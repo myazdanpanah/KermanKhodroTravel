@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import api from '../api/client'
 import { useToast } from '../components/Toast'
-import { ArrowRight, Users, Pencil, Trash2, X, Shield, UserPlus, Trash, History, ChevronDown, ChevronUp, Plus, Tag, Database } from 'lucide-react'
+import {
+  UserPlus, Users, Trash, Shield, History, ChevronDown, ChevronUp, Plus, Tag, Database, X, Pencil, Trash2
+} from 'lucide-react'
 import { ALL_ROLES, ROLE_MAP } from '../utils/roles'
 
 interface User {
@@ -330,23 +332,12 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900" dir="rtl">
-      {/* Header */}
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/dashboards" className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center">
-                <Shield className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">مدیریت کاربران</h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">ایجاد، ویرایش و حذف نقش‌ها و دسترسی‌ها</p>
-              </div>
-            </div>
+    <div className="p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">مدیریت کاربران</h1>
+            <p className="text-sm text-gray-500 mt-1">ایجاد، ویرایش و حذف نقش‌ها و دسترسی‌ها</p>
           </div>
           <button
             onClick={openCreateModal}
@@ -356,9 +347,6 @@ export default function AdminSettingsPage() {
             کاربر جدید
           </button>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {ROLE_OPTIONS.map((r) => {
@@ -619,7 +607,7 @@ export default function AdminSettingsPage() {
             </div>
           </div>
         )}
-      </main>
+      </div>
 
       {/* Role Create/Edit Modal */}
       {showRoleModal && (

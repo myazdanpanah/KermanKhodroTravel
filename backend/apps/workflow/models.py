@@ -167,7 +167,7 @@ class WorkflowHistory(models.Model):
     Immutable audit trail of every workflow transition.
     Per WORKFLOW_ENGINE.md §31: Workflow History.
     """
-    instance = models.ForeignKey(WorkflowInstance, on_delete=models.CASCADE, related_name="history")
+    instance = models.ForeignKey(WorkflowInstance, on_delete=models.PROTECT, related_name="history")
     previous_state = models.ForeignKey(WorkflowState, on_delete=models.SET_NULL, null=True, related_name="history_from")
     new_state = models.ForeignKey(WorkflowState, on_delete=models.SET_NULL, null=True, related_name="history_to")
     action = models.CharField(max_length=50)
@@ -197,3 +197,10 @@ class WorkflowComment(models.Model):
 
     def __str__(self):
         return f"Comment by {self.author} on {self.instance}"
+
+
+# Import extended workflow models (delegation, escalation, SLA, notifications)
+from .delegation import WorkflowDelegation  # noqa: F401
+from .escalation import WorkflowEscalationRule, WorkflowEscalationLog  # noqa: F401
+from .sla import WorkflowSLARule, WorkflowSLATracker  # noqa: F401
+from .notifications import WorkflowNotification, WorkflowNotificationRule  # noqa: F401

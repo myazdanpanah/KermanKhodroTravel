@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/client'
 import { useToast } from '../components/Toast'
-import { ArrowRight, Building2, FolderTree, Users, ChevronDown, ChevronRight, User, Crown } from 'lucide-react'
+import { Building2, FolderTree, Users, ChevronDown, ChevronRight, User, Crown } from 'lucide-react'
 
 interface OrgMember {
   id: number
@@ -234,27 +234,9 @@ export default function OrgChartPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900" dir="rtl">
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link to="/dashboards" className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
-              <ArrowRight className="w-5 h-5" />
-            </Link>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">نمودار سازمانی</h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">ساختار سازمانی شرکت و تیم‌ها</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="p-6 dark:bg-gray-900" dir="rtl">
 
-      <main className="max-w-5xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[

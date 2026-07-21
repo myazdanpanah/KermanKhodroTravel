@@ -15,6 +15,12 @@ MODULE_CHOICES = [
     ("llm",           "LLM Gateway"),
     ("settings",      "Settings"),
     ("manufacturing",  "Manufacturing"),
+    ("inventory",      "Inventory"),
+    ("workflow",       "Workflow Engine"),
+    ("purchasing",     "Purchasing"),
+    ("sales",          "Sales"),
+    ("trading",        "Trading"),
+    ("service_sales",  "Service Sales"),
 ]
 
 ALL_MODULE_IDS = [m[0] for m in MODULE_CHOICES]

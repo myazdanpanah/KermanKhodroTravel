@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import api from '../api/client'
 import { useToast } from '../components/Toast'
 import {
-  ArrowRight, Settings, Puzzle, Building2, FolderTree, Users,
+  Puzzle, Users, Building2, FolderTree, Settings,
   ChevronDown, ChevronRight, Plus, Pencil, Trash2, X, Check,
   ToggleLeft, ToggleRight, Zap, Save
 } from 'lucide-react'
@@ -483,7 +483,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!user || (user.role !== 'admin' && user.role !== 'ceo')) {
-      navigate('/dashboards')
+      navigate('/erp')
     }
   }, [user, navigate])
 
@@ -495,25 +495,12 @@ export default function SettingsPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900" dir="rtl">
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center gap-4">
-          <Link to="/launcher" className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
-            <ArrowRight className="w-5 h-5" />
-          </Link>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-500 rounded-xl flex items-center justify-center">
-              <Settings className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">تنظیمات</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">مدیریت ماژول‌ها و ساختار سازمانی</p>
-            </div>
-          </div>
+    <div className="p-6">
+      <div className="max-w-7xl mx-auto">
+        <div className="mb-6">
+          <h1 className="text-xl font-bold text-gray-900">تنظیمات</h1>
+          <p className="text-sm text-gray-500 mt-1">مدیریت ماژول‌ها و ساختار سازمانی</p>
         </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-6 py-8">
         {/* Tabs */}
         <div className="flex items-center gap-1 mb-6">
           {tabs.map((tab) => {
@@ -537,7 +524,7 @@ export default function SettingsPage() {
         {/* Tab Content */}
         {activeTab === 'modules' && <ModuleManagementTab />}
         {activeTab === 'org' && <OrganizationTab />}
-      </main>
+      </div>
     </div>
   )
 }

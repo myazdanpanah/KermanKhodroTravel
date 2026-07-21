@@ -367,3 +367,11 @@ class FinishedGoodsReceipt(models.Model):
     def save(self, *args, **kwargs):
         self.total_cost = self.quantity_received * self.unit_cost
         super().save(*args, **kwargs)
+
+
+# ─── Quality Control ──────────────────────────────────────────
+# Quality models are in quality.py. Import them here for
+# Django model detection and migration generation.
+from .quality import (
+    QualityPlan, InspectionResult, NonConformance, CorrectiveAction,
+)  # noqa: F401

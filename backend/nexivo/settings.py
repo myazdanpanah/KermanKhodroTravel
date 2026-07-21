@@ -35,6 +35,11 @@ INSTALLED_APPS = [
     "apps.llm.apps.LlmConfig",
     "apps.manufacturing.apps.ManufacturingConfig",
     "apps.workflow.apps.WorkflowConfig",
+    "apps.inventory.apps.InventoryConfig",
+    "apps.purchasing.apps.PurchasingConfig",
+    "apps.sales.apps.SalesConfig",
+    "apps.trading.apps.TradingConfig",
+    "apps.service_sales.apps.ServiceSalesConfig",
 ]
 
 MIDDLEWARE = [

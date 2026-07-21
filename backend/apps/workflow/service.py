@@ -183,6 +183,19 @@ class WorkflowExecutionService:
                 text=comment,
             )
 
+        # 8. Send notifications
+        from .notifications import NotificationService
+        NotificationService.notify_transition(
+            instance=instance,
+            action=action,
+            performed_by=user,
+            comment=comment,
+        )
+
+        # 9. Start SLA timers for new state
+        from .sla import SLAService
+        SLAService.start_sla(instance, transition.target_state)
+
         logger.info(
             f"Workflow transition: {instance.document_type}#{instance.document_id} "
             f"{previous_state.name} → {transition.target_state.name} ({action}) by {user.username}"
