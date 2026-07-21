@@ -69,7 +69,7 @@ Single collapsible sidebar with all ERP modules:
 
 ### Route Structure
 - All ERP routes nested under `/erp` using ERPLayout
-- Old routes (`/finance`, `/inventory`, etc.) redirect to `/erp` equivalents
+- Old root routes (`/finance`, `/inventory`, etc.) redirect to `/erp` root
 - Admin/Users/OrgChart/LLMSettings moved to `/erp/settings/*`
 - Standalone modules (dashboards, db-manager) remain separate
 
