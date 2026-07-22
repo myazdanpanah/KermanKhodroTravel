@@ -30,7 +30,7 @@ export default function DashboardsPage() {
       setDashboards(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ name: '', description: '' });
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   const handleDelete = async (id: number) => {
@@ -38,7 +38,7 @@ export default function DashboardsPage() {
     try {
       await reportingApi.deleteDashboard(id);
       setDashboards(prev => prev.filter(d => d.id !== id));
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   return (

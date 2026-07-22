@@ -35,7 +35,7 @@ export default function ScheduledReportsPage() {
       setSchedules(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ name: '', template: 0, frequency: 'daily', export_format: 'pdf', recipients: [] });
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   const handleDelete = async (id: number) => {
@@ -43,7 +43,7 @@ export default function ScheduledReportsPage() {
     try {
       await reportingApi.deleteScheduled(id);
       setSchedules(prev => prev.filter(s => s.id !== id));
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   return (
