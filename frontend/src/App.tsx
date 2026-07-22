@@ -53,6 +53,12 @@ import ContractsPage from './pages/service-management/ContractsPage'
 import WarrantiesPage from './pages/service-management/WarrantiesPage'
 import SLAPage from './pages/service-management/SLAPage'
 import MaintenancePage from './pages/service-management/MaintenancePage'
+// CRM module
+import CRMPage from './pages/crm/CRMPage'
+import LeadsPage from './pages/crm/LeadsPage'
+import OpportunitiesPage from './pages/crm/OpportunitiesPage'
+import ActivitiesPage from './pages/crm/ActivitiesPage'
+import CampaignsPage from './pages/crm/CampaignsPage'
 // Service Sales module
 import ServiceSalesDashboard from './pages/service_sales/ServiceSalesDashboard'
 import BookingsPage from './pages/service_sales/BookingsPage'
@@ -161,6 +167,12 @@ export default function App() {
         <Route path="service-management/warranties" element={<WarrantiesPage />} />
         <Route path="service-management/sla" element={<SLAPage />} />
         <Route path="service-management/maintenance" element={<MaintenancePage />} />
+        {/* CRM */}
+        <Route path="crm" element={<CRMPage />} />
+        <Route path="crm/leads" element={<LeadsPage />} />
+        <Route path="crm/opportunities" element={<OpportunitiesPage />} />
+        <Route path="crm/activities" element={<ActivitiesPage />} />
+        <Route path="crm/campaigns" element={<CampaignsPage />} />
         {/* Settings */}
         <Route path="settings" element={<SettingsPage />} />
         <Route path="settings/:tab" element={<SettingsPage />} />

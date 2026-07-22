@@ -13,7 +13,7 @@ import {
   Percent, Wallet,
   Settings, ChevronLeft, ChevronDown, LogOut, Zap,
   Shield, Building2, Search, Ship, Bell, Sun, Moon, Menu, X,
-  Headphones, Clock,
+  Headphones, Clock, TrendingUp, Target,
 } from 'lucide-react'
 
 // ─── Navigation Structure ───────────────────────────────────────
@@ -114,6 +114,17 @@ const NAV_SECTIONS: NavSection[] = [
       { to: '/erp/service-sales/passengers', icon: Users, label: 'مسافران' },
       { to: '/erp/service-sales/commissions', icon: Percent, label: 'كميسيون‌ها' },
       { to: '/erp/service-sales/refunds', icon: Wallet, label: 'بازپرداخت‌ها' },
+    ],
+  },
+  {
+    id: 'crm',
+    label: 'CRM',
+    items: [
+      { to: '/erp/crm', icon: Users, label: 'داشبورد CRM', end: true },
+      { to: '/erp/crm/leads', icon: Users, label: 'سرنخ‌ها' },
+      { to: '/erp/crm/opportunities', icon: TrendingUp, label: 'فرصت‌ها' },
+      { to: '/erp/crm/activities', icon: Calendar, label: 'فعالیت‌ها' },
+      { to: '/erp/crm/campaigns', icon: Target, label: 'کمپین‌ها' },
     ],
   },
   {
