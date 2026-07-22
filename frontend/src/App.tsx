@@ -57,6 +57,11 @@ import MaintenancePage from './pages/service-management/MaintenancePage'
 import HRDashboard from './pages/hr/HRDashboard'
 import EmployeesPage from './pages/hr/EmployeesPage'
 import AttendancePage from './pages/hr/AttendancePage'
+import DepartmentsPage from './pages/hr/DepartmentsPage'
+import LeavePage from './pages/hr/LeavePage'
+import PayrollPage from './pages/hr/PayrollPage'
+import EvaluationsPage from './pages/hr/EvaluationsPage'
+import RecruitmentPage from './pages/hr/RecruitmentPage'
 // CRM module
 import CRMPage from './pages/crm/CRMPage'
 import LeadsPage from './pages/crm/LeadsPage'
@@ -181,6 +186,11 @@ export default function App() {
         <Route path="hr" element={<HRDashboard />} />
         <Route path="hr/employees" element={<EmployeesPage />} />
         <Route path="hr/attendance" element={<AttendancePage />} />
+        <Route path="hr/departments" element={<DepartmentsPage />} />
+        <Route path="hr/leave" element={<LeavePage />} />
+        <Route path="hr/payroll" element={<PayrollPage />} />
+        <Route path="hr/evaluations" element={<EvaluationsPage />} />
+        <Route path="hr/recruitment" element={<RecruitmentPage />} />
         {/* Settings */}
         <Route path="settings" element={<SettingsPage />} />
         <Route path="settings/:tab" element={<SettingsPage />} />
