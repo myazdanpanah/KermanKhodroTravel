@@ -3,10 +3,12 @@ import { useToast } from "../../components/Toast";
  * Dashboards Page — View and manage analytics dashboards
  */
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Search, LayoutDashboard, Trash2, Settings } from 'lucide-react';
 import { reportingApi, Dashboard } from '../../api/reporting';
 
 export default function DashboardsPage() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
   const [loading, setLoading] = useState(true);
@@ -17,7 +19,7 @@ export default function DashboardsPage() {
   useEffect(() => {
     reportingApi.getDashboards()
       .then(r => setDashboards(r.data.data))
-      .catch(() => {})
+      .catch(() => toast('خطا در دریافت داشبوردها', 'error'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -81,7 +83,7 @@ export default function DashboardsPage() {
           <div className="col-span-3 text-center py-8 text-gray-500 text-sm">هیچ داشبوردی یافت نشد</div>
         ) : (
           filtered.map(d => (
-            <div key={d.id} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition">
+            <div key={d.id} onClick={() => navigate(`/erp/reports/dashboards/${d.id}`)} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition cursor-pointer">
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-white">{d.name}</h3>
