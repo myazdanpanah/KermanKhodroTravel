@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, Users, ChevronDown, Trash2 } from 'lucide-react';
 import { hrApi, Employee } from '../../api/hr';
+import { useToast } from '../../components/Toast';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   active: { label: 'فعال', color: 'bg-green-100 text-green-700' },
@@ -13,6 +14,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 };
 
 export default function EmployeesPage() {
+  const { toast } = useToast();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -23,7 +25,7 @@ export default function EmployeesPage() {
   useEffect(() => {
     const params: Record<string, string> = {};
     if (statusFilter) params.status = statusFilter;
-    hrApi.getEmployees(params).then(r => setEmployees(r.data.data)).catch(() => {}).finally(() => setLoading(false));
+    hrApi.getEmployees(params).then(r => setEmployees(r.data.data)).catch(() => toast('خطا در دریافت کارکنان', 'error')).finally(() => setLoading(false));
   }, [statusFilter]);
 
   const filtered = employees.filter(e => !search || e.first_name.includes(search) || e.last_name.includes(search) || e.employee_id.includes(search));
@@ -35,7 +37,8 @@ export default function EmployeesPage() {
       setEmployees(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ first_name: '', last_name: '', employee_id: '', position: '', phone: '', email: '', base_salary: 0, hire_date: new Date().toISOString().split('T')[0] });
-    } catch {}
+      toast('کارمند با موفقیت ایجاد شد', 'success');
+    } catch { toast('خطا در ایجاد کارمند', 'error'); }
   };
 
   const handleDelete = async (id: number) => {
@@ -43,7 +46,8 @@ export default function EmployeesPage() {
     try {
       await hrApi.deleteEmployee(id);
       setEmployees(prev => prev.filter(e => e.id !== id));
-    } catch {}
+      toast('کارمند حذف شد', 'success');
+    } catch { toast('خطا در حذف کارمند', 'error'); }
   };
 
   return (

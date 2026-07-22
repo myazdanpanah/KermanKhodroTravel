@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, DollarSign, Play } from 'lucide-react';
 import { hrApi, PayrollPeriod, PayrollRecord } from '../../api/hr';
+import { useToast } from '../../components/Toast';
 
 export default function PayrollPage() {
   const [periods, setPeriods] = useState<PayrollPeriod[]>([]);

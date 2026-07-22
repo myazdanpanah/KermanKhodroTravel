@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, Target } from 'lucide-react';
 import { crmApi, Campaign } from '../../api/crm';
+import { useToast } from '../../components/Toast';
 
 const TYPE_MAP: Record<string, string> = {
   email: 'ایمیل', social_media: 'شبکه اجتماعی', content: 'محتوا',

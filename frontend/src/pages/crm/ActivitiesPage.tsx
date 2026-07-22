@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, Phone, Mail, Calendar, CheckCircle, Clock } from 'lucide-react';
 import { crmApi, Activity } from '../../api/crm';
+import { useToast } from '../../components/Toast';
 
 const TYPE_MAP: Record<string, { label: string; icon: typeof Phone; color: string }> = {
   call: { label: 'تماس', icon: Phone, color: 'text-blue-500 bg-blue-50' },

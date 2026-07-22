@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, Calendar, CheckCircle, XCircle } from 'lucide-react';
 import { hrApi, LeaveRequest, LeaveType } from '../../api/hr';
+import { useToast } from '../../components/Toast';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   pending: { label: 'در انتظار', color: 'bg-yellow-100 text-yellow-700' },

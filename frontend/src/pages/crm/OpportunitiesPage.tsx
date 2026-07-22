@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, TrendingUp } from 'lucide-react';
 import { crmApi, Opportunity } from '../../api/crm';
+import { useToast } from '../../components/Toast';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   prospecting: { label: 'جستجو', color: 'bg-blue-100 text-blue-700' },

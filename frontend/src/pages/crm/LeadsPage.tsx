@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, Users, ChevronDown, ArrowLeftRight } from 'lucide-react';
 import { crmApi, Lead } from '../../api/crm';
+import { useToast } from '../../components/Toast';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   new: { label: 'جدید', color: 'bg-blue-100 text-blue-700' },
@@ -21,6 +22,7 @@ const SOURCE_MAP: Record<string, string> = {
 };
 
 export default function LeadsPage() {
+  const { toast } = useToast();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -31,7 +33,7 @@ export default function LeadsPage() {
   useEffect(() => {
     const params: Record<string, string> = {};
     if (statusFilter) params.status = statusFilter;
-    crmApi.getLeads(params).then(r => setLeads(r.data.data)).catch(() => {}).finally(() => setLoading(false));
+    crmApi.getLeads(params).then(r => setLeads(r.data.data)).catch(() => toast('خطا در دریافت سرنخ‌ها', 'error')).finally(() => setLoading(false));
   }, [statusFilter]);
 
   const filtered = leads.filter(l => !search || l.name.includes(search) || l.company_name.includes(search));
@@ -43,7 +45,8 @@ export default function LeadsPage() {
       setLeads(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ name: '', company_name: '', email: '', phone: '', source: 'other', priority: 'medium', notes: '' });
-    } catch {}
+      toast('سرنخ با موفقیت ایجاد شد', 'success');
+    } catch { toast('خطا در ایجاد سرنخ', 'error'); }
   };
 
   const handleConvert = async (id: number) => {
@@ -51,7 +54,8 @@ export default function LeadsPage() {
     try {
       await crmApi.convertLead(id);
       setLeads(prev => prev.map(l => l.id === id ? { ...l, status: 'converted' } : l));
-    } catch {}
+      toast('سرنخ با موفقیت تبدیل شد', 'success');
+    } catch { toast('خطا در تبدیل سرنخ', 'error'); }
   };
 
   return (

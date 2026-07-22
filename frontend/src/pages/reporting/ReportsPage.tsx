@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, Play, FileText, Download, Clock } from 'lucide-react';
 import { reportingApi, ReportTemplate, ReportExecution } from '../../api/reporting';
+import { useToast } from '../../components/Toast';
 
 const MODULE_LABELS: Record<string, string> = {
   finance: 'مالی', inventory: 'انبار', purchasing: 'خرید', sales: 'فروش',
@@ -17,6 +18,7 @@ const VIZ_LABELS: Record<string, string> = {
 };
 
 export default function ReportsPage() {
+  const { toast } = useToast();
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [executions, setExecutions] = useState<ReportExecution[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,7 +30,7 @@ export default function ReportsPage() {
   useEffect(() => {
     Promise.all([reportingApi.getTemplates(), reportingApi.getExecutions()])
       .then(([r1, r2]) => { setTemplates(r1.data.data); setExecutions(r2.data.data); })
-      .catch(() => {})
+      .catch(() => toast('خطا در دریافت گزارش‌ها', 'error'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -41,7 +43,8 @@ export default function ReportsPage() {
       setTemplates(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ name: '', description: '', module: 'finance', visualization: 'table' });
-    } catch {}
+      toast('قالب گزارش ایجاد شد', 'success');
+    } catch { toast('خطا در ایجاد قالب', 'error'); }
   };
 
   const handleExecute = async (templateId: number) => {
@@ -49,7 +52,8 @@ export default function ReportsPage() {
       const res = await reportingApi.executeReport(templateId);
       setExecutions(prev => [res.data.data, ...prev]);
       setSelectedResult(res.data.data);
-    } catch {}
+      toast('گزارش با موفقیت اجرا شد', 'success');
+    } catch { toast('خطا در اجرای گزارش', 'error'); }
   };
 
   const handleExport = async (id: number, format: string) => {

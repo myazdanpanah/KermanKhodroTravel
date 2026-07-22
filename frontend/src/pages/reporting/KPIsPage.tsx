@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, TrendingUp, TrendingDown, Minus, Target } from 'lucide-react';
 import { reportingApi, KPI, KPISummary } from '../../api/reporting';
+import { useToast } from '../../components/Toast';
 
 const MODULE_LABELS: Record<string, string> = {
   finance: 'مالی', inventory: 'انبار', purchasing: 'خرید', sales: 'فروش',
@@ -24,6 +25,7 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 export default function KPIsPage() {
+  const { toast } = useToast();
   const [kpis, setKPIs] = useState<KPI[]>([]);
   const [summary, setSummary] = useState<KPISummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -35,7 +37,7 @@ export default function KPIsPage() {
   useEffect(() => {
     Promise.all([reportingApi.getKPIs(), reportingApi.getKPISummary()])
       .then(([r1, r2]) => { setKPIs(r1.data.data); setSummary(r2.data.data); })
-      .catch(() => {})
+      .catch(() => toast('خطا در دریافت شاخص‌ها', 'error'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -52,7 +54,8 @@ export default function KPIsPage() {
       setKPIs(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ name: '', code: '', module: 'finance', formula: '', target_value: 0, unit: '' });
-    } catch {}
+      toast('شاخص ایجاد شد', 'success');
+    } catch { toast('خطا در ایجاد شاخص', 'error'); }
   };
 
   return (
