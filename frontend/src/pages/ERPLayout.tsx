@@ -13,6 +13,7 @@ import {
   Percent, Wallet,
   Settings, ChevronLeft, ChevronDown, LogOut, Zap,
   Shield, Building2, Search, Ship, Bell, Sun, Moon, Menu, X,
+  Headphones, Clock,
 } from 'lucide-react'
 
 // ─── Navigation Structure ───────────────────────────────────────
@@ -113,6 +114,20 @@ const NAV_SECTIONS: NavSection[] = [
       { to: '/erp/service-sales/passengers', icon: Users, label: 'مسافران' },
       { to: '/erp/service-sales/commissions', icon: Percent, label: 'كميسيون‌ها' },
       { to: '/erp/service-sales/refunds', icon: Wallet, label: 'بازپرداخت‌ها' },
+    ],
+  },
+  {
+    id: 'service_management',
+    label: 'مدیریت خدمات',
+    items: [
+      { to: '/erp/service-management', icon: Headphones, label: 'داشبورد خدمات', end: true },
+      { to: '/erp/service-management/requests', icon: ClipboardList, label: 'درخواست‌ها' },
+      { to: '/erp/service-management/work-orders', icon: Wrench, label: 'دستور کارها' },
+      { to: '/erp/service-management/technicians', icon: Users, label: 'تکنسین‌ها' },
+      { to: '/erp/service-management/warranties', icon: Shield, label: 'گارانتی' },
+      { to: '/erp/service-management/contracts', icon: FileText, label: 'قراردادها' },
+      { to: '/erp/service-management/sla', icon: Clock, label: 'SLA' },
+      { to: '/erp/service-management/maintenance', icon: Settings, label: 'نگهداری' },
     ],
   },
   {
