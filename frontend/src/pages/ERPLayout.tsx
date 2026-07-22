@@ -14,7 +14,7 @@ import {
   Settings, ChevronLeft, ChevronDown, LogOut, Zap,
   Shield, Building2, Search, Ship, Bell, Sun, Moon, Menu, X,
   Headphones, Clock, TrendingUp, Target, DollarSign,
-  FileBarChart, Gauge,
+  FileBarChart, Gauge, Brain, AlertTriangle, MessageSquare,
 } from 'lucide-react'
 
 // ─── Navigation Structure ───────────────────────────────────────
@@ -163,6 +163,16 @@ const NAV_SECTIONS: NavSection[] = [
       { to: '/erp/reports/dashboards', icon: LayoutDashboard, label: 'داشبوردها' },
       { to: '/erp/reports/kpis', icon: Gauge, label: 'شاخص‌ها' },
       { to: '/erp/reports/scheduled', icon: Calendar, label: 'زمان‌بندی' },
+    ],
+  },
+  {
+    id: 'ai_insights',
+    label: 'هوش مصنوعی',
+    items: [
+      { to: '/erp/ai', icon: Brain, label: 'داشبورد AI', end: true },
+      { to: '/erp/ai/anomalies', icon: AlertTriangle, label: 'تشخیص ناهنجاری' },
+      { to: '/erp/ai/forecasts', icon: TrendingUp, label: 'پیش‌بینی' },
+      { to: '/erp/ai/nl-query', icon: MessageSquare, label: 'پرسش طبیعی' },
     ],
   },
   {

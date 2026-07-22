@@ -53,18 +53,20 @@ class ReportService:
         module = template.module
 
         # Route to appropriate data source based on module
-        if module == 'finance':
-            return ReportService._query_finance(company, config, parameters)
-        elif module == 'sales':
-            return ReportService._query_sales(company, config, parameters)
-        elif module == 'inventory':
-            return ReportService._query_inventory(company, config, parameters)
-        elif module == 'hr':
-            return ReportService._query_hr(company, config, parameters)
-        elif module == 'crm':
-            return ReportService._query_crm(company, config, parameters)
-        else:
-            return {'headers': [], 'rows': [], 'summary': {}}
+        query_map = {
+            'finance': ReportService._query_finance,
+            'sales': ReportService._query_sales,
+            'inventory': ReportService._query_inventory,
+            'hr': ReportService._query_hr,
+            'crm': ReportService._query_crm,
+            'manufacturing': ReportService._query_manufacturing,
+            'service_management': ReportService._query_service_management,
+            'trading': ReportService._query_trading,
+        }
+        handler = query_map.get(module)
+        if handler:
+            return handler(company, config, parameters)
+        return {'headers': [], 'rows': [], 'summary': {}}
 
     @staticmethod
     def _query_finance(company, config, parameters):
@@ -176,6 +178,110 @@ class ReportService:
             'summary': {
                 'total_leads': leads.count(),
                 'total_opportunities': opps.count(),
+            }
+        }
+
+    @staticmethod
+    def _query_manufacturing(company, config, parameters):
+        """Query manufacturing module data."""
+        from apps.manufacturing.models import ProductionOrder, WorkCenter, BOM
+        from decimal import Decimal
+
+        orders = ProductionOrder.objects.filter(company=company)
+        work_centers = WorkCenter.objects.filter(company=company)
+        boms = BOM.objects.filter(company=company)
+
+        status_data = orders.values('status').annotate(
+            count=Count('id'),
+            total_qty=Sum('quantity'),
+            total_cost=Sum('total_cost'),
+        )
+
+        rows = [[d['status'], d['count'], float(d['total_qty'] or 0), float(d['total_cost'] or 0)] for d in status_data]
+
+        return {
+            'headers': ['Status', 'Count', 'Total Quantity', 'Total Cost'],
+            'rows': rows,
+            'summary': {
+                'total_orders': orders.count(),
+                'total_cost': float(orders.aggregate(s=Sum('total_cost'))['s'] or Decimal('0')),
+                'work_centers': work_centers.count(),
+                'boms': boms.count(),
+            }
+        }
+
+    @staticmethod
+    def _query_service_management(company, config, parameters):
+        """Query service management module data."""
+        from apps.service_management.models import (
+            ServiceRequest, WorkOrder, Technician, ServiceContract,
+        )
+        from decimal import Decimal
+
+        requests = ServiceRequest.objects.filter(company=company)
+        work_orders = WorkOrder.objects.filter(company=company)
+        technicians = Technician.objects.filter(company=company)
+        contracts = ServiceContract.objects.filter(company=company)
+
+        sr_status_data = requests.values('status').annotate(count=Count('id'))
+        sr_priority_data = requests.values('priority').annotate(count=Count('id'))
+        wo_status_data = work_orders.values('status').annotate(count=Count('id'))
+
+        rows = []
+        for d in sr_status_data:
+            rows.append([f'SR: {d["status"]}', d['count']])
+        for d in sr_priority_data:
+            rows.append([f'Priority: {d["priority"]}', d['count']])
+        for d in wo_status_data:
+            rows.append([f'WO: {d["status"]}', d['count']])
+
+        return {
+            'headers': ['Category', 'Count'],
+            'rows': rows,
+            'summary': {
+                'total_requests': requests.count(),
+                'open_requests': requests.exclude(status__in=['completed', 'closed', 'cancelled']).count(),
+                'total_work_orders': work_orders.count(),
+                'active_work_orders': work_orders.exclude(status__in=['completed', 'cancelled']).count(),
+                'technicians': technicians.count(),
+                'contracts': contracts.count(),
+            }
+        }
+
+    @staticmethod
+    def _query_trading(company, config, parameters):
+        """Query trading (import/export) module data."""
+        from apps.trading.models import ImportOrder, ExportOrder, Shipment
+        from decimal import Decimal
+
+        imports = ImportOrder.objects.filter(company=company)
+        exports = ExportOrder.objects.filter(company=company)
+        shipments = Shipment.objects.filter(company=company)
+
+        import_status = imports.values('status').annotate(
+            count=Count('id'),
+            total=Sum('total_price_irr'),
+        )
+        export_status = exports.values('status').annotate(
+            count=Count('id'),
+            total=Sum('total_price_irr'),
+        )
+
+        rows = []
+        for d in import_status:
+            rows.append([f'Import: {d["status"]}', d['count'], float(d['total'] or 0)])
+        for d in export_status:
+            rows.append([f'Export: {d["status"]}', d['count'], float(d['total'] or 0)])
+
+        return {
+            'headers': ['Category', 'Count', 'Total Value (IRR)'],
+            'rows': rows,
+            'summary': {
+                'total_imports': imports.count(),
+                'total_exports': exports.count(),
+                'total_shipments': shipments.count(),
+                'import_value': float(imports.aggregate(s=Sum('total_price_irr'))['s'] or Decimal('0')),
+                'export_value': float(exports.aggregate(s=Sum('total_price_irr'))['s'] or Decimal('0')),
             }
         }
 

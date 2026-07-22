@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "apps.crm.apps.CRMConfig",
     "apps.hr.apps.HRConfig",
     "apps.reporting.apps.ReportingConfig",
+    "apps.ai_insights.apps.AiInsightsConfig",
 ]
 
 MIDDLEWARE = [

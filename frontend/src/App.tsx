@@ -104,6 +104,11 @@ import SheetsSyncPage from './pages/SheetsSyncPage'
 import SupersetHealthPage from './pages/SupersetHealthPage'
 import LLMSettingsPage from './pages/LLMSettingsPage'
 import RoadmapPage from './pages/RoadmapPage'
+// AI Insights module
+import AIDashboardPage from './pages/ai-insights/AIDashboardPage'
+import AnomaliesPage from './pages/ai-insights/AnomaliesPage'
+import ForecastsPage from './pages/ai-insights/ForecastsPage'
+import NLQueryPage from './pages/ai-insights/NLQueryPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token)
@@ -205,6 +210,11 @@ export default function App() {
         <Route path="reports/dashboards/:id" element={<DashboardViewerPage />} />
         <Route path="reports/kpis" element={<KPIsPage />} />
         <Route path="reports/scheduled" element={<ScheduledReportsPage />} />
+        {/* AI Insights */}
+        <Route path="ai" element={<AIDashboardPage />} />
+        <Route path="ai/anomalies" element={<AnomaliesPage />} />
+        <Route path="ai/forecasts" element={<ForecastsPage />} />
+        <Route path="ai/nl-query" element={<NLQueryPage />} />
         {/* Settings */}
         <Route path="settings" element={<SettingsPage />} />
         <Route path="settings/:tab" element={<SettingsPage />} />

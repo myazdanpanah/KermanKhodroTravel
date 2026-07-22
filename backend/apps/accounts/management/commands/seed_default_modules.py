@@ -31,6 +31,7 @@ ALL_ERP_MODULES = [
     "hr",
     "crm",
     "reporting",
+    "ai_insights",
 ]
 
 
