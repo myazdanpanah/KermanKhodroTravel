@@ -17,7 +17,7 @@ const CANDIDATE_STATUS: Record<string, { label: string; color: string }> = {
   screening: { label: 'غربالگری', color: 'bg-purple-100 text-purple-700' },
   interview: { label: 'مصاحبه', color: 'bg-orange-100 text-orange-700' },
   offer: { label: 'پیشنهاد', color: 'bg-teal-100 text-teal-700' },
-  hired: { label: ' استخدام شده', color: 'bg-green-100 text-green-700' },
+  hired: { label: 'استخدام شده', color: 'bg-green-100 text-green-700' },
   rejected: { label: 'رد شده', color: 'bg-red-100 text-red-700' },
 };
 

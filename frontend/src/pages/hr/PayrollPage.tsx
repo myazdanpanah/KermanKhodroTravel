@@ -20,7 +20,11 @@ export default function PayrollPage() {
       .catch(() => {}).finally(() => setLoading(false));
   }, []);
 
-  const filteredRecords = records.filter(r => !search || r.employee_name.includes(search) || (selectedPeriod && r.period === selectedPeriod));
+  const filteredRecords = records.filter(r => {
+    const matchesSearch = !search || r.employee_name.includes(search);
+    const matchesPeriod = !selectedPeriod || r.period === selectedPeriod;
+    return matchesSearch && matchesPeriod;
+  });
 
   const handleCreate = async () => {
     if (!form.name || !form.start_date || !form.end_date) return;

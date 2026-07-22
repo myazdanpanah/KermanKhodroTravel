@@ -62,6 +62,7 @@ import LeavePage from './pages/hr/LeavePage'
 import PayrollPage from './pages/hr/PayrollPage'
 import EvaluationsPage from './pages/hr/EvaluationsPage'
 import RecruitmentPage from './pages/hr/RecruitmentPage'
+import LeaveTypesPage from './pages/hr/LeaveTypesPage'
 // CRM module
 import CRMPage from './pages/crm/CRMPage'
 import LeadsPage from './pages/crm/LeadsPage'
@@ -190,6 +191,7 @@ export default function App() {
         <Route path="hr/leave" element={<LeavePage />} />
         <Route path="hr/payroll" element={<PayrollPage />} />
         <Route path="hr/evaluations" element={<EvaluationsPage />} />
+        <Route path="hr/leave-types" element={<LeaveTypesPage />} />
         <Route path="hr/recruitment" element={<RecruitmentPage />} />
         {/* Settings */}
         <Route path="settings" element={<SettingsPage />} />
