@@ -75,19 +75,23 @@ class AnomalyService:
                 z = (float(inv.total) - avg) / std
                 if abs(z) > AnomalyService.Z_SCORE_THRESHOLD:
                     severity = 'critical' if abs(z) > 3 else 'high' if abs(z) > 2.5 else 'medium'
-                    existing = AnomalyDetection.objects.filter(company=company, module="finance", metric_name=f"Invoice {inv.invoice_number}", is_resolved=False).exists()
+                    existing = AnomalyDetection.objects.filter(
+                        company=company, module='finance',
+                        metric_name=f'Invoice {inv.invoice_number}',
+                        is_resolved=False
+                    ).exists()
                     if not existing:
                         anomaly = AnomalyDetection.objects.create(
-                        company=company,
-                        module='finance',
-                        metric_name=f'Invoice {inv.invoice_number}',
-                        expected_value=Decimal(str(round(avg, 2))),
-                        actual_value=inv.total,
-                        deviation_pct=Decimal(str(round(z * 100, 2))),
-                        severity=severity,
-                        description=f'Invoice {inv.invoice_number} total ({inv.total}) deviates {abs(round(z, 2))}σ from mean ({round(avg, 2)})',
-                    )
-                                            anomalies.append(anomaly)
+                            company=company,
+                            module='finance',
+                            metric_name=f'Invoice {inv.invoice_number}',
+                            expected_value=Decimal(str(round(avg, 2))),
+                            actual_value=inv.total,
+                            deviation_pct=Decimal(str(round(z * 100, 2))),
+                            severity=severity,
+                            description=f'Invoice {inv.invoice_number} total ({inv.total}) deviates {abs(round(z, 2))}σ from mean ({round(avg, 2)})',
+                        )
+                        anomalies.append(anomaly)
         return anomalies
 
     @staticmethod
@@ -111,19 +115,23 @@ class AnomalyService:
                 z = (float(order.total) - avg) / std
                 if abs(z) > AnomalyService.Z_SCORE_THRESHOLD:
                     severity = 'critical' if abs(z) > 3 else 'high' if abs(z) > 2.5 else 'medium'
-                    existing = AnomalyDetection.objects.filter(company=company, module="finance", metric_name=f"Invoice {inv.invoice_number}", is_resolved=False).exists()
+                    existing = AnomalyDetection.objects.filter(
+                        company=company, module='sales',
+                        metric_name=f'Order {order.order_number}',
+                        is_resolved=False
+                    ).exists()
                     if not existing:
                         anomaly = AnomalyDetection.objects.create(
-                        company=company,
-                        module='sales',
-                        metric_name=f'Order {order.order_number}',
-                        expected_value=Decimal(str(round(avg, 2))),
-                        actual_value=order.total,
-                        deviation_pct=Decimal(str(round(z * 100, 2))),
-                        severity=severity,
-                        description=f'Order {order.order_number} total ({order.total}) deviates {abs(round(z, 2))}σ from mean ({round(avg, 2)})',
-                    )
-                                            anomalies.append(anomaly)
+                            company=company,
+                            module='sales',
+                            metric_name=f'Order {order.order_number}',
+                            expected_value=Decimal(str(round(avg, 2))),
+                            actual_value=order.total,
+                            deviation_pct=Decimal(str(round(z * 100, 2))),
+                            severity=severity,
+                            description=f'Order {order.order_number} total ({order.total}) deviates {abs(round(z, 2))}σ from mean ({round(avg, 2)})',
+                        )
+                        anomalies.append(anomaly)
         return anomalies
 
     @staticmethod
