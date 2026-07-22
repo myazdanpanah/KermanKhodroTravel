@@ -81,7 +81,9 @@ services:
     command: celery -A nexivo worker --loglevel=info
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      target: dev
     container_name: nexivo_frontend
     volumes:
       - ./frontend:/app
