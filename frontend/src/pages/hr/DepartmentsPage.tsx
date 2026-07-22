@@ -4,8 +4,10 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, Building2, Trash2 } from 'lucide-react';
 import { hrApi, Department } from '../../api/hr';
+import { useToast } from '../../components/Toast';
 
 export default function DepartmentsPage() {
+  const { toast } = useToast();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

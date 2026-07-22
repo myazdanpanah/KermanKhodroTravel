@@ -1,3 +1,5 @@
+import { useToast } from '../../components/Toast';
+const { toast } = useToast();
 /**
  * Maintenance Plans Page
  * Per UI_UX_GUIDELINES.md §7: Table design.

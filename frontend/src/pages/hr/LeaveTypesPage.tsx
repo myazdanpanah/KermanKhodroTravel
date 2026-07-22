@@ -4,8 +4,10 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, Tag } from 'lucide-react';
 import { hrApi, LeaveType } from '../../api/hr';
+import { useToast } from '../../components/Toast';
 
 export default function LeaveTypesPage() {
+  const { toast } = useToast();
   const [types, setTypes] = useState<LeaveType[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

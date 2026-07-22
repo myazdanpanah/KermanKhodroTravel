@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, Briefcase, Users } from 'lucide-react';
 import { hrApi, Recruitment, Candidate } from '../../api/hr';
+import { useToast } from '../../components/Toast';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   open: { label: 'باز', color: 'bg-green-100 text-green-700' },
@@ -22,6 +23,7 @@ const CANDIDATE_STATUS: Record<string, { label: string; color: string }> = {
 };
 
 export default function RecruitmentPage() {
+  const { toast } = useToast();
   const [jobs, setJobs] = useState<Recruitment[]>([]);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);

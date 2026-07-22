@@ -1,3 +1,5 @@
+import { useToast } from '../../components/Toast';
+const { toast } = useToast();
 /**
  * Work Orders List Page
  * Per UI_UX_GUIDELINES.md §7: Table design.

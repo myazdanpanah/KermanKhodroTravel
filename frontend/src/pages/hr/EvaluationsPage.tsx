@@ -4,8 +4,10 @@
 import { useState, useEffect } from 'react';
 import { Plus, Search, TrendingUp } from 'lucide-react';
 import { hrApi, PerformanceEvaluation } from '../../api/hr';
+import { useToast } from '../../components/Toast';
 
 export default function EvaluationsPage() {
+  const { toast } = useToast();
   const [evaluations, setEvaluations] = useState<PerformanceEvaluation[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
