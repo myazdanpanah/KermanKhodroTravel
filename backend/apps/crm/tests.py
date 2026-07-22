@@ -1,0 +1,247 @@
+"""
+CRM Module Tests — Lead conversion, Opportunity lifecycle, Activities, Campaigns.
+Per IMPLEMENTATION_ROADMAP.md §18: CRM completion criteria.
+"""
+
+import datetime
+from decimal import Decimal
+from django.test import TestCase
+from django.utils import timezone
+
+from apps.accounts.tests_helpers import create_test_company, create_test_user
+from apps.finance.models import Customer, AccountGroup, KolAccount
+
+from .models import Lead, Opportunity, Activity, Campaign, CRMTask, CustomerTimeline
+from .services import (
+    LeadService, OpportunityService, ActivityService,
+    CampaignService, CRMTaskService,
+)
+
+
+class CRMTestBase(TestCase):
+    """Shared fixtures for CRM tests."""
+
+    def setUp(self):
+        self.company = create_test_company()
+        self.user = create_test_user(username="crm_tester", company=self.company, role="ceo")
+        self.group = AccountGroup.objects.create(company=self.company, code="1", name="Assets")
+        self.kol = KolAccount.objects.create(company=self.company, group=self.group, code="131", name="Customer Receivable", account_type="asset")
+        self.customer = Customer.objects.create(company=self.company, name="Test Customer")
+        self.company.enable_module("crm")
+
+
+# ─── Lead Tests ───────────────────────────────────────────────
+
+class LeadTests(CRMTestBase):
+
+    def test_create_lead(self):
+        lead = LeadService.create_lead(
+            company=self.company,
+            name="Acme Corp",
+            email="contact@acme.com",
+            phone="021-1234",
+            source="website",
+            priority="high",
+        )
+        self.assertEqual(lead.name, "Acme Corp")
+        self.assertEqual(lead.status, "new")
+        self.assertEqual(lead.source, "website")
+
+    def test_convert_lead_to_customer(self):
+        lead = LeadService.create_lead(
+            company=self.company,
+            name="Globex Corp",
+            email="info@globex.com",
+        )
+        result = LeadService.convert_lead(self.company, lead.id, user=self.user)
+
+        self.assertIsNotNone(result["customer"])
+        self.assertIsNotNone(result["opportunity"])
+        lead.refresh_from_db()
+        self.assertEqual(lead.status, "converted")
+        self.assertIsNotNone(lead.converted_customer)
+        self.assertIsNotNone(lead.converted_at)
+
+        # Verify customer was created
+        self.assertEqual(Customer.objects.filter(company=self.company).count(), 2)
+
+        # Verify opportunity was created
+        self.assertEqual(
+            Opportunity.objects.filter(company=self.company, lead=lead).count(), 1
+        )
+
+    def test_convert_already_converted_lead(self):
+        lead = LeadService.create_lead(company=self.company, name="Already Done")
+        LeadService.convert_lead(self.company, lead.id)
+        with self.assertRaises(Exception):
+            LeadService.convert_lead(self.company, lead.id)
+
+    def test_lead_summary(self):
+        for name, status in [("A", "new"), ("B", "contacted"), ("C", "qualified"), ("D", "converted")]:
+            LeadService.create_lead(company=self.company, name=name)
+            Lead.objects.filter(name=name, company=self.company).update(status=status)
+        summary = LeadService.get_summary(self.company)
+        self.assertEqual(summary["total"], 4)
+        self.assertEqual(summary["new"], 1)
+        self.assertEqual(summary["converted"], 1)
+
+    def test_lead_timeline_on_conversion(self):
+        lead = LeadService.create_lead(company=self.company, name="Timeline Test")
+        LeadService.convert_lead(self.company, lead.id, user=self.user)
+        timeline = CustomerTimeline.objects.filter(company=self.company, entity_type="lead")
+        self.assertEqual(timeline.count(), 1)
+        self.assertEqual(timeline.first().event_type, "converted")
+
+
+# ─── Opportunity Tests ────────────────────────────────────────
+
+class OpportunityTests(CRMTestBase):
+
+    def test_create_opportunity(self):
+        opp = OpportunityService.create_opportunity(
+            company=self.company,
+            name="Big Deal",
+            customer_id=self.customer.id,
+            estimated_value=Decimal("10000000"),
+            probability=50,
+        )
+        self.assertEqual(opp.name, "Big Deal")
+        self.assertEqual(opp.weighted_value, Decimal("5000000"))
+
+    def test_close_won(self):
+        opp = OpportunityService.create_opportunity(
+            company=self.company,
+            name="Won Deal",
+            estimated_value=Decimal("5000000"),
+            probability=80,
+        )
+        opp = OpportunityService.close_won(self.company, opp.id, revenue=Decimal("5000000"))
+        self.assertEqual(opp.status, "closed_won")
+        self.assertEqual(opp.stage, "closed")
+        self.assertIsNotNone(opp.actual_close_date)
+
+    def test_close_lost(self):
+        opp = OpportunityService.create_opportunity(
+            company=self.company,
+            name="Lost Deal",
+            estimated_value=Decimal("3000000"),
+            probability=30,
+        )
+        opp = OpportunityService.close_lost(self.company, opp.id, reason="Too expensive")
+        self.assertEqual(opp.status, "closed_lost")
+        self.assertEqual(opp.loss_reason, "Too expensive")
+
+    def test_close_already_closed(self):
+        opp = OpportunityService.create_opportunity(company=self.company, name="Done")
+        OpportunityService.close_won(self.company, opp.id)
+        with self.assertRaises(Exception):
+            OpportunityService.close_won(self.company, opp.id)
+
+    def test_pipeline_summary(self):
+        for name, stage in [("A", "lead"), ("B", "qualified"), ("C", "proposal_sent")]:
+            OpportunityService.create_opportunity(
+                company=self.company, name=name,
+                estimated_value=Decimal("1000000"), probability=50,
+            )
+            Opportunity.objects.filter(name=name, company=self.company).update(stage=stage)
+        pipeline = OpportunityService.get_pipeline(self.company)
+        self.assertEqual(pipeline["total_opportunities"], 3)
+        self.assertEqual(pipeline["by_stage"]["lead"], 1)
+
+
+# ─── Activity Tests ───────────────────────────────────────────
+
+class ActivityTests(CRMTestBase):
+
+    def test_create_activity(self):
+        activity = ActivityService.create_activity(
+            company=self.company,
+            activity_type="call",
+            subject="Follow up call",
+            description="Discussed pricing",
+            lead_id=None,
+        )
+        self.assertEqual(activity.activity_type, "call")
+        self.assertEqual(activity.status, "planned")
+
+    def test_complete_activity(self):
+        activity = ActivityService.create_activity(
+            company=self.company,
+            activity_type="email",
+            subject="Intro email",
+        )
+        activity = ActivityService.complete_activity(self.company, activity.id, outcome="Response received")
+        self.assertEqual(activity.status, "completed")
+        self.assertIsNotNone(activity.completed_at)
+        self.assertEqual(activity.outcome, "Response received")
+
+
+# ─── Campaign Tests ───────────────────────────────────────────
+
+class CampaignTests(CRMTestBase):
+
+    def test_create_campaign(self):
+        campaign = CampaignService.create_campaign(
+            company=self.company,
+            name="Q3 Newsletter",
+            campaign_type="email",
+            budget=Decimal("5000000"),
+            expected_leads=100,
+            expected_revenue=Decimal("50000000"),
+        )
+        self.assertEqual(campaign.name, "Q3 Newsletter")
+        self.assertEqual(campaign.status, "draft")
+        self.assertEqual(campaign.budget, Decimal("5000000"))
+
+    def test_activate_campaign(self):
+        campaign = CampaignService.create_campaign(
+            company=self.company,
+            name="Summer Sale",
+            campaign_type="social_media",
+        )
+        campaign = CampaignService.activate_campaign(self.company, campaign.id)
+        self.assertEqual(campaign.status, "active")
+
+    def test_activate_non_draft_campaign(self):
+        campaign = CampaignService.create_campaign(
+            company=self.company, name="Already Active",
+        )
+        campaign.status = "active"
+        campaign.save()
+        with self.assertRaises(Exception):
+            CampaignService.activate_campaign(self.company, campaign.id)
+
+    def test_campaign_roi(self):
+        campaign = CampaignService.create_campaign(
+            company=self.company, name="ROI Test",
+            budget=Decimal("1000000"),
+        )
+        campaign.actual_cost = Decimal("1000000")
+        campaign.actual_revenue = Decimal("3000000")
+        campaign.save()
+        self.assertAlmostEqual(campaign.roi, 200.0)
+
+
+# ─── Task Tests ───────────────────────────────────────────────
+
+class CRMTaskTests(CRMTestBase):
+
+    def test_create_task(self):
+        task = CRMTaskService.create_task(
+            company=self.company,
+            title="Follow up with Acme",
+            priority="high",
+            due_date=datetime.date.today() + datetime.timedelta(days=7),
+        )
+        self.assertEqual(task.title, "Follow up with Acme")
+        self.assertEqual(task.priority, "high")
+        self.assertEqual(task.status, "todo")
+
+    def test_complete_task(self):
+        task = CRMTaskService.create_task(
+            company=self.company,
+            title="Send proposal",
+        )
+        task = CRMTaskService.complete_task(self.company, task.id)
+        self.assertEqual(task.status, "completed")
+        self.assertIsNotNone(task.completed_at)
