@@ -3,7 +3,6 @@
  */
 
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Users, ChevronDown, ArrowLeftRight } from 'lucide-react';
 import { crmApi, Lead } from '../../api/crm';
 
