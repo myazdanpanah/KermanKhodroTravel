@@ -7,6 +7,7 @@ import { hrApi, PayrollPeriod, PayrollRecord } from '../../api/hr';
 import { useToast } from '../../components/Toast';
 
 export default function PayrollPage() {
+  const { toast } = useToast();
   const [periods, setPeriods] = useState<PayrollPeriod[]>([]);
   const [records, setRecords] = useState<PayrollRecord[]>([]);
   const [loading, setLoading] = useState(true);

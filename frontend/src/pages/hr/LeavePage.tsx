@@ -14,6 +14,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 };
 
 export default function LeavePage() {
+  const { toast } = useToast();
   const [requests, setRequests] = useState<LeaveRequest[]>([]);
   const [leaveTypes, setLeaveTypes] = useState<LeaveType[]>([]);
   const [loading, setLoading] = useState(true);

@@ -24,6 +24,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 };
 
 export default function ActivitiesPage() {
+  const { toast } = useToast();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

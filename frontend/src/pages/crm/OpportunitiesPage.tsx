@@ -22,6 +22,7 @@ const STAGE_LABELS: Record<string, string> = {
 };
 
 export default function OpportunitiesPage() {
+  const { toast } = useToast();
   const [opps, setOpps] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

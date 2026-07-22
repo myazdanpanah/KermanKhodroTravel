@@ -22,6 +22,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 };
 
 export default function CampaignsPage() {
+  const { toast } = useToast();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

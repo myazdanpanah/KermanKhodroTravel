@@ -32,6 +32,7 @@ const PRIORITY_MAP: Record<string, { label: string; color: string }> = {
 
 export default function ServiceRequestsPage() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [requests, setRequests] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
