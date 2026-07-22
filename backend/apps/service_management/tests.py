@@ -366,9 +366,10 @@ class MaintenanceTests(ServiceManagementTestBase):
             company=self.company,
             name="Monthly Filter Change",
             interval_days=30,
-            status="active",
             user=self.user,
         )
+        plan.status = "active"
+        plan.save(update_fields=["status"])
         created = MaintenanceService.generate_schedules(self.company)
         self.assertEqual(created, 1)
 
