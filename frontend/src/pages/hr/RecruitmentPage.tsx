@@ -35,7 +35,7 @@ export default function RecruitmentPage() {
   const [candidateForm, setCandidateForm] = useState({ first_name: '', last_name: '', email: '', phone: '' });
 
   useEffect(() => {
-    hrApi.getRecruitments().then(r => setJobs(r.data.data)).catch(() => {}).finally(() => setLoading(false));
+    hrApi.getRecruitments().then(r => setJobs(r.data.data)).catch(() => toast("خطا", "error")).finally(() => setLoading(false));
   }, []);
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export default function RecruitmentPage() {
       setJobs(prev => [res.data.data, ...prev]);
       setShowJobForm(false);
       setJobForm({ title: '', description: '', positions_count: 1 });
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   const handleAddCandidate = async () => {
@@ -63,7 +63,7 @@ export default function RecruitmentPage() {
       setCandidates(prev => [res.data.data, ...prev]);
       setShowCandidateForm(false);
       setCandidateForm({ first_name: '', last_name: '', email: '', phone: '' });
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   return (

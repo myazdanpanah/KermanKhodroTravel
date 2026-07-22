@@ -30,7 +30,7 @@ export default function LeaveTypesPage() {
       setTypes(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ name: '', code: '', default_days: 0, is_paid: true });
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   return (

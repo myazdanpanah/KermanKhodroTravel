@@ -51,14 +51,14 @@ export default function ContractsPage() {
       setContracts(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ customer_id: 0, contract_type: 'maintenance', start_date: '', end_date: '', coverage_description: '', sla_level: 'standard', price: 0, billing_cycle: 'monthly' });
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   const handleActivate = async (id: number) => {
     try {
       const res = await serviceManagementApi.activateContract(id);
       setContracts(prev => prev.map(c => c.id === id ? res.data.data : c));
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   return (

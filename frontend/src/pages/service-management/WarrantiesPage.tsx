@@ -46,7 +46,7 @@ export default function WarrantiesPage() {
       setWarranties(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ customer_id: 0, product_name: '', product_code: '', serial_number: '', warranty_type: 'manufacturer', start_date: '', end_date: '' });
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   return (

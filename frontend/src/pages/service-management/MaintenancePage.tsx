@@ -48,7 +48,7 @@ export default function MaintenancePage() {
       setPlans(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ name: '', product_name: '', maintenance_type: 'time_based', interval_days: 90, checklist: '', estimated_cost: 0 });
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   return (

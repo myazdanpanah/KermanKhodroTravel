@@ -15,7 +15,7 @@ export default function DepartmentsPage() {
   const [form, setForm] = useState({ name: '', code: '', description: '' });
 
   useEffect(() => {
-    hrApi.getDepartments().then(r => setDepartments(r.data.data)).catch(() => {}).finally(() => setLoading(false));
+    hrApi.getDepartments().then(r => setDepartments(r.data.data)).catch(() => toast("خطا", "error")).finally(() => setLoading(false));
   }, []);
 
   const filtered = departments.filter(d => !search || d.name.includes(search) || d.code.includes(search));
@@ -27,7 +27,7 @@ export default function DepartmentsPage() {
       setDepartments(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ name: '', code: '', description: '' });
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   const handleDelete = async (id: number) => {
@@ -35,7 +35,7 @@ export default function DepartmentsPage() {
     try {
       await hrApi.deleteDepartment(id);
       setDepartments(prev => prev.filter(d => d.id !== id));
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   return (

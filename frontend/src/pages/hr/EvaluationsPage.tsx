@@ -19,7 +19,7 @@ export default function EvaluationsPage() {
   });
 
   useEffect(() => {
-    hrApi.getEvaluations().then(r => setEvaluations(r.data.data)).catch(() => {}).finally(() => setLoading(false));
+    hrApi.getEvaluations().then(r => setEvaluations(r.data.data)).catch(() => toast("خطا", "error")).finally(() => setLoading(false));
   }, []);
 
   const filtered = evaluations.filter(e => !search || e.employee_name.includes(search) || e.period_label.includes(search));
@@ -31,7 +31,7 @@ export default function EvaluationsPage() {
       setEvaluations(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ employee_id: 0, period_label: '', evaluation_date: new Date().toISOString().split('T')[0], productivity_score: 3, quality_score: 3, teamwork_score: 3, initiative_score: 3, communication_score: 3, comments: '', goals: '' });
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   return (

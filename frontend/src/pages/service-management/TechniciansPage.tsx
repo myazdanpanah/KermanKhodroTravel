@@ -35,7 +35,7 @@ export default function TechniciansPage() {
       setTechnicians(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ name: '', employee_id: '', department: '', phone: '', skills: '', hourly_rate: 0 });
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   const handleDelete = async (id: number) => {
@@ -43,7 +43,7 @@ export default function TechniciansPage() {
     try {
       await serviceManagementApi.deleteTechnician(id);
       setTechnicians(prev => prev.filter(t => t.id !== id));
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   return (

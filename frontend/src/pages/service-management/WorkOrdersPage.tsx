@@ -1,10 +1,3 @@
-import { useToast } from '../../components/Toast';
-const { toast } = useToast();
-/**
- * Work Orders List Page
- * Per UI_UX_GUIDELINES.md §7: Table design.
- */
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -22,8 +15,11 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   closed: { label: 'بسته شده', color: 'bg-gray-100 text-gray-700 dark:bg-gray-900 dark:text-gray-300' },
 };
 
+import { useToast } from '../../components/Toast';
+
 export default function WorkOrdersPage() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [orders, setOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -34,7 +30,7 @@ export default function WorkOrdersPage() {
     if (statusFilter) params.status = statusFilter;
     serviceManagementApi.getWorkOrders(params)
       .then(res => setOrders(res.data.data))
-      .catch(() => {})
+      .catch(() => toast('خطا در دریافت دستور کارها', 'error'))
       .finally(() => setLoading(false));
   }, [statusFilter]);
 

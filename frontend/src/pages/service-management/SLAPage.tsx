@@ -45,7 +45,7 @@ export default function SLAPage() {
       setRules(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ name: '', priority: 'medium', response_time_hours: 24, resolution_time_hours: 72, working_hours_start: 8, working_hours_end: 17, escalate_after_hours: 0 });
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   const handleDelete = async (id: number) => {
@@ -53,7 +53,7 @@ export default function SLAPage() {
     try {
       await serviceManagementApi.deleteSLARule(id);
       setRules(prev => prev.filter(r => r.id !== id));
-    } catch {}
+    } catch { toast("خطا", "error"); }
   };
 
   return (
