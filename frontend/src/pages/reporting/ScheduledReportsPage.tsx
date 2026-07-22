@@ -119,7 +119,7 @@ export default function ScheduledReportsPage() {
                   <span className={`text-xs px-2 py-0.5 rounded-full ${s.is_active ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                     {s.is_active ? 'فعال' : 'غیرفعال'}
                   </span>
-                  <button onClick={(e) => { e.stopPropagation(); handleDelete(s.id)} className="p-1.5 text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={(e) => { e.stopPropagation(); handleDelete(s.id); }} className="p-1.5 text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
                 </div>
               </div>
             ))}

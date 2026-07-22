@@ -101,7 +101,7 @@ export default function DepartmentsPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <button onClick={(e) => { e.stopPropagation(); handleDelete(dept.id)} className="p-1.5 text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); handleDelete(dept.id); }} className="p-1.5 text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
                     </td>
                   </tr>
                 ))}
