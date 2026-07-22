@@ -1,5 +1,4 @@
 import { useToast } from '../../components/Toast';
-const { toast } = useToast();
 /**
  * Technicians List Page
  * Per UI_UX_GUIDELINES.md §7: Table design.
@@ -10,6 +9,7 @@ import { Plus, Search, Users, Trash2, Star } from 'lucide-react';
 import { serviceManagementApi, Technician } from '../../api/serviceManagement';
 
 export default function TechniciansPage() {
+  const { toast } = useToast();
   const [technicians, setTechnicians] = useState<Technician[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

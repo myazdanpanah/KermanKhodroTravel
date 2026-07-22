@@ -1,5 +1,4 @@
 import { useToast } from '../../components/Toast';
-const { toast } = useToast();
 /**
  * SLA Rules Page
  * Per UI_UX_GUIDELINES.md §7: Table design.
@@ -17,6 +16,7 @@ const PRIORITY_MAP: Record<string, { label: string; color: string }> = {
 };
 
 export default function SLAPage() {
+  const { toast } = useToast();
   const [rules, setRules] = useState<SLARule[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
