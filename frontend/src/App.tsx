@@ -45,7 +45,9 @@ import ShipmentsPage from './pages/trading/ShipmentsPage'
 // Service Management module
 import ServiceManagementDashboard from './pages/service-management/ServiceManagementDashboard'
 import ServiceRequestsPage from './pages/service-management/ServiceRequestsPage'
+import ServiceRequestDetailPage from './pages/service-management/ServiceRequestDetailPage'
 import WorkOrdersPage from './pages/service-management/WorkOrdersPage'
+import WorkOrderDetailPage from './pages/service-management/WorkOrderDetailPage'
 import TechniciansPage from './pages/service-management/TechniciansPage'
 import ContractsPage from './pages/service-management/ContractsPage'
 import WarrantiesPage from './pages/service-management/WarrantiesPage'
@@ -150,10 +152,10 @@ export default function App() {
         <Route path="service-management/dashboard" element={<ServiceManagementDashboard />} />
         <Route path="service-management/requests" element={<ServiceRequestsPage />} />
         <Route path="service-management/requests/new" element={<ServiceRequestsPage />} />
-        <Route path="service-management/requests/:id" element={<ServiceRequestsPage />} />
+        <Route path="service-management/requests/:id" element={<ServiceRequestDetailPage />} />
         <Route path="service-management/work-orders" element={<WorkOrdersPage />} />
         <Route path="service-management/work-orders/new" element={<WorkOrdersPage />} />
-        <Route path="service-management/work-orders/:id" element={<WorkOrdersPage />} />
+        <Route path="service-management/work-orders/:id" element={<WorkOrderDetailPage />} />
         <Route path="service-management/technicians" element={<TechniciansPage />} />
         <Route path="service-management/contracts" element={<ContractsPage />} />
         <Route path="service-management/warranties" element={<WarrantiesPage />} />

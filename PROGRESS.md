@@ -1,7 +1,7 @@
 # Nexivo — Project Progress
 
-**Last updated:** July 21, 2026  
-**Current version:** v0.9.0
+**Last updated:** July 22, 2026  
+**Current version:** v0.10.0
 
 ---
 
@@ -33,6 +33,7 @@ Nexivo is an **organizational SaaS platform** with pluggable modules. Each compa
 | `sales` | Sales | ✅ Active |
 | `trading` | Trading | ✅ Active |
 | `service_sales` | Service Sales | ✅ Active |
+| `service_management` | Service Management | ✅ Active |
 | `workflow` | Workflow Engine | ✅ Active |
 | `crm` | CRM | 🔲 Ready (future) |
 | `db_manager` | Database Manager | ✅ Active |
@@ -42,7 +43,7 @@ Nexivo is an **organizational SaaS platform** with pluggable modules. Each compa
 
 ---
 
-## 🏗️ Unified ERP Layout (v0.9.0) — NEW
+## 🏗️ Unified ERP Layout (v0.10.0)
 
 ### ERPLayout Component (`frontend/src/pages/ERPLayout.tsx`)
 
@@ -57,6 +58,7 @@ Single collapsible sidebar with all ERP modules:
 | Manufacturing | Dashboard, BOMs, Routings, Work Centers, Production Orders, Quality | تولید |
 | Trading | Dashboard, Imports, Exports, Containers, Shipments | بازرگانی |
 | Service Sales | Dashboard, Bookings, Services, Tickets, Tours, Hotels, Passengers, Commissions, Refunds | فروش خدمات |
+| Service Management | Dashboard, Requests, Work Orders, Technicians, Warranties, Contracts, SLA, Maintenance | مدیریت خدمات |
 | Settings | Settings, Users, Org Chart | تنظیمات |
 
 ### UI Features
@@ -116,11 +118,12 @@ Single collapsible sidebar with all ERP modules:
 | `finance` | 61 | ✅ All pass |
 | `manufacturing` | 18 | ✅ All pass |
 | `workflow` | 27 | ✅ All pass |
+| `service_management` | 24 | ✅ All pass |
 | `inventory` | ~25 | 🔲 Written (needs DB) |
 | `purchasing` | ~20 | 🔲 Written (needs DB) |
 | `sales` | ~20 | 🔲 Written (needs DB) |
 | `llm` | ~20 | ✅ All pass |
-| **Total** | **~330** | ✅ **All pass (existing) + ~65 written** |
+| **Total** | **~354** | ✅ **All pass (existing) + ~65 written** |
 
 ---
 
@@ -159,6 +162,7 @@ Nexivo/
 │   │   ├── purchasing/        # Purchasing (4 models)
 │   │   ├── sales/             # Sales (8 models + 4 services)
 │   │   ├── service_sales/     # Service Sales (booking, tickets, etc.)
+│   │   ├── service_management/ # Service Management (11 models + services)
 │   │   ├── trading/           # Trading (import/export/containers/shipments)
 │   │   ├── workflow/          # Workflow Engine (7+ models + delegation/SLA/notifications)
 │   │   └── llm/               # LLM Gateway
@@ -168,7 +172,7 @@ Nexivo/
 ├── frontend/
 │   └── src/
 │       ├── pages/
-│       │   ├── ERPLayout.tsx         # NEW: Unified ERP sidebar layout
+│       │   ├── ERPLayout.tsx         # Unified ERP sidebar layout
 │       │   ├── finance/              # 10-page RTL finance UI
 │       │   ├── inventory/            # 5-page inventory UI
 │       │   ├── purchasing/           # 5-page purchasing UI
@@ -176,6 +180,7 @@ Nexivo/
 │       │   ├── manufacturing/        # 6-page manufacturing UI
 │       │   ├── trading/              # 5-page trading UI
 │       │   ├── service_sales/        # 9-page service sales UI
+│       │   ├── service_management/   # 10-page service management UI
 │       │   └── ...
 │       ├── store/                    # Zustand stores (auth, theme, dashboard)
 │       └── api/                      # API clients
@@ -185,31 +190,43 @@ Nexivo/
 
 ---
 
-## 📝 Recent Changes (July 21, 2026)
+## 📝 Recent Changes (July 22, 2026)
+
+### v0.10.0 — Service Management Module (Phase 12)
+
+**Backend (11 models):**
+- `ServiceRequest` — entry point of customer support with SLA tracking
+- `Warranty` — product warranty lifecycle
+- `Technician` — field staff with skills and performance
+- `WorkOrder` — main execution document with cost tracking
+- `WorkOrderOperation` — individual operations within a work order
+- `ServiceContract` — recurring service agreements
+- `SLARule` — service level agreements
+- `MaintenancePlan` — scheduled preventive maintenance
+- `MaintenanceSchedule` — generated schedule entries
+- `ServicePart` — spare parts consumption
+- `ServiceFeedback` — customer feedback on completed service
+
+**Services:** 9 service classes with business logic, error handling, and accounting integration.
+
+**API:** 20+ endpoints at `/api/v1/service-management/` with `RequireModule` gate.
+
+**Frontend (10 pages):**
+- Dashboard with summary cards and SLA alerts
+- Service Requests list with search/filters + Detail page with transitions
+- Work Orders list + Detail page with cost tracking
+- Technicians card layout with create form
+- Contracts list with activate action
+- Warranties list with create form
+- SLA Rules CRUD
+- Maintenance Plans card layout
+
+**Tests:** 24 unit tests covering all services.
+
+**Seed:** `seed_default_modules` updated with all ERP modules.
 
 ### v0.9.0 — Unified ERP Layout, Bug Fixes
-
-**Unified ERP Layout:**
-- Created `ERPLayout.tsx` with collapsible sidebar (8 module sections)
-- Top navigation bar with breadcrumbs, search, notifications, theme toggle
-- Dark mode wired to `themeStore` with `syncThemeClass(dark)`
-- All ERP routes nested under `/erp` in `App.tsx`
-- Old routes redirect to `/erp` equivalents
-- Settings/Admin/OrgChart stripped standalone headers for ERPLayout integration
-- Removed 7 dead Layout files (FinanceLayout, InventoryLayout, etc.)
-
-**Bug Fixes:**
-- Fixed sales URL basename collision (`invoice` → `sales-invoice`)
-- Fixed `inspected_at` field migration issue in quality.py
-- Added trading accounts to seed_trading_data.py
-- Fixed SettingsPage redirect from `/dashboards` to `/erp`
-
-**Test Results:**
-- Finance: 61/61 ✅
-- Workflow: 27/27 ✅
-- Manufacturing: 18/18 ✅
-- TypeScript: 0 errors ✅
-- Docker: Build successful ✅
+*(See previous entry for details)*
 
 ### v0.8.0 — Sales Module, Frontend for All Modules
 *(See previous entry for details)*
@@ -243,11 +260,11 @@ Nexivo/
 - [x] Manufacturing Module (Phase 9)
 - [x] Trading Module (Phase 10) — Import/Export/Containers/Shipments
 - [x] Service Sales Module (Phase 11) — Bookings/Tickets/Tours/Hotels
+- [x] Service Management Module (Phase 12) — Requests/Warranty/WorkOrders/SLA/Maintenance
 - [x] Unified ERP Layout with all modules
-- [x] ~330 tests passing
+- [x] ~354 tests passing
 
 ### 🔜 In Progress / Next
-- [ ] Service Management Module (Phase 12) — Tickets, Work Orders, Warranty
 - [ ] CRM Module (Phase 13) — Leads, Opportunities, Activities
 - [ ] HR / Payroll Module (Phase 14)
 
