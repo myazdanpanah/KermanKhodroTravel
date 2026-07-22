@@ -158,7 +158,7 @@ export default function SLAPage() {
                       <td className="px-4 py-3 text-xs">{rule.resolution_time_hours} ساعت</td>
                       <td className="px-4 py-3 text-xs">{rule.working_hours_start}:00 - {rule.working_hours_end}:00</td>
                       <td className="px-4 py-3">
-                        <button onClick={() => handleDelete(rule.id)} className="p-1.5 text-gray-400 hover:text-red-500">
+                        <button onClick={(e) => { e.stopPropagation(); handleDelete(rule.id)} className="p-1.5 text-gray-400 hover:text-red-500">
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </td>

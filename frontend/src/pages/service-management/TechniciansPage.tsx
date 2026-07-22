@@ -178,7 +178,7 @@ export default function TechniciansPage() {
                 </div>
                 <div className="flex items-center gap-1">
                   <button
-                    onClick={() => handleDelete(tech.id)}
+                    onClick={(e) => { e.stopPropagation(); handleDelete(tech.id)}
                     className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
                   >
                     <Trash2 className="h-4 w-4" />

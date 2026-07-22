@@ -130,7 +130,7 @@ export default function EmployeesPage() {
                     </td>
                     <td className="px-4 py-3 text-xs">{emp.hire_date}</td>
                     <td className="px-4 py-3">
-                      <button onClick={() => handleDelete(emp.id)} className="p-1.5 text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); handleDelete(emp.id)} className="p-1.5 text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
                     </td>
                   </tr>
                 ))}
