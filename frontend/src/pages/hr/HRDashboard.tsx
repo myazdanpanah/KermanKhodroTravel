@@ -53,7 +53,7 @@ export default function HRDashboard() {
           { label: 'ارزیابی', path: '/erp/hr/evaluations', icon: TrendingUp, color: 'text-teal-500 bg-teal-50' },
           { label: 'استخدام', path: '/erp/hr/recruitment', icon: Briefcase, color: 'text-indigo-500 bg-indigo-50' },
           { label: 'بخش‌ها', path: '/erp/hr/departments', icon: Building2, color: 'text-pink-500 bg-pink-50' },
-          { label: 'types', path: '/erp/hr/leave-types', icon: GraduationCap, color: 'text-amber-500 bg-amber-50' },
+          { label: 'انواع مرخصی', path: '/erp/hr/leave-types', icon: GraduationCap, color: 'text-amber-500 bg-amber-50' },
         ].map(({ label, path, icon: Icon, color }) => (
           <button key={path} onClick={() => navigate(path)}
             className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all text-right">
