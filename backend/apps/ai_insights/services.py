@@ -233,11 +233,11 @@ class ForecastService:
             from apps.finance.models import Invoice
             from django.db.models.functions import TruncMonth
             data = (Invoice.objects.filter(company=company)
-                    .annotate(month=TruncMonth('invoice_date'))
+                    .annotate(month=TruncMonth('date'))
                     .values('month')
                     .annotate(total=Sum('total'))
                     .order_by('month'))
-            return [{'date': d['month'].isoformat(), 'value': d['total'] or 0} for d in data]
+            return [{'date': d['month'].isoformat(), 'value': float(d['total'] or 0)} for d in data]
 
         elif module == 'sales' and metric_name == 'orders':
             from apps.sales.models import SalesOrder
@@ -247,7 +247,7 @@ class ForecastService:
                     .values('month')
                     .annotate(count=Count('id'))
                     .order_by('month'))
-            return [{'date': d['month'].isoformat(), 'value': d['count']} for d in data]
+            return [{'date': d['month'].isoformat(), 'value': float(d['count'])} for d in data]
 
         elif module == 'sales' and metric_name == 'revenue':
             from apps.sales.models import SalesOrder
@@ -257,7 +257,7 @@ class ForecastService:
                     .values('month')
                     .annotate(total=Sum('total'))
                     .order_by('month'))
-            return [{'date': d['month'].isoformat(), 'value': d['total'] or 0} for d in data]
+            return [{'date': d['month'].isoformat(), 'value': float(d['total'] or 0)} for d in data]
 
         return []
 
