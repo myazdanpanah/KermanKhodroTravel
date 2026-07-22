@@ -79,7 +79,7 @@ class ReportService:
 
         data = qs.values('status').annotate(
             count=Count('id'),
-            total=Sum('total_amount')
+            total=Sum('total')
         )
 
         return {
@@ -87,7 +87,7 @@ class ReportService:
             'rows': [[d['status'], d['count'], float(d['total'] or 0)] for d in data],
             'summary': {
                 'total_records': qs.count(),
-                'total_amount': float(qs.aggregate(s=Sum('total_amount'))['s'] or 0),
+                'total_amount': float(qs.aggregate(s=Sum('total'))['s'] or 0),
             }
         }
 
@@ -104,7 +104,7 @@ class ReportService:
 
         data = qs.values('status').annotate(
             count=Count('id'),
-            total=Sum('total_amount')
+            total=Sum('total')
         )
 
         return {
@@ -112,7 +112,7 @@ class ReportService:
             'rows': [[d['status'], d['count'], float(d['total'] or 0)] for d in data],
             'summary': {
                 'total_orders': qs.count(),
-                'total_amount': float(qs.aggregate(s=Sum('total_amount'))['s'] or 0),
+                'total_amount': float(qs.aggregate(s=Sum('total'))['s'] or 0),
             }
         }
 

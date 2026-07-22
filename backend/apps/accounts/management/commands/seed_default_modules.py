@@ -28,6 +28,9 @@ ALL_ERP_MODULES = [
     "db_manager",
     "datasets",
     "llm",
+    "hr",
+    "crm",
+    "reporting",
 ]
 
 
