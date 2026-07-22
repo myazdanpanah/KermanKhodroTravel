@@ -1,5 +1,4 @@
 import { useToast } from '../../components/Toast';
-const { toast } = useToast();
 /**
  * Warranties Page
  * Per UI_UX_GUIDELINES.md §7: Table design.
@@ -17,6 +16,7 @@ const TYPE_MAP: Record<string, string> = {
 };
 
 export default function WarrantiesPage() {
+  const { toast } = useToast();
   const [warranties, setWarranties] = useState<Warranty[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

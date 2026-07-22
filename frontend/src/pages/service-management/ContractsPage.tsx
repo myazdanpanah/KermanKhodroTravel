@@ -1,5 +1,4 @@
 import { useToast } from '../../components/Toast';
-const { toast } = useToast();
 /**
  * Service Contracts Page
  * Per UI_UX_GUIDELINES.md §7: Table design.
@@ -24,6 +23,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 };
 
 export default function ContractsPage() {
+  const { toast } = useToast();
   const [contracts, setContracts] = useState<ServiceContract[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

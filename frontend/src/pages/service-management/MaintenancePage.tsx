@@ -1,5 +1,4 @@
 import { useToast } from '../../components/Toast';
-const { toast } = useToast();
 /**
  * Maintenance Plans Page
  * Per UI_UX_GUIDELINES.md §7: Table design.
@@ -23,6 +22,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 };
 
 export default function MaintenancePage() {
+  const { toast } = useToast();
   const [plans, setPlans] = useState<MaintenancePlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
