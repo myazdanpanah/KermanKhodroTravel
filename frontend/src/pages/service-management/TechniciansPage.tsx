@@ -1,4 +1,4 @@
-import { useToast } from '../../components/Toast';
+import { useToast } from "../../components/Toast";
 /**
  * Technicians List Page
  * Per UI_UX_GUIDELINES.md §7: Table design.
