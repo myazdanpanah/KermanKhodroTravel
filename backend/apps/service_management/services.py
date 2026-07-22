@@ -201,7 +201,8 @@ class WarrantyService:
     ) -> Warranty:
         """Register a new warranty."""
         from apps.finance.models import Customer
-        Customer.objects.get(pk=customer_id, company=company)
+        from django.shortcuts import get_object_or_404
+        get_object_or_404(Customer, pk=customer_id, company=company)
 
         warranty = Warranty.objects.create(
             company=company,
@@ -396,7 +397,8 @@ class ServiceContractService:
         notes: str = "",
     ) -> ServiceContract:
         from apps.finance.models import Customer
-        Customer.objects.get(pk=customer_id, company=company)
+        from django.shortcuts import get_object_or_404
+        get_object_or_404(Customer, pk=customer_id, company=company)
 
         last = ServiceContract.objects.filter(company=company).order_by("-id").first()
         next_num = (last.id + 1) if last else 1
@@ -631,6 +633,6 @@ class ServiceFeedbackService:
 
         feedback, created = ServiceFeedback.objects.update_or_create(
             work_order=wo,
-            defaults={"rating": rating, "comment": comment},
+            defaults={"company": wo.company, "rating": rating, "comment": comment},
         )
         return feedback

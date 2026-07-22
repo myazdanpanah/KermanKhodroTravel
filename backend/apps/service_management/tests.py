@@ -42,6 +42,8 @@ class ServiceManagementTestBase(TestCase):
         self.customer = Customer.objects.create(
             company=self.company, name="Test Customer"
         )
+        # Enable service_management module for test company
+        self.company.enable_module("service_management")
 
 
 # ─── Service Request Tests ─────────────────────────────────────
@@ -79,6 +81,11 @@ class ServiceRequestTests(ServiceManagementTestBase):
         self.assertEqual(sr.assigned_technician, tech)
 
     def test_transition_to_in_progress(self):
+        # Create SLA rule so response tracking activates
+        SLARule.objects.create(
+            company=self.company, name="Standard", priority="medium",
+            response_time_hours=24, resolution_time_hours=72,
+        )
         sr = ServiceRequestService.create_request(
             company=self.company,
             customer_id=self.customer.id,
