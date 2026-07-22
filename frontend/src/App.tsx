@@ -72,6 +72,7 @@ import CampaignsPage from './pages/crm/CampaignsPage'
 // Reporting module
 import ReportsPage from './pages/reporting/ReportsPage'
 import DashboardsPage from './pages/reporting/DashboardsPage'
+import DashboardViewerPage from './pages/reporting/DashboardViewerPage'
 import KPIsPage from './pages/reporting/KPIsPage'
 import ScheduledReportsPage from './pages/reporting/ScheduledReportsPage'
 // Service Sales module
@@ -201,6 +202,7 @@ export default function App() {
         {/* Reporting & Analytics */}
         <Route path="reports" element={<ReportsPage />} />
         <Route path="reports/dashboards" element={<DashboardsPage />} />
+        <Route path="reports/dashboards/:id" element={<DashboardViewerPage />} />
         <Route path="reports/kpis" element={<KPIsPage />} />
         <Route path="reports/scheduled" element={<ScheduledReportsPage />} />
         {/* Settings */}
