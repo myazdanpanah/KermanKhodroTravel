@@ -13,7 +13,7 @@ import {
   Percent, Wallet,
   Settings, ChevronLeft, ChevronDown, LogOut, Zap,
   Shield, Building2, Search, Ship, Bell, Sun, Moon, Menu, X,
-  Headphones, Clock, TrendingUp, Target,
+  Headphones, Clock, TrendingUp, Target, DollarSign,
 } from 'lucide-react'
 
 // ─── Navigation Structure ───────────────────────────────────────
@@ -139,6 +139,19 @@ const NAV_SECTIONS: NavSection[] = [
       { to: '/erp/service-management/contracts', icon: FileText, label: 'قراردادها' },
       { to: '/erp/service-management/sla', icon: Clock, label: 'SLA' },
       { to: '/erp/service-management/maintenance', icon: Settings, label: 'نگهداری' },
+    ],
+  },
+  {
+    id: 'hr',
+    label: 'منابع انسانی',
+    items: [
+      { to: '/erp/hr', icon: Users, label: 'داشبورد HR', end: true },
+      { to: '/erp/hr/employees', icon: Users, label: 'کارکنان' },
+      { to: '/erp/hr/attendance', icon: Calendar, label: 'حضور و غیاب' },
+      { to: '/erp/hr/departments', icon: Building2, label: 'بخش‌ها' },
+      { to: '/erp/hr/payroll', icon: DollarSign, label: 'حقوق' },
+      { to: '/erp/hr/evaluations', icon: TrendingUp, label: 'ارزیابی' },
+      { to: '/erp/hr/recruitment', icon: Target, label: 'استخدام' },
     ],
   },
   {
