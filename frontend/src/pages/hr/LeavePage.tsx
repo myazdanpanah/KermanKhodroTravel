@@ -2,7 +2,7 @@
  * Leave Management Page
  */
 import { useState, useEffect } from 'react';
-import { Plus, Search, Calendar, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { Plus, Search, Calendar, CheckCircle, XCircle } from 'lucide-react';
 import { hrApi, LeaveRequest, LeaveType } from '../../api/hr';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {

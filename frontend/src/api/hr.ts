@@ -10,9 +10,9 @@ export interface LeaveType { id: number; name: string; code: string; default_day
 export interface LeaveRequest { id: number; employee: number; employee_name: string; leave_type: number; leave_type_name: string; start_date: string; end_date: string; days: number; reason: string; status: string; }
 export interface PayrollPeriod { id: number; name: string; start_date: string; end_date: string; status: string; }
 export interface PayrollRecord { id: number; period: number; employee: number; employee_name: string; base_salary: number; total_earnings: number; total_deductions: number; net_pay: number; status: string; }
-export interface PerformanceEvaluation { id: number; employee: number; employee_name: string; evaluation_date: string; period_label: string; overall_score: number; productivity_score: number; quality_score: number; teamwork_score: number; }
+export interface PerformanceEvaluation { id: number; employee: number; employee_name: string; evaluation_date: string; period_label: string; overall_score: number; productivity_score: number; quality_score: number; teamwork_score: number; initiative_score: number; communication_score: number; }
 export interface Recruitment { id: number; title: string; department: number | null; status: string; positions_count: number; posted_date: string | null; }
-export interface Candidate { id: number; recruitment: number; first_name: string; last_name: string; full_name: string; email: string; status: string; }
+export interface Candidate { id: number; recruitment: number; first_name: string; last_name: string; full_name: string; email: string; phone: string; status: string; }
 export interface HRSummary { total: number; active: number; on_leave: number; terminated: number; departments: number; }
 
 export const hrApi = {
