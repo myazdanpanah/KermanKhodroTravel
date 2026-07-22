@@ -95,7 +95,7 @@ export default function DashboardsPage() {
                 <span className="text-xs text-gray-400">{d.widgets?.length || 0} ویجت</span>
                 <div className="flex gap-2">
                   <button className="p-1.5 text-gray-400 hover:text-gray-600"><Settings className="h-4 w-4" /></button>
-                  <button onClick={() => handleDelete(d.id)} className="p-1.5 text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={(e) => { e.stopPropagation(); handleDelete(d.id); }} className="p-1.5 text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
                 </div>
               </div>
             </div>
