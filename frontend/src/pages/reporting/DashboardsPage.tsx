@@ -1,3 +1,4 @@
+import { useToast } from "../../components/Toast";
 /**
  * Dashboards Page — View and manage analytics dashboards
  */
@@ -6,6 +7,7 @@ import { Plus, Search, LayoutDashboard, Trash2, Settings } from 'lucide-react';
 import { reportingApi, Dashboard } from '../../api/reporting';
 
 export default function DashboardsPage() {
+  const { toast } = useToast();
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');

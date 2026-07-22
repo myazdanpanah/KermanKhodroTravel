@@ -1,3 +1,4 @@
+import { useToast } from "../../components/Toast";
 /**
  * Scheduled Reports Page — Manage automated report scheduling
  */
@@ -10,6 +11,7 @@ const FREQ_LABELS: Record<string, string> = {
 };
 
 export default function ScheduledReportsPage() {
+  const { toast } = useToast();
   const [schedules, setSchedules] = useState<ScheduledReport[]>([]);
   const [templates, setTemplates] = useState<ReportTemplate[]>([]);
   const [loading, setLoading] = useState(true);
