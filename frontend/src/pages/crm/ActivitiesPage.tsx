@@ -32,7 +32,7 @@ export default function ActivitiesPage() {
   const [form, setForm] = useState({ activity_type: 'call', subject: '', description: '' });
 
   useEffect(() => {
-    crmApi.getActivities().then(r => setActivities(r.data.data)).catch(() => {}).finally(() => setLoading(false));
+    crmApi.getActivities().then(r => setActivities(r.data.data)).catch(() => toast('خطا در دریافت فعالیت‌ها', 'error')).finally(() => setLoading(false));
   }, []);
 
   const filtered = activities.filter(a => !search || a.subject.includes(search));
@@ -44,14 +44,16 @@ export default function ActivitiesPage() {
       setActivities(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ activity_type: 'call', subject: '', description: '' });
-    } catch {}
+      toast('فعالیت ایجاد شد', 'success');
+    } catch { toast('خطا در ایجاد فعالیت', 'error'); }
   };
 
   const handleComplete = async (id: number) => {
     try {
       const res = await crmApi.completeActivity(id);
       setActivities(prev => prev.map(a => a.id === id ? res.data.data : a));
-    } catch {}
+      toast('فعالیت تکمیل شد', 'success');
+    } catch { toast('خطا در تکمیل فعالیت', 'error'); }
   };
 
   return (

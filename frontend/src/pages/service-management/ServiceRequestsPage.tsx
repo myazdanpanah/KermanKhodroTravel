@@ -45,7 +45,7 @@ export default function ServiceRequestsPage() {
     if (priorityFilter) params.priority = priorityFilter;
     serviceManagementApi.getServiceRequests(params)
       .then(res => setRequests(res.data.data))
-      .catch(() => {})
+      .catch(() => toast('خطا در دریافت درخواست‌ها', 'error'))
       .finally(() => setLoading(false));
   }, [statusFilter, priorityFilter]);
 

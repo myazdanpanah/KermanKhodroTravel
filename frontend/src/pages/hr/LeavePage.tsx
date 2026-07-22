@@ -26,7 +26,7 @@ export default function LeavePage() {
   useEffect(() => {
     Promise.all([hrApi.getLeaveRequests(), hrApi.getLeaveTypes()])
       .then(([r1, r2]) => { setRequests(r1.data.data); setLeaveTypes(r2.data.data); })
-      .catch(() => {}).finally(() => setLoading(false));
+      .catch(() => toast('خطا در دریافت مرخصی‌ها', 'error')).finally(() => setLoading(false));
   }, [statusFilter]);
 
   const filtered = requests.filter(r => !search || r.employee_name.includes(search));
@@ -38,21 +38,24 @@ export default function LeavePage() {
       setRequests(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ employee_id: 0, leave_type_id: 0, start_date: '', end_date: '', reason: '' });
-    } catch {}
+      toast('درخواست مرخصی ایجاد شد', 'success');
+    } catch { toast('خطا در ایجاد درخواست', 'error'); }
   };
 
   const handleApprove = async (id: number) => {
     try {
       await hrApi.approveLeave(id);
       setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'approved' } : r));
-    } catch {}
+      toast('مرخصی تأیید شد', 'success');
+    } catch { toast('خطا در تأیید مرخصی', 'error'); }
   };
 
   const handleReject = async (id: number) => {
     try {
       await hrApi.rejectLeave(id, 'Rejected by manager');
       setRequests(prev => prev.map(r => r.id === id ? { ...r, status: 'rejected' } : r));
-    } catch {}
+      toast('مرخصی رد شد', 'success');
+    } catch { toast('خطا در رد مرخصی', 'error'); }
   };
 
   return (

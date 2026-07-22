@@ -30,7 +30,7 @@ export default function CampaignsPage() {
   const [form, setForm] = useState({ name: '', campaign_type: 'email', budget: 0, description: '' });
 
   useEffect(() => {
-    crmApi.getCampaigns().then(r => setCampaigns(r.data.data)).catch(() => {}).finally(() => setLoading(false));
+    crmApi.getCampaigns().then(r => setCampaigns(r.data.data)).catch(() => toast('خطا در دریافت کمپین‌ها', 'error')).finally(() => setLoading(false));
   }, []);
 
   const filtered = campaigns.filter(c => !search || c.name.includes(search));
@@ -42,7 +42,8 @@ export default function CampaignsPage() {
       setCampaigns(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ name: '', campaign_type: 'email', budget: 0, description: '' });
-    } catch {}
+      toast('کمپین ایجاد شد', 'success');
+    } catch { toast('خطا در ایجاد کمپین', 'error'); }
   };
 
   return (

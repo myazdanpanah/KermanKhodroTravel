@@ -30,7 +30,7 @@ export default function OpportunitiesPage() {
   const [form, setForm] = useState({ name: '', estimated_value: 0, probability: 0, description: '' });
 
   useEffect(() => {
-    crmApi.getOpportunities().then(r => setOpps(r.data.data)).catch(() => {}).finally(() => setLoading(false));
+    crmApi.getOpportunities().then(r => setOpps(r.data.data)).catch(() => toast('خطا در دریافت فرصت‌ها', 'error')).finally(() => setLoading(false));
   }, []);
 
   const filtered = opps.filter(o => !search || o.name.includes(search));
@@ -42,14 +42,16 @@ export default function OpportunitiesPage() {
       setOpps(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ name: '', estimated_value: 0, probability: 0, description: '' });
-    } catch {}
+      toast('فرصت ایجاد شد', 'success');
+    } catch { toast('خطا در ایجاد فرصت', 'error'); }
   };
 
   const handleCloseWon = async (id: number) => {
     try {
       const res = await crmApi.closeWon(id);
       setOpps(prev => prev.map(o => o.id === id ? res.data.data : o));
-    } catch {}
+      toast('فرصت بسته شد (برد)', 'success');
+    } catch { toast('خطا در بستن فرصت', 'error'); }
   };
 
   const handleCloseLost = async (id: number) => {
@@ -57,7 +59,8 @@ export default function OpportunitiesPage() {
     try {
       const res = await crmApi.closeLost(id, reason ? 'User confirmed' : '');
       setOpps(prev => prev.map(o => o.id === id ? res.data.data : o));
-    } catch {}
+      toast('فرصت بسته شد (باخت)', 'success');
+    } catch { toast('خطا در بستن فرصت', 'error'); }
   };
 
   return (

@@ -19,7 +19,7 @@ export default function PayrollPage() {
   useEffect(() => {
     Promise.all([hrApi.getPayrollPeriods(), hrApi.getPayrollRecords()])
       .then(([r1, r2]) => { setPeriods(r1.data.data); setRecords(r2.data.data); })
-      .catch(() => {}).finally(() => setLoading(false));
+      .catch(() => toast('خطا در دریافت اطلاعات حقوق', 'error')).finally(() => setLoading(false));
   }, []);
 
   const filteredRecords = records.filter(r => {
@@ -35,7 +35,8 @@ export default function PayrollPage() {
       setPeriods(prev => [res.data.data, ...prev]);
       setShowForm(false);
       setForm({ name: '', start_date: '', end_date: '' });
-    } catch {}
+      toast('دوره پرداخت ایجاد شد', 'success');
+    } catch { toast('خطا در ایجاد دوره', 'error'); }
   };
 
   const handleGenerate = async (periodId: number) => {
@@ -44,7 +45,8 @@ export default function PayrollPage() {
       await hrApi.generatePayroll(periodId);
       const res = await hrApi.getPayrollRecords({ period: String(periodId) });
       setRecords(prev => [...prev, ...res.data.data.filter(r => !prev.some(p => p.id === r.id))]);
-    } catch {}
+      toast('لیست حقوق تولید شد', 'success');
+    } catch { toast('خطا در تولید لیست حقوق', 'error'); }
   };
 
   const filteredPeriods = periods.filter(p => !search || p.name.includes(search));
