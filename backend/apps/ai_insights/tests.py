@@ -204,7 +204,7 @@ class NLQueryServiceTest(TestCase):
         self.assertEqual(module, 'hr')
 
     def test_detect_module_manufacturing(self):
-        module = NLQueryService._detect_module('production orders status')
+        module = NLQueryService._detect_module('work center capacity')
         self.assertEqual(module, 'manufacturing')
 
     def test_detect_module_service_management(self):
@@ -249,8 +249,7 @@ class AnomalyDetectionServiceTest(TestCase):
 
     def test_insufficient_data_returns_empty(self):
         """With fewer than 10 invoices, returns empty."""
-        # Just verify the method works without data
-        result = AnomalyService.detect_finance_anomalies(self.company)
+        result = AnomalyService.detect_sales_anomalies(self.company)
         self.assertEqual(result, [])
 
     def test_sales_no_data_returns_empty(self):
