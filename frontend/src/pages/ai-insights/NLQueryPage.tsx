@@ -17,7 +17,6 @@ export default function NLQueryPage() {
     } catch { /* ignore */ }
   }, [])
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { fetchHistory() }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {

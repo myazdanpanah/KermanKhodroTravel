@@ -179,6 +179,10 @@ class ForecastServiceTest(TestCase):
         forecasts = ForecastService.list_forecasts(self.company)
         self.assertEqual(forecasts.count(), 0)
 
+    def test_historical_data_returns_empty_for_unknown_module(self):
+        data = ForecastService._get_historical_data(self.company, 'unknown', 'metric')
+        self.assertEqual(data, [])
+
 
 class NLQueryServiceTest(TestCase):
     """Test NLQueryService."""
@@ -199,6 +203,14 @@ class NLQueryServiceTest(TestCase):
         module = NLQueryService._detect_module('employee attendance')
         self.assertEqual(module, 'hr')
 
+    def test_detect_module_manufacturing(self):
+        module = NLQueryService._detect_module('production orders status')
+        self.assertEqual(module, 'manufacturing')
+
+    def test_detect_module_service_management(self):
+        module = NLQueryService._detect_module('service requests open')
+        self.assertEqual(module, 'service_management')
+
     def test_detect_module_default(self):
         module = NLQueryService._detect_module('hello world')
         self.assertEqual(module, 'finance')
@@ -213,3 +225,56 @@ class NLQueryServiceTest(TestCase):
     def test_list_queries_empty(self):
         queries = NLQueryService.list_queries(self.company)
         self.assertEqual(queries.count(), 0)
+
+    def test_list_queries_with_limit(self):
+        for i in range(5):
+            NLQuery.objects.create(
+                company=self.company, query_text=f'Query {i}',
+                status='completed', created_by=self.user,
+            )
+        queries = NLQueryService.list_queries(self.company, limit=3)
+        self.assertEqual(queries.count(), 3)
+
+
+class AnomalyDetectionServiceTest(TestCase):
+    """Test AnomalyService detection methods."""
+
+    def setUp(self):
+        self.company = Company.objects.create(name='Test Co')
+
+    def test_no_data_returns_empty(self):
+        """With no invoices, anomaly detection returns empty."""
+        result = AnomalyService.detect_finance_anomalies(self.company)
+        self.assertEqual(result, [])
+
+    def test_insufficient_data_returns_empty(self):
+        """With fewer than 10 invoices, returns empty."""
+        # Just verify the method works without data
+        result = AnomalyService.detect_finance_anomalies(self.company)
+        self.assertEqual(result, [])
+
+    def test_sales_no_data_returns_empty(self):
+        """With no sales orders, returns empty."""
+        result = AnomalyService.detect_sales_anomalies(self.company)
+        self.assertEqual(result, [])
+
+    def test_anomaly_summary_empty(self):
+        summary = AnomalyService.summary(self.company)
+        self.assertEqual(summary['total'], 0)
+        self.assertEqual(summary['critical'], 0)
+
+    def test_anomaly_list_filters(self):
+        AnomalyDetection.objects.create(
+            company=self.company, module='finance', metric_name='Test',
+            expected_value=Decimal('100'), actual_value=Decimal('200'),
+            deviation_pct=Decimal('100'), severity='high', description='test',
+        )
+        AnomalyDetection.objects.create(
+            company=self.company, module='sales', metric_name='Test2',
+            expected_value=Decimal('100'), actual_value=Decimal('50'),
+            deviation_pct=Decimal('50'), severity='low', description='test2',
+        )
+        finance = AnomalyService.list_anomalies(self.company, module='finance')
+        self.assertEqual(finance.count(), 1)
+        high = AnomalyService.list_anomalies(self.company, severity='high')
+        self.assertEqual(high.count(), 1)

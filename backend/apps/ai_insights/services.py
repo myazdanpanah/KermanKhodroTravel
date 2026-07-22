@@ -2,7 +2,7 @@
 AI Insights Services — Anomaly Detection, Forecasting, Natural Language Queries
 """
 from django.utils import timezone
-from django.db.models import Avg, StdDev, Sum, Count, F
+from django.db.models import Avg, StdDev, Sum, Count
 from decimal import Decimal
 from datetime import timedelta
 import json
