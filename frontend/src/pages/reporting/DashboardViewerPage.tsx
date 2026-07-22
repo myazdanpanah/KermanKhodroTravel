@@ -108,7 +108,7 @@ export default function DashboardViewerPage() {
                       id: String(widget.id),
                       title: widget.title,
                       chartType: widget.chart_type,
-                      datasetId: widget.query_config.dataset_id as number,
+                      datasetId: widget.query_config?.dataset_id as number,
                       chartConfig: widget.config || {},
                       queryConfig: widget.query_config || {},
                     }}
