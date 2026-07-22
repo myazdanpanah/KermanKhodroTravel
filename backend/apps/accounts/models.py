@@ -23,6 +23,7 @@ MODULE_CHOICES = [
     ("service_sales",  "Service Sales"),
     ("service_management", "Service Management"),
     ("hr",             "HR"),
+    ("reporting",       "Reporting & Analytics"),
 ]
 
 ALL_MODULE_IDS = [m[0] for m in MODULE_CHOICES]

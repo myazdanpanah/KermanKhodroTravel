@@ -14,6 +14,7 @@ import {
   Settings, ChevronLeft, ChevronDown, LogOut, Zap,
   Shield, Building2, Search, Ship, Bell, Sun, Moon, Menu, X,
   Headphones, Clock, TrendingUp, Target, DollarSign,
+  FileBarChart, Gauge,
 } from 'lucide-react'
 
 // ─── Navigation Structure ───────────────────────────────────────
@@ -152,6 +153,16 @@ const NAV_SECTIONS: NavSection[] = [
       { to: '/erp/hr/payroll', icon: DollarSign, label: 'حقوق' },
       { to: '/erp/hr/evaluations', icon: TrendingUp, label: 'ارزیابی' },
       { to: '/erp/hr/recruitment', icon: Target, label: 'استخدام' },
+    ],
+  },
+  {
+    id: 'reporting',
+    label: 'گزارش‌ها و تحلیل',
+    items: [
+      { to: '/erp/reports', icon: FileBarChart, label: 'گزارش‌ها', end: true },
+      { to: '/erp/reports/dashboards', icon: LayoutDashboard, label: 'داشبوردها' },
+      { to: '/erp/reports/kpis', icon: Gauge, label: 'شاخص‌ها' },
+      { to: '/erp/reports/scheduled', icon: Calendar, label: 'زمان‌بندی' },
     ],
   },
   {

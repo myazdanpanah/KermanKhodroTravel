@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "apps.service_management.apps.ServiceManagementConfig",
     "apps.crm.apps.CRMConfig",
     "apps.hr.apps.HRConfig",
+    "apps.reporting.apps.ReportingConfig",
 ]
 
 MIDDLEWARE = [

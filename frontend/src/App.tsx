@@ -69,6 +69,11 @@ import LeadsPage from './pages/crm/LeadsPage'
 import OpportunitiesPage from './pages/crm/OpportunitiesPage'
 import ActivitiesPage from './pages/crm/ActivitiesPage'
 import CampaignsPage from './pages/crm/CampaignsPage'
+// Reporting module
+import ReportsPage from './pages/reporting/ReportsPage'
+import DashboardsPage from './pages/reporting/DashboardsPage'
+import KPIsPage from './pages/reporting/KPIsPage'
+import ScheduledReportsPage from './pages/reporting/ScheduledReportsPage'
 // Service Sales module
 import ServiceSalesDashboard from './pages/service_sales/ServiceSalesDashboard'
 import BookingsPage from './pages/service_sales/BookingsPage'
@@ -193,6 +198,11 @@ export default function App() {
         <Route path="hr/evaluations" element={<EvaluationsPage />} />
         <Route path="hr/leave-types" element={<LeaveTypesPage />} />
         <Route path="hr/recruitment" element={<RecruitmentPage />} />
+        {/* Reporting & Analytics */}
+        <Route path="reports" element={<ReportsPage />} />
+        <Route path="reports/dashboards" element={<DashboardsPage />} />
+        <Route path="reports/kpis" element={<KPIsPage />} />
+        <Route path="reports/scheduled" element={<ScheduledReportsPage />} />
         {/* Settings */}
         <Route path="settings" element={<SettingsPage />} />
         <Route path="settings/:tab" element={<SettingsPage />} />
