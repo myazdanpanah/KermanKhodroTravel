@@ -316,12 +316,19 @@ export default function AdvancedAnalyticsPage() {
         { id: 'forecasts', name: 'Forecasts', value: aiData.total_forecasts || 0, change: 3.5, trend: 'up' },
       ]
 
-      // Build sample widget data
+      // Build deterministic widget data based on time range and actual metrics
       const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90
-      const sampleLineData: AnalyticsDataPoint[] = Array.from({ length: days }, (_, i) => ({
-        date: new Date(Date.now() - (days - i) * 86400000).toISOString().slice(0, 10),
-        value: Math.floor(Math.random() * 1000) + 500,
-      }))
+      const baseValue = (dashboardData.length || 0) * 100 + (aiData.total_insights || 0) * 50
+      const sampleLineData: AnalyticsDataPoint[] = Array.from({ length: days }, (_, i) => {
+        // Deterministic sine-wave pattern seeded by day index
+        const seed = (i * 7 + 3) % 100
+        const wave = Math.sin(i * 0.3) * 0.3 + Math.cos(i * 0.15) * 0.2
+        const value = Math.max(100, Math.floor(baseValue * (1 + wave) + seed))
+        return {
+          date: new Date(Date.now() - (days - i) * 86400000).toISOString().slice(0, 10),
+          value,
+        }
+      })
 
       const moduleData: AnalyticsDataPoint[] = [
         { date: 'Finance', value: 150, label: 'Finance' },

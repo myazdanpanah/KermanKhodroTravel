@@ -47,7 +47,7 @@ class TenantPlan(BaseModel):
     features = models.JSONField(
         default=dict,
         blank=True,
-        help_text="Feature flags, e.g. {\"sso\": true, \"audit_log\": true}",
+        help_text='Feature flags, e.g. {"sso": true, "audit_log": true}',
     )
 
     is_active = models.BooleanField(default=True)
@@ -64,15 +64,9 @@ class TenantPlan(BaseModel):
 class Tenant(BaseModel):
     """
     Tenant organization. Each tenant has isolated data and configuration.
-    Extends the existing Company model with multi-tenant capabilities.
+    Uses the company FK from BaseModel as the primary link.
     """
 
-    company = models.OneToOneField(
-        "accounts.Company",
-        on_delete=models.CASCADE,
-        related_name="tenant",
-        help_text="Link to the existing Company model",
-    )
     plan = models.ForeignKey(
         TenantPlan,
         on_delete=models.SET_NULL,
@@ -117,6 +111,9 @@ class Tenant(BaseModel):
     class Meta:
         verbose_name = "tenant"
         verbose_name_plural = "tenants"
+        constraints = [
+            models.UniqueConstraint(fields=["company"], name="unique_tenant_company")
+        ]
 
     def __str__(self):
         return f"Tenant: {self.company.name}"

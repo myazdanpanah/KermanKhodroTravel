@@ -9,23 +9,14 @@ import time
 import logging
 from django.core.cache import cache
 from django.utils.deprecation import MiddlewareMixin
-from rest_framework.throttling import BaseThrottle, UserRateThrottle, AnonRateThrottle
+from rest_framework.throttling import BaseThrottle, UserRateThrottle
 
-from .models import APIKey, RateLimitPolicy, RateLimitLog, hash_api_key
+from .models import APIKey, RateLimitLog
 
 logger = logging.getLogger(__name__)
 
 
 # ─── DRF Throttle Classes ────────────────────────────────────────
-
-
-class GlobalRateThrottle(UserRateThrottle):
-    """
-    Global rate limit: applies to all API endpoints.
-    Uses DRF's scope-based rate settings from REST_FRAMEWORK.
-    """
-    rate = "1000/hour"
-    scope = "global"
 
 
 class APIKeyRateThrottle(BaseThrottle):
@@ -98,10 +89,13 @@ class ModuleRateThrottle(BaseThrottle):
             count = 1
 
         if count > rate_per_minute:
-            self.wait = 60
+            self.wait_time = 60
             return False
 
         return True
+
+    def wait(self):
+        return getattr(self, 'wait_time', 60)
 
 
 class ChatRateThrottle(UserRateThrottle):
@@ -167,7 +161,6 @@ class RateLimitLoggingMiddleware(MiddlewareMixin):
                 except (ValueError, TypeError):
                     pass
 
-            # Log asynchronously (don't block the response)
             company = None
             if api_key:
                 company = api_key.company
@@ -175,44 +168,26 @@ class RateLimitLoggingMiddleware(MiddlewareMixin):
                 company = user.company
 
             if company:
-                try:
-                    from django.db import transaction
-                    log_data = dict(
-                        company_id=company.id,
-                        api_key=api_key,
-                        user=user,
-                        method=request.method,
-                        path=request.path[:500],
-                        status_code=response.status_code,
-                        response_time_ms=elapsed_ms,
-                        rate_limit_remaining=rate_limit_remaining,
-                        rate_limit_limit=rate_limit_limit,
-                        was_throttled=was_throttled,
-                        ip_address=self._get_client_ip(request),
-                        user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
-                        module=module,
-                    )
-                    # Defer log write to after response is sent
-                    transaction.on_commit(
-                        lambda: RateLimitLog.objects.create(**log_data)
-                    )
-                except Exception:
-                    # Fallback: create synchronously if transaction.on_commit fails
-                    RateLimitLog.objects.create(
-                        company_id=company.id,
-                        api_key=api_key,
-                        user=user,
-                        method=request.method,
-                        path=request.path[:500],
-                        status_code=response.status_code,
-                        response_time_ms=elapsed_ms,
-                        rate_limit_remaining=rate_limit_remaining,
-                        rate_limit_limit=rate_limit_limit,
-                        was_throttled=was_throttled,
-                        ip_address=self._get_client_ip(request),
-                        user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
-                        module=module,
-                    )
+                from django.db import transaction
+                log_data = dict(
+                    company_id=company.id,
+                    api_key=api_key,
+                    user=user,
+                    method=request.method,
+                    path=request.path[:500],
+                    status_code=response.status_code,
+                    response_time_ms=elapsed_ms,
+                    rate_limit_remaining=rate_limit_remaining,
+                    rate_limit_limit=rate_limit_limit,
+                    was_throttled=was_throttled,
+                    ip_address=self._get_client_ip(request),
+                    user_agent=request.META.get("HTTP_USER_AGENT", "")[:500],
+                    module=module,
+                )
+                # Defer log write to after response is sent
+                transaction.on_commit(
+                    lambda: RateLimitLog.objects.create(**log_data)
+                )
         except Exception as e:
             # Never let logging break the request
             logger.debug("Rate limit logging failed: %s", e)
