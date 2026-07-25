@@ -3,6 +3,7 @@ AI Insights Serializers
 """
 from rest_framework import serializers
 from .models import AIInsight, AnomalyDetection, Forecast, NLQuery
+from .alerts import AnomalyAlert
 
 
 class AIInsightSerializer(serializers.ModelSerializer):
@@ -52,3 +53,14 @@ class NLQuerySerializer(serializers.ModelSerializer):
 
 class NLQueryCreateSerializer(serializers.Serializer):
     query_text = serializers.CharField(max_length=2000)
+
+
+class AnomalyAlertSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AnomalyAlert
+        fields = [
+            'id', 'company', 'anomaly', 'module', 'title',
+            'message', 'severity', 'is_read', 'is_notified',
+            'created_at',
+        ]
+        read_only_fields = ['id', 'company', 'created_at']

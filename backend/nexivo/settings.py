@@ -78,6 +78,7 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "nexivo.wsgi.application"
+ASGI_APPLICATION = "nexivo.asgi.application"
 
 # Database
 # Detect if running inside Docker (DB_HOST defaults to 'postgres' in docker-compose)
@@ -160,6 +161,23 @@ SUPERSET_DEFAULT_DATABASE_ID = config("SUPERSET_DEFAULT_DATABASE_ID", default=1,
 REDIS_URL = config("REDIS_URL", default="redis://redis:6379/0")
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
+
+# Django Channels (WebSocket support for real-time alerts)
+try:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels_redis.core.RedisChannelLayer",
+            "CONFIG": {
+                "hosts": [REDIS_URL],
+            },
+        },
+    }
+except Exception:
+    CHANNEL_LAYERS = {
+        "default": {
+            "BACKEND": "channels.layers.InMemoryChannelLayer",
+        },
+    }
 
 # DRF Spectacular (OpenAPI)
 SPECTACULAR_SETTINGS = {

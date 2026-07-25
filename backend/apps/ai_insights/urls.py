@@ -27,7 +27,13 @@ urlpatterns = [
     path('forecasts/generate/', views.forecast_generate, name='forecast-generate'),
     path('forecasts/<int:pk>/', views.forecast_detail, name='forecast-detail'),
 
-    # Natural Language Queries
+    # Natural Language Queries (Phase 19: LLM-powered)
     path('nl-queries/', views.nl_query_list, name='nl-query-list'),
     path('nl-queries/create/', views.nl_query_create, name='nl-query-create'),
+
+    # Real-time Anomaly Alerts (Phase 20)
+    path('alerts/', views.alert_list, name='alert-list'),
+    path('alerts/summary/', views.alert_summary, name='alert-summary'),
+    path('alerts/<int:pk>/read/', views.alert_mark_read, name='alert-mark-read'),
+    path('alerts/read-all/', views.alert_mark_all_read, name='alert-mark-all-read'),
 ]

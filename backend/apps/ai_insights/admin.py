@@ -1,5 +1,6 @@
 from django.contrib import admin
 from .models import AIInsight, AnomalyDetection, Forecast, NLQuery
+from .alerts import AnomalyAlert
 
 
 @admin.register(AIInsight)
@@ -28,3 +29,10 @@ class NLQueryAdmin(admin.ModelAdmin):
     list_display = ['query_text', 'status', 'execution_time_ms', 'created_at']
     list_filter = ['status']
     search_fields = ['query_text']
+
+
+@admin.register(AnomalyAlert)
+class AnomalyAlertAdmin(admin.ModelAdmin):
+    list_display = ['title', 'module', 'severity', 'is_read', 'is_notified', 'created_at']
+    list_filter = ['module', 'severity', 'is_read', 'is_notified']
+    search_fields = ['title', 'message']

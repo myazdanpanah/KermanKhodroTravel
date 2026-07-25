@@ -8,8 +8,13 @@ from datetime import timedelta
 import json
 import math
 
+import logging
+import re
+
 from .models import AIInsight, AnomalyDetection, Forecast, NLQuery
 from apps.finance.exceptions import ValidationError
+
+logger = logging.getLogger(__name__)
 
 
 class InsightService:
@@ -68,7 +73,7 @@ class AnomalyService:
         if std == 0:
             std = 1
 
-        recent = invoices.order_by('-invoice_date')[:20]
+        recent = invoices.order_by('-date')[:20]
         anomalies = []
         for inv in recent:
             if inv.total and float(inv.total) > 0:
@@ -77,19 +82,19 @@ class AnomalyService:
                     severity = 'critical' if abs(z) > 3 else 'high' if abs(z) > 2.5 else 'medium'
                     existing = AnomalyDetection.objects.filter(
                         company=company, module='finance',
-                        metric_name=f'Invoice {inv.invoice_number}',
+                        metric_name=f'Invoice {inv.number}',
                         is_resolved=False
                     ).exists()
                     if not existing:
                         anomaly = AnomalyDetection.objects.create(
                             company=company,
                             module='finance',
-                            metric_name=f'Invoice {inv.invoice_number}',
+                            metric_name=f'Invoice {inv.number}',
                             expected_value=Decimal(str(round(avg, 2))),
-                            actual_value=inv.total,
+                            actual_value=Decimal(str(inv.total)),
                             deviation_pct=Decimal(str(round(z * 100, 2))),
                             severity=severity,
-                            description=f'Invoice {inv.invoice_number} total ({inv.total}) deviates {abs(round(z, 2))}σ from mean ({round(avg, 2)})',
+                            description=f'Invoice {inv.number} total ({inv.total}) deviates {abs(round(z, 2))}σ from mean ({round(avg, 2)})',
                         )
                         anomalies.append(anomaly)
         return anomalies
@@ -126,7 +131,7 @@ class AnomalyService:
                             module='sales',
                             metric_name=f'Order {order.order_number}',
                             expected_value=Decimal(str(round(avg, 2))),
-                            actual_value=order.total,
+                            actual_value=Decimal(str(order.total)),
                             deviation_pct=Decimal(str(round(z * 100, 2))),
                             severity=severity,
                             description=f'Order {order.order_number} total ({order.total}) deviates {abs(round(z, 2))}σ from mean ({round(avg, 2)})',
@@ -274,9 +279,14 @@ class ForecastService:
 
 
 class NLQueryService:
-    """Process natural language queries and translate to data."""
+    """Process natural language queries and translate to data.
 
-    # Simple keyword-to-module mapping
+    Phase 19: When an active LLM provider is configured, queries are sent to the
+    LLM which returns structured JSON results. Falls back to keyword-based
+    detection when no LLM is available.
+    """
+
+    # Simple keyword-to-module mapping (fallback when no LLM)
     MODULE_KEYWORDS = {
         'finance': ['invoice', 'revenue', 'payment', 'account', 'cheque', 'receipt', 'financial'],
         'sales': ['order', 'quotation', 'sale', 'customer', 'return', 'sales'],
@@ -287,6 +297,30 @@ class NLQueryService:
         'service_management': ['service', 'request', 'work order', 'technician', 'sla', 'warranty', 'contract', 'maintenance'],
         'trading': ['import', 'export', 'shipment', 'container', 'customs', 'trading'],
     }
+
+    # System prompt for LLM-powered queries
+    LLM_SYSTEM_PROMPT = """You are Nexivo AI, an ERP data analyst. You convert natural language questions about business data into structured JSON results.
+
+The company has these modules:
+- finance: invoices (number, date, total, status, type)
+- sales: orders (order_number, order_date, total, status)
+- inventory: stock movements
+- manufacturing: production orders
+- hr: employees
+- service_management: service requests
+- trading: import/export orders
+- crm: leads, opportunities
+
+When given a question, respond with ONLY a JSON object in this exact format:
+{"module": "<detected_module>", "summary": "<one-line summary>", "headers": ["<col1>", "<col2>"], "rows": [["<val1>", <number>], ...], "sql": "<approximate SQL that would answer the question>"}
+
+Rules:
+- module must be one of: finance, sales, inventory, manufacturing, hr, service_management, trading, crm
+- headers should be descriptive column names
+- rows should contain the actual data (numbers as numbers, not strings)
+- sql should be a valid PostgreSQL SELECT statement for the detected module
+- Keep answers concise (max 20 rows)
+- If the question is ambiguous, make reasonable assumptions"""
 
     @staticmethod
     def process_query(company, query_text, user=None):
@@ -300,8 +334,23 @@ class NLQueryService:
 
         try:
             start_time = timezone.now()
-            module = NLQueryService._detect_module(query_text)
-            result = NLQueryService._execute_query(company, module, query_text)
+
+            # Try LLM-powered query first (Phase 19)
+            llm_result = NLQueryService._try_llm_query(company, query_text)
+            if llm_result:
+                nl_query.generated_sql = llm_result.get('sql', '')
+                result = {
+                    'headers': llm_result.get('headers', ['Message']),
+                    'rows': llm_result.get('rows', []),
+                    'summary': llm_result.get('summary', ''),
+                    'source': 'llm',
+                }
+            else:
+                # Fallback to keyword-based detection
+                module = NLQueryService._detect_module(query_text)
+                result = NLQueryService._execute_query(company, module, query_text)
+                result['source'] = 'keyword'
+
             elapsed = int((timezone.now() - start_time).total_seconds() * 1000)
 
             nl_query.result_data = result
@@ -314,6 +363,35 @@ class NLQueryService:
             nl_query.save()
 
         return nl_query
+
+    @staticmethod
+    def _try_llm_query(company, query_text):
+        """Attempt to process query via LLM gateway. Returns None if no LLM available."""
+        try:
+            from apps.llm.models import LLMProvider
+            provider = LLMProvider.objects.filter(company=company, is_active=True).first()
+            if not provider:
+                return None
+
+            from apps.llm.service import chat_completion
+            messages = [
+                {'role': 'system', 'content': NLQueryService.LLM_SYSTEM_PROMPT},
+                {'role': 'user', 'content': query_text},
+            ]
+            result = chat_completion(company, messages, feature='text_to_sql')
+            content = result.get('content', '')
+
+            # Parse JSON from LLM response
+            # Try to extract JSON from markdown code blocks first
+            json_match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', content, re.DOTALL)
+            if json_match:
+                return json.loads(json_match.group(1))
+
+            # Try direct JSON parse
+            return json.loads(content)
+        except Exception as e:
+            logger.warning("LLM query failed for company %s: %s", company.id, e)
+            return None
 
     @staticmethod
     def _detect_module(query_text):

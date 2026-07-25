@@ -1,14 +1,16 @@
 """
-AI Insights Views
+AI Insights Views — Dashboard, Insights, Anomalies, Forecasts, NL Queries, Alerts
 """
 from rest_framework import status, permissions
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from .models import AIInsight, AnomalyDetection, Forecast, NLQuery
+from .alerts import AnomalyAlert, AnomalyAlertService
 from .serializers import (
     AIInsightSerializer, AnomalyDetectionSerializer,
     ForecastSerializer, NLQuerySerializer, NLQueryCreateSerializer,
+    AnomalyAlertSerializer,
 )
 from .services import InsightService, AnomalyService, ForecastService, NLQueryService
 
@@ -57,13 +59,19 @@ def anomaly_list(request):
 
 @api_view(["POST"])
 def anomaly_detect(request):
-    """Run anomaly detection across modules."""
+    """Run anomaly detection across modules. Creates alerts for new anomalies (Phase 20)."""
+    company = request.user.company
     module = request.data.get('module', 'all')
     all_anomalies = []
     if module in ('all', 'finance'):
-        all_anomalies.extend(AnomalyService.detect_finance_anomalies(request.user.company))
+        all_anomalies.extend(AnomalyService.detect_finance_anomalies(company))
     if module in ('all', 'sales'):
-        all_anomalies.extend(AnomalyService.detect_sales_anomalies(request.user.company))
+        all_anomalies.extend(AnomalyService.detect_sales_anomalies(company))
+
+    # Phase 20: Create real-time alerts for newly detected anomalies
+    if all_anomalies:
+        AnomalyAlertService.create_alerts_for_anomalies(company, all_anomalies)
+
     return Response({
         'detected': len(all_anomalies),
         'anomalies': AnomalyDetectionSerializer(all_anomalies, many=True).data,
@@ -118,7 +126,7 @@ def forecast_generate(request):
     return Response(ForecastSerializer(forecast).data, status=status.HTTP_201_CREATED)
 
 
-# ---- Natural Language Queries ----
+# ---- Natural Language Queries (Phase 19: LLM-powered) ----
 
 @api_view(["GET"])
 def nl_query_list(request):
@@ -129,7 +137,7 @@ def nl_query_list(request):
 
 @api_view(["POST"])
 def nl_query_create(request):
-    """Process a natural language query."""
+    """Process a natural language query. Uses LLM when available, falls back to keywords."""
     serializer = NLQueryCreateSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
 
@@ -141,6 +149,40 @@ def nl_query_create(request):
     return Response(NLQuerySerializer(nl_query).data, status=status.HTTP_201_CREATED)
 
 
+# ---- Anomaly Alerts (Phase 20) ----
+
+@api_view(["GET"])
+def alert_list(request):
+    """List anomaly alerts."""
+    module = request.query_params.get('module')
+    severity = request.query_params.get('severity')
+    unread = request.query_params.get('unread', '').lower() == 'true'
+    alerts = AnomalyAlertService.list_alerts(
+        request.user.company, module=module, severity=severity, unread_only=unread,
+    )
+    return Response(AnomalyAlertSerializer(alerts, many=True).data)
+
+
+@api_view(["POST"])
+def alert_mark_read(request, pk):
+    """Mark an alert as read."""
+    alert = AnomalyAlertService.mark_read(request.user.company, pk)
+    return Response(AnomalyAlertSerializer(alert).data)
+
+
+@api_view(["POST"])
+def alert_mark_all_read(request):
+    """Mark all alerts as read."""
+    AnomalyAlertService.mark_all_read(request.user.company)
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+@api_view(["GET"])
+def alert_summary(request):
+    """Get alert summary stats."""
+    return Response(AnomalyAlertService.summary(request.user.company))
+
+
 # ---- Dashboard Summary ----
 
 @api_view(["GET"])
@@ -150,6 +192,7 @@ def ai_dashboard(request):
     return Response({
         'insights': InsightService.summary(company),
         'anomalies': AnomalyService.summary(company),
+        'alerts': AnomalyAlertService.summary(company),
         'recent_queries': NLQuerySerializer(
             NLQueryService.list_queries(company, limit=5), many=True
         ).data,
