@@ -51,8 +51,6 @@ class TenantPlan(BaseModel):
     )
 
     is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ["price_monthly"]
@@ -104,9 +102,6 @@ class Tenant(BaseModel):
     onboarding_completed = models.BooleanField(default=False)
     last_active_at = models.DateTimeField(null=True, blank=True)
     settings = models.JSONField(default=dict, blank=True)
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         verbose_name = "tenant"
@@ -190,9 +185,6 @@ class TenantSubscription(BaseModel):
     stripe_subscription_id = models.CharField(max_length=255, blank=True, default="")
     stripe_customer_id = models.CharField(max_length=255, blank=True, default="")
 
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
     class Meta:
         ordering = ["-created_at"]
 
@@ -239,9 +231,6 @@ class TenantFeature(BaseModel):
         blank=True,
         help_text="Feature-specific configuration",
     )
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         unique_together = ["tenant", "feature_key"]
