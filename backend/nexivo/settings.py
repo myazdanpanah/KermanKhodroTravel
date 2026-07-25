@@ -45,7 +45,13 @@ INSTALLED_APPS = [
     "apps.hr.apps.HRConfig",
     "apps.reporting.apps.ReportingConfig",
     "apps.ai_insights.apps.AiInsightsConfig",
+    "apps.rate_limiting.apps.RateLimitingConfig",
+    "apps.multi_tenant.apps.MultiTenantConfig",
+    # Module choices for multi_tenant
 ]
+
+# Rate Limiting
+RATE_LIMIT_DEFAULT_REQUESTS_PER_MINUTE = 60
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -57,6 +63,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.accounts.middleware.RoleMiddleware",
+    "apps.rate_limiting.throttling.RateLimitLoggingMiddleware",
 ]
 
 ROOT_URLCONF = "nexivo.urls"
@@ -136,6 +143,18 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    # Throttling
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/hour",
+        "user": "1000/hour",
+        "llm_chat": "20/minute",
+        "nl_query": "30/minute",
+        "alert": "60/minute",
+    },
 }
 
 # CORS
@@ -186,6 +205,12 @@ SPECTACULAR_SETTINGS = {
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
 }
+
+# Rate Limiting
+RATE_LIMIT_DEFAULT_REQUESTS_PER_MINUTE = 60
+RATE_LIMIT_DEFAULT_REQUESTS_PER_HOUR = 1000
+RATE_LIMIT_DEFAULT_REQUESTS_PER_DAY = 10000
+RATE_LIMIT_LOG_RETENTION_DAYS = 90
 
 # Role choices
 ROLE_FINANCE = "finance"

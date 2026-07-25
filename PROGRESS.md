@@ -94,8 +94,72 @@
 
 ---
 
+## v0.15.0 — Phases 17, 18, 21, 22: Mobile App, Multi-tenant, Analytics Dashboard, Rate Limiting
+
+### Phase 17: Mobile App (React Native)
+- **Framework:** Expo SDK 50 + React Native 0.73 + TypeScript
+- **Navigation:** React Navigation (native stack + bottom tabs)
+- **State Management:** Zustand for auth and app state
+- **API Client:** Axios with JWT token management, refresh token support, SecureStore persistence
+- **Screens:** LoginScreen (credentials, show/hide password), DashboardScreen (metrics grid, quick actions, alerts, module status)
+- **Files:** `mobile/` directory with package.json, src/api/client.ts, src/store/authStore.ts, src/screens/LoginScreen.tsx, src/screens/DashboardScreen.tsx
+
+### Phase 18: Multi-tenant Architecture
+- **Models:**
+  - `TenantPlan` — Subscription plans with limits (free/starter/professional/enterprise), module access, feature flags
+  - `Tenant` — Organization with company link, subdomain, trial status, usage tracking, settings
+  - `TenantSubscription` — Subscription history with Stripe integration fields
+  - `TenantFeature` — Feature flags per tenant (module/capability/integration/UI)
+- **Views:** tenant_list, tenant_detail, tenant_onboard, tenant_my_info, plan_list, tenant_change_plan, feature_list, feature_toggle, subscription_list
+- **Serializers:** TenantPlanSerializer, TenantSerializer, TenantOnboardingSerializer, TenantSubscriptionSerializer, TenantFeatureSerializer
+- **Admin:** All 4 models registered
+- **Tests:** 10 tests covering plan creation, tenant activation/expiration/suspension, user limits, subscriptions, feature flags
+- **Endpoints:** /api/v1/tenants/
+
+### Phase 21: Advanced Analytics Dashboard
+- **Frontend:** `AdvancedAnalyticsPage.tsx` with pure SVG chart components (no D3 dependency)
+- **Charts:** LineChart (area fill, grid lines, axis labels), BarChart (responsive bars, grid lines), PieChart (arc slices, percentage labels)
+- **Components:** MetricCard (value, trend indicator, change %), AnalyticsWidget (container with resize observer), time range selector (7d/30d/90d)
+- **Data:** Fetches from /reporting/dashboards/ and /ai/dashboard/ APIs, builds sample widgets
+- **Route:** /erp/analytics registered in App.tsx
+
+### Phase 22: API Rate Limiting & Throttling
+- **Models:**
+  - `APIKey` — SHA-256 hashed keys with scopes, module access, rate limit overrides, expiration, usage tracking
+  - `RateLimitPolicy` — Configurable policies (global/module/endpoint/api_key scope) with minute/hour/day limits, burst size, priority
+  - `RateLimitLog` — Request logging with response time, throttle status, IP, user agent
+- **Throttling:**
+  - `APIKeyRateThrottle` — Atomic cache operations (add+incr pattern) for per-key limits
+  - `ModuleRateThrottle` — Per-module per-client throttling
+  - `ChatRateThrottle` — 20/min for LLM chat
+  - `NLQueryRateThrottle` — 30/min for NL queries
+  - `AlertRateThrottle` — 60/min for alerts
+- **Middleware:** `RateLimitLoggingMiddleware` — Logs all /api/ requests (response time, throttle status, IP)
+- **Authentication:** `APIKeyAuthentication` — DRF-compatible class for X-API-Key header auth
+- **Views:** API key CRUD (create/regenerate/toggle/delete), policy management (admin), usage analytics (stats/logs)
+- **Management Command:** `cleanup_rate_limit_logs` — Purge old logs (--days, --dry-run)
+- **Tests:** 25+ tests covering key generation, hashing, verification, expiration, throttling, logging
+- **Endpoints:** /api/v1/rate-limiting/
+- **Config:** ASGI_APPLICATION, CHANNEL_LAYERS, DEFAULT_THROTTLE_RATES in settings.py
+
+### Validation Results
+- TypeScript: 0 errors (pending)
+- Files changed: 4 (settings.py, urls.py, App.tsx, PROGRESS.md)
+- New backend apps: 2 (rate_limiting, multi_tenant)
+- New frontend page: 1 (analytics)
+- New mobile directory: 1 (mobile/)
+
+---
+
+## Previous Phases
+- v0.14.0: Phases 19-20 (LLM-powered NL Query + Real-time Anomaly Alerts)
+- v0.12.0: Phases 12-15 (Service Management, CRM, HR, Reporting Engine)
+- v0.11.0: Phases 8-11 (Manufacturing, Trading, Service Sales, Workflow Extensions)
+- v0.10.0: Phases 1-7 (Foundation, Finance, Inventory, Purchasing, Sales, MRP, Cost Engine)
+
+---
+
 ## Next Phases
-- Phase 17: Mobile App (React Native)
-- Phase 18: Multi-tenant Architecture
-- Phase 21: Advanced Analytics Dashboard (D3.js visualizations)
-- Phase 22: API Rate Limiting & Throttling
+- Phase 23: SSO/SAML Integration
+- Phase 24: Audit Trail & Compliance Logging
+- Phase 25: White-label & Custom Branding

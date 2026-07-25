@@ -109,6 +109,8 @@ import AIDashboardPage from './pages/ai-insights/AIDashboardPage'
 import AnomaliesPage from './pages/ai-insights/AnomaliesPage'
 import ForecastsPage from './pages/ai-insights/ForecastsPage'
 import NLQueryPage from './pages/ai-insights/NLQueryPage'
+// Analytics
+import AdvancedAnalyticsPage from './pages/analytics/AdvancedAnalyticsPage'
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const token = useAuthStore((s) => s.token)
@@ -215,6 +217,8 @@ export default function App() {
         <Route path="ai/anomalies" element={<AnomaliesPage />} />
         <Route path="ai/forecasts" element={<ForecastsPage />} />
         <Route path="ai/nl-query" element={<NLQueryPage />} />
+        {/* Advanced Analytics */}
+        <Route path="analytics" element={<AdvancedAnalyticsPage />} />
         {/* Settings */}
         <Route path="settings" element={<SettingsPage />} />
         <Route path="settings/:tab" element={<SettingsPage />} />
