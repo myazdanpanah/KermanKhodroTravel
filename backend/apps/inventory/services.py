@@ -93,7 +93,8 @@ class InventoryService:
             )
         except StockLedger.DoesNotExist:
             return {
-                "available": False,
+                "is_available": False,
+                "available": Decimal("0"),
                 "on_hand": Decimal("0"),
                 "requested": quantity,
                 "shortage": quantity,
