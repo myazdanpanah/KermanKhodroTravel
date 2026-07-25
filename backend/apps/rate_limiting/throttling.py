@@ -8,6 +8,7 @@ Supports per-user, per-API-key, per-module, and per-endpoint throttling.
 import time
 import logging
 from django.core.cache import cache
+from django.db import transaction
 from django.utils.deprecation import MiddlewareMixin
 from rest_framework.throttling import BaseThrottle, UserRateThrottle
 
@@ -168,7 +169,6 @@ class RateLimitLoggingMiddleware(MiddlewareMixin):
                 company = user.company
 
             if company:
-                from django.db import transaction
                 log_data = dict(
                     company_id=company.id,
                     api_key=api_key,
