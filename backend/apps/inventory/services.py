@@ -105,7 +105,7 @@ class InventoryService:
             "available": available >= quantity,
             "on_hand": ledger.quantity_on_hand,
             "reserved": ledger.quantity_reserved,
-            "available": available,
+            "available_quantity": available,
             "requested": quantity,
             "shortage": max(quantity - available, Decimal("0")),
             "message": "Sufficient stock" if available >= quantity else f"Insufficient stock (need {quantity}, have {available})",
@@ -190,7 +190,7 @@ class StockMovementService:
         )
 
         # Update stock ledger
-        InventoryService._update_ledger(
+        StockMovementService._update_ledger(
             company=company,
             product_code=product_code,
             product_name=product_name,
@@ -254,7 +254,7 @@ class StockMovementService:
         )
 
         # Update stock ledger
-        InventoryService._update_ledger(
+        StockMovementService._update_ledger(
             company=company,
             product_code=product_code,
             product_name=product_name,

@@ -320,11 +320,11 @@ class ReservationTests(InventoryTestBase):
         self.assertEqual(reservation.quantity_fulfilled, Decimal("20"))
         self.assertEqual(reservation.status, "active")
 
-        # Stock should be issued
+        # Stock should be issued: 100 - 20 = 80
         balance = InventoryService.get_stock_balance(
             self.company, "WDG-001", self.warehouse.id,
         )
-        self.assertEqual(balance["quantity_on_hand"], Decimal("70"))
+        self.assertEqual(balance["quantity_on_hand"], Decimal("80"))
 
 
 class ValuationEngineTests(InventoryTestBase):

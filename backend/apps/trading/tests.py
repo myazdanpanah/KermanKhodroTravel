@@ -25,10 +25,10 @@ User = get_user_model()
 class TradingTestBase(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.company = Company.objects.create(name="TradingTestCo", code="TT")
+        cls.company = Company.objects.create(name="TradingTestCo", enabled_modules=["trading", "finance"])
         cls.user = User.objects.create_user(username="trader", password="pass123", company=cls.company)
         cls.supplier = Supplier.objects.create(company=cls.company, name="Foreign Supplier Co")
-        cls.customer = Customer.objects.create(company=cls.company, name="Export Customer", customer_type="corporate")
+        cls.customer = Customer.objects.create(company=cls.company, name="Export Customer")
 
 
 class ImportTests(TradingTestBase):

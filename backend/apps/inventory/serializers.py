@@ -16,7 +16,7 @@ class WarehouseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Warehouse
         fields = [
-            "id", "code", "name", "warehouse_type", "branch",
+            "id", "code", "name", "warehouse_type", "branch_name",
             "address", "is_active", "created_at",
         ]
         read_only_fields = ["id", "created_at"]
