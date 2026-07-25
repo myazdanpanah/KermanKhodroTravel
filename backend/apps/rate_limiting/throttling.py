@@ -185,9 +185,15 @@ class RateLimitLoggingMiddleware(MiddlewareMixin):
                     module=module,
                 )
                 # Defer log write to after response is sent
-                transaction.on_commit(
-                    lambda: RateLimitLog.objects.create(**log_data)
-                )
+                # Note: transaction.on_commit is a no-op outside a transaction,
+                # which is fine — the response is already sent.
+                try:
+                    transaction.on_commit(
+                        lambda: RateLimitLog.objects.create(**log_data)
+                    )
+                except Exception:
+                    # Outside a transaction context — skip logging
+                    pass
         except Exception as e:
             # Never let logging break the request
             logger.debug("Rate limit logging failed: %s", e)
