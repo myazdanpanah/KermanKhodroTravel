@@ -102,11 +102,10 @@ class InventoryService:
 
         available = ledger.quantity_available
         return {
-            "available": available >= quantity,
+            "is_available": available >= quantity,
+            "available": available,  # backward compat: was quantity before
             "on_hand": ledger.quantity_on_hand,
             "reserved": ledger.quantity_reserved,
-            "available_quantity": available,
-            "available_stock": available,  # backward compat alias
             "requested": quantity,
             "shortage": max(quantity - available, Decimal("0")),
             "message": "Sufficient stock" if available >= quantity else f"Insufficient stock (need {quantity}, have {available})",

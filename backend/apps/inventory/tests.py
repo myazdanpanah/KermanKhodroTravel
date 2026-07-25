@@ -213,13 +213,14 @@ class InventoryServiceTests(InventoryTestBase):
         result = InventoryService.check_availability(
             self.company, "WDG-001", self.warehouse.id, Decimal("50"),
         )
-        self.assertTrue(result["available"])
+        self.assertTrue(result["is_available"])
+        self.assertIsInstance(result["available"], Decimal)  # backward compat: quantity
 
     def test_check_availability_insufficient(self):
         result = InventoryService.check_availability(
             self.company, "WDG-001", self.warehouse.id, Decimal("200"),
         )
-        self.assertFalse(result["available"])
+        self.assertFalse(result["is_available"])
         self.assertGreater(result["shortage"], Decimal("0"))
 
     def test_low_stock_items(self):
@@ -394,7 +395,7 @@ class InventoryViewTests(InventoryTestBase):
         )
         self.assertEqual(resp.status_code, 200)
         data = resp.data.get("data", resp.data)
-        self.assertTrue(data["available"])
+        self.assertTrue(data["is_available"])
 
     def test_low_stock_endpoint(self):
         resp = self.client.get("/api/v1/inventory/low-stock/")
