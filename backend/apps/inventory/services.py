@@ -232,7 +232,7 @@ class StockMovementService:
         availability = InventoryService.check_availability(
             company, product_code, warehouse_id, quantity
         )
-        if not availability["available"]:
+        if not availability["is_available"]:
             raise ValidationError(availability["message"])
 
         warehouse = Warehouse.objects.get(pk=warehouse_id, company=company)
@@ -405,7 +405,7 @@ class ReservationService:
         availability = InventoryService.check_availability(
             company, product_code, warehouse_id, quantity
         )
-        if not availability["available"]:
+        if not availability["is_available"]:
             raise ValidationError(availability["message"])
 
         reservation = InventoryReservation.objects.create(
