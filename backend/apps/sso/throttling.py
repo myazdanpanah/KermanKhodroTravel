@@ -10,7 +10,7 @@ from rest_framework.throttling import BaseThrottle
 
 class SSOInitiateThrottle(BaseThrottle):
     """Rate limit for SSO initiation: 10/min per IP."""
-    
+
     def allow_request(self, request, view):
         ip = self.get_ident(request)
         cache_key = f"sso_initiate_rl:{ip}"
@@ -27,8 +27,11 @@ class SSOInitiateThrottle(BaseThrottle):
 
         return True
 
+    def wait(self):
+        return getattr(self, 'wait_time', 60)
 
-class SSOCallbackThrottle(SSORateThrottle):
+
+class SSOCallbackThrottle(BaseThrottle):
     """Rate limit for SSO callbacks: 20/min per IP."""
     
     def allow_request(self, request, view):
@@ -46,3 +49,6 @@ class SSOCallbackThrottle(SSORateThrottle):
             return False
 
         return True
+
+    def wait(self):
+        return getattr(self, 'wait_time', 60)

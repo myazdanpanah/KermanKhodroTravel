@@ -29,7 +29,7 @@ class AuditLog(models.Model):
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
         null=True, blank=True,
-        related_name="audit_logs",
+        related_name="audit_log_entries",
     )
     ip_address = models.GenericIPAddressField(null=True, blank=True)
     user_agent = models.TextField(blank=True, default="")
@@ -60,7 +60,7 @@ class AuditLog(models.Model):
         "accounts.Company",
         on_delete=models.SET_NULL,
         null=True, blank=True,
-        related_name="audit_logs",
+        related_name="audit_log_entries",
     )
     metadata = models.JSONField(default=dict, blank=True, help_text="Additional context (request path, etc.)")
 

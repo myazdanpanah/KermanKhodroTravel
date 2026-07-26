@@ -6,6 +6,7 @@ Supports SAML 2.0 and OIDC/OAuth2 identity providers (Okta, Azure AD, Google, On
 import secrets
 from django.db import models
 from django.conf import settings
+from django_cryptography.fields import encrypt
 from apps.core.models import BaseModel
 
 
@@ -34,7 +35,7 @@ class SSOProvider(BaseModel):
     saml_entity_id = models.CharField(max_length=500, blank=True, default="", help_text="IdP Entity ID")
     saml_sso_url = models.URLField(max_length=500, blank=True, default="", help_text="IdP SSO Login URL")
     saml_slo_url = models.URLField(max_length=500, blank=True, default="", help_text="IdP Single Logout URL")
-    saml_certificate = models.TextField(blank=True, default="", help_text="IdP X.509 signing certificate (PEM)")
+    saml_certificate = encrypt(models.TextField(blank=True, default="", help_text="IdP X.509 signing certificate (PEM)"))
     saml_metadata_url = models.URLField(max_length=500, blank=True, default="", help_text="IdP Metadata XML URL")
     saml_name_id_format = models.CharField(
         max_length=200, blank=True, default="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress",
@@ -43,7 +44,7 @@ class SSOProvider(BaseModel):
 
     # OIDC/OAuth2 fields
     oidc_client_id = models.CharField(max_length=500, blank=True, default="")
-    oidc_client_secret = models.CharField(max_length=500, blank=True, default="")
+    oidc_client_secret = encrypt(models.CharField(max_length=500, blank=True, default=""))
     oidc_discovery_url = models.URLField(max_length=500, blank=True, default="", help_text="OIDC .well-known/openid-configuration URL")
     oidc_authorization_url = models.URLField(max_length=500, blank=True, default="")
     oidc_token_url = models.URLField(max_length=500, blank=True, default="")
