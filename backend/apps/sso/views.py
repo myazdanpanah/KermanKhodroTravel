@@ -306,12 +306,7 @@ def _handle_oidc_callback(provider, request, ip, ua):
                     claims.validate()
                     userinfo = dict(claims)
                 else:
-                    # Fallback: decode without verification (less secure)
-                    import base64 as b64
-                    payload_b64 = token_resp["id_token"].split(".")[1]
-                    padding = 4 - len(payload_b64) % 4
-                    payload_b64 += "=" * padding
-                    userinfo = json.loads(b64.urlsafe_b64decode(payload_b64))
+                    raise ValueError("No JWKS endpoint configured — cannot verify ID token. Configure oidc_jwks_url in provider settings.")
             except Exception:
                 logger.warning("Failed to decode ID token for provider %s", provider.slug)
 
