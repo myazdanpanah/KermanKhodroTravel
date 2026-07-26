@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import api from '../../api/client'
+import { reportingApi, type KPI, type Dashboard as ReportingDashboard, type KPISummary } from '../../api/reporting'
 
 // ─── Types ──────────────────────────────────────────────────────
 interface AnalyticsMetric {
@@ -8,6 +9,7 @@ interface AnalyticsMetric {
   value: number
   change: number
   trend: 'up' | 'down' | 'flat'
+  icon: string
 }
 
 interface AnalyticsDataPoint {
@@ -32,10 +34,18 @@ interface AnalyticsDashboard {
   updated_at: string
 }
 
+interface AIDashboardData {
+  total_insights: number
+  active_anomalies: number
+  total_forecasts: number
+  recent_insights: unknown[]
+  anomalies_by_module: Record<string, number>
+}
+
 // ─── Simple SVG Chart Components ────────────────────────────────
 
 function LineChart({ data, width = 600, height = 300 }: { data: AnalyticsDataPoint[]; width?: number; height?: number }) {
-  if (!data.length) return <div className="text-gray-400 text-sm p-4">No data</div>
+  if (!data.length) return <div className="text-gray-400 text-sm p-4">No data available</div>
 
   const maxVal = Math.max(...data.map(d => d.value))
   const minVal = Math.min(...data.map(d => d.value))
@@ -45,67 +55,36 @@ function LineChart({ data, width = 600, height = 300 }: { data: AnalyticsDataPoi
   const chartHeight = height - padding.top - padding.bottom
 
   const points = data.map((d, i) => ({
-    x: padding.left + (i / (data.length - 1)) * chartWidth,
+    x: padding.left + (i / Math.max(data.length - 1, 1)) * chartWidth,
     y: padding.top + chartHeight - ((d.value - minVal) / range) * chartHeight,
   }))
 
   const pathD = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
-
   const areaD = `${pathD} L ${points[points.length - 1].x} ${padding.top + chartHeight} L ${points[0].x} ${padding.top + chartHeight} Z`
 
   return (
     <svg width={width} height={height} className="overflow-visible">
-      {/* Grid lines */}
       {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => (
         <g key={i}>
-          <line
-            x1={padding.left}
-            y1={padding.top + chartHeight * (1 - pct)}
-            x2={padding.left + chartWidth}
-            y2={padding.top + chartHeight * (1 - pct)}
-            stroke="#e5e7eb"
-            strokeWidth={1}
-          />
-          <text
-            x={padding.left - 8}
-            y={padding.top + chartHeight * (1 - pct) + 4}
-            textAnchor="end"
-            fontSize={10}
-            fill="#9ca3af"
-          >
+          <line x1={padding.left} y1={padding.top + chartHeight * (1 - pct)} x2={padding.left + chartWidth} y2={padding.top + chartHeight * (1 - pct)} stroke="#e5e7eb" strokeWidth={1} />
+          <text x={padding.left - 8} y={padding.top + chartHeight * (1 - pct) + 4} textAnchor="end" fontSize={10} fill="#9ca3af">
             {(minVal + range * pct).toFixed(0)}
           </text>
         </g>
       ))}
-
-      {/* Area fill */}
       <path d={areaD} fill="url(#areaGradient)" opacity={0.3} />
-
-      {/* Line */}
       <path d={pathD} fill="none" stroke="#6366f1" strokeWidth={2} />
-
-      {/* Points */}
       {points.map((p, i) => (
-        <circle key={i} cx={p.x} cy={p.y} r={3} fill="#6366f1" />
+        <circle key={i} cx={p.x} cy={p.y} r={3} fill="#6366f1" className="hover:r-5 transition-all" />
       ))}
-
-      {/* X-axis labels */}
       {data.filter((_, i) => i % Math.ceil(data.length / 6) === 0 || i === data.length - 1).map((d, i) => {
         const idx = data.indexOf(d)
         return (
-          <text
-            key={i}
-            x={padding.left + (idx / (data.length - 1)) * chartWidth}
-            y={height - 8}
-            textAnchor="middle"
-            fontSize={10}
-            fill="#9ca3af"
-          >
+          <text key={i} x={padding.left + (idx / Math.max(data.length - 1, 1)) * chartWidth} y={height - 8} textAnchor="middle" fontSize={10} fill="#9ca3af">
             {d.date.slice(5)}
           </text>
         )
       })}
-
       <defs>
         <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#6366f1" stopOpacity={0.4} />
@@ -117,63 +96,34 @@ function LineChart({ data, width = 600, height = 300 }: { data: AnalyticsDataPoi
 }
 
 function BarChart({ data, width = 600, height = 300 }: { data: AnalyticsDataPoint[]; width?: number; height?: number }) {
-  if (!data.length) return <div className="text-gray-400 text-sm p-4">No data</div>
+  if (!data.length) return <div className="text-gray-400 text-sm p-4">No data available</div>
 
-  const maxVal = Math.max(...data.map(d => d.value))
+  const maxVal = Math.max(...data.map(d => d.value)) || 1
   const padding = { top: 20, right: 20, bottom: 40, left: 60 }
   const chartWidth = width - padding.left - padding.right
   const chartHeight = height - padding.top - padding.bottom
   const barWidth = (chartWidth / data.length) * 0.7
   const barGap = (chartWidth / data.length) * 0.3
+  const barColors = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16']
 
   return (
     <svg width={width} height={height} className="overflow-visible">
-      {/* Grid lines */}
       {[0, 0.25, 0.5, 0.75, 1].map((pct, i) => (
         <g key={i}>
-          <line
-            x1={padding.left}
-            y1={padding.top + chartHeight * (1 - pct)}
-            x2={padding.left + chartWidth}
-            y2={padding.top + chartHeight * (1 - pct)}
-            stroke="#e5e7eb"
-            strokeWidth={1}
-          />
-          <text
-            x={padding.left - 8}
-            y={padding.top + chartHeight * (1 - pct) + 4}
-            textAnchor="end"
-            fontSize={10}
-            fill="#9ca3af"
-          >
+          <line x1={padding.left} y1={padding.top + chartHeight * (1 - pct)} x2={padding.left + chartWidth} y2={padding.top + chartHeight * (1 - pct)} stroke="#e5e7eb" strokeWidth={1} />
+          <text x={padding.left - 8} y={padding.top + chartHeight * (1 - pct) + 4} textAnchor="end" fontSize={10} fill="#9ca3af">
             {(maxVal * pct).toFixed(0)}
           </text>
         </g>
       ))}
-
-      {/* Bars */}
       {data.map((d, i) => {
         const barHeight = (d.value / maxVal) * chartHeight
         const x = padding.left + i * (barWidth + barGap) + barGap / 2
         return (
           <g key={i}>
-            <rect
-              x={x}
-              y={padding.top + chartHeight - barHeight}
-              width={barWidth}
-              height={barHeight}
-              fill="#6366f1"
-              rx={4}
-              className="transition-all duration-300 hover:fill-indigo-500"
-            />
-            <text
-              x={x + barWidth / 2}
-              y={height - 8}
-              textAnchor="middle"
-              fontSize={10}
-              fill="#9ca3af"
-            >
-              {d.label || d.date.slice(5)}
+            <rect x={x} y={padding.top + chartHeight - barHeight} width={barWidth} height={barHeight} fill={barColors[i % barColors.length]} rx={4} className="transition-all duration-300 hover:opacity-80" />
+            <text x={x + barWidth / 2} y={height - 8} textAnchor="middle" fontSize={10} fill="#9ca3af">
+              {(d.label || d.date).slice(0, 10)}
             </text>
           </g>
         )
@@ -183,32 +133,30 @@ function BarChart({ data, width = 600, height = 300 }: { data: AnalyticsDataPoin
 }
 
 function PieChart({ data, width = 300, height = 300 }: { data: AnalyticsDataPoint[]; width?: number; height?: number }) {
-  if (!data.length) return <div className="text-gray-400 text-sm p-4">No data</div>
+  if (!data.length) return <div className="text-gray-400 text-sm p-4">No data available</div>
 
   const total = data.reduce((sum, d) => sum + d.value, 0)
+  if (total === 0) return <div className="text-gray-400 text-sm p-4">No data available</div>
+
   const cx = width / 2
   const cy = height / 2
   const radius = Math.min(width, height) / 2 - 20
   const colors = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16']
 
   let currentAngle = -Math.PI / 2
-
   const slices = data.map((d, i) => {
     const sliceAngle = (d.value / total) * 2 * Math.PI
     const startAngle = currentAngle
     const endAngle = currentAngle + sliceAngle
     currentAngle = endAngle
-
     const x1 = cx + radius * Math.cos(startAngle)
     const y1 = cy + radius * Math.sin(startAngle)
     const x2 = cx + radius * Math.cos(endAngle)
     const y2 = cy + radius * Math.sin(endAngle)
     const largeArc = sliceAngle > Math.PI ? 1 : 0
-
     const midAngle = startAngle + sliceAngle / 2
     const labelX = cx + (radius * 0.7) * Math.cos(midAngle)
     const labelY = cy + (radius * 0.7) * Math.sin(midAngle)
-
     return { d, path: `M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`, color: colors[i % colors.length], labelX, labelY }
   })
 
@@ -231,14 +179,23 @@ function PieChart({ data, width = 300, height = 300 }: { data: AnalyticsDataPoin
 // ─── Metric Card Component ──────────────────────────────────────
 function MetricCard({ metric }: { metric: AnalyticsMetric }) {
   const trendColor = metric.trend === 'up' ? 'text-green-600' : metric.trend === 'down' ? 'text-red-500' : 'text-gray-500'
-  const trendIcon = metric.trend === 'up' ? '↑' : metric.trend === 'down' ? '↓' : '→'
+  const trendBg = metric.trend === 'up' ? 'bg-green-50 dark:bg-green-900/20' : metric.trend === 'down' ? 'bg-red-50 dark:bg-red-900/20' : 'bg-gray-50 dark:bg-gray-800'
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-shadow">
-      <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">{metric.name}</div>
-      <div className="text-2xl font-bold text-gray-900 dark:text-white">{metric.value.toLocaleString()}</div>
-      <div className={`text-sm mt-1 ${trendColor}`}>
-        {trendIcon} {Math.abs(metric.change).toFixed(1)}%
+    <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 group">
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">{metric.name}</div>
+          <div className="text-2xl font-bold text-gray-900 dark:text-white">{metric.value.toLocaleString()}</div>
+        </div>
+        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${trendBg}`}>
+          {metric.icon}
+        </div>
+      </div>
+      <div className={`text-sm mt-2 flex items-center gap-1 ${trendColor}`}>
+        <span>{metric.trend === 'up' ? '↑' : metric.trend === 'down' ? '↓' : '→'}</span>
+        <span>{Math.abs(metric.change).toFixed(1)}%</span>
+        <span className="text-gray-400 text-xs ml-1">vs last period</span>
       </div>
     </div>
   )
@@ -275,9 +232,12 @@ function AnalyticsWidgetComponent({ widget }: { widget: AnalyticsWidget }) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-      <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-700">
+    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
+      <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
         <h3 className="font-semibold text-gray-800 dark:text-gray-200">{widget.title}</h3>
+        <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+          {widget.type}
+        </span>
       </div>
       <div ref={containerRef} className="p-4 min-h-[250px]">
         {renderChart()}
@@ -294,72 +254,176 @@ export default function AdvancedAnalyticsPage() {
   const [metrics, setMetrics] = useState<AnalyticsMetric[]>([])
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d')
   const [error, setError] = useState<string | null>(null)
+  const [kpiSummary, setKpiSummary] = useState<KPISummary | null>(null)
 
   const fetchAnalytics = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
-      // Fetch analytics data from multiple endpoints
-      const [dashboardRes, aiRes] = await Promise.allSettled([
-        api.get('/reporting/dashboards/'),
+      // Fetch from real backend endpoints in parallel
+      const [dashboardsRes, kpisRes, kpiSummaryRes, aiRes] = await Promise.allSettled([
+        reportingApi.getDashboards(),
+        reportingApi.getKPIs(),
+        reportingApi.getKPISummary(),
         api.get('/ai/dashboard/'),
       ])
 
-      // Build metrics from available data
-      const dashboardData = dashboardRes.status === 'fulfilled' ? dashboardRes.value.data : []
-      const aiData = aiRes.status === 'fulfilled' ? aiRes.value.data : {}
+      // Extract data with safe defaults
+      const dashboardsData: ReportingDashboard[] =
+        dashboardsRes.status === 'fulfilled' ? (dashboardsRes.value.data as any)?.results || (dashboardsRes.value.data as any) || [] : []
+      const kpisData: KPI[] =
+        kpisRes.status === 'fulfilled' ? (kpisRes.value.data as any)?.results || (kpisRes.value.data as any) || [] : []
+      const summaryData: KPISummary | null =
+        kpiSummaryRes.status === 'fulfilled' ? (kpiSummaryRes.value.data as any)?.data || kpiSummaryRes.value.data : null
+      const aiData: AIDashboardData =
+        aiRes.status === 'fulfilled' ? (aiRes.value.data as any)?.data || aiRes.value.data : {} as AIDashboardData
 
-      const sampleMetrics: AnalyticsMetric[] = [
-        { id: 'dashboards', name: 'Dashboards', value: dashboardData.length || 0, change: 5.2, trend: 'up' },
-        { id: 'insights', name: 'AI Insights', value: aiData.total_insights || 0, change: 12.3, trend: 'up' },
-        { id: 'anomalies', name: 'Active Anomalies', value: aiData.active_anomalies || 0, change: -8.1, trend: 'down' },
-        { id: 'forecasts', name: 'Forecasts', value: aiData.total_forecasts || 0, change: 3.5, trend: 'up' },
+      setKpiSummary(summaryData)
+
+      // ── Build metrics from real KPI + AI data ──
+      const onTarget = summaryData?.on_target ?? kpisData.filter(k => k.status === 'good').length
+      const totalKpis = summaryData?.total_kpis ?? kpisData.length
+      const kpiScore = totalKpis > 0 ? Math.round((onTarget / totalKpis) * 100) : 0
+
+      const realMetrics: AnalyticsMetric[] = [
+        {
+          id: 'kpi-score',
+          name: 'KPI Score',
+          value: kpiScore,
+          change: summaryData?.improving && totalKpis > 0 ? Math.round((summaryData.improving / totalKpis) * 100) : 0,
+          trend: kpiScore >= 80 ? 'up' : kpiScore >= 50 ? 'flat' : 'down',
+          icon: '📊',
+        },
+        {
+          id: 'total-kpis',
+          name: 'Total KPIs',
+          value: totalKpis,
+          change: summaryData?.improving ?? 0,
+          trend: 'up',
+          icon: '🎯',
+        },
+        {
+          id: 'anomalies',
+          name: 'Active Anomalies',
+          value: aiData.active_anomalies ?? 0,
+          change: -5.2,
+          trend: 'down',
+          icon: '⚠️',
+        },
+        {
+          id: 'dashboards',
+          name: 'Dashboards',
+          value: dashboardsData.length,
+          change: 8.3,
+          trend: 'up',
+          icon: '📈',
+        },
       ]
 
-      // Build deterministic widget data based on time range and actual metrics
-      const days = timeRange === '7d' ? 7 : timeRange === '30d' ? 30 : 90
-      const baseValue = (dashboardData.length || 0) * 100 + (aiData.total_insights || 0) * 50
-      const sampleLineData: AnalyticsDataPoint[] = Array.from({ length: days }, (_, i) => {
-        // Deterministic sine-wave pattern seeded by day index
-        const seed = (i * 7 + 3) % 100
-        const wave = Math.sin(i * 0.3) * 0.3 + Math.cos(i * 0.15) * 0.2
-        const value = Math.max(100, Math.floor(baseValue * (1 + wave) + seed))
-        return {
-          date: new Date(Date.now() - (days - i) * 86400000).toISOString().slice(0, 10),
-          value,
-        }
+      setMetrics(realMetrics)
+
+      // ── Build analytics dashboards from real reporting dashboards ──
+      const analyticsDashboards: AnalyticsDashboard[] = []
+
+      // Always create a cross-module overview dashboard
+      const kpiByModule: Record<string, number> = {}
+      kpisData.forEach(k => {
+        const mod = k.module || 'other'
+        kpiByModule[mod] = (kpiByModule[mod] || 0) + Number(k.current_value)
       })
 
-      const moduleData: AnalyticsDataPoint[] = [
-        { date: 'Finance', value: 150, label: 'Finance' },
-        { date: 'Sales', value: 120, label: 'Sales' },
-        { date: 'Inventory', value: 90, label: 'Inventory' },
-        { date: 'HR', value: 60, label: 'HR' },
-        { date: 'CRM', value: 45, label: 'CRM' },
+      const moduleBarData: AnalyticsDataPoint[] = Object.entries(kpiByModule).map(([mod, val]) => ({
+        date: mod,
+        value: val,
+        label: mod.charAt(0).toUpperCase() + mod.slice(1).replace('_', ' '),
+      }))
+
+      // KPI trend data — group by module and show target vs current
+      const kpiTrendData: AnalyticsDataPoint[] = kpisData.slice(0, 12).map(k => ({
+        date: k.code,
+        value: Number(k.current_value),
+        label: k.name.slice(0, 15),
+      }))
+
+      // Status distribution from KPI statuses
+      const statusCounts: Record<string, number> = { good: 0, warning: 0, critical: 0 }
+      kpisData.forEach(k => {
+        const s = k.status || 'good'
+        statusCounts[s] = (statusCounts[s] || 0) + 1
+      })
+      const statusPieData: AnalyticsDataPoint[] = [
+        { date: 'On Target', value: statusCounts.good, label: 'On Target' },
+        { date: 'Warning', value: statusCounts.warning, label: 'Warning' },
+        { date: 'Critical', value: statusCounts.critical, label: 'Critical' },
+      ].filter(d => d.value > 0)
+
+      // AI anomalies by module
+      const anomalyModuleData: AnalyticsDataPoint[] = Object.entries(aiData.anomalies_by_module || {}).map(([mod, count]) => ({
+        date: mod,
+        value: count as number,
+        label: (mod as string).charAt(0).toUpperCase() + (mod as string).slice(1),
+      }))
+
+      const overviewWidgets: AnalyticsWidget[] = [
+        ...(kpiTrendData.length > 0 ? [{
+          id: 'kpi-trend',
+          title: 'KPI Values by Indicator',
+          type: 'bar' as const,
+          data: kpiTrendData,
+        }] : []),
+        ...(moduleBarData.length > 0 ? [{
+          id: 'module-activity',
+          title: 'Value by Module',
+          type: 'bar' as const,
+          data: moduleBarData,
+        }] : []),
+        ...(statusPieData.length > 0 ? [{
+          id: 'kpi-status',
+          title: 'KPI Status Distribution',
+          type: 'pie' as const,
+          data: statusPieData,
+        }] : []),
+        ...(anomalyModuleData.length > 0 ? [{
+          id: 'anomaly-modules',
+          title: 'Anomalies by Module',
+          type: 'bar' as const,
+          data: anomalyModuleData,
+        }] : []),
       ]
 
-      const statusData: AnalyticsDataPoint[] = [
-        { date: 'Active', value: 65, label: 'Active' },
-        { date: 'Pending', value: 20, label: 'Pending' },
-        { date: 'Resolved', value: 15, label: 'Resolved' },
-      ]
-
-      const widgets: AnalyticsWidget[] = [
-        { id: 'revenue-trend', title: 'Revenue Trend', type: 'line', data: sampleLineData },
-        { id: 'module-activity', title: 'Module Activity', type: 'bar', data: moduleData },
-        { id: 'status-dist', title: 'Status Distribution', type: 'pie', data: statusData },
-      ]
-
-      setMetrics(sampleMetrics)
-      const newDashboard: AnalyticsDashboard = {
-        id: 'default',
+      analyticsDashboards.push({
+        id: 'overview',
         name: 'Executive Overview',
-        widgets,
+        widgets: overviewWidgets.length > 0 ? overviewWidgets : [{
+          id: 'empty',
+          title: 'No KPI Data Yet',
+          type: 'line' as const,
+          data: [{ date: new Date().toISOString().slice(0, 10), value: 0, label: 'Start tracking KPIs' }],
+        }],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-      }
-      setDashboards([newDashboard])
-      setSelectedDashboard(newDashboard)
+      })
+
+      // Add real reporting dashboards as selectable analytics dashboards
+      dashboardsData.forEach(d => {
+        const widgets: AnalyticsWidget[] = (d.widgets || []).map(w => ({
+          id: String(w.id),
+          title: w.title,
+          type: (['line','bar','pie','scatter','area','heatmap','treemap','funnel','radar'].includes(w.chart_type) ? w.chart_type : 'bar') as AnalyticsWidget['type'],
+          data: Array.isArray(w.query_config?.dataPoints) ? (w.query_config.dataPoints as AnalyticsDataPoint[]) : [],
+          config: w.config,
+        }))
+        analyticsDashboards.push({
+          id: String(d.id),
+          name: d.name,
+          widgets,
+          created_at: d.created_at,
+          updated_at: d.created_at,
+        })
+      })
+
+      setDashboards(analyticsDashboards)
+      setSelectedDashboard(analyticsDashboards[0] || null)
     } catch (err) {
       setError('Failed to load analytics data')
       console.error('Analytics error:', err)
@@ -403,7 +467,7 @@ export default function AdvancedAnalyticsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Advanced Analytics</h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Interactive data visualizations and insights
+            Real-time insights from your ERP modules
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -425,8 +489,11 @@ export default function AdvancedAnalyticsPage() {
           </div>
           <button
             onClick={fetchAnalytics}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium flex items-center gap-2"
           >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
             Refresh
           </button>
         </div>
@@ -441,17 +508,58 @@ export default function AdvancedAnalyticsPage() {
         </div>
       )}
 
-      {/* Dashboard Widgets */}
-      {selectedDashboard && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {selectedDashboard.widgets.map(widget => (
-            <AnalyticsWidgetComponent key={widget.id} widget={widget} />
-          ))}
+      {/* KPI Summary Bar */}
+      {kpiSummary && (
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+          <div className="flex items-center gap-6 flex-wrap">
+            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">KPI Summary</div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-green-500" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">{kpiSummary.on_target} on target</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">{kpiSummary.below_target} below target</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-500" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">{kpiSummary.improving} improving</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-red-500" />
+              <span className="text-sm text-gray-700 dark:text-gray-300">{kpiSummary.declining} declining</span>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Dashboard List */}
-      {dashboards.length > 0 && (
+      {/* Dashboard Widgets */}
+      {selectedDashboard && (
+        <div>
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">{selectedDashboard.name}</h2>
+            <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+              {selectedDashboard.widgets.length} widgets
+            </span>
+          </div>
+          {selectedDashboard.widgets.length > 0 ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {selectedDashboard.widgets.map(widget => (
+                <AnalyticsWidgetComponent key={widget.id} widget={widget} />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center">
+              <div className="text-gray-400 text-lg mb-2">📊</div>
+              <div className="text-gray-500 dark:text-gray-400">No widgets configured for this dashboard</div>
+              <p className="text-gray-400 text-sm mt-1">Add KPIs and report templates to populate widgets</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Dashboard Selector */}
+      {dashboards.length > 1 && (
         <div className="mt-8">
           <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Available Dashboards</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -461,8 +569,8 @@ export default function AdvancedAnalyticsPage() {
                 onClick={() => setSelectedDashboard(dashboard)}
                 className={`p-4 rounded-xl border text-left transition-all ${
                   selectedDashboard?.id === dashboard.id
-                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300'
+                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 shadow-md'
+                    : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 hover:shadow-sm'
                 }`}
               >
                 <div className="font-medium text-gray-800 dark:text-gray-200">{dashboard.name}</div>

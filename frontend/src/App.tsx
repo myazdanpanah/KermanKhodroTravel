@@ -87,6 +87,7 @@ import CommissionsPage from './pages/service_sales/CommissionsPage'
 import RefundsPage from './pages/service_sales/RefundsPage'
 // Settings (inside ERP)
 import SettingsPage from './pages/SettingsPage'
+import SSOSettingsPage from './pages/settings/SSOSettingsPage'
 import AdminSettingsPage from './pages/AdminSettingsPage'
 import OrgChartPage from './pages/OrgChartPage'
 // Other standalone pages
@@ -225,6 +226,7 @@ export default function App() {
         <Route path="settings/users" element={<AdminSettingsPage />} />
         <Route path="settings/org" element={<OrgChartPage />} />
         <Route path="settings/ai" element={<LLMSettingsPage />} />
+        <Route path="settings/sso" element={<SSOSettingsPage />} />
       </Route>
 
       {/* ═══ Redirects from old routes to unified ERP ═══ */}

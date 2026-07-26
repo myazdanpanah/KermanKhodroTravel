@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     "apps.ai_insights.apps.AiInsightsConfig",
     "apps.rate_limiting.apps.RateLimitingConfig",
     "apps.multi_tenant.apps.MultiTenantConfig",
-    # Module choices for multi_tenant
+    "apps.sso.apps.SSOConfig",
 ]
 
 # Rate Limiting
