@@ -12,7 +12,6 @@ from django.db.models.signals import pre_save, post_save, pre_delete
 from django.dispatch import receiver
 from django.contrib.contenttypes.models import ContentType
 from django.utils.deprecation import MiddlewareMixin
-from .models import AuditLog
 
 logger = logging.getLogger("audit_log")
 
@@ -141,6 +140,7 @@ def audit_post_save(sender, instance, created, **kwargs):
     description = f"{'Created' if created else 'Updated'} {model_label}: {obj_str}"
 
     try:
+        from .models import AuditLog
         AuditLog.objects.create(
             action=action,
             user=user,
@@ -180,6 +180,7 @@ def audit_pre_delete(sender, instance, **kwargs):
     description = f"Deleted {model_label}: {obj_str}"
 
     try:
+        from .models import AuditLog
         AuditLog.objects.create(
             action="delete",
             user=user,
@@ -238,16 +239,3 @@ def auto_register_models():
     for model in apps.get_models():
         if issubclass(model, BaseModel) and model is not BaseModel:
             register_model(model)
-
-
-# Signal to auto-register on Django ready
-from django.apps import AppConfig
-
-_original_ready = AppConfig.ready
-
-
-def _patched_ready(self):
-    """Override AppConfig.ready to auto-register models."""
-    _original_ready(self)
-    if self.name == "apps.audit_log":
-        auto_register_models()
