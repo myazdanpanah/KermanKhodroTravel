@@ -1,7 +1,7 @@
 """
 SSO & Identity — Tests for providers, auth flow, JIT provisioning, and audit trail.
 """
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
