@@ -63,7 +63,7 @@ class SSOProviderViewSet(viewsets.ModelViewSet):
         company = getattr(self.request.user, "company", None)
         serializer.save(company=company, created_by=self.request.user)
 
-    @action(detail=False, methods=["get"], url_path="public")
+    @action(detail=False, methods=["get"], url_path="public", permission_classes=[permissions.AllowAny])
     def list_public(self, request):
         """List active providers for the login page (no auth required)."""
         company_slug = request.query_params.get("company")

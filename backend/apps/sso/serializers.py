@@ -29,7 +29,7 @@ class SSOProviderSerializer(serializers.ModelSerializer):
             # Meta
             "logo_url", "created_by", "created_by_name", "created_at",
         ]
-        read_only_fields = ["id", "created_at", "is_configured"]
+        read_only_fields = ["id", "created_at", "is_configured", "slug"]
         extra_kwargs = {
             "oidc_client_secret": {"write_only": True},
             "saml_certificate": {"write_only": True},

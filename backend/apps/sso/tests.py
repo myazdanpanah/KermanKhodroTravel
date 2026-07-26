@@ -6,8 +6,9 @@ from django.test import TestCase, RequestFactory
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 
-from apps.core.models import Company
+from apps.accounts.models import Company
 from apps.sso.models import SSOProvider, SSOUserMapping, SSOLoginAttempt
+from rest_framework.test import APIClient
 from apps.sso.views import (
     _provision_or_get_user,
     _build_oidc_auth_url,
@@ -251,12 +252,12 @@ class SSOProviderAPITest(TestCase):
     """Test SSO provider CRUD API endpoints."""
 
     def setUp(self):
-        from apps.accounts.models import User
         self.user = User.objects.create_user(
             username="ssotester", password="testpass123", email="ssotester@test.com",
         )
         self.user.company = Company.objects.create(name="APICo", enabled_modules=["reporting"])
         self.user.save()
+        self.client = APIClient()
         self.client.force_authenticate(user=self.user)
 
     def test_list_providers(self):
@@ -331,8 +332,8 @@ class SSOProviderAPITest(TestCase):
             protocol="oidc", status="inactive",
             oidc_client_id="x", oidc_discovery_url="https://x.com",
         )
-        self.client.force_authenticate(user=None)
-        resp = self.client.get("/api/v1/sso/providers/public/")
+        unauth_client = APIClient()
+        resp = unauth_client.get("/api/v1/sso/providers/public/")
         self.assertEqual(resp.status_code, 200)
         data = resp.data.get("results", resp.data) if isinstance(resp.data, dict) else resp.data
         names = [p["name"] for p in data]
