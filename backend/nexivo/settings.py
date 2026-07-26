@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "apps.rate_limiting.apps.RateLimitingConfig",
     "apps.multi_tenant.apps.MultiTenantConfig",
     "apps.sso.apps.SSOConfig",
+    "apps.audit_log.apps.AuditLogConfig",
 ]
 
 # Rate Limiting
@@ -64,6 +65,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "apps.accounts.middleware.RoleMiddleware",
     "apps.rate_limiting.throttling.RateLimitLoggingMiddleware",
+    "apps.audit_log.middleware.AuditLogMiddleware",
 ]
 
 ROOT_URLCONF = "nexivo.urls"

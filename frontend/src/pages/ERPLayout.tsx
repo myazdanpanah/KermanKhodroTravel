@@ -186,6 +186,13 @@ const NAV_SECTIONS: NavSection[] = [
       { to: '/erp/settings/sso', icon: Key, label: 'ورود یکپارچه (SSO)' },
     ],
   },
+  {
+    id: 'audit',
+    label: ' Audit Trail',
+    items: [
+      { to: '/erp/audit', icon: ClipboardList, label: 'Audit Log' },
+    ],
+  },
 ]
 
 // ─── Component ───────────────────────────────────────────────────

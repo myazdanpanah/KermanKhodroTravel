@@ -14,6 +14,7 @@ from rest_framework.decorators import api_view, permission_classes, action
 from rest_framework.response import Response
 
 from .models import SSOProvider, SSOUserMapping, SSOLoginAttempt, SSORefreshToken
+from .throttling import SSOInitiateThrottle, SSOCallbackThrottle
 from .serializers import (
     SSOProviderSerializer, SSOProviderPublicSerializer,
     SSOUserMappingSerializer, SSOLoginAttemptSerializer,
@@ -102,6 +103,10 @@ class SSOProviderViewSet(viewsets.ModelViewSet):
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 def sso_initiate(request):
+    # Apply rate limiting
+    throttle = SSOInitiateThrottle()
+    if not throttle.allow_request(request, sso_initiate):
+        return Response({"error": "Rate limit exceeded. Try again later."}, status=429)
     """
     Initiate SSO login. Returns a redirect URL to the Identity Provider.
 
@@ -150,6 +155,10 @@ def sso_initiate(request):
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 def sso_callback(request, provider_slug):
+    # Apply rate limiting
+    throttle = SSOCallbackThrottle()
+    if not throttle.allow_request(request, sso_callback):
+        return Response({"error": "Rate limit exceeded. Try again later."}, status=429)
     """
     Handle SSO callback from Identity Provider.
 
