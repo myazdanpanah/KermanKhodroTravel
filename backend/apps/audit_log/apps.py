@@ -7,5 +7,8 @@ class AuditLogConfig(AppConfig):
     verbose_name = "Audit Logging"
 
     def ready(self):
-        from .signals import auto_register_models
-        auto_register_models()
+        try:
+            from .signals import auto_register_models
+            auto_register_models()
+        except Exception:
+            pass  # Skip during migrations before tables exist
