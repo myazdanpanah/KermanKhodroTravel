@@ -32,7 +32,19 @@ def _get_client_ip(request):
 # ── Provider CRUD ──
 
 class SSOProviderViewSet(viewsets.ModelViewSet):
-    """CRUD for SSO identity provider configurations."""
+    """
+    CRUD for SSO identity provider configurations.
+
+    Supports SAML 2.0 and OIDC/OAuth2 protocols. Configure your IdP
+    (Okta, Azure AD, Google, OneLogin, etc.) and enable JIT provisioning
+    for automatic user creation on first SSO login.
+
+    **Actions:**
+    - `test_connection`: Validate IdP connectivity (fetches metadata/discovery)
+    - `toggle_status`: Enable/disable a provider
+    - `login_attempts`: View login audit trail for a provider
+    - `list_public`: List active providers for the login page (no auth required)
+    """
     serializer_class = SSOProviderSerializer
     permission_classes = [permissions.IsAuthenticated]
 
@@ -91,8 +103,13 @@ class SSOProviderViewSet(viewsets.ModelViewSet):
 @permission_classes([permissions.AllowAny])
 def sso_initiate(request):
     """
-    Initiate SSO login. Returns a redirect URL to the IdP.
-    Frontend should redirect the user's browser to this URL.
+    Initiate SSO login. Returns a redirect URL to the Identity Provider.
+
+    The frontend should redirect the user's browser to the returned URL.
+    State parameter is stored in Django cache (300s TTL) for CSRF protection.
+
+    **Request:** `{"provider_slug": "okta-prod", "redirect_uri": "https://app.com/callback"}`
+    **Response:** `{"redirect_url": "https://idp.okta.com/authorize?...", "state": "..."}`
     """
     serializer = SSOInitiateRequest(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -134,7 +151,15 @@ def sso_initiate(request):
 @permission_classes([permissions.AllowAny])
 def sso_callback(request, provider_slug):
     """
-    Handle SSO callback from IdP. Validates assertion/code, provisions user, issues JWT.
+    Handle SSO callback from Identity Provider.
+
+    Validates the authorization code (OIDC) or SAML assertion, provisions
+    the user via JIT if enabled, and returns a JWT access token.
+
+    **OIDC flow:** Exchanges code for tokens via Authlib, fetches userinfo, verifies ID token via JWKS.
+    **SAML flow:** Validates assertion via python3-saml with strict mode, extracts NameID and attributes.
+
+    **Response:** `{"access": "jwt...", "user": {...}, "is_new_user": true}`
     """
     try:
         provider = SSOProvider.objects.get(slug=provider_slug, status="active")

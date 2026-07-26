@@ -200,10 +200,28 @@ except Exception:
 
 # DRF Spectacular (OpenAPI)
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Nexivo API",
-    "DESCRIPTION": "Nexivo BI Platform API",
-    "VERSION": "0.1.0",
+    "TITLE": "Nexivo ERP API",
+    "DESCRIPTION": "Nexivo ERP — OpenAPI documentation for all modules:\n\n- **Finance** — Invoices, receipts, payments, cheques, chart of accounts\n- **Inventory** — Warehouses, stock movements, reservations\n- **Purchasing** — Purchase orders, requests, goods receipts\n- **Sales** — Quotations, orders, invoices, returns\n- **Manufacturing** — BOMs, routings, work centers, production orders, QC\n- **Trading** — Import/export orders, containers, shipments\n- **Service Sales** — Bookings, tickets, tours, hotels, passengers\n- **Service Management** — Requests, work orders, technicians, contracts, SLA\n- **CRM** — Leads, opportunities, activities, campaigns\n- **HR** — Employees, attendance, departments, payroll, evaluations\n- **Reporting** — Report templates, dashboards, KPIs, scheduled reports\n- **AI Insights** — Anomaly detection, forecasting, NL queries\n- **SSO & Identity** — SAML/OIDC provider management, JIT provisioning\n- **Rate Limiting** — Per-module throttling\n- **Multi-Tenant** — Tenant provisioning and management",
+    "VERSION": "0.16.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "TAGS": [
+        {"name": "Auth", "description": "JWT authentication and user management"},
+        {"name": "Finance", "description": "Invoices, receipts, payments, and accounting"},
+        {"name": "Inventory", "description": "Warehouses, stock movements, reservations"},
+        {"name": "Purchasing", "description": "Purchase orders and goods receipts"},
+        {"name": "Sales", "description": "Quotations, orders, invoices, returns"},
+        {"name": "Manufacturing", "description": "BOMs, routings, work centers, production orders"},
+        {"name": "Trading", "description": "Import/export orders and shipments"},
+        {"name": "Service Sales", "description": "Bookings, tickets, tours, hotels"},
+        {"name": "Service Management", "description": "Requests, work orders, technicians, SLA"},
+        {"name": "CRM", "description": "Leads, opportunities, activities, campaigns"},
+        {"name": "HR", "description": "Employees, attendance, departments, payroll"},
+        {"name": "Reporting", "description": "Report templates, dashboards, KPIs"},
+        {"name": "AI Insights", "description": "Anomaly detection, forecasting, NL queries"},
+        {"name": "SSO", "description": "SAML/OIDC identity providers and JIT provisioning"},
+        {"name": "Rate Limiting", "description": "Per-module throttling configuration"},
+        {"name": "Multi-Tenant", "description": "Tenant provisioning and management"},
+    ],
 }
 
 # Rate Limiting

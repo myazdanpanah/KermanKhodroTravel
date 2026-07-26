@@ -15,6 +15,7 @@ import {
   Shield, Building2, Search, Ship, Bell, Sun, Moon, Menu, X,
   Headphones, Clock, TrendingUp, Target, DollarSign,
   FileBarChart, Gauge, Brain, AlertTriangle, MessageSquare,
+  Key,
 } from 'lucide-react'
 
 // ─── Navigation Structure ───────────────────────────────────────
@@ -182,6 +183,7 @@ const NAV_SECTIONS: NavSection[] = [
       { to: '/erp/settings', icon: Settings, label: 'تنظیمات' },
       { to: '/erp/settings/users', icon: Shield, label: 'كاربران' },
       { to: '/erp/settings/org', icon: Building2, label: 'ساختار سازمانی' },
+      { to: '/erp/settings/sso', icon: Key, label: 'ورود یکپارچه (SSO)' },
     ],
   },
 ]
