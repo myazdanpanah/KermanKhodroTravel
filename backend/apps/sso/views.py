@@ -430,9 +430,9 @@ def _handle_saml_callback(provider, request, ip, ua):
 
     except ImportError:
         raise ValueError("python3-saml is not installed. Install it with: pip install python3-saml")
+    except ValueError:
+        raise
     except Exception as e:
-        if "is not installed" in str(e):
-            raise
         raise ValueError(f"SAML assertion validation failed: {e}")
 
     if not email:
