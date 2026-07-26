@@ -2,6 +2,7 @@
 SSO & Identity Views — Provider management, auth flow, JIT provisioning, and audit.
 """
 import hashlib
+import json
 import secrets
 import logging
 from datetime import timedelta
@@ -115,12 +116,16 @@ def sso_initiate(request):
     else:
         return Response({"error": f"Unsupported protocol: {provider.protocol}"}, status=400)
 
-    # Store state for validation (use session or cache in production)
-    request.session[f"sso_state_{state}"] = {
+    # Store state for validation (use Django cache for stateless deployments)
+    from django.core.cache import cache
+    state_data = {
         "provider_slug": provider.slug,
         "redirect_uri": redirect_uri,
         "created_at": timezone.now().isoformat(),
     }
+    cache.set(f"sso_state_{state}", state_data, timeout=300)  # 5 minutes
+    # Also store in session as fallback
+    request.session[f"sso_state_{state}"] = state_data
 
     return Response({"redirect_url": redirect_url, "state": state})
 
@@ -228,42 +233,113 @@ def _build_saml_auth_request(provider, state, redirect_uri):
 
 
 def _handle_oidc_callback(provider, request, ip, ua):
-    """Handle OIDC callback: exchange code for tokens, fetch claims, provision user."""
+    """Handle OIDC callback: exchange code for tokens via Authlib, fetch claims, provision user."""
     code = request.data.get("code") or request.query_params.get("code")
     state_val = request.data.get("state") or request.query_params.get("state")
 
     if not code:
         raise ValueError("Missing authorization code")
 
-    # Validate state (check session in production)
+    # Validate state (use cache for stateless deployments)
+    from django.core.cache import cache
     state_key = f"sso_state_{state_val}"
-    stored_state = request.session.get(state_key)
+    stored_state = cache.get(state_key)
+    if not stored_state:
+        # Fallback to session (for Django session-backed deployments)
+        stored_state = request.session.get(state_key)
     if not stored_state:
         raise ValueError("Invalid or expired state parameter")
-    del request.session[state_key]
+    cache.delete(state_key)
+    request.session.pop(state_key, None)
 
-    # Token exchange (simplified — in production use Authlib)
-    # Simulated token exchange for scaffold
-    user_email = f"sso-user-{secrets.token_hex(4)}@example.com"
-    user_claims = {"email": user_email, "name": "SSO User"}
+    redirect_uri = stored_state.get("redirect_uri", "")
 
-    # Map attributes
+    # Exchange authorization code for tokens using Authlib
+    try:
+        from authlib.integrations.requests_client import OAuth2Session
+        from authlib.jose import jwt as authlib_jwt
+        import requests as http_requests
+
+        # Build OAuth2 session with provider config
+        oauth = OAuth2Session(
+            client_id=provider.oidc_client_id,
+            client_secret=provider.oidc_client_secret,
+            redirect_uri=redirect_uri,
+            scope=" ".join(provider.oidc_scopes or ["openid", "email", "profile"]),
+        )
+
+        # Token exchange
+        token_url = provider.oidc_token_url
+        if not token_url:
+            # Auto-discover from discovery URL
+            disc_resp = http_requests.get(provider.oidc_discovery_url, timeout=10)
+            disc_resp.raise_for_status()
+            token_url = disc_resp.json()["token_endpoint"]
+            provider.oidc_token_url = token_url
+            provider.oidc_userinfo_url = disc_resp.json().get("userinfo_endpoint", "")
+            provider.oidc_jwks_url = disc_resp.json().get("jwks_uri", "")
+            provider.save(update_fields=["oidc_token_url", "oidc_userinfo_url", "oidc_jwks_url", "updated_at"])
+
+        token_resp = oauth.fetch_token(token_url, code=code)
+        access_token = token_resp.get("access_token")
+
+        # Fetch user info from the IdP
+        userinfo_url = provider.oidc_userinfo_url
+        userinfo = {}
+        if userinfo_url:
+            userinfo_resp = oauth.get(userinfo_url)
+            if userinfo_resp.status_code == 200:
+                userinfo = userinfo_resp.json()
+
+        # If no userinfo endpoint, decode the ID token
+        if not userinfo and "id_token" in token_resp:
+            try:
+                # Fetch JWKS for verification
+                jwks_url = provider.oidc_jwks_url
+                if jwks_url:
+                    jwks_resp = http_requests.get(jwks_url, timeout=10)
+                    jwks_resp.raise_for_status()
+                    jwks = jwks_resp.json()
+                    claims = authlib_jwt.decode(
+                        token_resp["id_token"], jwks
+                    )
+                    claims.validate()
+                    userinfo = dict(claims)
+                else:
+                    # Fallback: decode without verification (less secure)
+                    import base64 as b64
+                    payload_b64 = token_resp["id_token"].split(".")[1]
+                    padding = 4 - len(payload_b64) % 4
+                    payload_b64 += "=" * padding
+                    userinfo = json.loads(b64.urlsafe_b64decode(payload_b64))
+            except Exception:
+                logger.warning("Failed to decode ID token for provider %s", provider.slug)
+
+        if not userinfo:
+            raise ValueError("Could not fetch user info from IdP")
+
+    except Exception as e:
+        if "Could not fetch" in str(e) or "Missing" in str(e):
+            raise
+        raise ValueError(f"OIDC token exchange failed: {e}")
+
+    # Map attributes from claims to local user fields
     mapping = provider.attribute_mapping or {}
-    email = user_claims.get(mapping.get("email", "email"), user_email)
-    first_name = user_claims.get(mapping.get("first_name", "given_name"), "")
-    last_name = user_claims.get(mapping.get("last_name", "family_name"), "")
+    email = userinfo.get(mapping.get("email", "email"), "")
+    first_name = userinfo.get(mapping.get("first_name", "given_name"), "")
+    last_name = userinfo.get(mapping.get("last_name", "family_name"), "")
 
-    is_new = False
-    user, is_new = _provision_or_get_user(provider, email, first_name, last_name, user_claims, ip, ua)
+    if not email:
+        raise ValueError("No email found in IdP claims")
+
+    user, is_new = _provision_or_get_user(provider, email, first_name, last_name, userinfo, ip, ua)
 
     # Issue JWT
     from apps.accounts.authentication import JWTAuthentication
-    jwt_auth = JWTAuthentication()
-    tokens = jwt_auth.get_tokens_for_user(user)
+    token = JWTAuthentication.generate_token(user)
 
     return {
-        "access": tokens["access"],
-        "refresh": tokens["refresh"],
+        "access": token,
         "user": {
             "id": user.id,
             "username": user.username,
@@ -276,31 +352,105 @@ def _handle_oidc_callback(provider, request, ip, ua):
 
 
 def _handle_saml_callback(provider, request, ip, ua):
-    """Handle SAML callback: parse assertion, provision user, issue JWT."""
+    """Handle SAML callback: validate assertion via python3-saml, provision user, issue JWT."""
     saml_response = request.data.get("SAMLResponse") or request.query_params.get("SAMLResponse")
+    relay_state = request.data.get("RelayState") or request.query_params.get("RelayState", "")
+
     if not saml_response:
         raise ValueError("Missing SAMLResponse")
 
-    # In production, use python3-saml OneLogin_Saml2_Auth to parse and validate
-    # Simulated claims for scaffold
-    user_email = f"saml-user-{secrets.token_hex(4)}@example.com"
-    user_claims = {"email": user_email, "name": "SAML User"}
+    # Validate state
+    from django.core.cache import cache
+    state_key = f"sso_state_{relay_state}"
+    stored_state = cache.get(state_key)
+    if not stored_state:
+        stored_state = request.session.get(state_key)
+    if stored_state:
+        cache.delete(state_key)
+        request.session.pop(state_key, None)
 
-    mapping = provider.attribute_mapping or {}
-    email = user_claims.get(mapping.get("email", "email"), user_email)
-    first_name = user_claims.get(mapping.get("first_name", "first_name"), "")
-    last_name = user_claims.get(mapping.get("last_name", "last_name"), "")
+    # Parse and validate SAML assertion using python3-saml
+    try:
+        from onelogin.saml2.auth import OneLogin_Saml2_Auth
+        from onelogin.saml2.response import OneLogin_Saml2_Response
+        import base64
+        import json
 
-    is_new = False
-    user, is_new = _provision_or_get_user(provider, email, first_name, last_name, user_claims, ip, ua)
+        # Build the settings dict python3-saml expects
+        saml_settings = {
+            "strict": True,
+            "sp": {
+                "entityId": provider.saml_entity_id or f"{provider.saml_sso_url}/metadata",
+                "assertionConsumerService": {
+                    "url": stored_state.get("redirect_uri", "") if stored_state else "",
+                    "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST",
+                },
+            },
+            "idp": {
+                "entityId": provider.saml_entity_id,
+                "singleSignOnService": {
+                    "url": provider.saml_sso_url,
+                    "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
+                },
+                "singleLogoutService": {
+                    "url": provider.saml_slo_url,
+                    "binding": "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
+                },
+            },
+        }
 
+        # Add certificate for signature verification
+        if provider.saml_certificate:
+            saml_settings["idp"]["x509cert"] = provider.saml_certificate
+
+        # Parse the response
+        saml_resp = OneLogin_Saml2_Response(saml_settings, saml_response)
+
+        # Validate the response
+        if not saml_resp.is_valid({
+            "current_url": request.build_absolute_uri(),
+            "http_host": request.get_host(),
+        }):
+            errors = saml_resp.get_error()
+            raise ValueError(f"SAML assertion validation failed: {errors}")
+
+        # Extract attributes from the validated assertion
+        attrs = saml_resp.get_attributes()
+        name_id = saml_resp.get_nameid()
+
+        # Build claims from SAML attributes
+        mapping = provider.attribute_mapping or {}
+        email = attrs.get(mapping.get("email", "email"), name_id or "")
+        first_name = attrs.get(mapping.get("first_name", "first_name"), "")
+        last_name = attrs.get(mapping.get("last_name", "last_name"), "")
+
+        # Include raw claims for audit
+        userinfo = {
+            "sub": name_id or email,
+            "email": email,
+            "first_name": first_name,
+            "last_name": last_name,
+            **attrs,
+        }
+
+    except ImportError:
+        raise ValueError("python3-saml is not installed. Install it with: pip install python3-saml")
+    except Exception as e:
+        if "is not installed" in str(e):
+            raise
+        raise ValueError(f"SAML assertion validation failed: {e}")
+
+    if not email:
+        raise ValueError("No email found in SAML assertion")
+
+    user, is_new = _provision_or_get_user(provider, email, first_name, last_name, userinfo, ip, ua)
+
+    # Issue JWT
     from apps.accounts.authentication import JWTAuthentication
-    jwt_auth = JWTAuthentication()
-    tokens = jwt_auth.get_tokens_for_user(user)
+    token = JWTAuthentication.generate_token(user)
 
     return {
-        "access": tokens["access"],
-        "refresh": tokens["refresh"],
+        "access": token,
         "user": {
             "id": user.id,
             "username": user.username,

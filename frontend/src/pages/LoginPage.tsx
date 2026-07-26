@@ -1,16 +1,42 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import api from '../api/client'
 import { LogIn } from 'lucide-react'
+
+interface SSOProviderInfo {
+  id: number
+  name: string
+  slug: string
+  protocol: 'oidc' | 'saml'
+  logo_url: string
+}
 
 export default function LoginPage() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [ssoProviders, setSsoProviders] = useState<SSOProviderInfo[]>([])
+  const [ssoLoading, setSsoLoading] = useState(false)
   const { setAuth } = useAuthStore()
   const navigate = useNavigate()
+
+  // Fetch available SSO providers on mount
+  useEffect(() => {
+    const fetchProviders = async () => {
+      try {
+        const res = await api.get('/sso/providers/public/')
+        const data = (res.data as any)?.results || res.data
+        if (Array.isArray(data)) {
+          setSsoProviders(data.filter((p: SSOProviderInfo) => p.protocol === 'oidc' || p.protocol === 'saml'))
+        }
+      } catch {
+        // SSO not configured or not available — silently ignore
+      }
+    }
+    fetchProviders()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -32,6 +58,32 @@ export default function LoginPage() {
       setError(message)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleSSOLogin = async (provider: SSOProviderInfo) => {
+    setSsoLoading(true)
+    setError('')
+    try {
+      const res = await api.post('/sso/initiate/', {
+        provider_slug: provider.slug,
+        redirect_uri: `${window.location.origin}/sso/callback/${provider.slug}/`,
+      })
+      const { redirect_url } = res.data
+      if (redirect_url) {
+        window.location.href = redirect_url
+      } else {
+        setError('SSO initiation failed: no redirect URL')
+        setSsoLoading(false)
+      }
+    } catch (err: unknown) {
+      let message = 'SSO login failed'
+      if (err && typeof err === 'object' && 'response' in err) {
+        const axiosErr = err as { response?: { data?: { error?: string; detail?: string } } }
+        message = axiosErr.response?.data?.error || axiosErr.response?.data?.detail || message
+      }
+      setError(message)
+      setSsoLoading(false)
     }
   }
 
@@ -90,6 +142,45 @@ export default function LoginPage() {
             {loading ? 'در حال ورود...' : 'ورود'}
           </button>
         </form>
+
+        {/* SSO Login Options */}
+        {ssoProviders.length > 0 && (
+          <>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-200 dark:border-gray-600" />
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-3 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                  یا ورود با SSO
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {ssoProviders.map((provider) => (
+                <button
+                  key={provider.id}
+                  onClick={() => handleSSOLogin(provider)}
+                  disabled={ssoLoading}
+                  className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {provider.logo_url ? (
+                    <img src={provider.logo_url} alt={provider.name} className="w-5 h-5 object-contain" />
+                  ) : (
+                    <span className="text-lg">{provider.protocol === 'oidc' ? '🔑' : '🛡️'}</span>
+                  )}
+                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    ورود با {provider.name}
+                  </span>
+                  {ssoLoading && (
+                    <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
