@@ -253,7 +253,7 @@ class SSOProviderAPITest(TestCase):
     def setUp(self):
         from apps.accounts.models import User
         self.user = User.objects.create_user(
-            username="ssotester", password="testpass123",
+            username="ssotester", password="testpass123", email="ssotester@test.com",
         )
         self.user.company = Company.objects.create(name="APICo", enabled_modules=["reporting"])
         self.user.save()
@@ -318,3 +318,22 @@ class SSOProviderAPITest(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertFalse(resp.data["success"])
         self.assertIn("No discovery URL", resp.data["message"])
+
+    def test_list_public_unauthenticated(self):
+        """Test that unauthenticated users can list active providers for the login page."""
+        SSOProvider.objects.create(
+            company=self.user.company, name="ActivePublic", slug="active-pub",
+            protocol="oidc", status="active",
+            oidc_client_id="x", oidc_discovery_url="https://x.com",
+        )
+        SSOProvider.objects.create(
+            company=self.user.company, name="InactivePublic", slug="inactive-pub",
+            protocol="oidc", status="inactive",
+            oidc_client_id="x", oidc_discovery_url="https://x.com",
+        )
+        self.client.force_authenticate(user=None)
+        resp = self.client.get("/api/v1/sso/providers/public/")
+        self.assertEqual(resp.status_code, 200)
+        names = [p["name"] for p in resp.data]
+        self.assertIn("ActivePublic", names)
+        self.assertNotIn("InactivePublic", names)
