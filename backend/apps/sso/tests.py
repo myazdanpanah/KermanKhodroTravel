@@ -334,6 +334,7 @@ class SSOProviderAPITest(TestCase):
         self.client.force_authenticate(user=None)
         resp = self.client.get("/api/v1/sso/providers/public/")
         self.assertEqual(resp.status_code, 200)
-        names = [p["name"] for p in resp.data]
+        data = resp.data.get("results", resp.data) if isinstance(resp.data, dict) else resp.data
+        names = [p["name"] for p in data]
         self.assertIn("ActivePublic", names)
         self.assertNotIn("InactivePublic", names)
