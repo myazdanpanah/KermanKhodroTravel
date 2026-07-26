@@ -30,6 +30,10 @@ class SSOProviderSerializer(serializers.ModelSerializer):
             "logo_url", "created_by", "created_by_name", "created_at",
         ]
         read_only_fields = ["id", "created_at", "is_configured"]
+        extra_kwargs = {
+            "oidc_client_secret": {"write_only": True},
+            "saml_certificate": {"write_only": True},
+        }
 
     def validate(self, data):
         protocol = data.get("protocol", self.instance and self.instance.protocol)
