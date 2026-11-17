@@ -8,6 +8,7 @@ If the disk copy disappears, download re-creates it from the BLOB.
 
 from __future__ import annotations
 
+import datetime as dt
 import re
 from pathlib import Path
 
@@ -101,6 +102,44 @@ def read_bytes(final_file: FinalFile) -> bytes:
     final_file.last_accessed = timezone.now()
     final_file.save(update_fields=["last_accessed"])
     return data
+
+
+RETENTION_HOURS = 24
+
+
+def purge_expired_files(older_than_hours: int = RETENTION_HOURS) -> int:
+    """
+    Drop the payload of generated files older than the retention window.
+
+    Storage is limited, so the BLOB and the disk copy are released; the row
+    stays (so the UI keeps its download button) and the file is reproduced
+    from the stored request whenever someone downloads it again.
+    """
+    cutoff = timezone.now() - dt.timedelta(hours=older_than_hours)
+    stale = FinalFile.objects.filter(created_at__lt=cutoff).exclude(purged_at__isnull=False)
+    purged = 0
+    for final_file in stale.iterator():
+        try:
+            delete_disk_copy(final_file)
+        except Exception:  # noqa: BLE001 - a missing disk is fine
+            pass
+        FinalFile.objects.filter(pk=final_file.pk).update(
+            file_data=None, file_path="", is_deleted_from_disk=True, purged_at=timezone.now()
+        )
+        purged += 1
+
+    # Uploaded Excel workbooks are only needed until the request is issued.
+    tmp_dir = Path(django_settings.MEDIA_ROOT) / "tmp_excel"
+    if tmp_dir.exists():
+        cutoff_ts = cutoff.timestamp()
+        for workbook in tmp_dir.glob("*.xlsx"):
+            try:
+                if workbook.stat().st_mtime < cutoff_ts:
+                    workbook.unlink()
+            except OSError:
+                pass
+
+    return purged
 
 
 def delete_disk_copy(final_file: FinalFile) -> None:

@@ -63,19 +63,50 @@ function fromApi(data: any): Branding {
   }
 }
 
-/** Point the browser tab icon at the uploaded logo (falls back to the NEXIVO mark). */
-function applyFavicon(b: Branding) {
-  const href = b.logoUrl || '/brand/nexivo-favicon.png'
+function setFaviconLink(href: string, type = 'image/png') {
   let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
   if (!link) {
     link = document.createElement('link')
     link.rel = 'icon'
     document.head.appendChild(link)
   }
-  if (!link.getAttribute('href') || !link.getAttribute('href')!.endsWith(href)) {
-    link.href = href
-    if (href.endsWith('.png')) link.type = 'image/png'
+  link.type = type
+  link.href = href
+}
+
+/**
+ * Point the browser tab icon at the uploaded logo.
+ *
+ * A favicon is always rendered in a square box, so the logo is drawn onto a
+ * transparent square canvas with `contain` scaling — never stretched.
+ */
+function applyFavicon(b: Branding) {
+  const src = b.logoUrl
+  if (!src) {
+    setFaviconLink('/brand/nexivo-favicon.png')
+    return
   }
+  const image = new Image()
+  image.crossOrigin = 'anonymous'
+  image.onload = () => {
+    const size = 64
+    const canvas = document.createElement('canvas')
+    canvas.width = size
+    canvas.height = size
+    const ctx = canvas.getContext('2d')
+    if (!ctx || !image.width || !image.height) {
+      setFaviconLink(src)
+      return
+    }
+    const scale = Math.min(size / image.width, size / image.height)
+    const width = image.width * scale
+    const height = image.height * scale
+    ctx.clearRect(0, 0, size, size)
+    ctx.drawImage(image, (size - width) / 2, (size - height) / 2, width, height)
+    setFaviconLink(canvas.toDataURL('image/png'))
+  }
+  image.onerror = () => setFaviconLink(src)
+  image.src = src
 }
 
 function persist(b: Branding) {

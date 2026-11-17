@@ -58,8 +58,8 @@ export default function BillingIssuePage() {
   const [payerCode, setPayerCode] = useState('')
   const [letterNumber, setLetterNumber] = useState('')
   const [letterDate, setLetterDate] = useState(todayIso())
-  const [startDay, setStartDay] = useState('1')
-  const [endDay, setEndDay] = useState('31')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [serviceLabel, setServiceLabel] = useState('پرواز')
   const [activeService, setActiveService] = useState<ServiceKey>('flight')
 
@@ -71,6 +71,7 @@ export default function BillingIssuePage() {
   const [uploading, setUploading] = useState<ServiceKey | null>(null)
 
   const jalali = useMemo(() => isoToJalali(letterDate), [letterDate])
+  const startJalali = useMemo(() => isoToJalali(startDate), [startDate])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -132,11 +133,20 @@ export default function BillingIssuePage() {
   const clearBlock = (service: ServiceKey) =>
     setBlocks((prev) => ({ ...prev, [service]: { columns: [], rows: [], totals: {} } }))
 
-  const periodRange = jalali ? `${jalali.month}/${jalali.year} — روز ${startDay} تا ${endDay}` : ''
+  const periodRange =
+    startDate && endDate ? `از ${formatJalali(startDate)} تا ${formatJalali(endDate)}` : ''
 
   const submit = async (approveNow: boolean) => {
     if (!payerCode) {
       toast('شرکت طرف حساب را انتخاب کنید', 'error')
+      return
+    }
+    if (!letterDate || !startDate || !endDate) {
+      toast('تاریخ نامه، تاریخ شروع و تاریخ پایان الزامی است', 'error')
+      return
+    }
+    if (endDate < startDate) {
+      toast('تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد', 'error')
       return
     }
     if (!blocks.flight.rows.length && !blocks.hotel.rows.length && !blocks.service.rows.length) {
@@ -152,9 +162,9 @@ export default function BillingIssuePage() {
         service_type: serviceLabel,
         letter_number: letterNumber,
         letter_date: formatJalali(letterDate),
-        start_day: Number(startDay) || 1,
-        end_day: Number(endDay) || 31,
-        month: jalali ? String(jalali.month) : '',
+        start_day: startJalali?.day || 1,
+        end_day: isoToJalali(endDate)?.day || 1,
+        month: startJalali ? String(startJalali.month) : '',
         year: jalali?.year || 0,
         period_range: periodRange,
         flight_data: blocks.flight.rows,
@@ -226,14 +236,8 @@ export default function BillingIssuePage() {
             <input value={letterNumber} readOnly className={INPUT} placeholder="خودکار" />
           </div>
           <JalaliDateInput label="تاریخ نامه" value={letterDate} onChange={setLetterDate} />
-          <div>
-            <label className="block text-xs text-nx-mist mb-1.5">از روز</label>
-            <input type="number" value={startDay} onChange={(e) => setStartDay(e.target.value)} className={INPUT} />
-          </div>
-          <div>
-            <label className="block text-xs text-nx-mist mb-1.5">تا روز</label>
-            <input type="number" value={endDay} onChange={(e) => setEndDay(e.target.value)} className={INPUT} />
-          </div>
+          <JalaliDateInput label="تاریخ شروع *" value={startDate} onChange={setStartDate} />
+          <JalaliDateInput label="تاریخ پایان *" value={endDate} onChange={setEndDate} />
           <div className="md:col-span-2">
             <label className="block text-xs text-nx-mist mb-1.5">نوع خدمت (موضوع نامه)</label>
             <input value={serviceLabel} onChange={(e) => setServiceLabel(e.target.value)} className={INPUT} placeholder="پرواز، هتل، ویزا…" />

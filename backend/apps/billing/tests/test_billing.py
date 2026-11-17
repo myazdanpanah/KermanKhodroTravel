@@ -474,3 +474,60 @@ class RolePermissionTests(TestCase):
         staff.can_issue = True
         staff.save(update_fields=["can_issue"])
         self.assertTrue(has_perm(staff, "can_issue"))
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp(prefix="kkt-retention-"))
+class FileRetentionTests(TestCase):
+    """Files are released after 24h and reproduced on the next download."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="ret_admin", password="pass12345", role="admin",
+            is_staff=True, is_superuser=True,
+        )
+        self.payer = Payer.objects.create(code="7001", name="شرکت نگهداری")
+        self.approval = ApprovalRequest.objects.create(
+            requester=self.admin, requester_name="admin", payer_code="7001",
+            payer_name="شرکت نگهداری", service_type="پرواز", letter_number="1404701",
+            letter_date="1404/03/01", start_day=1, end_day=31, month="3", year=1404,
+            period_range="از 1404/03/01 تا 1404/03/31", status=ApprovalRequest.STATUS_APPROVED,
+            flight_data=[{
+                "ردیف": 1, "قرارداد": "1", "نام مسافر": "مسافر", "مسیر": "KER-MHD",
+                "شماره بلیط": "1", "تاریخ پرواز": "1404/03/01",
+                "بدهکار": 1000, "بستانکار": 0, "مانده": 1000,
+            }],
+        )
+
+    def test_purge_and_regenerate_on_download(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.billing.models import FinalFile as FinalFileModel
+        from apps.billing.services.files import purge_expired_files, save_final_file
+        from apps.billing.services.generation import regenerate_file, render_docx
+
+        final_file = save_final_file(self.approval, "flight", "flight_1404701.docx", render_docx({
+            "variant": "debt", "payer": "x", "letter_number": "1",
+        }))
+        FinalFileModel.objects.filter(pk=final_file.pk).update(
+            created_at=timezone.now() - timedelta(hours=25)
+        )
+        self.assertEqual(purge_expired_files(), 1)
+
+        final_file.refresh_from_db()
+        self.assertIsNone(final_file.file_data)
+        self.assertEqual(final_file.file_path, "")
+        self.assertIsNotNone(final_file.purged_at)
+
+        regenerated = regenerate_file(final_file)
+        self.assertTrue(regenerated.startswith(b"PK"))
+
+        client = APIClient()
+        client.force_authenticate(user=self.admin)
+        response = client.get(f"/api/v1/billing/files/{final_file.pk}/download/")
+        self.assertEqual(response.status_code, 200)
+        self.assertGreater(len(response.content), 500)
+
+        final_file.refresh_from_db()
+        self.assertIsNotNone(final_file.file_data)

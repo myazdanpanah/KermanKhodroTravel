@@ -383,6 +383,12 @@ class FinalFile(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     last_accessed = models.DateTimeField(null=True, blank=True, verbose_name="آخرین دسترسی")
     is_deleted_from_disk = models.BooleanField(default=False, verbose_name="از دیسک حذف شده")
+    purged_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="زمان پاک‌سازی",
+        help_text="پس از ۲۴ ساعت محتوا پاک می‌شود و هنگام دانلود دوباره تولید می‌گردد.",
+    )
 
     class Meta:
         verbose_name = "فایل نهایی"

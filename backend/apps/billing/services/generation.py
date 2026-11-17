@@ -373,6 +373,32 @@ def _columns_for(service_key: str) -> list[str]:
     return COLUMNS[service_key]
 
 
+SERVICE_ATTRS = {key: (attr, label) for key, attr, label in SERVICE_KEYS}
+
+
+def _context_for(request_obj: ApprovalRequest, service_key: str) -> dict:
+    attr, label = SERVICE_ATTRS[service_key]
+    rows = list(getattr(request_obj, attr) or [])
+    if not rows:
+        raise GenerationError(f"ردیفی برای {label} ثبت نشده است.")
+    context = build_context(request_obj, rows, _columns_for(service_key))
+    context["service_type"] = f"{request_obj.service_type} — {label}"
+    return context
+
+
+def regenerate_file(final_file) -> bytes:
+    """
+    Reproduce one generated artifact from the stored request data.
+
+    Used after the retention window has released the original bytes, so a
+    download always works without keeping old files on disk (spec §7).
+    """
+    context = _context_for(final_file.request, final_file.service_type)
+    if final_file.file_name.lower().endswith(".pdf"):
+        return render_pdf(render_html(context, active_template()))
+    return render_docx(context)
+
+
 def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
     """
     Idempotent generation for an approved request (spec §11).

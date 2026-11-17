@@ -42,8 +42,14 @@ from .serializers import (
 )
 from .services import excel as excel_service
 from .services.balance import balances_for, payer_balance, total_outstanding
-from .services.files import read_bytes
-from .services.generation import GenerationError, build_context, render_html, render_pdf
+from .services.files import purge_expired_files, read_bytes, save_final_file
+from .services.generation import (
+    GenerationError,
+    build_context,
+    regenerate_file,
+    render_html,
+    render_pdf,
+)
 from .services.normalize import gregorian_to_persian, persian_date_to_gregorian
 from .services.numbers import (
     full_letter_number,
@@ -417,6 +423,7 @@ def approval_files(request, pk: int):
     approval = ApprovalRequest.objects.filter(pk=pk).first()
     if approval is None:
         return _error("درخواست یافت نشد.", status.HTTP_404_NOT_FOUND)
+    purge_expired_files()
     return Response(FinalFileSerializer(approval.files.all(), many=True).data)
 
 
@@ -428,10 +435,25 @@ def file_download(request, pk: int):
     final_file = FinalFile.objects.filter(pk=pk).first()
     if final_file is None:
         return _error("فایل یافت نشد.", status.HTTP_404_NOT_FOUND)
+
+    # Keep storage bounded: anything past the retention window is released.
+    purge_expired_files()
+
     try:
         data = read_bytes(final_file)
-    except FileNotFoundError as exc:
-        return _error(str(exc), status.HTTP_404_NOT_FOUND)
+    except FileNotFoundError:
+        # The payload was purged; reproduce it from the stored request.
+        try:
+            data = regenerate_file(final_file)
+            final_file = save_final_file(
+                final_file.request,
+                final_file.service_type,
+                final_file.file_name,
+                data,
+                letter_number=final_file.letter_number,
+            )
+        except Exception as exc:  # noqa: BLE001 - surface a Persian message
+            return _error(f"تولید دوبارهٔ فایل ناموفق بود: {exc}", status.HTTP_400_BAD_REQUEST)
     content_type = (
         "application/pdf" if final_file.file_name.endswith(".pdf") else "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     )
