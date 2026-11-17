@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore'
 import { useThemeStore, syncThemeClass } from '../store/themeStore'
 import { useBrandLogo } from '../store/brandingStore'
 import {
-  LayoutDashboard, FileText, CreditCard, Users, Gauge,
+  LayoutDashboard, FileText, CreditCard, Users, Gauge, Plus,
   Calendar, Target, TrendingUp,
   Settings, ChevronLeft, ChevronDown, LogOut,
   Shield, Building2, Search, Bell, Sun, Moon, Menu, X,
@@ -38,6 +38,7 @@ const NAV_SECTIONS: NavSection[] = [
     id: 'finance',
     label: 'مالی',
     items: [
+      { to: '/erp/billing/issue', icon: Plus, label: 'صدور صورت‌حساب' },
       { to: '/erp/billing/invoices', icon: FileText, label: 'صورت‌حساب‌ها' },
       { to: '/erp/billing/payments', icon: CreditCard, label: 'پرداخت‌ها' },
       { to: '/erp/billing/performance', icon: Gauge, label: 'عملکرد' },
@@ -110,7 +111,13 @@ export default function ERPLayout() {
   // Only the three licensed modules (plus settings for admins) are reachable.
   const isAdmin = user?.role === 'admin' || user?.role === 'ceo'
   const allowedPrefixes = isAdmin ? ['/erp/billing', '/erp/crm', '/erp/settings'] : ['/erp/billing', '/erp/crm']
-  const sections = isAdmin ? NAV_SECTIONS : NAV_SECTIONS.filter((section) => section.id !== 'settings')
+  const canIssue = isAdmin || Boolean(user?.permissions?.issue)
+  const sections = (isAdmin ? NAV_SECTIONS : NAV_SECTIONS.filter((section) => section.id !== 'settings'))
+    .map((section) =>
+      section.id === 'finance'
+        ? { ...section, items: section.items.filter((item) => item.to !== '/erp/billing/issue' || canIssue) }
+        : section
+    )
 
   useEffect(() => {
     const path = location.pathname.replace(/\/$/, '')

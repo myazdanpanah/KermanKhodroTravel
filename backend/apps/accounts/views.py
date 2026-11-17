@@ -93,6 +93,20 @@ def users_list_create_view(request):
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+
+        # Optional permission matrix supplied with the new user.
+        nested = request.data.get("permissions")
+        if isinstance(nested, dict):
+            flags = [
+                "can_view", "can_pay", "can_issue", "can_manage_users",
+                "can_manage_settings", "can_delete_history", "can_delete_payment",
+                "can_export", "can_manage_companies", "can_submit", "can_approve",
+                "can_edit_template",
+            ]
+            for flag in flags:
+                if flag in nested:
+                    setattr(user, flag, bool(nested[flag]))
+            user.save()
         return Response(
             UserSerializer(user).data,
             status=status.HTTP_201_CREATED,
@@ -142,6 +156,13 @@ def user_detail_view(request, pk):
             "username", "email", "first_name", "last_name", "role", "department",
             "company", "division", "team", "reports_to",
         ]
+        permission_flags = [
+            "can_view", "can_pay", "can_issue", "can_manage_users",
+            "can_manage_settings", "can_delete_history", "can_delete_payment",
+            "can_export", "can_manage_companies", "can_submit", "can_approve",
+            "can_edit_template",
+        ]
+        allowed_fields += permission_flags
         for field in allowed_fields:
             if field in serializer.validated_data:
                 setattr(user, field, serializer.validated_data[field])
@@ -156,6 +177,13 @@ def user_detail_view(request, pk):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
             user.set_password(str(new_password))
+
+        # Nested `permissions: {flag: bool}` from the user editor.
+        nested = request.data.get("permissions")
+        if isinstance(nested, dict):
+            for flag in permission_flags:
+                if flag in nested:
+                    setattr(user, flag, bool(nested[flag]))
 
         user.save()
 

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import api from '../api/client'
 import { useToast } from '../components/Toast'
 import { useAuthStore } from '../store/authStore'
+import { useBrandingStore } from '../store/brandingStore'
 import { Save, Upload, FileText, Image as ImageIcon, PenTool, Stamp, Building2, CreditCard, User, FolderOpen } from 'lucide-react'
 
 /**
@@ -242,6 +243,10 @@ export default function BillingLetterheadTab() {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       setForm((prev) => ({ ...prev, [`${type}_path`]: res.data.path }))
+      if (type === 'logo') {
+        // The letterhead logo is the system logo: splash, sidebar and favicon.
+        await useBrandingStore.getState().load()
+      }
       toast('فایل بارگذاری شد', 'success')
     } catch (err: unknown) {
       const apiError = (err as { response?: { data?: { error?: string } } })?.response?.data?.error

@@ -13,6 +13,8 @@ class UserSerializer(serializers.ModelSerializer):
     accessible_modules = serializers.SerializerMethodField()
     # Billing permission flags (KKTCOIG spec §6.1) so the UI can hide actions.
     permissions = serializers.SerializerMethodField()
+    # Raw stored flags (not role-expanded) for the per-user permission editor.
+    permission_flags = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -25,6 +27,12 @@ class UserSerializer(serializers.ModelSerializer):
             "reports_to", "reports_to_name",
             "accessible_modules",
             "permissions",
+            "permission_flags",
+            # Writable per-feature flags (spec §6.1) for the user editor.
+            "can_view", "can_pay", "can_issue", "can_manage_users",
+            "can_manage_settings", "can_delete_history", "can_delete_payment",
+            "can_export", "can_manage_companies", "can_submit", "can_approve",
+            "can_edit_template",
         ]
         read_only_fields = ["id"]
 
@@ -37,6 +45,11 @@ class UserSerializer(serializers.ModelSerializer):
         from apps.billing.permissions import permissions_payload
 
         return permissions_payload(obj)
+
+    def get_permission_flags(self, obj):
+        from apps.billing.permissions import PERMISSION_FLAGS
+
+        return {flag: bool(getattr(obj, flag, False)) for flag in PERMISSION_FLAGS}
 
     def get_accessible_modules(self, obj):
         """Return the list of module slugs this user can access."""

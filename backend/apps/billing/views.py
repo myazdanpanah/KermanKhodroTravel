@@ -646,6 +646,21 @@ def company_settings_asset(request):
     company = CompanySettings.load()
     setattr(company, f"{asset_type}_path", relative)
     company.save(update_fields=[f"{asset_type}_path"])
+
+    if asset_type == "logo":
+        # Keep the system branding (splash + favicon) on the same logo.
+        from apps.accounts.models import Company
+
+        account_company = Company.objects.filter(is_active=True).order_by("id").first()
+        if account_company is not None:
+            from django.core.files.base import ContentFile
+
+            account_company.logo.save(
+                f"logo{suffix}",
+                ContentFile((Path(django_settings.MEDIA_ROOT) / relative).read_bytes()),
+                save=True,
+            )
+
     return Response({"ok": True, "path": relative})
 
 

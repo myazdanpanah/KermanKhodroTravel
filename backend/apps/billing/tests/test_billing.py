@@ -455,3 +455,22 @@ class OfficialLetterTests(TestCase):
             flight_data=[{"بدهکار": 0, "بستانکار": 5000}],
         )
         self.assertEqual(_variant(credit_request), "credit")
+
+
+class RolePermissionTests(TestCase):
+    """CEO and Admin always pass the feature matrix; other users are flag-driven."""
+
+    def test_ceo_and_admin_bypass_flags(self):
+        from apps.billing.permissions import has_perm
+
+        ceo = get_user_model().objects.create_user(
+            username="ceo-x", password="x", role="ceo", can_issue=False
+        )
+        staff = get_user_model().objects.create_user(
+            username="fin-x", password="x", role="finance", can_issue=False
+        )
+        self.assertTrue(has_perm(ceo, "can_issue"))
+        self.assertFalse(has_perm(staff, "can_issue"))
+        staff.can_issue = True
+        staff.save(update_fields=["can_issue"])
+        self.assertTrue(has_perm(staff, "can_issue"))

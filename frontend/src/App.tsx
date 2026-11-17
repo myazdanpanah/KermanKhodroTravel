@@ -11,6 +11,7 @@ import ERPLayout from './pages/ERPLayout'
 // Every page below is loaded on demand so the initial bundle stays small.
 // Finance module
 const BillingDashboardPage = lazy(() => import('./pages/billing/BillingDashboardPage'))
+const BillingIssuePage = lazy(() => import('./pages/billing/BillingIssuePage'))
 const BillingInvoicesPage = lazy(() => import('./pages/billing/BillingInvoicesPage'))
 const BillingPaymentsPage = lazy(() => import('./pages/billing/BillingPaymentsPage'))
 const BillingPerformancePage = lazy(() => import('./pages/billing/BillingPerformancePage'))
@@ -156,6 +157,7 @@ export default function App() {
         <Route path="/erp" element={<PrivateRoute><ERPLayout /></PrivateRoute>}>
           {/* Finance */}
           <Route index element={<BillingDashboardPage />} />
+          <Route path="billing/issue" element={<BillingIssuePage />} />
           <Route path="billing/invoices" element={<BillingInvoicesPage />} />
           <Route path="billing/payments" element={<BillingPaymentsPage />} />
           <Route path="billing/performance" element={<BillingPerformancePage />} />

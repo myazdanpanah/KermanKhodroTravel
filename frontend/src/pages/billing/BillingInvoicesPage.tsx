@@ -9,7 +9,7 @@ import { FileText, Filter, Trash2 } from 'lucide-react'
 export default function BillingInvoicesPage() {
   const { toast } = useToast()
   const user = useAuthStore((s) => s.user)
-  const canDelete = Boolean(user?.permissions?.can_delete_history)
+  const canDelete = user?.role === 'ceo' || user?.role === 'admin' || Boolean(user?.permissions?.delete_history)
 
   const [rows, setRows] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)

@@ -63,8 +63,24 @@ function fromApi(data: any): Branding {
   }
 }
 
+/** Point the browser tab icon at the uploaded logo (falls back to the NEXIVO mark). */
+function applyFavicon(b: Branding) {
+  const href = b.logoUrl || '/brand/nexivo-favicon.png'
+  let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+  if (!link) {
+    link = document.createElement('link')
+    link.rel = 'icon'
+    document.head.appendChild(link)
+  }
+  if (!link.getAttribute('href') || !link.getAttribute('href')!.endsWith(href)) {
+    link.href = href
+    if (href.endsWith('.png')) link.type = 'image/png'
+  }
+}
+
 function persist(b: Branding) {
   applyBranding(b)
+  applyFavicon(b)
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(b))
   } catch {

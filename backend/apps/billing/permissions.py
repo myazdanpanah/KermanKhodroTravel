@@ -28,6 +28,10 @@ def has_perm(user, flag: str) -> bool:
         return False
     if getattr(user, "is_superuser", False):
         return True
+    # The CEO owns the process and the admin runs the installation, so both
+    # always pass the per-feature matrix (individual users stay flag-driven).
+    if getattr(user, "role", "") in ("ceo", "admin"):
+        return True
     return bool(getattr(user, flag, False))
 
 

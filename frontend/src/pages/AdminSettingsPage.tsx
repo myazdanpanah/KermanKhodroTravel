@@ -24,7 +24,28 @@ interface User {
   team_name: string | null
   reports_to: number | null
   reports_to_name: string | null
+  permission_flags?: Record<string, boolean>
 }
+
+// The twelve billing permissions of the KKT spec (§6.1), grouped for the editor.
+const PERMISSION_ITEMS: { key: string; label: string }[] = [
+  { key: 'can_view', label: 'مشاهدهٔ اطلاعات' },
+  { key: 'can_submit', label: 'ثبت درخواست صدور' },
+  { key: 'can_issue', label: 'صدور صورت‌حساب' },
+  { key: 'can_approve', label: 'تأیید و رد درخواست' },
+  { key: 'can_pay', label: 'ثبت پرداخت' },
+  { key: 'can_delete_payment', label: 'حذف پرداخت' },
+  { key: 'can_delete_history', label: 'حذف تاریخچه' },
+  { key: 'can_manage_companies', label: 'مدیریت شرکت‌ها' },
+  { key: 'can_manage_users', label: 'مدیریت کاربران' },
+  { key: 'can_manage_settings', label: 'مدیریت تنظیمات' },
+  { key: 'can_export', label: 'خروجی گرفتن' },
+  { key: 'can_edit_template', label: 'ویرایش قالب نامه' },
+]
+
+const EMPTY_PERMISSIONS: Record<string, boolean> = Object.fromEntries(
+  PERMISSION_ITEMS.map((item) => [item.key, false])
+)
 
 interface AuditLog {
   id: number
@@ -98,6 +119,7 @@ export default function AdminSettingsPage() {
     division: null as number | null,
     team: null as number | null,
     reports_to: null as number | null,
+    permissions: { ...EMPTY_PERMISSIONS } as Record<string, boolean>,
   })
 
   useEffect(() => {
@@ -169,7 +191,7 @@ export default function AdminSettingsPage() {
 
   const openCreateModal = () => {
     setEditingUser(null)
-    setForm({ username: '', email: '', first_name: '', last_name: '', role: 'sales', department: '', password: '', company: null, division: null, team: null, reports_to: null })
+    setForm({ username: '', email: '', first_name: '', last_name: '', role: 'sales', department: '', password: '', company: null, division: null, team: null, reports_to: null, permissions: { ...EMPTY_PERMISSIONS } })
     setShowModal(true)
   }
 
@@ -187,6 +209,7 @@ export default function AdminSettingsPage() {
       division: u.division,
       team: u.team,
       reports_to: u.reports_to,
+      permissions: { ...EMPTY_PERMISSIONS, ...(u.permission_flags || {}) },
     })
     setShowModal(true)
   }
@@ -238,6 +261,7 @@ export default function AdminSettingsPage() {
           division: form.division,
           team: form.team,
           reports_to: form.reports_to,
+          permissions: form.permissions,
         })
         toast('کاربر جدید ساخته شد', 'success')
       }
@@ -835,6 +859,46 @@ export default function AdminSettingsPage() {
                     </select>
                   </div>
                 </div>
+              </div>
+
+              <div className="rounded-xl border border-nx-border dark:border-nx-navy-border p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-medium text-nx-navy dark:text-nx-mist">دسترسی‌های این کاربر</p>
+                  <div className="flex gap-2 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, permissions: Object.fromEntries(PERMISSION_ITEMS.map((i) => [i.key, true])) })}
+                      className="text-nx-blue hover:underline"
+                    >
+                      انتخاب همه
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setForm({ ...form, permissions: { ...EMPTY_PERMISSIONS } })}
+                      className="text-nx-mist hover:underline"
+                    >
+                      پاک کردن
+                    </button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {PERMISSION_ITEMS.map((item) => (
+                    <label key={item.key} className="flex items-center gap-2 text-xs text-nx-navy dark:text-nx-mist cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(form.permissions?.[item.key])}
+                        onChange={(e) =>
+                          setForm({ ...form, permissions: { ...form.permissions, [item.key]: e.target.checked } })
+                        }
+                        className="w-4 h-4 rounded border-nx-muted text-nx-blue focus:ring-nx-blue"
+                      />
+                      {item.label}
+                    </label>
+                  ))}
+                </div>
+                <p className="mt-3 text-[10px] text-nx-mist">
+                  نقش‌های مدیرعامل و ادمین همیشه به همهٔ بخش‌ها دسترسی دارند؛ این چک‌باکس‌ها برای بقیهٔ کاربران اعمال می‌شود.
+                </p>
               </div>
 
               <div>

@@ -17,8 +17,9 @@ const emptyForm = {
 export default function BillingPaymentsPage() {
   const { toast } = useToast()
   const user = useAuthStore((s) => s.user)
-  const canPay = Boolean(user?.permissions?.can_pay)
-  const canDelete = Boolean(user?.permissions?.can_delete_payment)
+  const privileged = user?.role === 'ceo' || user?.role === 'admin'
+  const canPay = privileged || Boolean(user?.permissions?.pay)
+  const canDelete = privileged || Boolean(user?.permissions?.delete_payment)
 
   const [rows, setRows] = useState<Payment[]>([])
   const [payers, setPayers] = useState<Payer[]>([])

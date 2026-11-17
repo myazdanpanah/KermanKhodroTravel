@@ -23,7 +23,7 @@ const empty = {
 export default function BillingPayersPage() {
   const { toast } = useToast()
   const user = useAuthStore((s) => s.user)
-  const canManage = Boolean(user?.permissions?.can_manage_companies)
+  const canManage = user?.role === 'ceo' || user?.role === 'admin' || Boolean(user?.permissions?.manage_companies)
 
   const [rows, setRows] = useState<Payer[]>([])
   const [loading, setLoading] = useState(true)
