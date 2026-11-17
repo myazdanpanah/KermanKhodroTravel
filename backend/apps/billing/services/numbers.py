@@ -1,9 +1,10 @@
 """
 Letter numbering (spec §5.1).
 
-Format: YYYYNNN where YYYY is the 4-digit Jalali year and NNN is a
-per-payer, per-year sequence. Deleted invoices release their number into
-``available_letter_numbers`` and the lowest free number is reused first.
+Format: YYYY/COMPANYCODE/NNNNN — the four-digit Jalali year, the payer's
+company code and a five-digit per-payer, per-year sequence. Deleted invoices
+release their number into ``available_letter_numbers`` and the lowest free
+number is reused first.
 
 Reservation runs inside a single transaction and locks the sequence row, so
 two concurrent approvals can never receive the same number.
@@ -33,14 +34,15 @@ def jalali_century_prefix() -> str:
     return str(jdatetime.date.today().year)[:2]
 
 
-def full_letter_number(year_two: str, number: int) -> str:
-    """('04', 12) -> '1404012' (spec format YYYYNNN)."""
+def full_letter_number(year_two: str, number: int, payer_code: str = "") -> str:
+    """('04', 12, '5001') -> '1404/5001/00012' (YYYY/COMPANYCODE/NNNNN)."""
     year_two = str(year_two).zfill(2)
     century = jalali_century_prefix()
     # A two-digit year in the 90s belongs to the previous century (1370s).
     if int(year_two) >= 50 and century == "14":
         century = "13"
-    return f"{century}{year_two}{int(number):03d}"
+    code = str(payer_code or "").strip() or "0"
+    return f"{century}{year_two}/{code}/{int(number):05d}"
 
 
 def peek(payer_code: str, year: str) -> int:
@@ -141,20 +143,19 @@ def year_from_invoice(invoice: Invoice) -> str:
 
 def number_from_letter(letter_number: str) -> int | None:
     """
-    Sequence part of a letter number: '1404012' -> 12.
+    Sequence part of a letter number: '1404/5001/00012' -> 12.
 
-    Our letter format is fixed (YYYYNNN), so the sequence is the last three
-    digits; anything shorter is treated as a bare number. Falls back to the
-    last integer run for legacy values that contain separators.
+    The sequence is the last numeric run (also works for legacy shapes such as
+    '1404012'), and a bare number is accepted as-is.
     """
-    digits = re.sub(r"\D", "", letter_number or "")
-    if not digits:
+    raw = letter_number or ""
+    runs = re.findall(r"\d+", raw)
+    if not runs:
         return None
-    if len(digits) >= 7:
-        return int(digits[-3:])
-    if len(digits) > 3:
-        return int(digits[-3:])
-    return int(digits)
+    if len(runs) == 1 and "/" not in raw and len(runs[0]) >= 5:
+        # Legacy YYYYNNN numbers stored without separators.
+        return int(runs[0][-3:])
+    return int(runs[-1])
 
 
 def release_invoice_number(invoice: Invoice) -> None:
@@ -165,8 +166,17 @@ def release_invoice_number(invoice: Invoice) -> None:
     release_numbers(invoice.payer_code, year_from_invoice(invoice), [number])
 
 
-def peek_letter(payer_code: str, date: dt.date | None = None) -> str:
-    """Preview the next full letter number (does not reserve it)."""
-    date = date or dt.date.today()
-    year_two = f"{jdatetime.date.fromgregorian(date=date).year % 100:02d}"
-    return full_letter_number(year_two, peek(payer_code, year_two))
+def peek_letter(
+    payer_code: str, date: dt.date | None = None, jalali_year: int | None = None
+) -> str:
+    """Preview the next full letter number (does not reserve it).
+
+    ``jalali_year`` wins over ``date`` so the preview matches the year the
+    approval will actually be numbered in.
+    """
+    if jalali_year:
+        year_two = f"{int(jalali_year) % 100:02d}"
+    else:
+        date = date or dt.date.today()
+        year_two = f"{jdatetime.date.fromgregorian(date=date).year % 100:02d}"
+    return full_letter_number(year_two, peek(payer_code, year_two), payer_code)

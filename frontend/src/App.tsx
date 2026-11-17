@@ -16,6 +16,7 @@ const BillingInvoicesPage = lazy(() => import('./pages/billing/BillingInvoicesPa
 const BillingPaymentsPage = lazy(() => import('./pages/billing/BillingPaymentsPage'))
 const BillingPerformancePage = lazy(() => import('./pages/billing/BillingPerformancePage'))
 const BillingPayersPage = lazy(() => import('./pages/billing/BillingPayersPage'))
+const BillingServicesPage = lazy(() => import('./pages/billing/BillingServicesPage'))
 const ChartOfAccountsPage = lazy(() => import('./pages/finance/ChartOfAccountsPage'))
 const InvoicesPage = lazy(() => import('./pages/finance/InvoicesPage'))
 const ReceiptsPage = lazy(() => import('./pages/finance/ReceiptsPage'))
@@ -162,6 +163,7 @@ export default function App() {
           <Route path="billing/payments" element={<BillingPaymentsPage />} />
           <Route path="billing/performance" element={<BillingPerformancePage />} />
           <Route path="billing/payers" element={<BillingPayersPage />} />
+          <Route path="billing/services" element={<BillingServicesPage />} />
           <Route path="chart-of-accounts" element={<ChartOfAccountsPage />} />
           <Route path="invoices" element={<InvoicesPage />} />
           <Route path="receipts" element={<ReceiptsPage />} />

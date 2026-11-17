@@ -161,10 +161,23 @@ class ApprovalRequestSerializer(serializers.ModelSerializer):
 
 
 class ServiceCategorySerializer(serializers.ModelSerializer):
+    # Codes are technical keys: the UI only asks for the service name.
+    code = serializers.CharField(max_length=20, required=False, allow_blank=True)
+
     class Meta:
         model = ServiceCategory
         fields = ["id", "parent", "name", "code", "is_active", "display_order", "created_at"]
         read_only_fields = ["id", "created_at"]
+
+    def create(self, validated_data):
+        if not str(validated_data.get("code") or "").strip():
+            base = f"SVC{ServiceCategory.objects.count() + 1}"
+            code, suffix = base, 1
+            while ServiceCategory.objects.filter(code=code).exists():
+                suffix += 1
+                code = f"{base}{suffix}"
+            validated_data["code"] = code
+        return super().create(validated_data)
 
 
 class CompanySettingsSerializer(serializers.ModelSerializer):

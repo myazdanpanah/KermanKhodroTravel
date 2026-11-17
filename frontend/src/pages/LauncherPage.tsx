@@ -103,7 +103,12 @@ export default function LauncherPage() {
   const fetchModules = async () => {
     try {
       const res = await api.get('/auth/user-modules/')
-      setModules(res.data.filter((m: ModuleInfo) => DELIVERED_MODULES.has(m.id)))
+      const delivered = res.data.filter((m: ModuleInfo) => DELIVERED_MODULES.has(m.id))
+      // Settings is not a licensed module but the admins need a direct entry.
+      if ((user?.role === 'ceo' || user?.role === 'admin') && !delivered.some((m: ModuleInfo) => m.id === 'settings')) {
+        delivered.push({ id: 'settings', label: 'تنظیمات' })
+      }
+      setModules(delivered)
     } catch {
       toast('خطا در دریافت ماژول‌ها', 'error')
     } finally {

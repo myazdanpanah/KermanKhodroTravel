@@ -52,5 +52,6 @@ urlpatterns = [
     # Misc
     path("me/", views.me_permissions, name="me-permissions"),
     path("next-letter/", views.next_letter, name="next-letter"),
+    path("passengers/", views.passenger_suggestions, name="passenger-suggestions"),
     path("dashboard/summary/", views.dashboard_summary, name="dashboard-summary"),
 ]

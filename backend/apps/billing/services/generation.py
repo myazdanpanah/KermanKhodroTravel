@@ -420,12 +420,14 @@ def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
         columns = _columns_for(service_key)
         context = build_context(request_obj, rows, columns)
         context["service_type"] = f"{request_obj.service_type} — {label}"
+        # Letter numbers contain slashes (YYYY/CODE/NNNNN); file names must not.
+        letter_slug = (request_obj.letter_number or "letter").replace("/", "-")
 
         try:
             docx_bytes = render_docx(context)
             produced.append(
                 save_final_file(
-                    request_obj, service_key, f"{service_key}_{request_obj.letter_number}.docx", docx_bytes
+                    request_obj, service_key, f"{service_key}_{letter_slug}.docx", docx_bytes
                 )
             )
         except Exception as exc:  # noqa: BLE001
@@ -435,7 +437,7 @@ def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
             pdf_bytes = render_pdf(render_html(context, template))
             produced.append(
                 save_final_file(
-                    request_obj, service_key, f"{service_key}_{request_obj.letter_number}.pdf", pdf_bytes
+                    request_obj, service_key, f"{service_key}_{letter_slug}.pdf", pdf_bytes
                 )
             )
         except Exception as exc:  # noqa: BLE001
@@ -455,7 +457,7 @@ def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
                     "payer": request_obj.payer_name,
                     "amount": amount,
                     "issue_date": issue_date,
-                    "file_path": f"{request_obj.letter_number}/{service_key}_{request_obj.letter_number}.pdf",
+                    "file_path": f"{letter_slug}/{service_key}_{letter_slug}.pdf",
                 },
             )
 

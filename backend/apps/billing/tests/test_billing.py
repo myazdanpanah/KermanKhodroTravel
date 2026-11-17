@@ -161,12 +161,11 @@ class LetterNumberingTests(TestCase):
         self.assertEqual(peek("1001", "04"), 3)
 
     def test_full_letter_number_format(self):
-        letter = full_letter_number("04", 12)
-        self.assertEqual(len(letter), 7)
-        self.assertTrue(letter.startswith("1404"))
-        self.assertEqual(letter[-3:], "012")
+        letter = full_letter_number("04", 12, "5001")
+        self.assertEqual(letter, "1404/5001/00012")
 
     def test_number_from_letter(self):
+        self.assertEqual(number_from_letter("1404/5001/00012"), 12)
         self.assertEqual(number_from_letter("1404012"), 12)
         self.assertIsNone(number_from_letter("no-digits"))
 
@@ -274,7 +273,8 @@ class BillingApiTests(TestCase):
         approval = ApprovalRequest.objects.get(pk=approval_id)
         self.assertEqual(approval.status, ApprovalRequest.STATUS_APPROVED)
         self.assertEqual(len(approval.reserved_numbers), 1)
-        self.assertTrue(approval.letter_number.endswith("04001"))
+        self.assertTrue(approval.letter_number.endswith("/00001"))
+        self.assertEqual(approval.letter_number.split("/")[1], "2001")
         self.assertTrue(approval.files.filter(file_name__endswith=".docx").exists())
         self.assertTrue(Invoice.objects.filter(payer_code="2001").exists())
 

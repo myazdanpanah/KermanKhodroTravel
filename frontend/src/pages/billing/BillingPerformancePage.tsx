@@ -4,6 +4,11 @@ import { useToast } from '../../components/Toast'
 import { CARD, num, rial, type Payer } from './shared'
 import { Gauge } from 'lucide-react'
 
+/**
+ * Performance is a three-figure ledger per company: what they owe, what they
+ * have paid and the remaining balance. Invoices, manual debts, payments and
+ * credits are only the inputs; their breakdown lives on the dashboard.
+ */
 export default function BillingPerformancePage() {
   const { toast } = useToast()
   const [rows, setRows] = useState<Payer[]>([])
@@ -24,14 +29,12 @@ export default function BillingPerformancePage() {
         (acc, row) => {
           const b = row.balance || { invoices: 0, manual_debts: 0, payments: 0, credits: 0, balance: 0 }
           return {
-            invoices: acc.invoices + b.invoices,
-            manual_debts: acc.manual_debts + b.manual_debts,
-            payments: acc.payments + b.payments,
-            credits: acc.credits + b.credits,
+            debt: acc.debt + b.invoices + b.manual_debts,
+            credit: acc.credit + b.payments + b.credits,
             balance: acc.balance + b.balance,
           }
         },
-        { invoices: 0, manual_debts: 0, payments: 0, credits: 0, balance: 0 }
+        { debt: 0, credit: 0, balance: 0 }
       ),
     [rows]
   )
@@ -42,30 +45,30 @@ export default function BillingPerformancePage() {
         <Gauge className="w-5 h-5 text-nx-blue" />
         <div>
           <h1 className="text-lg font-bold text-white">عملکرد</h1>
-          <p className="text-xs text-nx-mist">گردش حساب هر شرکت: صورت‌حساب، بدهی دستی، پرداخت و اعتبار</p>
+          <p className="text-xs text-nx-mist">بدهکاری، بستانکاری و ماندهٔ هر شرکت</p>
         </div>
       </div>
 
       <div className={`${CARD} overflow-x-auto`}>
-        <table className="w-full text-sm min-w-[720px]">
+        <table className="w-full text-sm min-w-[560px]">
           <thead className="bg-nx-navy text-nx-mist text-xs">
             <tr>
               <th className="text-right font-medium px-4 py-3">کد</th>
               <th className="text-right font-medium px-4 py-3">شرکت</th>
-              <th className="text-left font-medium px-4 py-3">صورت‌حساب</th>
-              <th className="text-left font-medium px-4 py-3">بدهی دستی</th>
-              <th className="text-left font-medium px-4 py-3">پرداخت</th>
-              <th className="text-left font-medium px-4 py-3">اعتبار</th>
+              <th className="text-left font-medium px-4 py-3">بدهکاری</th>
+              <th className="text-left font-medium px-4 py-3">بستانکاری</th>
               <th className="text-left font-medium px-4 py-3">مانده</th>
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={7} className="py-8 text-center text-xs text-nx-mist">در حال بارگذاری…</td></tr>}
+            {loading && <tr><td colSpan={5} className="py-8 text-center text-xs text-nx-mist">در حال بارگذاری…</td></tr>}
             {!loading && rows.length === 0 && (
-              <tr><td colSpan={7} className="py-8 text-center text-xs text-nx-mist">شرکتی ثبت نشده است.</td></tr>
+              <tr><td colSpan={5} className="py-8 text-center text-xs text-nx-mist">شرکتی ثبت نشده است.</td></tr>
             )}
             {rows.map((row) => {
               const b = row.balance || { invoices: 0, manual_debts: 0, payments: 0, credits: 0, balance: 0 }
+              const debt = b.invoices + b.manual_debts
+              const credit = b.payments + b.credits
               return (
                 <tr key={row.code} className="border-t border-nx-navy-border hover:bg-nx-navy/40">
                   <td className="px-4 py-3 text-nx-mist">{row.code}</td>
@@ -73,11 +76,9 @@ export default function BillingPerformancePage() {
                     {row.name}
                     {row.parent_name && <span className="text-[10px] text-nx-mist/70"> ({row.parent_name})</span>}
                   </td>
-                  <td className="px-4 py-3 text-left text-nx-mist">{rial(b.invoices)}</td>
-                  <td className="px-4 py-3 text-left text-nx-mist">{rial(b.manual_debts)}</td>
-                  <td className="px-4 py-3 text-left text-emerald-400">{rial(b.payments)}</td>
-                  <td className="px-4 py-3 text-left text-amber-400">{rial(b.credits)}</td>
-                  <td className={`px-4 py-3 text-left font-bold ${b.balance > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+                  <td className="px-4 py-3 text-left text-rose-400">{rial(debt)}</td>
+                  <td className="px-4 py-3 text-left text-emerald-400">{rial(credit)}</td>
+                  <td className={`px-4 py-3 text-left font-bold ${b.balance > 0 ? 'text-rose-400' : b.balance < 0 ? 'text-emerald-400' : 'text-white'}`}>
                     {rial(b.balance)}
                   </td>
                 </tr>
@@ -87,10 +88,8 @@ export default function BillingPerformancePage() {
           <tfoot className="bg-nx-navy">
             <tr>
               <td colSpan={2} className="px-4 py-3 text-xs text-nx-mist">جمع ({num(rows.length)} شرکت)</td>
-              <td className="px-4 py-3 text-left text-white">{rial(totals.invoices)}</td>
-              <td className="px-4 py-3 text-left text-white">{rial(totals.manual_debts)}</td>
-              <td className="px-4 py-3 text-left text-white">{rial(totals.payments)}</td>
-              <td className="px-4 py-3 text-left text-white">{rial(totals.credits)}</td>
+              <td className="px-4 py-3 text-left text-white">{rial(totals.debt)}</td>
+              <td className="px-4 py-3 text-left text-white">{rial(totals.credit)}</td>
               <td className="px-4 py-3 text-left font-bold text-white">{rial(totals.balance)}</td>
             </tr>
           </tfoot>

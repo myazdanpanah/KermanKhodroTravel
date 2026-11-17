@@ -385,7 +385,9 @@ def approval_approve(request, pk: int):
 
     with transaction.atomic():
         numbers = reserve_numbers(approval.payer_code, str(approval.year % 100).zfill(2), count)
-        approval.letter_number = full_letter_number(str(approval.year % 100).zfill(2), numbers[0])
+        approval.letter_number = full_letter_number(
+            str(approval.year % 100).zfill(2), numbers[0], approval.payer_code
+        )
         approval.reserved_numbers = numbers
         approval.status = ApprovalRequest.STATUS_APPROVED
         approval.approved_by = request.user
@@ -733,7 +735,9 @@ def next_letter(request):
     payer_code = request.query_params.get("payer_code")
     if not payer_code:
         return _error("کد شرکت لازم است.")
-    return Response({"letter_number": peek_letter(payer_code)})
+    year = request.query_params.get("year")
+    jalali_year = int(year) if year and year.isdigit() else None
+    return Response({"letter_number": peek_letter(payer_code, jalali_year=jalali_year)})
 
 
 @api_view(["GET"])
@@ -832,3 +836,21 @@ def admin_restore(request):
         company.save()
 
     return Response({"ok": True, "restored": {name: len(tables.get(name) or []) for name, _ in BACKUP_MODELS}})
+
+
+@api_view(["GET"])
+@perm_required("can_view")
+def passenger_suggestions(request):
+    """Distinct passenger names from previous requests, for the manual editor."""
+    names: dict[str, None] = {}
+    for request_obj in ApprovalRequest.objects.only(
+        "flight_data", "hotel_data", "service_data"
+    ).iterator():
+        for block in (request_obj.flight_data, request_obj.hotel_data, request_obj.service_data):
+            for row in block or []:
+                name = str(row.get("نام مسافر") or "").strip()
+                if name:
+                    names.setdefault(name, None)
+        if len(names) >= 500:
+            break
+    return Response(sorted(names.keys())[:500])

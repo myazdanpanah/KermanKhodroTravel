@@ -5,7 +5,10 @@ import { useAuthStore } from '../../store/authStore'
 import JalaliDateInput from '../../components/JalaliDateInput'
 import { isoToJalali, formatJalali, todayIso } from '../../lib/jalali'
 import { CARD, INPUT, rial, type Payer } from './shared'
-import { FileSpreadsheet, Plus, Send, CheckCircle2, XCircle, Download, Trash2 } from 'lucide-react'
+import {
+  FileSpreadsheet, Plus, Send, CheckCircle2, XCircle, Download, Trash2,
+  PencilLine, X, Save,
+} from 'lucide-react'
 
 type ServiceKey = 'flight' | 'hotel' | 'service'
 
@@ -15,11 +18,57 @@ const SERVICES: { key: ServiceKey; label: string; field: 'flight_data' | 'hotel_
   { key: 'service', label: 'خدمات', field: 'service_data' },
 ]
 
+type FieldType = 'text' | 'passenger' | 'money' | 'number' | 'date'
+
+interface ManualField {
+  key: string
+  label: string
+  type: FieldType
+  required?: boolean
+}
+
+// Every column of the three Excel layouts, so a manual row is indistinguishable
+// from an uploaded one.
+const MANUAL_FIELDS: Record<ServiceKey, ManualField[]> = {
+  flight: [
+    { key: 'قرارداد', label: 'شماره قرارداد', type: 'text' },
+    { key: 'نام مسافر', label: 'نام مسافر', type: 'passenger', required: true },
+    { key: 'مسیر', label: 'مسیر', type: 'text' },
+    { key: 'شماره بلیط', label: 'شماره بلیط', type: 'text' },
+    { key: 'تاریخ پرواز', label: 'تاریخ پرواز', type: 'date' },
+    { key: 'بدهکار', label: 'بدهکار', type: 'money' },
+    { key: 'بستانکار', label: 'بستانکار', type: 'money' },
+  ],
+  hotel: [
+    { key: 'قرارداد', label: 'شماره قرارداد', type: 'text' },
+    { key: 'نام مسافر', label: 'نام مسافر', type: 'passenger', required: true },
+    { key: 'هتل', label: 'هتل', type: 'text' },
+    { key: 'نوع اتاق', label: 'نوع اتاق', type: 'text' },
+    { key: 'تعداد نفرات', label: 'تعداد نفرات', type: 'number' },
+    { key: 'تاریخ ورود', label: 'تاریخ ورود', type: 'date' },
+    { key: 'تاریخ خروج', label: 'تاریخ خروج', type: 'date' },
+    { key: 'بدهکار', label: 'بدهکار', type: 'money' },
+    { key: 'بستانکار', label: 'بستانکار', type: 'money' },
+  ],
+  service: [
+    { key: 'قرارداد', label: 'شماره قرارداد', type: 'text' },
+    { key: 'نام مسافر', label: 'نام مسافر', type: 'passenger', required: true },
+    { key: 'شرح خدمات', label: 'شرح خدمات', type: 'text' },
+    { key: 'تاریخ', label: 'تاریخ', type: 'date' },
+    { key: 'توضیحات', label: 'توضیحات', type: 'text' },
+    { key: 'بدهکار', label: 'بدهکار', type: 'money' },
+    { key: 'بستانکار', label: 'بستانکار', type: 'money' },
+  ],
+}
+
+type Block = { columns: string[]; rows: Record<string, unknown>[]; totals: Record<string, number> }
+const EMPTY_BLOCK: Block = { columns: [], rows: [], totals: {} }
+const EMPTY_BLOCKS: Record<ServiceKey, Block> = { flight: EMPTY_BLOCK, hotel: EMPTY_BLOCK, service: EMPTY_BLOCK }
+
 interface ApprovalFile {
   id: number
   service_type: string
   file_name: string
-  download_url: string
 }
 
 interface Approval {
@@ -29,12 +78,19 @@ interface Approval {
   payer_name: string
   service_type: string
   letter_number: string
-  letter_date: string
   period_range: string
   status: 'pending' | 'approved' | 'rejected'
   status_display: string
   generation_error: string
   files: ApprovalFile[]
+}
+
+interface ServiceCategory {
+  id: number
+  name: string
+  code: string
+  parent: number | null
+  is_active: boolean
 }
 
 const STATUS_STYLE: Record<string, string> = {
@@ -52,6 +108,8 @@ export default function BillingIssuePage() {
 
   const [payers, setPayers] = useState<Payer[]>([])
   const [approvals, setApprovals] = useState<Approval[]>([])
+  const [categories, setCategories] = useState<ServiceCategory[]>([])
+  const [passengers, setPassengers] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
 
@@ -60,28 +118,31 @@ export default function BillingIssuePage() {
   const [letterDate, setLetterDate] = useState(todayIso())
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
-  const [serviceLabel, setServiceLabel] = useState('پرواز')
+  const [serviceCategoryId, setServiceCategoryId] = useState('')
   const [activeService, setActiveService] = useState<ServiceKey>('flight')
-
-  const [blocks, setBlocks] = useState<Record<ServiceKey, { columns: string[]; rows: Record<string, unknown>[]; totals: Record<string, number> }>>({
-    flight: { columns: [], rows: [], totals: {} },
-    hotel: { columns: [], rows: [], totals: {} },
-    service: { columns: [], rows: [], totals: {} },
-  })
+  const [blocks, setBlocks] = useState<Record<ServiceKey, Block>>(EMPTY_BLOCKS)
   const [uploading, setUploading] = useState<ServiceKey | null>(null)
 
-  const jalali = useMemo(() => isoToJalali(letterDate), [letterDate])
+  // Manual row editor
+  const [manualOpen, setManualOpen] = useState(false)
+  const [manualDraft, setManualDraft] = useState<Record<string, string>>({})
+  const [manualDates, setManualDates] = useState<Record<string, string>>({})
+
   const startJalali = useMemo(() => isoToJalali(startDate), [startDate])
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const [payersRes, approvalsRes] = await Promise.all([
+      const [payersRes, approvalsRes, categoriesRes, passengersRes] = await Promise.all([
         api.get('/billing/payers/'),
         api.get('/billing/approvals/'),
+        api.get('/billing/service-categories/'),
+        api.get('/billing/passengers/'),
       ])
       setPayers(payersRes.data)
       setApprovals(approvalsRes.data)
+      setCategories(categoriesRes.data)
+      setPassengers(passengersRes.data)
     } catch {
       toast('خطا در دریافت اطلاعات صدور', 'error')
     } finally {
@@ -100,10 +161,20 @@ export default function BillingIssuePage() {
       return
     }
     api
-      .get('/billing/next-letter/', { params: { payer_code: payerCode } })
+      .get('/billing/next-letter/', {
+        params: { payer_code: payerCode, year: isoToJalali(startDate)?.year ?? '' },
+      })
       .then((res) => setLetterNumber(res.data.letter_number))
       .catch(() => setLetterNumber(''))
-  }, [payerCode])
+  }, [payerCode, startDate])
+
+  // The service type is derived from what was actually uploaded.
+  const uploadedLabels = SERVICES.filter((service) => blocks[service.key].rows.length > 0).map((service) => {
+    if (service.key !== 'service') return service.label
+    const category = categories.find((item) => String(item.id) === serviceCategoryId)
+    return category?.name || service.label
+  })
+  const serviceType = uploadedLabels.join('، ')
 
   const uploadExcel = async (service: ServiceKey, file: File) => {
     setUploading(service)
@@ -121,7 +192,9 @@ export default function BillingIssuePage() {
         ...prev,
         [service]: { columns: processed.data.columns, rows: processed.data.rows, totals: processed.data.totals },
       }))
-      toast(`فایل ${file.name} خوانده شد (${processed.data.rows.length} ردیف)`, 'success')
+      setActiveService(service)
+      const serviceLabel = SERVICES.find((item) => item.key === service)?.label || ''
+      toast(`فایل ${file.name} خوانده شد (${processed.data.rows.length} ردیف) — نوع خدمت: ${serviceLabel}`, 'success')
     } catch (err: unknown) {
       const apiError = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
       toast(apiError || 'خطا در خواندن فایل اکسل', 'error')
@@ -131,7 +204,76 @@ export default function BillingIssuePage() {
   }
 
   const clearBlock = (service: ServiceKey) =>
-    setBlocks((prev) => ({ ...prev, [service]: { columns: [], rows: [], totals: {} } }))
+    setBlocks((prev) => ({ ...prev, [service]: { ...EMPTY_BLOCK } }))
+
+  const blockTotals = (service: ServiceKey) => {
+    const rows = blocks[service].rows
+    const debt = rows.reduce((sum, row) => sum + Number(row['بدهکار'] || 0), 0)
+    const credit = rows.reduce((sum, row) => sum + Number(row['بستانکار'] || 0), 0)
+    return { debt, credit, balance: debt - credit }
+  }
+
+  const openManualEditor = () => {
+    setManualDraft({})
+    setManualDates({})
+    setManualOpen(true)
+  }
+
+  const addManualRow = () => {
+    const fields = MANUAL_FIELDS[activeService]
+    for (const field of fields) {
+      if (field.required && !String(manualDraft[field.key] || '').trim()) {
+        toast(`${field.label} را وارد کنید`, 'error')
+        return
+      }
+    }
+
+    const row: Record<string, unknown> = {}
+    for (const field of fields) {
+      if (field.type === 'date') {
+        const iso = manualDates[field.key] || ''
+        row[field.key] = iso ? formatJalali(iso) : ''
+      } else if (field.type === 'money' || field.type === 'number') {
+        row[field.key] = Number(manualDraft[field.key] || 0)
+      } else {
+        row[field.key] = String(manualDraft[field.key] || '').trim()
+      }
+    }
+
+    if (activeService === 'hotel') {
+      row['تاریخ ورود و خروج'] = `ورود: ${row['تاریخ ورود'] || '—'}  خروج: ${row['تاریخ خروج'] || '—'}`
+      delete row['تاریخ ورود']
+      delete row['تاریخ خروج']
+      row['تعداد نفرات'] = Number(row['تعداد نفرات'] || 1)
+    }
+
+    const debt = Number(row['بدهکار'] || 0)
+    const credit = Number(row['بستانکار'] || 0)
+    row['مانده'] = debt - credit
+
+    setBlocks((prev) => {
+      const current = prev[activeService]
+      const rows: Record<string, unknown>[] = [...current.rows, row].map((item, index) => ({ ...item, ردیف: index + 1 }))
+      return {
+        ...prev,
+        [activeService]: {
+          columns: current.columns.length ? current.columns : defaultColumns(activeService),
+          rows,
+          totals: { debt: rows.reduce((s, r) => s + Number(r['بدهکار'] || 0), 0), credit: rows.reduce((s, r) => s + Number(r['بستانکار'] || 0), 0) },
+        },
+      }
+    })
+    setManualDraft({})
+    setManualDates({})
+    toast('ردیف به جدول اضافه شد', 'success')
+  }
+
+  const removeManualRow = (service: ServiceKey, index: number) => {
+    setBlocks((prev) => {
+      const rows = prev[service].rows.filter((_, i) => i !== index).map((item, i) => ({ ...item, ردیف: i + 1 }))
+      return { ...prev, [service]: { ...prev[service], rows } }
+    })
+  }
 
   const periodRange =
     startDate && endDate ? `از ${formatJalali(startDate)} تا ${formatJalali(endDate)}` : ''
@@ -149,8 +291,8 @@ export default function BillingIssuePage() {
       toast('تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد', 'error')
       return
     }
-    if (!blocks.flight.rows.length && !blocks.hotel.rows.length && !blocks.service.rows.length) {
-      toast('حداقل یک فایل خدمت لازم است', 'error')
+    if (!serviceType) {
+      toast('حداقل یک فایل یا ردیف خدمت لازم است', 'error')
       return
     }
     setSaving(true)
@@ -159,13 +301,13 @@ export default function BillingIssuePage() {
       const res = await api.post('/billing/approvals/', {
         payer_code: payerCode,
         payer_name: payer?.name || '',
-        service_type: serviceLabel,
+        service_type: serviceType,
         letter_number: letterNumber,
         letter_date: formatJalali(letterDate),
         start_day: startJalali?.day || 1,
         end_day: isoToJalali(endDate)?.day || 1,
         month: startJalali ? String(startJalali.month) : '',
-        year: jalali?.year || 0,
+        year: startJalali?.year || 0,
         period_range: periodRange,
         flight_data: blocks.flight.rows,
         hotel_data: blocks.hotel.rows,
@@ -177,11 +319,8 @@ export default function BillingIssuePage() {
         await api.post(`/billing/approvals/${res.data.id}/approve/`, {})
         toast('تأیید شد و فایل‌ها تولید شدند', 'success')
       }
-      setBlocks({
-        flight: { columns: [], rows: [], totals: {} },
-        hotel: { columns: [], rows: [], totals: {} },
-        service: { columns: [], rows: [], totals: {} },
-      })
+      setBlocks({ flight: { ...EMPTY_BLOCK }, hotel: { ...EMPTY_BLOCK }, service: { ...EMPTY_BLOCK } })
+      setServiceCategoryId('')
       void load()
     } catch (err: unknown) {
       const data = (err as { response?: { data?: { error?: string } } })?.response?.data
@@ -205,6 +344,7 @@ export default function BillingIssuePage() {
   }
 
   const active = blocks[activeService]
+  const totals = blockTotals(activeService)
 
   if (!canIssue && !canApprove) {
     return <div className="p-10 text-center text-sm text-nx-mist">برای صدور صورت‌حساب مجوز لازم است.</div>
@@ -233,15 +373,28 @@ export default function BillingIssuePage() {
           </div>
           <div>
             <label className="block text-xs text-nx-mist mb-1.5">شماره نامه</label>
-            <input value={letterNumber} readOnly className={INPUT} placeholder="خودکار" />
+            <input value={letterNumber} readOnly className={INPUT} placeholder="YYYY/CODE/NNNNN" dir="ltr" />
           </div>
           <JalaliDateInput label="تاریخ نامه" value={letterDate} onChange={setLetterDate} />
           <JalaliDateInput label="تاریخ شروع *" value={startDate} onChange={setStartDate} />
           <JalaliDateInput label="تاریخ پایان *" value={endDate} onChange={setEndDate} />
           <div className="md:col-span-2">
-            <label className="block text-xs text-nx-mist mb-1.5">نوع خدمت (موضوع نامه)</label>
-            <input value={serviceLabel} onChange={(e) => setServiceLabel(e.target.value)} className={INPUT} placeholder="پرواز، هتل، ویزا…" />
+            <label className="block text-xs text-nx-mist mb-1.5">نوع خدمت (از فایل تعیین می‌شود)</label>
+            <div className={`${INPUT} flex items-center min-h-[42px]`}>
+              {serviceType || <span className="text-nx-mist/60">هنوز فایلی بارگذاری نشده است</span>}
+            </div>
           </div>
+          {blocks.service.rows.length > 0 && (
+            <div className="md:col-span-2">
+              <label className="block text-xs text-nx-mist mb-1.5">دستهٔ خدمت (برای نام‌گذاری دقیق)</label>
+              <select value={serviceCategoryId} onChange={(e) => setServiceCategoryId(e.target.value)} className={INPUT}>
+                <option value="">خدمات (عمومی)</option>
+                {categories.filter((c) => c.is_active).map((c) => (
+                  <option key={c.id} value={String(c.id)}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-2 border-b border-nx-navy-border pb-2">
@@ -277,6 +430,13 @@ export default function BillingIssuePage() {
               }}
             />
           </label>
+          <button
+            onClick={openManualEditor}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-nx-navy-border text-nx-mist text-sm hover:border-nx-blue/50"
+          >
+            <PencilLine className="w-4 h-4 text-nx-blue" />
+            افزودن دستی خدمت
+          </button>
           {active.rows.length > 0 && (
             <button onClick={() => clearBlock(activeService)} className="inline-flex items-center gap-1.5 text-xs text-rose-400 hover:bg-rose-400/10 px-3 py-2 rounded-lg">
               <Trash2 className="w-3.5 h-3.5" /> پاک کردن ردیف‌ها
@@ -284,8 +444,9 @@ export default function BillingIssuePage() {
           )}
           {active.rows.length > 0 && (
             <span className="text-xs text-nx-mist">
-              جمع بدهکار: <strong className="text-white">{rial(Number(active.totals.debt || 0))}</strong>
-              {' '}— جمع بستانکار: <strong className="text-white">{rial(Number(active.totals.credit || 0))}</strong>
+              بدهکاری: <strong className="text-white">{rial(totals.debt)}</strong>
+              {' '}— بستانکاری: <strong className="text-white">{rial(totals.credit)}</strong>
+              {' '}— مانده: <strong className="text-white">{rial(totals.balance)}</strong>
             </span>
           )}
         </div>
@@ -295,26 +456,29 @@ export default function BillingIssuePage() {
             <table className="w-full text-xs min-w-[720px]">
               <thead className="bg-nx-navy text-nx-mist">
                 <tr>
-                  {active.columns.map((column) => (
+                  {(active.columns.length ? active.columns : defaultColumns(activeService)).map((column) => (
                     <th key={column} className="px-3 py-2 text-right font-medium whitespace-nowrap">{column}</th>
                   ))}
+                  <th className="px-3 py-2" />
                 </tr>
               </thead>
               <tbody>
-                {active.rows.slice(0, 50).map((row, index) => (
+                {active.rows.slice(0, 100).map((row, index) => (
                   <tr key={index} className="border-t border-nx-navy-border">
-                    {active.columns.map((column) => (
+                    {(active.columns.length ? active.columns : defaultColumns(activeService)).map((column) => (
                       <td key={column} className="px-3 py-2 text-nx-mist whitespace-nowrap">
                         {typeof row[column] === 'number' ? rial(row[column] as number) : String(row[column] ?? '')}
                       </td>
                     ))}
+                    <td className="px-3 py-2">
+                      <button onClick={() => removeManualRow(activeService, index)} className="p-1 rounded text-rose-400 hover:bg-rose-400/10">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            {active.rows.length > 50 && (
-              <p className="text-[10px] text-nx-mist p-2">۵۰ ردیف اول نمایش داده شده است؛ همهٔ {active.rows.length} ردیف ارسال می‌شوند.</p>
-            )}
           </div>
         )}
 
@@ -339,8 +503,8 @@ export default function BillingIssuePage() {
             <tr>
               <th className="text-right font-medium px-4 py-3">شماره نامه</th>
               <th className="text-right font-medium px-4 py-3">شرکت</th>
+              <th className="text-right font-medium px-4 py-3">نوع خدمت</th>
               <th className="text-right font-medium px-4 py-3">بازه</th>
-              <th className="text-right font-medium px-4 py-3">درخواست‌دهنده</th>
               <th className="text-right font-medium px-4 py-3">وضعیت</th>
               <th className="text-right font-medium px-4 py-3">فایل‌ها</th>
               <th className="px-4 py-3" />
@@ -351,21 +515,19 @@ export default function BillingIssuePage() {
             {!loading && approvals.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-xs text-nx-mist">درخواستی ثبت نشده است.</td></tr>}
             {approvals.map((approval) => (
               <tr key={approval.id} className="border-t border-nx-navy-border hover:bg-nx-navy/40">
-                <td className="px-4 py-3 text-white">{approval.letter_number || '—'}</td>
+                <td className="px-4 py-3 text-white" dir="ltr">{approval.letter_number || '—'}</td>
                 <td className="px-4 py-3 text-nx-mist">{approval.payer_name}</td>
+                <td className="px-4 py-3 text-nx-mist">{approval.service_type}</td>
                 <td className="px-4 py-3 text-nx-mist">{approval.period_range}</td>
-                <td className="px-4 py-3 text-nx-mist">{approval.requester_name}</td>
                 <td className="px-4 py-3">
                   <span className={`px-2 py-1 rounded-lg text-[11px] ${STATUS_STYLE[approval.status] || ''}`}>{approval.status_display}</span>
                 </td>
                 <td className="px-4 py-3">
-                  <div className="flex flex-wrap gap-1">
+                  <div className="flex flex-wrap gap-2">
                     {approval.files.map((file) => (
-                      <a
+                      <button
                         key={file.id}
-                        href={file.download_url}
-                        onClick={async (e) => {
-                          e.preventDefault()
+                        onClick={async () => {
                           const res = await api.get(`/billing/files/${file.id}/download/`, { responseType: 'blob' })
                           const url = URL.createObjectURL(res.data)
                           const link = document.createElement('a')
@@ -377,7 +539,7 @@ export default function BillingIssuePage() {
                         className="inline-flex items-center gap-1 text-[11px] text-nx-blue hover:underline"
                       >
                         <Download className="w-3 h-3" /> {file.file_name}
-                      </a>
+                      </button>
                     ))}
                     {approval.files.length === 0 && <span className="text-[11px] text-nx-mist/60">—</span>}
                   </div>
@@ -400,6 +562,90 @@ export default function BillingIssuePage() {
           </tbody>
         </table>
       </section>
+
+      {manualOpen && (
+        <div className="fixed inset-0 z-[120] bg-black/50 flex items-start justify-center p-4 overflow-y-auto" onClick={() => setManualOpen(false)}>
+          <div className={`${CARD} w-full max-w-3xl p-5 my-6`} onClick={(event) => event.stopPropagation()} dir="rtl">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-white">افزودن دستی خدمت — {SERVICES.find((s) => s.key === activeService)?.label}</h3>
+                <p className="text-[11px] text-nx-mist mt-0.5">ردیف جدید مثل ردیف‌های اکسل به همان جدول اضافه و با ثبت درخواست در دیتابیس ذخیره می‌شود.</p>
+              </div>
+              <button onClick={() => setManualOpen(false)} className="p-1.5 rounded-lg text-nx-mist hover:bg-nx-navy"><X className="w-4 h-4" /></button>
+            </div>
+
+            {activeService === 'service' && categories.length > 0 && (
+              <div className="mb-3">
+                <label className="block text-[11px] text-nx-mist mb-1">انتخاب خدمت از فهرست</label>
+                <select
+                  value={manualDraft['شرح خدمات'] || ''}
+                  onChange={(e) => setManualDraft({ ...manualDraft, 'شرح خدمات': e.target.value })}
+                  className={INPUT}
+                >
+                  <option value="">انتخاب یا تایپ دستی…</option>
+                  {categories.filter((c) => c.is_active).map((c) => (
+                    <option key={c.id} value={c.name}>{c.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {MANUAL_FIELDS[activeService].map((field) => (
+                <div key={field.key}>
+                  <label className="block text-[11px] text-nx-mist mb-1">
+                    {field.label}{field.required ? ' *' : ''}
+                  </label>
+                  {field.type === 'date' ? (
+                    <JalaliDateInput
+                      value={manualDates[field.key] || ''}
+                      onChange={(iso) => setManualDates({ ...manualDates, [field.key]: iso })}
+                    />
+                  ) : field.type === 'passenger' ? (
+                    <>
+                      <input
+                        list="passenger-suggestions"
+                        value={manualDraft[field.key] || ''}
+                        onChange={(e) => setManualDraft({ ...manualDraft, [field.key]: e.target.value })}
+                        className={INPUT}
+                        placeholder="نام مسافر را بنویسید یا انتخاب کنید"
+                      />
+                      <datalist id="passenger-suggestions">
+                        {passengers.map((name) => <option key={name} value={name} />)}
+                      </datalist>
+                    </>
+                  ) : (
+                    <input
+                      type={field.type === 'money' || field.type === 'number' ? 'number' : 'text'}
+                      value={manualDraft[field.key] || ''}
+                      onChange={(e) => setManualDraft({ ...manualDraft, [field.key]: e.target.value })}
+                      className={INPUT}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center justify-between mt-4">
+              <p className="text-[11px] text-nx-mist">مانده به‌صورت خودکار از بدهکار منهای بستانکار محاسبه می‌شود.</p>
+              <div className="flex gap-2">
+                <button onClick={() => setManualOpen(false)} className="px-4 py-2 rounded-xl border border-nx-navy-border text-nx-mist text-sm">بستن</button>
+                <button onClick={addManualRow} className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-nx-blue text-white text-sm">
+                  <Save className="w-4 h-4" /> افزودن ردیف
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
+}
+
+function defaultColumns(service: ServiceKey): string[] {
+  return {
+    flight: ['ردیف', 'قرارداد', 'نام مسافر', 'مسیر', 'شماره بلیط', 'تاریخ پرواز', 'بدهکار', 'بستانکار', 'مانده'],
+    hotel: ['ردیف', 'قرارداد', 'نام مسافر', 'هتل', 'نوع اتاق', 'تعداد نفرات', 'تاریخ ورود و خروج', 'بدهکار', 'بستانکار', 'مانده'],
+    service: ['ردیف', 'قرارداد', 'نام مسافر', 'شرح خدمات', 'تاریخ', 'توضیحات', 'بدهکار', 'بستانکار', 'مانده'],
+  }[service]
 }

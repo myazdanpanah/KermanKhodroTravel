@@ -8,7 +8,7 @@ import {
   LayoutDashboard, FileText, CreditCard, Users, Gauge, Plus,
   Calendar, Target, TrendingUp,
   Settings, ChevronLeft, ChevronDown,
-  Shield, Search, Bell, Sun, Moon, Menu, X,
+  Shield, Search, Bell, Sun, Moon, Menu, X, Briefcase,
 } from 'lucide-react'
 
 // ─── Navigation Structure ───────────────────────────────────────
@@ -44,6 +44,7 @@ const NAV_SECTIONS: NavSection[] = [
       { to: '/erp/billing/payments', icon: CreditCard, label: 'پرداخت‌ها' },
       { to: '/erp/billing/performance', icon: Gauge, label: 'عملکرد' },
       { to: '/erp/billing/payers', icon: Users, label: 'مشتریان' },
+      { to: '/erp/billing/services', icon: Briefcase, label: 'خدمات' },
     ],
   },
   {
