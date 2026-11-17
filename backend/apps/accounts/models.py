@@ -218,6 +218,23 @@ class User(AbstractUser):
         help_text="Direct manager this user reports to",
     )
 
+    # ── Billing permissions (KKTCOIG spec §3.1 / §9) ──────────────────
+    # Granular flags enforced per route; the frontend uses the same flags to
+    # show or hide actions. They complement `role`, which still drives the
+    # module launcher.
+    can_view = models.BooleanField(default=True, verbose_name="مشاهده")
+    can_pay = models.BooleanField(default=False, verbose_name="ثبت پرداخت")
+    can_issue = models.BooleanField(default=False, verbose_name="صدور صورتحساب")
+    can_manage_users = models.BooleanField(default=False, verbose_name="مدیریت کاربران")
+    can_manage_settings = models.BooleanField(default=False, verbose_name="مدیریت تنظیمات")
+    can_delete_history = models.BooleanField(default=False, verbose_name="حذف تاریخچه")
+    can_delete_payment = models.BooleanField(default=False, verbose_name="حذف پرداخت")
+    can_export = models.BooleanField(default=False, verbose_name="خروجی گرفتن")
+    can_manage_companies = models.BooleanField(default=False, verbose_name="مدیریت شرکت‌ها")
+    can_submit = models.BooleanField(default=True, verbose_name="ارسال درخواست")
+    can_approve = models.BooleanField(default=False, verbose_name="تأیید درخواست")
+    can_edit_template = models.BooleanField(default=False, verbose_name="ویرایش قالب")
+
     class Meta:
         verbose_name = "user"
         verbose_name_plural = "users"

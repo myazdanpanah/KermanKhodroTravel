@@ -8,8 +8,9 @@ import {
   Puzzle, Users, Building2, FolderTree, Settings,
   ChevronDown, ChevronRight, Plus, Pencil, Trash2, X, Check,
   ToggleLeft, ToggleRight, Zap, Save,
-  Palette, Upload, RotateCcw
+  Palette, Upload, RotateCcw, FileText
 } from 'lucide-react'
+import BillingLetterheadTab from './BillingLetterheadTab'
 
 // ─── Module Management ────────────────────────────────────────────
 
@@ -672,7 +673,7 @@ function BrandingTab() {
 export default function SettingsPage() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'modules' | 'branding' | 'org'>('modules')
+  const [activeTab, setActiveTab] = useState<'modules' | 'branding' | 'letterhead' | 'org'>('modules')
 
   useEffect(() => {
     if (!user || (user.role !== 'admin' && user.role !== 'ceo')) {
@@ -685,6 +686,7 @@ export default function SettingsPage() {
   const tabs = [
     { id: 'modules' as const, label: 'مدیریت ماژول‌ها', icon: Puzzle },
     { id: 'branding' as const, label: 'برندینگ', icon: Palette },
+    { id: 'letterhead' as const, label: 'سربرگ و اطلاعات نامه', icon: FileText },
     { id: 'org' as const, label: 'ساختار سازمانی', icon: Building2 },
   ]
 
@@ -718,6 +720,7 @@ export default function SettingsPage() {
         {/* Tab Content */}
         {activeTab === 'modules' && <ModuleManagementTab />}
         {activeTab === 'branding' && <BrandingTab />}
+        {activeTab === 'letterhead' && <BillingLetterheadTab />}
         {activeTab === 'org' && <OrganizationTab />}
       </div>
     </div>

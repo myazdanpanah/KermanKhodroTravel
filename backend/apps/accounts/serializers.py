@@ -11,6 +11,8 @@ class UserSerializer(serializers.ModelSerializer):
     team_name = serializers.CharField(source='team.name', read_only=True, default=None)
     reports_to_name = serializers.SerializerMethodField()
     accessible_modules = serializers.SerializerMethodField()
+    # Billing permission flags (KKTCOIG spec §6.1) so the UI can hide actions.
+    permissions = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -22,6 +24,7 @@ class UserSerializer(serializers.ModelSerializer):
             "team", "team_name",
             "reports_to", "reports_to_name",
             "accessible_modules",
+            "permissions",
         ]
         read_only_fields = ["id"]
 
@@ -29,6 +32,11 @@ class UserSerializer(serializers.ModelSerializer):
         if obj.reports_to:
             return f"{obj.reports_to.first_name} {obj.reports_to.last_name}".strip() or obj.reports_to.username
         return None
+
+    def get_permissions(self, obj):
+        from apps.billing.permissions import permissions_payload
+
+        return permissions_payload(obj)
 
     def get_accessible_modules(self, obj):
         """Return the list of module slugs this user can access."""

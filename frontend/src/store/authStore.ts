@@ -12,6 +12,8 @@ interface User {
   isStaff?: boolean
   company_name?: string | null
   accessible_modules?: string[]
+  /** Billing permission flags (spec §6.1); drives UI visibility. */
+  permissions?: Record<string, boolean>
 }
 
 interface AuthState {

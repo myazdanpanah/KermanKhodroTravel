@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     # Local apps
     "apps.core.apps.CoreConfig",
     "apps.accounts.apps.AccountsConfig",
+    "apps.billing.apps.BillingConfig",
     "apps.datasets.apps.DatasetsConfig",
     "apps.dashboards.apps.DashboardsConfig",
     "apps.db_manager.apps.DbManagerConfig",

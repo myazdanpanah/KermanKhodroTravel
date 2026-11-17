@@ -265,3 +265,44 @@ html[dir="rtl"] .react-resizable-handle:active::after {
   .nx-splash-mark, .nx-splash-halo, .nx-splash-bar-fill { animation: none; }
   .nx-splash-flash { animation-duration: 1ms; }
 }
+
+/* ── NEXIVO × Persian Calendar (Jalali date picker) ─────────────────────
+   Maps @seydanloo/persian-calendar CSS variables onto NEXIVO tokens so the
+   picker follows the same palette, radius and font as the rest of the app.
+   Runtime brand colours (nx-blue/nx-teal) come through the CSS variables set
+   by brandingStore. */
+:root {
+  --pc-font-family: 'Vazirmatn', system-ui, sans-serif;
+  --pc-color-surface: #FFFFFF;
+  --pc-color-text: #101D35;
+  --pc-color-border: #E5E7EB;
+  --pc-color-muted: #6B7280;
+  --pc-color-disabled: #A5B4CC;
+  --pc-color-holiday: #EF4444;
+  --pc-color-hover: rgba(54, 120, 246, 0.08);
+  --pc-color-selected: rgb(var(--nx-blue));
+  --pc-color-selected-text: #FFFFFF;
+  --pc-color-today: rgb(var(--nx-teal));
+  --pc-color-focus: rgb(var(--nx-blue));
+  --pc-input-background: #FFFFFF;
+  --pc-input-color: #101D35;
+  --pc-input-border-color: #E5E7EB;
+  --pc-input-border-width: 1px;
+  --pc-input-border-radius: 12px;
+  --pc-input-focus-border-color: rgb(var(--nx-blue));
+  --pc-input-focus-ring-color: rgba(54, 120, 246, 0.25);
+  --pc-calendar-radius: 12px;
+}
+
+.dark {
+  --pc-color-surface: #1E2A42;
+  --pc-color-text: #E6EDF8;
+  --pc-color-border: #2C4060;
+  --pc-color-muted: #A5B4CC;
+  --pc-color-hover: rgba(255, 255, 255, 0.06);
+  --pc-color-selected: rgb(var(--nx-blue));
+  --pc-color-selected-text: #FFFFFF;
+  --pc-input-background: #101D35;
+  --pc-input-color: #E6EDF8;
+  --pc-input-border-color: #2C4060;
+}

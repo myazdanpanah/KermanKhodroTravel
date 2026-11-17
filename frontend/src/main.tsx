@@ -4,6 +4,8 @@ import '@fontsource/vazirmatn/400.css'
 import '@fontsource/vazirmatn/500.css'
 import '@fontsource/vazirmatn/600.css'
 import '@fontsource/vazirmatn/700.css'
+// Jalali calendar/date-picker styles (themed with nx-* tokens in index.css)
+import '@seydanloo/persian-calendar/styles.css'
 import React, { useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
