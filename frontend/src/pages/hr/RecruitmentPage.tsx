@@ -73,7 +73,7 @@ export default function RecruitmentPage() {
           <h1 className="text-2xl font-bold text-white dark:text-white flex items-center gap-3">
             <Briefcase className="h-6 w-6 text-nx-blue" /> استخدام
           </h1>
-          <p className="text-sm text-nx-mist dark:text-nx-mist mt-1">{filteredJobs.length} آگهی شغلی</p>
+          <p className="text-sm text-slate-600 dark:text-slate-200 mt-1">{filteredJobs.length} آگهی شغلی</p>
         </div>
         <button onClick={() => setShowJobForm(!showJobForm)} className="flex items-center gap-2 px-4 py-2 bg-nx-blue text-white rounded-lg hover:bg-nx-blue">
           <Plus className="h-4 w-4" /> آگهی جدید

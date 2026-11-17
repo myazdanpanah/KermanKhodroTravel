@@ -128,7 +128,7 @@ export default function ServiceRequestDetailPage() {
             <h1 className="text-2xl font-bold text-white dark:text-white">
               {request.request_number}
             </h1>
-            <p className="text-sm text-nx-mist dark:text-nx-mist">
+            <p className="text-sm text-slate-600 dark:text-slate-200">
               {request.customer_name} — {request.product_name}
             </p>
           </div>
@@ -150,7 +150,7 @@ export default function ServiceRequestDetailPage() {
           {/* Problem Description */}
           <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-6">
             <h3 className="text-sm font-semibold text-nx-navy dark:text-white mb-3">توضیحات مشکل</h3>
-            <p className="text-nx-mist dark:text-nx-mist text-sm leading-relaxed">
+            <p className="text-slate-600 dark:text-slate-200 text-sm leading-relaxed">
               {request.problem_description || 'بدون توضیحات'}
             </p>
             {request.notes && (

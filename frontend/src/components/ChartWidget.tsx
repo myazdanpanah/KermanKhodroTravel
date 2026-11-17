@@ -1129,7 +1129,7 @@ export default function ChartWidget({
                   return (
                     <td
                       key={col}
-                      className={`px-3 py-1.5 text-right text-nx-navy dark:text-nx-mist/20 border-b border-nx-border dark:border-nx-navy-border ${
+                      className={`px-3 py-1.5 text-right text-nx-navy dark:text-slate-100 border-b border-nx-border dark:border-nx-navy-border ${
                         onDrillDown ? 'cursor-pointer hover:bg-nx-blue/10 dark:hover:bg-nx-blue/30' : ''
                       }`}
                       style={condBg ? { backgroundColor: condBg } : undefined}

@@ -60,7 +60,7 @@ function MemberCard({ member, compact = false }: { member: OrgMember; compact?: 
           {initials}
         </div>
         <div className="min-w-0">
-          <p className="text-xs font-medium text-nx-navy dark:text-nx-mist/20 truncate">{fullName}</p>
+          <p className="text-xs font-medium text-nx-navy dark:text-slate-100 truncate">{fullName}</p>
           <p className="text-[10px] text-nx-mist">{ROLE_LABELS[member.role] || member.role}</p>
         </div>
       </div>
@@ -74,8 +74,8 @@ function MemberCard({ member, compact = false }: { member: OrgMember; compact?: 
           {initials}
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-bold text-nx-navy dark:text-nx-mist/10 truncate">{fullName}</p>
-          <p className="text-xs text-nx-mist dark:text-nx-mist">@{member.username}</p>
+          <p className="text-sm font-bold text-nx-navy dark:text-slate-100 truncate">{fullName}</p>
+          <p className="text-xs text-slate-600 dark:text-slate-200">@{member.username}</p>
           <span className={`inline-block mt-1 px-2 py-0.5 rounded-lg text-[10px] font-medium border ${ROLE_COLORS[member.role] || 'bg-nx-mist/10 text-nx-mist border-nx-border'}`}>
             {ROLE_LABELS[member.role] || member.role}
           </span>
@@ -99,8 +99,8 @@ function TeamNode({ team }: { team: OrgTeam }) {
       >
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-nx-blue" />
-          <span className="text-sm font-bold text-nx-navy dark:text-nx-mist/20">{team.name}</span>
-          <span className="text-[10px] bg-nx-mist/20 dark:bg-nx-muted text-nx-mist dark:text-nx-mist px-1.5 py-0.5 rounded-full">{team.members.length}</span>
+          <span className="text-sm font-bold text-nx-navy dark:text-slate-100">{team.name}</span>
+          <span className="text-[10px] bg-nx-mist/20 dark:bg-nx-muted text-slate-600 dark:text-slate-200 px-1.5 py-0.5 rounded-full">{team.members.length}</span>
         </div>
         {expanded ? <ChevronDown className="w-4 h-4 text-nx-mist" /> : <ChevronRight className="w-4 h-4 text-nx-mist" />}
       </button>
@@ -126,7 +126,7 @@ function TeamNode({ team }: { team: OrgTeam }) {
             </div>
           )}
           {team.members.length === 0 && !team.manager && (
-            <p className="text-xs text-nx-mist dark:text-nx-mist text-center py-2">بدون عضو</p>
+            <p className="text-xs text-slate-600 dark:text-slate-200 text-center py-2">بدون عضو</p>
           )}
         </div>
       )}
@@ -150,7 +150,7 @@ function DivisionNode({ division }: { division: OrgDivision }) {
             <FolderTree className="w-5 h-5 text-white" />
           </div>
           <div>
-            <span className="text-base font-bold text-nx-navy dark:text-nx-mist/10">{division.name}</span>
+            <span className="text-base font-bold text-nx-navy dark:text-slate-100">{division.name}</span>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-[10px] text-nx-mist">{totalMembers} نفر</span>
               <span className="text-[10px] text-nx-mist">·</span>
@@ -184,7 +184,7 @@ function DivisionNode({ division }: { division: OrgDivision }) {
           )}
 
           {division.teams.length > 0 && (
-            <div>                  <p className="text-[10px] font-medium text-nx-mist dark:text-nx-mist mb-2">تیم‌ها ({division.teams.length})</p>
+            <div>                  <p className="text-[10px] font-medium text-slate-600 dark:text-slate-200 mb-2">تیم‌ها ({division.teams.length})</p>
                   <div className="space-y-2 pl-4 border-r-2 border-nx-blue/10 dark:border-nx-blue">
                 {division.teams.map(team => (
                   <TeamNode key={team.id} team={team} />
@@ -250,8 +250,8 @@ export default function OrgChartPage() {
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${stat.color}`}>
                   <stat.icon className="w-5 h-5" />
                 </div>
-                <div>                    <p className="text-2xl font-bold text-nx-navy dark:text-nx-mist/10">{stat.count}</p>
-                    <p className="text-xs text-nx-mist dark:text-nx-mist">{stat.label}</p>
+                <div>                    <p className="text-2xl font-bold text-nx-navy dark:text-slate-100">{stat.count}</p>
+                    <p className="text-xs text-slate-600 dark:text-slate-200">{stat.label}</p>
                 </div>
               </div>
             </div>
@@ -263,8 +263,8 @@ export default function OrgChartPage() {
         ) : orgTree.length === 0 ? (
           <div className="text-center py-20">
             <Building2 className="w-16 h-16 text-nx-mist mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-nx-navy dark:text-nx-mist/10 mb-2">هنوز ساختار سازمانی تعریف نشده</h3>
-            <p className="text-nx-mist dark:text-nx-mist mb-6">از بخش مدیریت سازمانی شرکت، واحد و تیم اضافه کنید</p>
+            <h3 className="text-lg font-medium text-nx-navy dark:text-slate-100 mb-2">هنوز ساختار سازمانی تعریف نشده</h3>
+            <p className="text-slate-600 dark:text-slate-200 mb-6">از بخش مدیریت سازمانی شرکت، واحد و تیم اضافه کنید</p>
             <Link
               to="/admin/org"
               className="px-6 py-3 bg-nx-blue text-white rounded-xl hover:bg-nx-blue transition font-medium inline-block"

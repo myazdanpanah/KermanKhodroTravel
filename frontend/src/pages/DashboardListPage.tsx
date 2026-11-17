@@ -249,8 +249,8 @@ export default function DashboardListPage() {
               <BarChart3 className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10">نکسیوو</h1>
-              <p className="text-xs text-nx-mist dark:text-nx-mist">پلتفرم داشبورد هوشمند</p>
+              <h1 className="text-lg font-bold text-nx-navy dark:text-slate-100">نکسیوو</h1>
+              <p className="text-xs text-slate-600 dark:text-slate-200">پلتفرم داشبورد هوشمند</p>
             </div>
           </div>
 
@@ -258,7 +258,7 @@ export default function DashboardListPage() {
             <NotificationBell />
             <ThemeToggle />
 
-            <div className="flex items-center gap-2 text-sm text-nx-mist dark:text-nx-mist">
+            <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-200">
               <span className="font-medium">{user?.username}</span>
               <span className="px-2 py-0.5 bg-nx-blue/10 dark:bg-nx-blue/40 text-nx-blue dark:text-nx-blue rounded-lg text-xs font-medium">
                 {roleLabels[user?.role || ''] || user?.role}
@@ -279,7 +279,7 @@ export default function DashboardListPage() {
       {/* Content */}
       <main className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex items-center justify-between mb-8">
-          <h2 className="text-xl font-bold text-white dark:text-nx-mist/10">داشبوردها</h2>
+          <h2 className="text-xl font-bold text-white dark:text-slate-100">داشبوردها</h2>
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowTemplates(!showTemplates)}
@@ -301,8 +301,8 @@ export default function DashboardListPage() {
         {/* Template Picker */}
         {showTemplates && (
           <div className="mb-8 bg-white dark:bg-nx-navy rounded-2xl border border-nx-border dark:border-nx-navy-border p-6">
-            <h3 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10 mb-4">قالب‌های آماده</h3>
-            <p className="text-sm text-nx-mist dark:text-nx-mist mb-6">یک قالب انتخاب کنید تا داشبورد شما با نمودارهای پیش‌فرض ساخته شود. سپس می‌توانید داده‌ها و تنظیمات را تغییر دهید.</p>
+            <h3 className="text-lg font-bold text-nx-navy dark:text-slate-100 mb-4">قالب‌های آماده</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-200 mb-6">یک قالب انتخاب کنید تا داشبورد شما با نمودارهای پیش‌فرض ساخته شود. سپس می‌توانید داده‌ها و تنظیمات را تغییر دهید.</p>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {templates.map((tmpl) => {
                 const Icon = TEMPLATE_ICONS[tmpl.id] || BarChart3
@@ -320,10 +320,10 @@ export default function DashboardListPage() {
                         <Icon className="w-5 h-5 text-white" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h4 className="font-bold text-nx-navy dark:text-nx-mist/10 group-hover:text-nx-blue transition text-sm">
+                        <h4 className="font-bold text-nx-navy dark:text-slate-100 group-hover:text-nx-blue transition text-sm">
                           {isCreating ? 'در حال ساخت...' : tmpl.name}
                         </h4>
-                        <p className="text-xs text-nx-mist dark:text-nx-mist mt-1">{tmpl.description}</p>
+                        <p className="text-xs text-slate-600 dark:text-slate-200 mt-1">{tmpl.description}</p>
                         <div className="flex items-center gap-3 mt-2 text-xs text-nx-mist">
                           <span>{tmpl.page_count} صفحه</span>
                           <span>{tmpl.widget_count} نمودار</span>
@@ -341,9 +341,9 @@ export default function DashboardListPage() {
           <div className="text-center py-20 text-nx-mist">در حال بارگذاری...</div>
         ) : dashboards.length === 0 ? (
           <div className="text-center py-20">
-            <BarChart3 className="w-16 h-16 text-nx-mist dark:text-nx-mist mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-white dark:text-nx-mist/10 mb-2">هنوز داشبوردی ندارید</h3>
-            <p className="text-nx-mist dark:text-nx-mist mb-6">اولین داشبورد خود را بسازید یا از یک قالب شروع کنید</p>
+            <BarChart3 className="w-16 h-16 text-slate-600 dark:text-slate-200 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white dark:text-slate-100 mb-2">هنوز داشبوردی ندارید</h3>
+            <p className="text-slate-600 dark:text-slate-200 mb-6">اولین داشبورد خود را بسازید یا از یک قالب شروع کنید</p>
             <div className="flex items-center justify-center gap-3">
               <button
                 onClick={() => setShowTemplates(true)}
@@ -369,12 +369,12 @@ export default function DashboardListPage() {
               >
                 <Link to={`/dashboards/${d.id}`} className="block">
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-bold text-nx-navy dark:text-nx-mist/10 group-hover:text-nx-blue transition">
+                    <h3 className="font-bold text-nx-navy dark:text-slate-100 group-hover:text-nx-blue transition">
                       {d.name}
                     </h3>
-                    <ChevronLeft className="w-5 h-5 text-nx-mist dark:text-nx-mist group-hover:text-nx-blue transition" />
+                    <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-200 group-hover:text-nx-blue transition" />
                   </div>
-                  <p className="text-sm text-nx-mist dark:text-nx-mist mb-4 line-clamp-2">
+                  <p className="text-sm text-slate-600 dark:text-slate-200 mb-4 line-clamp-2">
                     {d.description || 'بدون توضیح'}
                   </p>
                 </Link>
@@ -388,9 +388,9 @@ export default function DashboardListPage() {
                         تخصیص
                       </span>
                     )}
-                    <span className="text-nx-mist dark:text-nx-mist">{d.pages && d.pages.length > 0 ? `${d.pages.length} صفحه` : `${d.widgets?.length || 0} نمودار`}</span>
-                    <span className="mx-1 text-nx-mist dark:text-nx-mist">·</span>
-                    <span className="text-nx-mist dark:text-nx-mist">{d.owner_name}</span>
+                    <span className="text-slate-600 dark:text-slate-200">{d.pages && d.pages.length > 0 ? `${d.pages.length} صفحه` : `${d.widgets?.length || 0} نمودار`}</span>
+                    <span className="mx-1 text-slate-600 dark:text-slate-200">·</span>
+                    <span className="text-slate-600 dark:text-slate-200">{d.owner_name}</span>
                   </div>
 
                   {/* Three-dot menu */}
@@ -463,7 +463,7 @@ export default function DashboardListPage() {
           <div className="absolute inset-0 bg-black/40" onClick={() => setEditModal(null)} />
           <div className="relative bg-white dark:bg-nx-navy rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-nx-border dark:border-nx-navy-border">
-              <h3 className="font-bold text-nx-navy dark:text-nx-mist/10">ویرایش داشبورد</h3>
+              <h3 className="font-bold text-nx-navy dark:text-slate-100">ویرایش داشبورد</h3>
               <button onClick={() => setEditModal(null)} className="p-1 text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist">
                 <X className="w-5 h-5" />
               </button>
@@ -475,7 +475,7 @@ export default function DashboardListPage() {
                   type="text"
                   value={editForm.name}
                   onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
+                  className="w-full px-4 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
                   dir="rtl"
                   autoFocus
                 />
@@ -486,7 +486,7 @@ export default function DashboardListPage() {
                   value={editForm.description}
                   onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none resize-none"
+                  className="w-full px-4 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none resize-none"
                   dir="rtl"
                   placeholder="توضیحات داشبورد..."
                 />
@@ -495,7 +495,7 @@ export default function DashboardListPage() {
             <div className="px-6 py-4 border-t border-nx-border dark:border-nx-navy-border flex items-center justify-end gap-3">
               <button
                 onClick={() => setEditModal(null)}
-                className="px-4 py-2 text-sm text-nx-mist dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy rounded-xl transition"
+                className="px-4 py-2 text-sm text-slate-600 dark:text-slate-200 hover:bg-nx-mist/10 dark:hover:bg-nx-navy rounded-xl transition"
               >
                 انصراف
               </button>
@@ -517,13 +517,13 @@ export default function DashboardListPage() {
           <div className="absolute inset-0 bg-black/40" onClick={() => setShareModal(null)} />
           <div className="relative bg-white dark:bg-nx-navy rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-nx-border dark:border-nx-navy-border">
-              <h3 className="font-bold text-nx-navy dark:text-nx-mist/10">اشتراک‌گذاری: {shareModal.name}</h3>
+              <h3 className="font-bold text-nx-navy dark:text-slate-100">اشتراک‌گذاری: {shareModal.name}</h3>
               <button onClick={() => setShareModal(null)} className="p-1 text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6">
-              <p className="text-sm text-nx-mist dark:text-nx-mist mb-4">نقش‌هایی که به این داشبورد دسترسی دارند:</p>
+              <p className="text-sm text-slate-600 dark:text-slate-200 mb-4">نقش‌هایی که به این داشبورد دسترسی دارند:</p>
               <div className="space-y-2">
                 {ALL_ROLES.map((r) => (
                   <label
@@ -545,7 +545,7 @@ export default function DashboardListPage() {
             <div className="px-6 py-4 border-t border-nx-border dark:border-nx-navy-border flex items-center justify-end gap-3">
               <button
                 onClick={() => setShareModal(null)}
-                className="px-4 py-2 text-sm text-nx-mist dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy rounded-xl transition"
+                className="px-4 py-2 text-sm text-slate-600 dark:text-slate-200 hover:bg-nx-mist/10 dark:hover:bg-nx-navy rounded-xl transition"
               >
                 انصراف
               </button>

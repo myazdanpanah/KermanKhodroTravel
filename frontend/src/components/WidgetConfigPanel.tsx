@@ -355,8 +355,8 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
       {/* Panel */}
       <div className="absolute left-0 top-0 bottom-0 w-full max-w-96 bg-white dark:bg-nx-navy shadow-xl overflow-y-auto">
         <div className="sticky top-0 bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border px-6 py-4 flex items-center justify-between">
-          <h3 className="font-bold text-nx-navy dark:text-nx-mist/10">تنظیمات نمودار</h3>
-          <button onClick={onClose} className="p-1 text-nx-mist dark:text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist transition">
+          <h3 className="font-bold text-nx-navy dark:text-slate-100">تنظیمات نمودار</h3>
+          <button onClick={onClose} className="p-1 text-slate-600 dark:text-slate-200 hover:text-nx-mist dark:hover:text-nx-mist transition">
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -369,7 +369,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
+              className="w-full px-4 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
               dir="rtl"
             />
           </div>
@@ -404,7 +404,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
             <select
               value={selectedDatasetId || ''}
               onChange={(e) => setSelectedDatasetId(e.target.value ? parseInt(e.target.value) : null)}
-              className="w-full px-4 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
+              className="w-full px-4 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
             >
               <option value="">انتخاب کنید...</option>
               {datasets.map((ds) => (
@@ -551,7 +551,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                             return next
                           })
                         }}
-                        className="text-xs px-2 py-1 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 focus:ring-1 focus:ring-nx-blue outline-none"
+                        className="text-xs px-2 py-1 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 focus:ring-1 focus:ring-nx-blue outline-none"
                       >
                         <option value="">بدون گروه‌بندی</option>
                         <option value="year">سال</option>
@@ -573,11 +573,11 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
 
               {/* Format type */}
               <div>
-                <label className="block text-xs text-nx-mist dark:text-nx-mist mb-1">نوع قالب</label>
+                <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">نوع قالب</label>
                 <select
                   value={kpiFormat.type}
                   onChange={(e) => setKpiFormat({ ...kpiFormat, type: e.target.value as KpiFormat['type'] })}
-                  className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
+                  className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
                 >
                   <option value="auto">خودکار</option>
                   <option value="number">عدد</option>
@@ -589,12 +589,12 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
               {/* Currency symbol (only for currency) */}
               {kpiFormat.type === 'currency' && (
                 <div>
-                  <label className="block text-xs text-nx-mist dark:text-nx-mist mb-1">نماد ارز</label>
+                  <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">نماد ارز</label>
                   <input
                     type="text"
                     value={kpiFormat.currency}
                     onChange={(e) => setKpiFormat({ ...kpiFormat, currency: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
+                    className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
                     placeholder="$"
                     maxLength={5}
                   />
@@ -603,7 +603,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
 
               {/* Decimal places */}
               <div>
-                <label className="block text-xs text-nx-mist dark:text-nx-mist mb-1">اعداد اعشاری: {kpiFormat.decimals}</label>
+                <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">اعداد اعشاری: {kpiFormat.decimals}</label>
                 <input
                   type="range"
                   min={0}
@@ -621,12 +621,12 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
 
               {/* Prefix */}
               <div>
-              <label className="block text-xs text-nx-mist dark:text-nx-mist mb-1">پیشوند</label>
+              <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">پیشوند</label>
               <input
                 type="text"
                 value={kpiFormat.prefix}
                 onChange={(e) => setKpiFormat({ ...kpiFormat, prefix: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
+                className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
                 placeholder="مثلاً: "
                 maxLength={10}
                 />
@@ -634,12 +634,12 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
 
               {/* Suffix */}
               <div>
-              <label className="block text-xs text-nx-mist dark:text-nx-mist mb-1">پسوند</label>
+              <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">پسوند</label>
               <input
                 type="text"
                 value={kpiFormat.suffix}
                 onChange={(e) => setKpiFormat({ ...kpiFormat, suffix: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
+                className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
                 placeholder="مثلاً: تومان"
                 maxLength={10}
                 />
@@ -663,7 +663,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
               <input
                 type="text"
                 value={mapUrl}
-                onChange={(e) => setMapUrl(e.target.value)}                      className="w-full px-4 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none text-sm"
+                onChange={(e) => setMapUrl(e.target.value)}                      className="w-full px-4 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none text-sm"
                 placeholder="https://example.com/maps/iran.json"
                 dir="ltr"
               />
@@ -702,7 +702,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                         next[idx] = { ...next[idx], col: e.target.value }
                         setWidgetFilters(next)
                       }}
-                      className="flex-1 px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
+                      className="flex-1 px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
                     >
                       {selectedDataset.column_names.map((col) => (
                         <option key={col} value={col}>{col}</option>
@@ -717,7 +717,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                         next[idx] = { ...next[idx], op: e.target.value as WidgetFilter['op'] }
                         setWidgetFilters(next)
                       }}
-                      className="w-20 px-1.5 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
+                      className="w-20 px-1.5 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
                     >
                       <option value="eq">برابر</option>
                       <option value="neq">نابرابر</option>
@@ -740,7 +740,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                         setWidgetFilters(next)
                       }}
                       placeholder="مقدار"
-                      className="flex-1 px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
+                      className="flex-1 px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
                     />
 
                     {/* Remove */}
@@ -760,7 +760,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
           <div className="border border-nx-border dark:border-nx-muted rounded-xl p-4 space-y-3">
             <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist">پس‌زمینه نمودار</label>
             <div>
-              <label className="block text-xs text-nx-mist dark:text-nx-mist mb-1">رنگ پس‌زمینه</label>
+              <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">رنگ پس‌زمینه</label>
               <div className="flex items-center gap-2">                  <input
                     type="color"
                     value={bgColor || '#ffffff'}
@@ -772,7 +772,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                     value={bgColor}
                     onChange={(e) => setBgColor(e.target.value)}
                     placeholder="#ffffff یا خالی برای شفاف"
-                    className="flex-1 px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
+                    className="flex-1 px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
                   dir="ltr"
                 />
                 {bgColor && (
@@ -781,12 +781,12 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
               </div>
             </div>
             <div>
-              <label className="block text-xs text-nx-mist dark:text-nx-mist mb-1">آدرس تصویر پس‌زمینه (URL)</label>
+              <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">آدرس تصویر پس‌زمینه (URL)</label>
               <input
                 type="text"
                 value={bgImage}
                 onChange={(e) => setBgImage(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
+                className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
                 placeholder="https://example.com/bg.png"
                 dir="ltr"
               />
@@ -799,11 +799,11 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
               <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist">مرتب‌سازی و محدودیت</label>
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="block text-xs text-nx-mist dark:text-nx-mist mb-1">مرتب‌سازی</label>
+                  <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">مرتب‌سازی</label>
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
+                    className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
                   >
                     <option value="none">بدون مرتب‌سازی</option>
                     <option value="asc">صعودی (کم به زیاد)</option>
@@ -811,19 +811,19 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                   </select>
                 </div>
                 <div className="flex-1">
-                  <label className="block text-xs text-nx-mist dark:text-nx-mist mb-1">تعداد نتایج</label>
+                  <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">تعداد نتایج</label>
                   <input
                     type="number"
                     min={0}
                     max={100}
                     value={sortLimit}
                     onChange={(e) => setSortLimit(parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
+                    className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
                     placeholder="0 = بدون محدودیت"
                   />
                 </div>
               </div>
-              <p className="text-[10px] text-nx-mist dark:text-nx-mist">مثلاً: ۱۰ مورد برتر یا ۵ مورد آخر</p>
+              <p className="text-[10px] text-slate-600 dark:text-slate-200">مثلاً: ۱۰ مورد برتر یا ۵ مورد آخر</p>
             </div>
           )}
 
@@ -833,26 +833,26 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
               <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist">اندازه فونت</label>
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="block text-xs text-nx-mist dark:text-nx-mist mb-1">متن/برچسب (px)</label>
+                  <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">متن/برچسب (px)</label>
                   <input
                     type="number"
                     min={8}
                     max={32}
                     value={fontConfig.labelSize ?? ''}
                     onChange={(e) => setFontConfig({ ...fontConfig, labelSize: parseInt(e.target.value) || undefined })}
-                    className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
+                    className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
                     placeholder="۱۱"
                   />
                 </div>
                 <div className="flex-1">
-                  <label className="block text-xs text-nx-mist dark:text-nx-mist mb-1">اعداد/مقادیر (px)</label>
+                  <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">اعداد/مقادیر (px)</label>
                   <input
                     type="number"
                     min={8}
                     max={48}
                     value={fontConfig.valueSize ?? ''}
                     onChange={(e) => setFontConfig({ ...fontConfig, valueSize: parseInt(e.target.value) || undefined })}
-                    className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
+                    className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
                     placeholder="۱۴"
                   />
                 </div>
@@ -872,7 +872,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                     onChange={(e) => setSeriesColors({ ...seriesColors, [col]: e.target.value })}
                     className="w-8 h-8 rounded-lg border border-nx-mist dark:border-nx-muted cursor-pointer"
                   />
-                  <span className="text-xs text-nx-mist dark:text-nx-mist">{col}</span>
+                  <span className="text-xs text-slate-600 dark:text-slate-200">{col}</span>
                   {seriesColors[col] && (
                     <button
                       onClick={() => {
@@ -901,7 +901,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                     onChange={(e) => setSliceColors({ ...sliceColors, [name]: e.target.value })}
                     className="w-8 h-8 rounded-lg border border-nx-mist dark:border-nx-muted cursor-pointer"
                   />
-                  <span className="text-xs text-nx-mist dark:text-nx-mist flex-1 truncate">{name}</span>
+                  <span className="text-xs text-slate-600 dark:text-slate-200 flex-1 truncate">{name}</span>
                   <button
                     onClick={() => {
                       const next = { ...sliceColors }
@@ -938,7 +938,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                   value={singleColor}
                   onChange={(e) => setSingleColor(e.target.value)}
                   placeholder="#6366f1"
-                  className="flex-1 px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
+                  className="flex-1 px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
                   dir="ltr"
                 />
                 {singleColor && (
@@ -981,7 +981,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                       next[idx] = { ...rule, column: e.target.value }
                       setCondRules(next)
                     }}
-                    className="px-2 py-1 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
+                    className="px-2 py-1 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
                   >
                     <option value="">ستون...</option>
                     {selectedColumns.map((col) => (
@@ -995,7 +995,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                       next[idx] = { ...rule, op: e.target.value as ConditionalRule['op'] }
                       setCondRules(next)
                     }}
-                    className="px-2 py-1 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
+                    className="px-2 py-1 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
                   >
                     <option value="gt">&gt;</option>
                     <option value="gte">≥</option>
@@ -1012,7 +1012,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                       next[idx] = { ...rule, value: parseFloat(e.target.value) || 0 }
                       setCondRules(next)
                     }}
-                    className="w-20 px-2 py-1 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
+                    className="w-20 px-2 py-1 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
                     dir="ltr"
                   />
                   {rule.op === 'between' && (
@@ -1024,7 +1024,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                         next[idx] = { ...rule, value2: parseFloat(e.target.value) || 0 }
                         setCondRules(next)
                       }}
-                      className="w-20 px-2 py-1 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
+                      className="w-20 px-2 py-1 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
                       dir="ltr"
                     />
                   )}
@@ -1070,7 +1070,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
               <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist">سبک نمودار</label>
 
               {/* Shadow */}
-              <div>                  <label className="block text-xs text-nx-mist dark:text-nx-mist mb-1">سایه</label>
+              <div>                  <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">سایه</label>
                 <div className="flex gap-2">
                   {(['none', 'sm', 'md', 'lg'] as const).map((s) => (
                     <button
@@ -1079,7 +1079,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                       className={`flex-1 py-2 rounded-lg text-xs font-medium border transition ${
                         widgetStyle.shadow === s
                           ? 'border-nx-blue bg-nx-blue/10 dark:bg-nx-blue/30 text-nx-blue dark:text-nx-blue'
-                          : 'border-nx-border dark:border-nx-muted text-nx-mist dark:text-nx-mist hover:border-nx-mist dark:hover:border-nx-muted'
+                          : 'border-nx-border dark:border-nx-muted text-slate-600 dark:text-slate-200 hover:border-nx-mist dark:hover:border-nx-muted'
                       }`}
                     >
                       {s === 'none' ? 'بدون' : s === 'sm' ? 'کم' : s === 'md' ? 'متوسط' : 'زیاد'}
@@ -1090,7 +1090,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
 
               {/* Border Radius */}
               <div>
-                <label className="block text-xs text-nx-mist dark:text-nx-mist mb-1">گردی گوشه: {widgetStyle.borderRadius}px</label>
+                <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">گردی گوشه: {widgetStyle.borderRadius}px</label>
                 <input
                   type="range"
                   min={0}
@@ -1103,11 +1103,11 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
 
               {/* Legend Position */}
               <div>
-                <label className="block text-xs text-nx-mist dark:text-nx-mist mb-1">موقعیت راهنما</label>
+                <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">موقعیت راهنما</label>
                 <select
                   value={widgetStyle.legendPosition}
                   onChange={(e) => setWidgetStyle({ ...widgetStyle, legendPosition: e.target.value as WidgetStyle['legendPosition'] })}
-                  className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
+                  className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
                 >
                   <option value="top">بالا</option>
                   <option value="bottom">پایین</option>
@@ -1119,7 +1119,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
 
               {/* Tooltip Style */}
               <div>
-                <label className="block text-xs text-nx-mist dark:text-nx-mist mb-1">سبک راهنما</label>
+                <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">سبک راهنما</label>
                 <div className="flex gap-2">
                   {(['light', 'dark'] as const).map((ts) => (
                     <button
@@ -1128,7 +1128,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                       className={`flex-1 py-2 rounded-lg text-xs font-medium border transition ${
                         widgetStyle.tooltipStyle === ts
                           ? 'border-nx-blue bg-nx-blue/10 dark:bg-nx-blue/30 text-nx-blue dark:text-nx-blue'
-                          : 'border-nx-border dark:border-nx-muted text-nx-mist dark:text-nx-mist hover:border-nx-mist dark:hover:border-nx-muted'
+                          : 'border-nx-border dark:border-nx-muted text-slate-600 dark:text-slate-200 hover:border-nx-mist dark:hover:border-nx-muted'
                       }`}
                     >
                       {ts === 'light' ? 'روشن' : 'تاریک'}

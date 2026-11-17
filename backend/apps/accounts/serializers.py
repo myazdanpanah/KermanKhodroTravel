@@ -10,6 +10,7 @@ class UserSerializer(serializers.ModelSerializer):
     division_name = serializers.CharField(source='division.name', read_only=True, default=None)
     team_name = serializers.CharField(source='team.name', read_only=True, default=None)
     reports_to_name = serializers.SerializerMethodField()
+    avatar_url = serializers.SerializerMethodField()
     accessible_modules = serializers.SerializerMethodField()
     # Billing permission flags (KKTCOIG spec §6.1) so the UI can hide actions.
     permissions = serializers.SerializerMethodField()
@@ -20,7 +21,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             "id", "username", "email", "first_name", "last_name",
-            "role", "department", "is_staff",
+            "role", "department", "is_staff", "avatar", "avatar_url",
             "company", "company_name",
             "division", "division_name",
             "team", "team_name",
@@ -35,6 +36,14 @@ class UserSerializer(serializers.ModelSerializer):
             "can_edit_template",
         ]
         read_only_fields = ["id"]
+
+    def get_avatar_url(self, obj):
+        if not obj.avatar:
+            return None
+        try:
+            return obj.avatar.url
+        except ValueError:
+            return None
 
     def get_reports_to_name(self, obj):
         if obj.reports_to:

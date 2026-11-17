@@ -31,6 +31,17 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  /* Readability first: dark text on the light canvas, white text on the dark one. */
+  color: #0f172a;
+}
+
+html.dark body {
+  color: #f8fafc;
+}
+
+/* Muted copy keeps AA contrast on both canvases. */
+html:not(.dark) .text-slate-600 {
+  color: #475569;
 }
 
 /* Grid layout styles */

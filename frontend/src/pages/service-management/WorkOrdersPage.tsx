@@ -47,7 +47,7 @@ export default function WorkOrdersPage() {
             <Wrench className="h-6 w-6 text-nx-blue" />
             دستور کارها
           </h1>
-          <p className="text-sm text-nx-mist dark:text-nx-mist mt-1">
+          <p className="text-sm text-slate-600 dark:text-slate-200 mt-1">
             {filtered.length} دستور کار
           </p>
         </div>
@@ -94,7 +94,7 @@ export default function WorkOrdersPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-nx-blue" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-nx-mist dark:text-nx-mist">
+          <div className="text-center py-12 text-slate-600 dark:text-slate-200">
             <Wrench className="h-12 w-12 mx-auto mb-3 opacity-30" />
             <p>هیچ دستور کاری یافت نشد</p>
           </div>
@@ -103,12 +103,12 @@ export default function WorkOrdersPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-nx-border dark:border-nx-navy-border bg-white dark:bg-nx-navy">
-                  <th className="text-right px-4 py-3 font-medium text-nx-mist dark:text-nx-mist">شماره</th>
-                  <th className="text-right px-4 py-3 font-medium text-nx-mist dark:text-nx-mist">درخواست</th>
-                  <th className="text-right px-4 py-3 font-medium text-nx-mist dark:text-nx-mist">تکنسین</th>
-                  <th className="text-right px-4 py-3 font-medium text-nx-mist dark:text-nx-mist">وضعیت</th>
-                  <th className="text-right px-4 py-3 font-medium text-nx-mist dark:text-nx-mist">هزینه تخمینی</th>
-                  <th className="text-right px-4 py-3 font-medium text-nx-mist dark:text-nx-mist">هزینه واقعی</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-200">شماره</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-200">درخواست</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-200">تکنسین</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-200">وضعیت</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-200">هزینه تخمینی</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-200">هزینه واقعی</th>
                 </tr>
               </thead>
               <tbody>

@@ -119,7 +119,7 @@ export default function TableEditorPage() {
               <ArrowRight className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10">{table}</h1>
+              <h1 className="text-lg font-bold text-nx-navy dark:text-slate-100">{table}</h1>
               <p className="text-xs text-nx-muted dark:text-nx-mist">
                 {source === 'local' ? 'Nexivo' : 'خارجی'} · {totalCount.toLocaleString()} ردیف · {schema.length} ستون
               </p>

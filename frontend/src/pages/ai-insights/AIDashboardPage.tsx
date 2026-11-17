@@ -46,8 +46,8 @@ export default function AIDashboardPage() {
           <Brain className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-white dark:text-nx-mist/10">داشبورد هوش مصنوعی</h1>
-          <p className="text-sm text-nx-mist dark:text-nx-mist">تحلیل داده و بینش‌های خودکار</p>
+          <h1 className="text-2xl font-bold text-white dark:text-slate-100">داشبورد هوش مصنوعی</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-200">تحلیل داده و بینش‌های خودکار</p>
         </div>
       </div>
 
@@ -60,8 +60,8 @@ export default function AIDashboardPage() {
                 <card.icon className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-nx-navy dark:text-nx-mist/10">{card.value}</p>
-                <p className="text-xs text-nx-mist dark:text-nx-mist">{card.sub}</p>
+                <p className="text-2xl font-bold text-nx-navy dark:text-slate-100">{card.value}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-200">{card.sub}</p>
               </div>
             </div>
           </div>
@@ -70,11 +70,11 @@ export default function AIDashboardPage() {
 
       {/* Anomalies by Module */}
       <div className="bg-white dark:bg-nx-navy rounded-xl p-6 shadow-sm border border-nx-border dark:border-nx-navy-border">
-        <h2 className="text-lg font-semibold text-nx-navy dark:text-nx-mist/10 mb-4 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-nx-navy dark:text-slate-100 mb-4 flex items-center gap-2">
           <Activity className="w-5 h-5" /> Anomalies by Module
         </h2>
         {data.anomalies.by_module.length === 0 ? (
-          <p className="text-nx-mist dark:text-nx-mist text-sm">No anomalies detected</p>
+          <p className="text-slate-600 dark:text-slate-200 text-sm">No anomalies detected</p>
         ) : (
           <div className="space-y-3">
             {data.anomalies.by_module.map((m) => (
@@ -89,17 +89,17 @@ export default function AIDashboardPage() {
 
       {/* Recent NL Queries */}
       <div className="bg-white dark:bg-nx-navy rounded-xl p-6 shadow-sm border border-nx-border dark:border-nx-navy-border">
-        <h2 className="text-lg font-semibold text-nx-navy dark:text-nx-mist/10 mb-4 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-nx-navy dark:text-slate-100 mb-4 flex items-center gap-2">
           <MessageSquare className="w-5 h-5" /> Recent Queries
         </h2>
         {data.recent_queries.length === 0 ? (
-          <p className="text-nx-mist dark:text-nx-mist text-sm">No queries yet</p>
+          <p className="text-slate-600 dark:text-slate-200 text-sm">No queries yet</p>
         ) : (
           <div className="space-y-3">
             {data.recent_queries.map((q) => (
               <div key={q.id} className="p-3 bg-white dark:bg-nx-navy rounded-lg">
                 <p className="text-sm font-medium text-nx-navy dark:text-nx-mist">{q.query_text}</p>
-                <div className="flex items-center gap-3 mt-1 text-xs text-nx-mist dark:text-nx-mist">
+                <div className="flex items-center gap-3 mt-1 text-xs text-slate-600 dark:text-slate-200">
                   <span className={`px-2 py-0.5 rounded-full ${q.status === 'completed' ? 'bg-nx-teal/10 text-nx-teal' : q.status === 'failed' ? 'bg-nx-danger-100 text-nx-danger-700' : 'bg-nx-warning-100 text-nx-warning-700'}`}>
                     {q.status}
                   </span>

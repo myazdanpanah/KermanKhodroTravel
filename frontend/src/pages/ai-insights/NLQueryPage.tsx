@@ -53,8 +53,8 @@ export default function NLQueryPage() {
           <MessageSquare className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-white dark:text-nx-mist/10">پرسش به زبان طبیعی</h1>
-          <p className="text-sm text-nx-mist dark:text-nx-mist">Natural Language Query</p>
+          <h1 className="text-2xl font-bold text-white dark:text-slate-100">پرسش به زبان طبیعی</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-200">Natural Language Query</p>
         </div>
       </div>
 
@@ -66,7 +66,7 @@ export default function NLQueryPage() {
         <div className="flex gap-3">
           <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
             placeholder="مثلاً: مجموع فاکتورهای این ماه چقدر است؟"
-            className="flex-1 px-4 py-3 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none transition"
+            className="flex-1 px-4 py-3 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none transition"
             dir="rtl"
           />
           <button type="submit" disabled={submitting || !query.trim()}
@@ -78,7 +78,7 @@ export default function NLQueryPage() {
         <div className="mt-3 flex flex-wrap gap-2">
           {['مجموع فاکتورها', 'تعداد سفارشات', 'کارمندان فعال', 'درخواست‌های سرویس', 'هزینه تولید'].map((s) => (
             <button key={s} type="button" onClick={() => setQuery(s)}
-              className="px-3 py-1 text-xs rounded-full border border-nx-mist dark:border-nx-muted text-nx-mist dark:text-nx-mist hover:bg-nx-blue/10 dark:hover:bg-nx-blue/20 transition">
+              className="px-3 py-1 text-xs rounded-full border border-nx-mist dark:border-nx-muted text-slate-600 dark:text-slate-200 hover:bg-nx-blue/10 dark:hover:bg-nx-blue/20 transition">
               {s}
             </button>
           ))}
@@ -89,7 +89,7 @@ export default function NLQueryPage() {
       {currentResult && (
         <div className="bg-white dark:bg-nx-navy rounded-xl p-6 shadow-sm border border-nx-border dark:border-nx-navy-border">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="font-semibold text-nx-navy dark:text-nx-mist/10">Result</h3>
+            <h3 className="font-semibold text-nx-navy dark:text-slate-100">Result</h3>
             <div className="flex items-center gap-2 text-xs text-nx-mist">
               {statusIcon(currentResult.status)}
               <span>{currentResult.execution_time_ms}ms</span>
@@ -101,7 +101,7 @@ export default function NLQueryPage() {
                 <thead>
                   <tr className="border-b border-nx-border dark:border-nx-navy-border">
                     {currentResult.result_data.headers.map((h: string, i: number) => (
-                      <th key={i} className="text-left py-2 px-3 text-nx-mist dark:text-nx-mist font-medium">{h}</th>
+                      <th key={i} className="text-left py-2 px-3 text-slate-600 dark:text-slate-200 font-medium">{h}</th>
                     ))}
                   </tr>
                 </thead>
@@ -128,9 +128,9 @@ export default function NLQueryPage() {
 
       {/* Query History */}
       <div className="bg-white dark:bg-nx-navy rounded-xl p-6 shadow-sm border border-nx-border dark:border-nx-navy-border">
-        <h3 className="font-semibold text-nx-navy dark:text-nx-mist/10 mb-4">Query History</h3>
+        <h3 className="font-semibold text-nx-navy dark:text-slate-100 mb-4">Query History</h3>
         {queries.length === 0 ? (
-          <p className="text-sm text-nx-mist dark:text-nx-mist">No queries yet.</p>
+          <p className="text-sm text-slate-600 dark:text-slate-200">No queries yet.</p>
         ) : (
           <div className="space-y-2">
             {queries.map((q) => (

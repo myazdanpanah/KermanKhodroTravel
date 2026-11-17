@@ -381,7 +381,7 @@ export default function DashboardFilterBar() {
                 <select
                   value={newControlDatasetId || ''}
                   onChange={(e) => setNewControlDatasetId(e.target.value ? parseInt(e.target.value) : null)}
-                  className="w-full px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
+                  className="w-full px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
                 >
                   <option value="">مجموعه داده...</option>
                   {datasets.filter((d) => datasetIds.includes(d.id)).map((ds) => (
@@ -394,7 +394,7 @@ export default function DashboardFilterBar() {
                   <select
                     value={newControlCol}
                     onChange={(e) => setNewControlCol(e.target.value)}
-                    className="w-full px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
+                    className="w-full px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
                   >
                     <option value="">ستون...</option>
                     {dsForNewControl.column_names.map((col) => (
@@ -407,7 +407,7 @@ export default function DashboardFilterBar() {
                 <select
                   value={newControlType}
                   onChange={(e) => setNewControlType(e.target.value as DashboardFilterControl['type'])}
-                  className="w-full px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
+                  className="w-full px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
                 >
                   {CONTROL_TYPES.map((ct) => (
                     <option key={ct.value} value={ct.value}>{ct.label}</option>
@@ -420,7 +420,7 @@ export default function DashboardFilterBar() {
                   value={newControlLabel}
                   onChange={(e) => setNewControlLabel(e.target.value)}
                   placeholder="برچسب (اختیاری)"
-                  className="w-full px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
+                  className="w-full px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
                 />
 
                 {/* Filter access control */}
@@ -488,7 +488,7 @@ function FilterControlWidget({
           <select
             value={String(control.value || '')}
             onChange={(e) => onChange(e.target.value || null)}
-            className="w-full px-2 py-1.5 pr-6 rounded-lg border border-nx-mist dark:border-nx-muted text-xs bg-white dark:bg-nx-navy dark:text-nx-mist/20 focus:ring-1 focus:ring-nx-blue outline-none appearance-none"
+            className="w-full px-2 py-1.5 pr-6 rounded-lg border border-nx-mist dark:border-nx-muted text-xs bg-white dark:bg-nx-navy dark:text-slate-100 focus:ring-1 focus:ring-nx-blue outline-none appearance-none"
           >
             <option value="">همه</option>
             {(control.options || []).map((opt) => (

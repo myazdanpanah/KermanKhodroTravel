@@ -43,7 +43,7 @@ export default function AttendancePage() {
           <h1 className="text-2xl font-bold text-white dark:text-white flex items-center gap-3">
             <Calendar className="h-6 w-6 text-nx-teal" /> حضور و غیاب
           </h1>
-          <p className="text-sm text-nx-mist dark:text-nx-mist mt-1">{filtered.length} رکورد</p>
+          <p className="text-sm text-slate-600 dark:text-slate-200 mt-1">{filtered.length} رکورد</p>
         </div>
       </div>
 

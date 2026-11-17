@@ -93,7 +93,7 @@ export default function FileImportPage() {
             <ArrowRight className="w-5 h-5" />
           </Link>
           <Upload className="w-5 h-5 text-nx-blue" />
-          <h1 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10">وارد کردن فایل</h1>
+          <h1 className="text-lg font-bold text-nx-navy dark:text-slate-100">وارد کردن فایل</h1>
         </div>
       </header>
 
@@ -123,7 +123,7 @@ export default function FileImportPage() {
               <div className="flex items-center justify-center gap-3">
                 <FileSpreadsheet className="w-8 h-8 text-nx-teal" />
                 <div className="text-right">
-                  <p className="text-sm font-medium text-nx-navy dark:text-nx-mist/10">{file.name}</p>
+                  <p className="text-sm font-medium text-nx-navy dark:text-slate-100">{file.name}</p>
                   <p className="text-xs text-nx-muted dark:text-nx-mist">
                     {(file.size / 1024).toFixed(1)} KB · کلیک کنید برای تغییر
                   </p>
@@ -149,7 +149,7 @@ export default function FileImportPage() {
               value={tableName}
               onChange={(e) => setTableName(e.target.value)}
               placeholder="nexivo_my_data یا نام جدول موجود"
-              className="w-full px-4 py-2.5 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-xl outline-none focus:ring-2 focus:ring-nx-blue font-mono"
+              className="w-full px-4 py-2.5 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-nx-blue font-mono"
             />
             <p className="text-[10px] text-nx-mist mt-1">اگر جدول وجود نداشته باشد، ساخته می‌شود</p>
           </div>
@@ -159,7 +159,7 @@ export default function FileImportPage() {
             <select
               value={source}
               onChange={(e) => setSource(e.target.value)}
-              className="w-full px-4 py-2.5 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-xl outline-none focus:ring-2 focus:ring-nx-blue"
+              className="w-full px-4 py-2.5 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-nx-blue"
             >
               <option value="local">Nexivo (local)</option>
             </select>
@@ -178,7 +178,7 @@ export default function FileImportPage() {
                       : 'border-nx-border dark:border-nx-muted hover:border-nx-mist dark:hover:border-nx-muted'
                   }`}
                 >
-                  <div className="text-sm font-medium text-nx-navy dark:text-nx-mist/10">{m.label}</div>
+                  <div className="text-sm font-medium text-nx-navy dark:text-slate-100">{m.label}</div>
                   <div className="text-[10px] text-nx-muted dark:text-nx-mist mt-0.5">{m.desc}</div>
                 </button>
               ))}
@@ -192,7 +192,7 @@ export default function FileImportPage() {
                 value={keyColumn}
                 onChange={(e) => setKeyColumn(e.target.value)}
                 placeholder="id"
-                className="w-full px-4 py-2.5 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-xl outline-none focus:ring-2 focus:ring-nx-blue font-mono"
+                className="w-full px-4 py-2.5 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 rounded-xl outline-none focus:ring-2 focus:ring-nx-blue font-mono"
               />
             </div>
           )}

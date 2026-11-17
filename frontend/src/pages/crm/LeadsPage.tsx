@@ -65,7 +65,7 @@ export default function LeadsPage() {
           <h1 className="text-2xl font-bold text-white dark:text-white flex items-center gap-3">
             <Users className="h-6 w-6 text-nx-blue" /> سرنخ‌ها
           </h1>
-          <p className="text-sm text-nx-mist dark:text-nx-mist mt-1">{filtered.length} سرنخ</p>
+          <p className="text-sm text-slate-600 dark:text-slate-200 mt-1">{filtered.length} سرنخ</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-4 py-2 bg-nx-blue text-white rounded-lg hover:bg-nx-blue transition-colors">
           <Plus className="h-4 w-4" /> سرنخ جدید
@@ -120,7 +120,7 @@ export default function LeadsPage() {
         {loading ? (
           <div className="flex items-center justify-center h-48"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-nx-blue" /></div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-nx-mist dark:text-nx-mist"><Users className="h-12 w-12 mx-auto mb-3 opacity-30" /><p>هیچ سرنخی یافت نشد</p></div>
+          <div className="text-center py-12 text-slate-600 dark:text-slate-200"><Users className="h-12 w-12 mx-auto mb-3 opacity-30" /><p>هیچ سرنخی یافت نشد</p></div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

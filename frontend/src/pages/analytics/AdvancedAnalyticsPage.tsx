@@ -185,7 +185,7 @@ function MetricCard({ metric }: { metric: AnalyticsMetric }) {
     <div className="bg-white dark:bg-nx-navy rounded-xl p-5 border border-nx-border dark:border-nx-navy-border hover:shadow-lg transition-all duration-200 group">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <div className="text-sm text-nx-mist dark:text-nx-mist mb-1">{metric.name}</div>
+          <div className="text-sm text-slate-600 dark:text-slate-200 mb-1">{metric.name}</div>
           <div className="text-2xl font-bold text-nx-navy dark:text-white">{metric.value.toLocaleString()}</div>
         </div>
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${trendBg}`}>
@@ -234,7 +234,7 @@ function AnalyticsWidgetComponent({ widget }: { widget: AnalyticsWidget }) {
   return (
     <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border overflow-hidden hover:shadow-md transition-shadow">
       <div className="px-5 py-3 border-b border-nx-border dark:border-nx-navy-border flex items-center justify-between">
-        <h3 className="font-semibold text-nx-navy dark:text-nx-mist/20">{widget.title}</h3>
+        <h3 className="font-semibold text-nx-navy dark:text-slate-100">{widget.title}</h3>
         <span className="text-xs text-nx-mist bg-nx-mist/10 dark:bg-nx-navy px-2 py-0.5 rounded-full">
           {widget.type}
         </span>
@@ -466,7 +466,7 @@ export default function AdvancedAnalyticsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white dark:text-white">Advanced Analytics</h1>
-          <p className="text-nx-mist dark:text-nx-mist text-sm mt-1">
+          <p className="text-slate-600 dark:text-slate-200 text-sm mt-1">
             Real-time insights from your ERP modules
           </p>
         </div>
@@ -480,7 +480,7 @@ export default function AdvancedAnalyticsPage() {
                 className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                   timeRange === range
                     ? 'bg-white dark:bg-nx-navy text-nx-navy dark:text-white shadow-sm'
-                    : 'text-nx-mist dark:text-nx-mist hover:text-nx-navy dark:hover:text-white'
+                    : 'text-slate-600 dark:text-slate-200 hover:text-nx-navy dark:hover:text-white'
                 }`}
               >
                 {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : '90 Days'}
@@ -512,7 +512,7 @@ export default function AdvancedAnalyticsPage() {
       {kpiSummary && (
         <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-4">
           <div className="flex items-center gap-6 flex-wrap">
-            <div className="text-sm text-nx-mist dark:text-nx-mist font-medium">KPI Summary</div>
+            <div className="text-sm text-slate-600 dark:text-slate-200 font-medium">KPI Summary</div>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-nx-teal" />
               <span className="text-sm text-nx-navy dark:text-nx-mist">{kpiSummary.on_target} on target</span>
@@ -537,7 +537,7 @@ export default function AdvancedAnalyticsPage() {
       {selectedDashboard && (
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-lg font-semibold text-nx-navy dark:text-nx-mist/20">{selectedDashboard.name}</h2>
+            <h2 className="text-lg font-semibold text-nx-navy dark:text-slate-100">{selectedDashboard.name}</h2>
             <span className="text-xs text-nx-mist bg-nx-mist/10 dark:bg-nx-navy px-2 py-0.5 rounded-full">
               {selectedDashboard.widgets.length} widgets
             </span>
@@ -551,7 +551,7 @@ export default function AdvancedAnalyticsPage() {
           ) : (
             <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-12 text-center">
               <div className="text-nx-mist text-lg mb-2">📊</div>
-              <div className="text-nx-mist dark:text-nx-mist">No widgets configured for this dashboard</div>
+              <div className="text-slate-600 dark:text-slate-200">No widgets configured for this dashboard</div>
               <p className="text-nx-mist text-sm mt-1">Add KPIs and report templates to populate widgets</p>
             </div>
           )}
@@ -561,7 +561,7 @@ export default function AdvancedAnalyticsPage() {
       {/* Dashboard Selector */}
       {dashboards.length > 1 && (
         <div className="mt-8">
-          <h2 className="text-lg font-semibold text-nx-navy dark:text-nx-mist/20 mb-4">Available Dashboards</h2>
+          <h2 className="text-lg font-semibold text-nx-navy dark:text-slate-100 mb-4">Available Dashboards</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {dashboards.map(dashboard => (
               <button
@@ -573,7 +573,7 @@ export default function AdvancedAnalyticsPage() {
                     : 'border-nx-border dark:border-nx-navy-border hover:border-nx-blue hover:shadow-sm'
                 }`}
               >
-                <div className="font-medium text-nx-navy dark:text-nx-mist/20">{dashboard.name}</div>
+                <div className="font-medium text-nx-navy dark:text-slate-100">{dashboard.name}</div>
                 <div className="text-sm text-nx-mist mt-1">{dashboard.widgets.length} widgets</div>
               </button>
             ))}

@@ -99,7 +99,7 @@ export default function ExternalDbPage() {
               <ArrowRight className="w-5 h-5" />
             </Link>
             <Server className="w-5 h-5 text-nx-teal" />
-            <h1 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10">اتصالات پایگاه‌داده خارجی</h1>
+            <h1 className="text-lg font-bold text-nx-navy dark:text-slate-100">اتصالات پایگاه‌داده خارجی</h1>
           </div>
           <button
             onClick={() => { setShowForm(!showForm); setEditingId(null); setForm(EMPTY_FORM) }}
@@ -115,22 +115,22 @@ export default function ExternalDbPage() {
         {/* Add/Edit form */}
         {showForm && (
           <div className="bg-white dark:bg-nx-navy border border-nx-teal/10 dark:border-nx-teal rounded-xl p-6 space-y-4">
-            <h3 className="text-sm font-bold text-nx-navy dark:text-nx-mist/10">
+            <h3 className="text-sm font-bold text-nx-navy dark:text-slate-100">
               {editingId ? 'ویرایش اتصال' : 'اتصال جدید'}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <input placeholder="نام" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
               <input placeholder="هاست" value={form.host} onChange={(e) => setForm({ ...form, host: e.target.value })}
-                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
               <input placeholder="پورت" type="number" value={form.port} onChange={(e) => setForm({ ...form, port: parseInt(e.target.value) || 5432 })}
-                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
               <input placeholder="نام دیتابیس" value={form.database} onChange={(e) => setForm({ ...form, database: e.target.value })}
-                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
               <input placeholder="نام کاربری" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })}
-                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
               <input placeholder="رمز عبور" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
             </div>
             <div className="flex items-center gap-3">
               <button onClick={handleSave} className="px-4 py-2 text-sm bg-nx-teal text-white rounded-lg hover:bg-nx-teal transition font-medium">
@@ -161,7 +161,7 @@ export default function ExternalDbPage() {
                   <div className="flex items-center gap-3">
                     <Server className="w-5 h-5 text-nx-teal" />
                     <div>
-                      <span className="text-sm font-bold text-nx-navy dark:text-nx-mist/10">{db.name}</span>
+                      <span className="text-sm font-bold text-nx-navy dark:text-slate-100">{db.name}</span>
                       <span className={`mr-2 px-2 py-0.5 rounded-full text-[10px] font-medium ${db.is_active ? 'bg-nx-teal/10 text-nx-teal dark:bg-nx-teal/30 dark:text-nx-teal' : 'bg-nx-mist/10 text-nx-muted dark:bg-nx-navy dark:text-nx-mist'}`}>
                         {db.is_active ? 'فعال' : 'غیرفعال'}
                       </span>

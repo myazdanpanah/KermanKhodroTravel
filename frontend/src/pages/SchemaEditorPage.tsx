@@ -115,7 +115,7 @@ export default function SchemaEditorPage() {
               <ArrowRight className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10">مدیریت اسکیما</h1>
+              <h1 className="text-lg font-bold text-nx-navy dark:text-slate-100">مدیریت اسکیما</h1>
               <p className="text-xs text-nx-muted dark:text-nx-mist">{table} · {schema.length} ستون</p>
             </div>
           </div>
@@ -140,18 +140,18 @@ export default function SchemaEditorPage() {
         {/* Add column form */}
         {showAdd && (
           <div className="bg-white dark:bg-nx-navy border border-nx-blue/10 dark:border-nx-blue rounded-xl p-5 mb-6">
-            <h3 className="text-sm font-bold text-nx-navy dark:text-nx-mist/10 mb-4">ستون جدید</h3>
+            <h3 className="text-sm font-bold text-nx-navy dark:text-slate-100 mb-4">ستون جدید</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <input
                 placeholder="نام ستون"
                 value={newCol.name}
                 onChange={(e) => setNewCol({ ...newCol, name: e.target.value })}
-                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-blue"
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 rounded-lg outline-none focus:ring-2 focus:ring-nx-blue"
               />
               <select
                 value={newCol.type}
                 onChange={(e) => setNewCol({ ...newCol, type: e.target.value })}
-                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-blue"
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 rounded-lg outline-none focus:ring-2 focus:ring-nx-blue"
               >
                 {PG_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
@@ -159,7 +159,7 @@ export default function SchemaEditorPage() {
                 placeholder="مقدار پیش‌فرض (اختیاری)"
                 value={newCol.default}
                 onChange={(e) => setNewCol({ ...newCol, default: e.target.value })}
-                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-blue"
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 rounded-lg outline-none focus:ring-2 focus:ring-nx-blue"
               />
               <div className="flex items-center gap-2">
                 <button onClick={handleAdd} className="px-4 py-2 text-sm bg-nx-blue text-white rounded-lg hover:bg-nx-blue transition">
@@ -201,13 +201,13 @@ export default function SchemaEditorPage() {
                             onChange={(e) => setRenameValue(e.target.value)}
                             onKeyDown={(e) => { if (e.key === 'Enter') handleRename(col.name); if (e.key === 'Escape') setRenaming(null) }}
                             autoFocus
-                            className="px-2 py-1 text-sm border border-nx-blue dark:border-nx-blue dark:bg-nx-navy dark:text-nx-mist/10 rounded outline-none"
+                            className="px-2 py-1 text-sm border border-nx-blue dark:border-nx-blue dark:bg-nx-navy dark:text-slate-100 rounded outline-none"
                           />
                           <button onClick={() => handleRename(col.name)} className="text-nx-teal hover:text-nx-teal"><Check className="w-4 h-4" /></button>
                           <button onClick={() => setRenaming(null)} className="text-nx-mist hover:text-nx-muted"><X className="w-4 h-4" /></button>
                         </div>
                       ) : (
-                        <span className="font-mono text-nx-navy dark:text-nx-mist/10">{col.name}</span>
+                        <span className="font-mono text-nx-navy dark:text-slate-100">{col.name}</span>
                       )}
                     </td>
                     <td className="px-4 py-3">
@@ -216,7 +216,7 @@ export default function SchemaEditorPage() {
                           <select
                             value={typeValue}
                             onChange={(e) => setTypeValue(e.target.value)}
-                            className="px-2 py-1 text-sm border border-nx-blue dark:border-nx-blue dark:bg-nx-navy dark:text-nx-mist/10 rounded outline-none"
+                            className="px-2 py-1 text-sm border border-nx-blue dark:border-nx-blue dark:bg-nx-navy dark:text-slate-100 rounded outline-none"
                           >
                             {PG_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
                           </select>

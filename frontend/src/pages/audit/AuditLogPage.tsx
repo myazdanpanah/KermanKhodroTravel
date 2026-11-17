@@ -22,7 +22,7 @@ function SummaryCard({ label, value, icon }: { label: string; value: string | nu
     <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-5">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-sm text-nx-mist dark:text-nx-mist">{label}</div>
+          <div className="text-sm text-slate-600 dark:text-slate-200">{label}</div>
           <div className="text-2xl font-bold text-nx-navy dark:text-white mt-1">{typeof value === 'number' ? value.toLocaleString() : value}</div>
         </div>
         <div className="w-10 h-10 rounded-lg bg-nx-blue/10 dark:bg-nx-blue/30 flex items-center justify-center text-lg">{icon}</div>
@@ -53,7 +53,7 @@ function AuditTrailTable({ entries }: { entries: AuditLogEntry[] }) {
 
   if (!entries.length) {
     return (
-      <div className="text-center py-16 text-nx-mist dark:text-nx-mist">
+      <div className="text-center py-16 text-slate-600 dark:text-slate-200">
         <div className="text-4xl mb-3">📋</div>
         <div className="text-lg font-medium">No audit entries found</div>
         <div className="text-sm mt-1">Activity will appear here as users make changes</div>
@@ -87,8 +87,8 @@ function AuditTrailTable({ entries }: { entries: AuditLogEntry[] }) {
                     {ACTION_ICONS[entry.action]} {entry.action}
                   </span>
                 </td>
-                <td className="py-3 px-4 text-nx-navy dark:text-nx-mist/20 max-w-[300px] truncate">{entry.description}</td>
-                <td className="py-3 px-4 text-nx-mist dark:text-nx-mist">{entry.user_display}</td>
+                <td className="py-3 px-4 text-nx-navy dark:text-slate-100 max-w-[300px] truncate">{entry.description}</td>
+                <td className="py-3 px-4 text-slate-600 dark:text-slate-200">{entry.user_display}</td>
                 <td className="py-3 px-4 text-nx-mist font-mono text-xs">{entry.ip_address || '—'}</td>
                 <td className="py-3 px-4 text-nx-mist text-xs whitespace-nowrap">{new Date(entry.timestamp).toLocaleString()}</td>
               </tr>
@@ -102,7 +102,7 @@ function AuditTrailTable({ entries }: { entries: AuditLogEntry[] }) {
                       </div>
                       <div>
                         <div className="text-xs font-semibold text-nx-mist mb-2">Details</div>
-                        <div className="space-y-1 text-xs text-nx-mist dark:text-nx-mist">
+                        <div className="space-y-1 text-xs text-slate-600 dark:text-slate-200">
                           <div><span className="font-medium">Type:</span> {entry.content_type_display}</div>
                           <div><span className="font-medium">Object ID:</span> {entry.object_id}</div>
                           {entry.module && <div><span className="font-medium">Module:</span> {entry.module}</div>}
@@ -165,7 +165,7 @@ export default function AuditLogPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white dark:text-white">Audit Log</h1>
-          <p className="text-nx-mist dark:text-nx-mist text-sm mt-1">
+          <p className="text-slate-600 dark:text-slate-200 text-sm mt-1">
             Track all model changes with before/after snapshots
           </p>
         </div>
@@ -244,7 +244,7 @@ export default function AuditLogPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* By Action */}
             <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-5">
-              <h3 className="font-semibold text-nx-navy dark:text-nx-mist/20 mb-4">Actions (Last 7 Days)</h3>
+              <h3 className="font-semibold text-nx-navy dark:text-slate-100 mb-4">Actions (Last 7 Days)</h3>
               <div className="space-y-3">
                 {Object.entries(summary.entries_by_action).map(([action, count]) => (
                   <div key={action} className="flex items-center justify-between">
@@ -261,7 +261,7 @@ export default function AuditLogPage() {
 
             {/* Recent Users */}
             <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-5">
-              <h3 className="font-semibold text-nx-navy dark:text-nx-mist/20 mb-4">Most Active Users</h3>
+              <h3 className="font-semibold text-nx-navy dark:text-slate-100 mb-4">Most Active Users</h3>
               <div className="space-y-2">
                 {summary.recent_users.map((u, i) => (
                   <div key={i} className="flex items-center justify-between">
@@ -279,7 +279,7 @@ export default function AuditLogPage() {
           {/* Daily Trend */}
           {summary.daily_trend.length > 0 && (
             <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-5">
-              <h3 className="font-semibold text-nx-navy dark:text-nx-mist/20 mb-4">Daily Activity (Last 7 Days)</h3>
+              <h3 className="font-semibold text-nx-navy dark:text-slate-100 mb-4">Daily Activity (Last 7 Days)</h3>
               <div className="flex items-end gap-2 h-32">
                 {summary.daily_trend.map((day, i) => {
                   const maxCount = Math.max(...summary.daily_trend.map(d => d.count), 1)

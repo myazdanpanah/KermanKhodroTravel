@@ -47,7 +47,7 @@ export default function CRMPage() {
             <Users className="h-7 w-7 text-nx-blue" />
             مدیریت ارتباط با مشتری
           </h1>
-          <p className="text-sm text-nx-mist dark:text-nx-mist mt-1">
+          <p className="text-sm text-slate-600 dark:text-slate-200 mt-1">
             سرنخ‌ها، فرصت‌ها، فعالیت‌ها و کمپین‌ها
           </p>
         </div>
@@ -68,7 +68,7 @@ export default function CRMPage() {
             className={`${color} rounded-xl p-4 border border-nx-border dark:border-nx-navy-border hover:shadow-md transition-all text-center`}
           >
             <p className="text-2xl font-bold">{(summary?.leads as any)?.[key] ?? 0}</p>
-            <p className="text-xs text-nx-mist dark:text-nx-mist mt-1">{label}</p>
+            <p className="text-xs text-slate-600 dark:text-slate-200 mt-1">{label}</p>
           </button>
         ))}
       </div>

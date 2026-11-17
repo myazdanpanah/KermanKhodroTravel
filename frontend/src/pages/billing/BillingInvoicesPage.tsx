@@ -4,15 +4,20 @@ import { useToast } from '../../components/Toast'
 import { useAuthStore } from '../../store/authStore'
 import JalaliDateInput from '../../components/JalaliDateInput'
 import { CARD, INPUT, rial, type Invoice } from './shared'
-import { FileText, Filter, Trash2 } from 'lucide-react'
+import { FileText, Filter, Trash2, Wallet, X } from 'lucide-react'
+import { todayIso } from '../../lib/jalali'
 
 export default function BillingInvoicesPage() {
   const { toast } = useToast()
   const user = useAuthStore((s) => s.user)
   const canDelete = user?.role === 'ceo' || user?.role === 'admin' || Boolean(user?.permissions?.delete_history)
+  const canPay = user?.role === 'ceo' || user?.role === 'admin' || Boolean(user?.permissions?.pay)
 
   const [rows, setRows] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
+  const [paying, setPaying] = useState<Invoice | null>(null)
+  const [payForm, setPayForm] = useState({ amount: '', date: '', tracking: '', description: '' })
+  const [savingPay, setSavingPay] = useState(false)
   const [payer, setPayer] = useState('')
   const [start, setStart] = useState('')
   const [end, setEnd] = useState('')
@@ -37,6 +42,42 @@ export default function BillingInvoicesPage() {
   }, [load])
 
   const total = useMemo(() => rows.reduce((sum, row) => sum + Number(row.amount || 0), 0), [rows])
+
+  const openPayment = (invoice: Invoice) => {
+    setPaying(invoice)
+    setPayForm({
+      amount: String(invoice.amount || ''),
+      date: todayIso(),
+      tracking: invoice.letter_number,
+      description: '',
+    })
+  }
+
+  const submitPayment = async () => {
+    if (!paying) return
+    if (!payForm.amount || Number(payForm.amount) <= 0) {
+      toast('مبلغ پرداخت را وارد کنید', 'error')
+      return
+    }
+    setSavingPay(true)
+    try {
+      await api.post('/billing/payments/', {
+        payer_code: paying.payer_code,
+        payer_name: paying.payer,
+        amount: Number(payForm.amount),
+        payment_date: payForm.date || undefined,
+        tracking_number: payForm.tracking,
+        description: payForm.description,
+      })
+      toast('پرداخت ثبت شد', 'success')
+      setPaying(null)
+    } catch (err: unknown) {
+      const apiError = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+      toast(apiError || 'خطا در ثبت پرداخت', 'error')
+    } finally {
+      setSavingPay(false)
+    }
+  }
 
   const remove = async (invoice: Invoice) => {
     if (!confirm(`صورت‌حساب ${invoice.letter_number} حذف شود؟ شمارهٔ نامه آزاد می‌شود.`)) return
@@ -103,11 +144,23 @@ export default function BillingInvoicesPage() {
                 <td className="px-4 py-3 text-nx-mist">{row.invoice_type}</td>
                 <td className="px-4 py-3 text-left text-white">{rial(row.amount)}</td>
                 <td className="px-4 py-3">
-                  {canDelete && (
-                    <button onClick={() => void remove(row)} className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-400/10" title="حذف">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {canPay && (
+                      <button
+                        onClick={() => openPayment(row)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-400/10 text-emerald-400 text-[11px] hover:bg-emerald-400/20"
+                        title="ثبت پرداخت برای این صورت‌حساب"
+                      >
+                        <Wallet className="w-3.5 h-3.5" />
+                        ثبت پرداخت
+                      </button>
+                    )}
+                    {canDelete && (
+                      <button onClick={() => void remove(row)} className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-400/10" title="حذف">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
@@ -121,6 +174,76 @@ export default function BillingInvoicesPage() {
           </tfoot>
         </table>
       </div>
+
+      {paying && (
+        <div className="fixed inset-0 z-[120] bg-black/50 flex items-center justify-center p-4" onClick={() => setPaying(null)}>
+          <div
+            className={`${CARD} w-full max-w-md p-5`}
+            onClick={(event) => event.stopPropagation()}
+            dir="rtl"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-white">ثبت پرداخت</h3>
+                <p className="text-[11px] text-nx-mist mt-0.5">
+                  {paying.payer} — صورت‌حساب {paying.letter_number}
+                </p>
+              </div>
+              <button onClick={() => setPaying(null)} className="p-1.5 rounded-lg text-nx-mist hover:bg-nx-navy">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs text-nx-mist mb-1.5">مبلغ (ریال)</label>
+                  <input
+                    type="number"
+                    value={payForm.amount}
+                    onChange={(e) => setPayForm({ ...payForm, amount: e.target.value })}
+                    className={INPUT}
+                  />
+                </div>
+                <JalaliDateInput
+                  label="تاریخ پرداخت"
+                  value={payForm.date}
+                  onChange={(iso) => setPayForm({ ...payForm, date: iso })}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-nx-mist mb-1.5">شماره مرجع</label>
+                <input
+                  value={payForm.tracking}
+                  onChange={(e) => setPayForm({ ...payForm, tracking: e.target.value })}
+                  className={INPUT}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-nx-mist mb-1.5">توضیحات (اختیاری)</label>
+                <input
+                  value={payForm.description}
+                  onChange={(e) => setPayForm({ ...payForm, description: e.target.value })}
+                  className={INPUT}
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setPaying(null)} className="px-4 py-2 rounded-xl border border-nx-navy-border text-nx-mist text-sm">
+                انصراف
+              </button>
+              <button
+                onClick={() => void submitPayment()}
+                disabled={savingPay}
+                className="px-5 py-2 rounded-xl bg-nx-blue text-white text-sm disabled:opacity-60"
+              >
+                {savingPay ? 'در حال ثبت…' : 'ثبت پرداخت'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

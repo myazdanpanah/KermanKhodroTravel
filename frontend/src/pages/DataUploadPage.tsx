@@ -70,7 +70,7 @@ export default function DataUploadPage() {
     <div className="min-h-screen bg-white dark:bg-nx-navy" dir="rtl">
       <header className="bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border px-6 py-4">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10">بارگذاری داده</h1>
+          <h1 className="text-lg font-bold text-nx-navy dark:text-slate-100">بارگذاری داده</h1>
           <p className="text-sm text-nx-muted dark:text-nx-mist">فایل اکسل یا CSV خود را آپلود کنید</p>
         </div>
       </header>

@@ -62,7 +62,7 @@ export default function DatabaseManagerPage() {
               <ChevronRight className="w-5 h-5" />
             </Link>
             <Database className="w-6 h-6 text-nx-blue" />
-            <h1 className="text-xl font-bold text-nx-navy dark:text-nx-mist/10">مدیریت پایگاه‌داده</h1>
+            <h1 className="text-xl font-bold text-nx-navy dark:text-slate-100">مدیریت پایگاه‌داده</h1>
           </div>
           <div className="flex items-center gap-3">
             <Link
@@ -106,7 +106,7 @@ export default function DatabaseManagerPage() {
             placeholder="جستجو در جداول و پایگاه‌داده‌ها..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pr-10 pl-4 py-2.5 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted rounded-xl text-sm text-nx-navy dark:text-nx-mist/10 placeholder-nx-mist focus:ring-2 focus:ring-nx-blue focus:border-nx-blue outline-none transition"
+            className="w-full pr-10 pl-4 py-2.5 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted rounded-xl text-sm text-nx-navy dark:text-slate-100 placeholder-nx-mist focus:ring-2 focus:ring-nx-blue focus:border-nx-blue outline-none transition"
           />
           <button
             onClick={loadDatabases}
@@ -123,15 +123,15 @@ export default function DatabaseManagerPage() {
         {loading ? (
           <div className="text-center py-20">
             <RefreshCw className="w-8 h-8 text-nx-mist mx-auto animate-spin mb-3" />
-            <p className="text-nx-mist dark:text-nx-mist">در حال بارگذاری...</p>
+            <p className="text-slate-600 dark:text-slate-200">در حال بارگذاری...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
-            <Database className="w-16 h-16 text-nx-mist dark:text-nx-mist mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-nx-navy dark:text-nx-mist/10 mb-2">
+            <Database className="w-16 h-16 text-slate-600 dark:text-slate-200 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-nx-navy dark:text-slate-100 mb-2">
               {search ? 'نتیجه‌ای یافت نشد' : 'پایگاه‌داده‌ای وجود ندارد'}
             </h3>
-            <p className="text-nx-mist dark:text-nx-mist mb-4">
+            <p className="text-slate-600 dark:text-slate-200 mb-4">
               فایلی وارد کنید یا اتصال خارجی اضافه کنید
             </p>
             <div className="flex items-center justify-center gap-3">
@@ -158,7 +158,7 @@ export default function DatabaseManagerPage() {
               <section>
                 <div className="flex items-center gap-2 mb-4">
                   <HardDrive className="w-5 h-5 text-nx-blue" />
-                  <h2 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10">
+                  <h2 className="text-lg font-bold text-nx-navy dark:text-slate-100">
                     جداول Nexivo
                   </h2>
                   <span className="px-2 py-0.5 bg-nx-blue/10 dark:bg-nx-blue/30 text-nx-blue dark:text-nx-blue rounded-full text-xs font-medium">
@@ -175,12 +175,12 @@ export default function DatabaseManagerPage() {
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <Table className="w-5 h-5 text-nx-blue" />
-                          <span className="text-sm font-bold text-nx-navy dark:text-nx-mist/10 group-hover:text-nx-blue transition">
+                          <span className="text-sm font-bold text-nx-navy dark:text-slate-100 group-hover:text-nx-blue transition">
                             {db.name}
                           </span>
                         </div>
                       </div>
-                      <div className="space-y-1.5 text-xs text-nx-mist dark:text-nx-mist">
+                      <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-200">
                         <div className="flex items-center gap-1.5">
                           <span className="font-mono bg-nx-mist/10 dark:bg-nx-navy px-1.5 py-0.5 rounded">
                             {db.table_name}
@@ -201,7 +201,7 @@ export default function DatabaseManagerPage() {
               <section>
                 <div className="flex items-center gap-2 mb-4">
                   <Server className="w-5 h-5 text-nx-teal" />
-                  <h2 className="text-lg font-bold text-white dark:text-nx-mist/10">
+                  <h2 className="text-lg font-bold text-white dark:text-slate-100">
                     پایگاه‌داده‌های خارجی
                   </h2>
                   <span className="px-2 py-0.5 bg-nx-teal/10 dark:bg-nx-teal/30 text-nx-teal dark:text-nx-teal rounded-full text-xs font-medium">
@@ -251,7 +251,7 @@ function ExternalDbCard({ db }: { db: DatabaseEntry }) {
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <Server className="w-5 h-5 text-nx-teal" />
-            <span className="text-sm font-bold text-nx-navy dark:text-nx-mist/10">{db.name}</span>
+            <span className="text-sm font-bold text-nx-navy dark:text-slate-100">{db.name}</span>
           </div>
           {loading ? (
             <RefreshCw className="w-4 h-4 text-nx-mist animate-spin" />
@@ -259,7 +259,7 @@ function ExternalDbCard({ db }: { db: DatabaseEntry }) {
             <ChevronRight className={`w-4 h-4 text-nx-mist transition-transform ${expanded ? 'rotate-90' : ''}`} />
           )}
         </div>
-        <div className="text-xs text-nx-mist dark:text-nx-mist space-y-1">
+        <div className="text-xs text-slate-600 dark:text-slate-200 space-y-1">
           <div className="font-mono">{db.host}</div>
           <div>{db.database}</div>
         </div>

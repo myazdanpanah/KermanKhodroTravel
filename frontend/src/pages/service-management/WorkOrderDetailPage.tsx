@@ -111,7 +111,7 @@ export default function WorkOrderDetailPage() {
             <h1 className="text-2xl font-bold text-white dark:text-white">
               {order.work_order_number}
             </h1>
-            <p className="text-sm text-nx-mist dark:text-nx-mist">
+            <p className="text-sm text-slate-600 dark:text-slate-200">
               درخواست: {order.service_request_number} — {order.technician_name || 'بدون تکنسین'}
             </p>
           </div>
@@ -275,7 +275,7 @@ export default function WorkOrderDetailPage() {
                 <FileText className="h-4 w-4 text-nx-mist" />
                 قطعات مورد نیاز
               </h3>
-              <p className="text-sm text-nx-mist dark:text-nx-mist">{order.required_parts}</p>
+              <p className="text-sm text-slate-600 dark:text-slate-200">{order.required_parts}</p>
             </div>
           )}
         </div>

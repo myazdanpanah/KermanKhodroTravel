@@ -64,7 +64,7 @@ export default function SLAPage() {
             <Clock className="h-6 w-6 text-nx-warning-500" />
             قوانین SLA
           </h1>
-          <p className="text-sm text-nx-mist dark:text-nx-mist mt-1">قوانین سطح خدمات — {filtered.length} قانون</p>
+          <p className="text-sm text-slate-600 dark:text-slate-200 mt-1">قوانین سطح خدمات — {filtered.length} قانون</p>
         </div>
         <button onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-2 px-4 py-2 bg-nx-blue text-white rounded-lg hover:bg-nx-blue transition-colors">
@@ -128,7 +128,7 @@ export default function SLAPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-nx-blue" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-nx-mist dark:text-nx-mist">
+          <div className="text-center py-12 text-slate-600 dark:text-slate-200">
             <Clock className="h-12 w-12 mx-auto mb-3 opacity-30" />
             <p>هیچ قانون SLA یافت نشد</p>
           </div>

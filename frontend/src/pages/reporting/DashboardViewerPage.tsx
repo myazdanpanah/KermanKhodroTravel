@@ -70,7 +70,7 @@ export default function DashboardViewerPage() {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-white dark:text-white">{dashboard.name}</h1>
-            <p className="text-sm text-nx-mist dark:text-nx-mist">{dashboard.description || 'بدون توضیح'}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-200">{dashboard.description || 'بدون توضیح'}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">

@@ -65,7 +65,7 @@ export default function LeavePage() {
           <h1 className="text-2xl font-bold text-white dark:text-white flex items-center gap-3">
             <Calendar className="h-6 w-6 text-nx-blue" /> مرخصی‌ها
           </h1>
-          <p className="text-sm text-nx-mist dark:text-nx-mist mt-1">{filtered.length} درخواست</p>
+          <p className="text-sm text-slate-600 dark:text-slate-200 mt-1">{filtered.length} درخواست</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-4 py-2 bg-nx-blue text-white rounded-lg hover:bg-nx-blue">
           <Plus className="h-4 w-4" /> درخواست جدید

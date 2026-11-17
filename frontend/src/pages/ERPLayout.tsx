@@ -3,11 +3,12 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useThemeStore, syncThemeClass } from '../store/themeStore'
 import { useBrandLogo } from '../store/brandingStore'
+import UserMenu from '../components/UserMenu'
 import {
   LayoutDashboard, FileText, CreditCard, Users, Gauge, Plus,
   Calendar, Target, TrendingUp,
-  Settings, ChevronLeft, ChevronDown, LogOut,
-  Shield, Building2, Search, Bell, Sun, Moon, Menu, X,
+  Settings, ChevronLeft, ChevronDown,
+  Shield, Search, Bell, Sun, Moon, Menu, X,
 } from 'lucide-react'
 
 // ─── Navigation Structure ───────────────────────────────────────
@@ -61,7 +62,6 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { to: '/erp/settings', icon: Settings, label: 'تنظیمات' },
       { to: '/erp/settings/users', icon: Shield, label: 'کاربران' },
-      { to: '/erp/settings/org', icon: Building2, label: 'ساختار سازمانی' },
     ],
   },
 ]
@@ -240,31 +240,6 @@ export default function ERPLayout() {
           })}
         </nav>
 
-        {/* User Footer */}
-        <div className="border-t border-nx-navy-border p-2">
-          {!collapsed && (
-            <div className="flex items-center gap-2 px-3 py-2 mb-1">
-              <div className="w-8 h-8 rounded-full bg-nx-blue flex items-center justify-center text-white text-xs font-bold">
-                {(user?.username?.[0] || 'U').toUpperCase()}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-white truncate">
-                  {user?.first_name || user?.username}
-                </p>
-                <p className="text-[10px] text-nx-mist truncate">{user?.company_name || 'ERP'}</p>
-              </div>
-            </div>
-          )}
-          <button
-            onClick={handleLogout}
-            className={`w-full flex items-center gap-2 px-3 py-2 text-nx-mist hover:text-nx-danger-400 hover:bg-nx-danger-500/10 rounded-nx-btn transition text-sm ${
-              collapsed ? 'justify-center' : ''
-            }`}
-          >
-            <LogOut className="w-4 h-4" />
-            {!collapsed && <span>خروج</span>}
-          </button>
-        </div>
       </aside>
 
       {/* ─── Main Content ─────────────────────────────── */}
@@ -316,16 +291,8 @@ export default function ERPLayout() {
             >
               {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-            {/* User Menu */}
-            <div className="flex items-center gap-2 pl-3 border-l border-nx-navy-border">
-              <div className="w-8 h-8 rounded-full bg-nx-blue flex items-center justify-center text-white text-xs font-bold">
-                {(user?.username?.[0] || 'U').toUpperCase()}
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-xs font-medium text-white">{user?.first_name || user?.username}</p>
-                <p className="text-[10px] text-nx-mist">{user?.company_name || 'ERP'}</p>
-              </div>
-            </div>
+            {/* Account menu: profile, avatar, email, password, logout */}
+            <UserMenu onLogout={handleLogout} />
           </div>
         </header>
         <Outlet />

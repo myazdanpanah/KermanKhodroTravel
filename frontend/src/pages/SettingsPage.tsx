@@ -122,7 +122,7 @@ function ModuleManagementTab() {
     <div className="space-y-6">
       {/* Company Selector */}
       <div className="bg-white dark:bg-nx-navy rounded-2xl border border-nx-border dark:border-nx-navy-border p-6">
-        <h3 className="font-bold text-nx-navy dark:text-nx-mist/10 mb-4">انتخاب شرکت</h3>
+        <h3 className="font-bold text-nx-navy dark:text-slate-100 mb-4">انتخاب شرکت</h3>
         {companies.length === 0 ? (
           <p className="text-nx-mist text-sm">هنوز شرکتی تعریف نشده. ابتدا در تب «ساختار سازمانی» شرکت ایجاد کنید.</p>
         ) : (
@@ -149,7 +149,7 @@ function ModuleManagementTab() {
         <>
           <div className="bg-white dark:bg-nx-navy rounded-2xl border border-nx-border dark:border-nx-navy-border p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="font-bold text-nx-navy dark:text-nx-mist/10">
+              <h3 className="font-bold text-nx-navy dark:text-slate-100">
                 ماژول‌های فعال
               </h3>
               {hasChanges && (
@@ -184,14 +184,14 @@ function ModuleManagementTab() {
                         <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                           isEnabled ? 'bg-nx-blue/10 dark:bg-nx-blue' : 'bg-nx-mist/20 dark:bg-nx-muted'
                         }`}>
-                          <Icon className={`w-5 h-5 ${isEnabled ? 'text-nx-blue dark:text-nx-blue' : 'text-nx-mist dark:text-nx-mist'}`} />
+                          <Icon className={`w-5 h-5 ${isEnabled ? 'text-nx-blue dark:text-nx-blue' : 'text-slate-600 dark:text-slate-200'}`} />
                         </div>
                         <div>
                           <p className={`font-medium ${isEnabled ? 'text-nx-blue dark:text-nx-blue' : 'text-nx-navy dark:text-nx-mist'}`}>
                             {mod.label}
                           </p>
                           {description && (
-                            <p className="text-xs text-nx-mist dark:text-nx-mist mt-0.5">{description}</p>
+                            <p className="text-xs text-slate-600 dark:text-slate-200 mt-0.5">{description}</p>
                           )}
                         </div>
                       </div>
@@ -346,7 +346,7 @@ function OrganizationTab() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="font-bold text-white dark:text-nx-mist/10">درخت سازمانی</h3>
+        <h3 className="font-bold text-white dark:text-slate-100">درخت سازمانی</h3>
         <button onClick={() => openCreate('company')} className="flex items-center gap-2 px-4 py-2 bg-nx-blue text-white rounded-xl hover:bg-nx-blue transition text-sm font-medium">
           <Building2 className="w-4 h-4" /> شرکت جدید
         </button>
@@ -373,7 +373,7 @@ function OrganizationTab() {
                       {isCompOpen ? <ChevronDown className="w-4 h-4 text-nx-mist" /> : <ChevronRight className="w-4 h-4 text-nx-mist" />}
                       <div className="w-8 h-8 bg-nx-blue/10 dark:bg-nx-blue rounded-lg flex items-center justify-center"><Building2 className="w-4 h-4 text-nx-blue dark:text-nx-blue" /></div>
                       <div>
-                        <p className="text-sm font-bold text-nx-navy dark:text-nx-mist/10">{company.name}</p>
+                        <p className="text-sm font-bold text-nx-navy dark:text-slate-100">{company.name}</p>
                         <p className="text-xs text-nx-mist">{company.divisions.length} واحد · {company.employees.length} کارمند مستقیم</p>
                       </div>
                     </div>
@@ -395,7 +395,7 @@ function OrganizationTab() {
                                 {isDivOpen ? <ChevronDown className="w-3.5 h-3.5 text-nx-mist" /> : <ChevronRight className="w-3.5 h-3.5 text-nx-mist" />}
                                 <div className="w-7 h-7 bg-nx-blue/10 dark:bg-nx-blue/30 rounded-lg flex items-center justify-center"><FolderTree className="w-3.5 h-3.5 text-nx-blue dark:text-nx-blue" /></div>
                                 <div>
-                                  <p className="text-sm font-medium text-nx-navy dark:text-nx-mist/20">{div.name}</p>
+                                  <p className="text-sm font-medium text-nx-navy dark:text-slate-100">{div.name}</p>
                                   <p className="text-[11px] text-nx-mist">{div.manager_name ? `مدیر: ${div.manager_name}` : 'بدون مدیر'} · {div.teams.length} تیم</p>
                                 </div>
                               </div>
@@ -442,21 +442,21 @@ function OrganizationTab() {
           <div className="absolute inset-0 bg-black/40" onClick={() => setModalType(null)} />
           <div className="relative bg-white dark:bg-nx-navy rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-nx-border dark:border-nx-navy-border">
-              <h3 className="font-bold text-nx-navy dark:text-nx-mist/10">{editingId ? 'ویرایش' : 'ایجاد'} {modalType === 'company' ? 'شرکت' : modalType === 'division' ? 'واحد' : 'تیم'}</h3>
+              <h3 className="font-bold text-nx-navy dark:text-slate-100">{editingId ? 'ویرایش' : 'ایجاد'} {modalType === 'company' ? 'شرکت' : modalType === 'division' ? 'واحد' : 'تیم'}</h3>
               <button onClick={() => setModalType(null)} className="p-1 text-nx-mist hover:text-nx-mist"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-6 space-y-4">
               <div>
                 <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">نام *</label>
-                <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none" />
+                <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">توضیحات</label>
-                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none resize-none" />
+                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none resize-none" />
               </div>
               <div>
                 <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">مدیر</label>
-                <select value={form.manager || ''} onChange={(e) => setForm({ ...form, manager: Number(e.target.value) })} className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none">
+                <select value={form.manager || ''} onChange={(e) => setForm({ ...form, manager: Number(e.target.value) })} className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none">
                   <option value="">انتخاب مدیر...</option>
                   {users.map((u) => (
                     <option key={u.id} value={u.id}>{u.first_name || u.last_name ? `${u.first_name} ${u.last_name}` : u.username} (@{u.username})</option>
@@ -465,7 +465,7 @@ function OrganizationTab() {
               </div>
             </div>
             <div className="px-6 py-4 border-t border-nx-border dark:border-nx-navy-border flex items-center justify-end gap-3">
-              <button onClick={() => setModalType(null)} className="px-4 py-2 text-sm text-nx-mist dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy rounded-xl transition">انصراف</button>
+              <button onClick={() => setModalType(null)} className="px-4 py-2 text-sm text-slate-600 dark:text-slate-200 hover:bg-nx-mist/10 dark:hover:bg-nx-navy rounded-xl transition">انصراف</button>
               <button onClick={handleSubmit} className="px-6 py-2 bg-nx-blue text-white text-sm rounded-xl hover:bg-nx-blue transition font-medium flex items-center gap-2">
                 <Check className="w-4 h-4" /> {editingId ? 'ذخیره' : 'ایجاد'}
               </button>
@@ -708,7 +708,7 @@ export default function SettingsPage() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
                   activeTab === tab.id
                     ? 'bg-nx-blue/10 dark:bg-nx-blue/40 text-nx-blue dark:text-nx-blue'
-                    : 'text-nx-mist dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy'
+                    : 'text-slate-600 dark:text-slate-200 hover:bg-nx-mist/10 dark:hover:bg-nx-navy'
                 }`}
               >
                 <Icon className="w-4 h-4" /> {tab.label}

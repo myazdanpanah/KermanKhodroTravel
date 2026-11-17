@@ -28,7 +28,7 @@ export default function SqlEditorPage() {
     return (
       <div className="min-h-screen bg-white dark:bg-nx-navy flex items-center justify-center" dir="rtl">
         <div className="text-center">
-          <h2 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10 mb-2">دسترسی غیرمجاز</h2>
+          <h2 className="text-lg font-bold text-nx-navy dark:text-slate-100 mb-2">دسترسی غیرمجاز</h2>
           <p className="text-nx-muted dark:text-nx-mist">فقط مدیر سیستم و مدیرعامل به SQL Editor دسترسی دارند</p>
         </div>
       </div>
@@ -83,13 +83,13 @@ export default function SqlEditorPage() {
             <Link to="/db-manager" className="p-2 text-nx-mist hover:text-nx-muted dark:hover:text-nx-mist transition">
               <ArrowRight className="w-5 h-5" />
             </Link>
-            <h1 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10">SQL Editor</h1>
+            <h1 className="text-lg font-bold text-nx-navy dark:text-slate-100">SQL Editor</h1>
           </div>
           <div className="flex items-center gap-3">
             <select
               value={source}
               onChange={(e) => setSource(e.target.value)}
-              className="px-3 py-1.5 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-blue"
+              className="px-3 py-1.5 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 rounded-lg outline-none focus:ring-2 focus:ring-nx-blue"
             >
               <option value="local">Nexivo (local)</option>
             </select>

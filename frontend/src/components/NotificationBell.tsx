@@ -116,7 +116,7 @@ export default function NotificationBell() {
       {open && (
         <div className="absolute top-full left-0 mt-2 w-96 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-navy-border rounded-2xl shadow-2xl z-50 overflow-hidden" dir="rtl">
           <div className="flex items-center justify-between px-4 py-3 border-b border-nx-border">
-            <h3 className="font-bold text-sm text-nx-navy dark:text-nx-mist/10">اعلان‌ها</h3>
+            <h3 className="font-bold text-sm text-nx-navy dark:text-slate-100">اعلان‌ها</h3>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
                 <button
@@ -156,11 +156,11 @@ export default function NotificationBell() {
                     <span className="text-lg mt-0.5">{getTypeIcon(n.type)}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-nx-navy dark:text-nx-mist/10 truncate">{n.title}</p>
+                        <p className="text-sm font-medium text-nx-navy dark:text-slate-100 truncate">{n.title}</p>
                         {!n.is_read && (
                           <span className="w-2 h-2 bg-nx-blue rounded-full flex-shrink-0" />
                         )}
-                      </div>                        <p className="text-xs text-nx-mist dark:text-nx-mist mt-0.5 line-clamp-2">{n.message}</p>
+                      </div>                        <p className="text-xs text-slate-600 dark:text-slate-200 mt-0.5 line-clamp-2">{n.message}</p>
                       <p className="text-[10px] text-nx-mist mt-1">{timeAgo(n.created_at)}</p>
                     </div>
                     {!n.is_read && (

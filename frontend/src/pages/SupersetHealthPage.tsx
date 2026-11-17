@@ -105,8 +105,8 @@ export default function SupersetHealthPage() {
                 <Database className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10">وضعیت Superset</h1>
-                <p className="text-xs text-nx-mist dark:text-nx-mist">بررسی اتصال و همگام‌سازی مجموعه‌داده‌ها</p>
+                <h1 className="text-lg font-bold text-nx-navy dark:text-slate-100">وضعیت Superset</h1>
+                <p className="text-xs text-slate-600 dark:text-slate-200">بررسی اتصال و همگام‌سازی مجموعه‌داده‌ها</p>
               </div>
             </div>
           </div>
@@ -139,7 +139,7 @@ export default function SupersetHealthPage() {
                 <p className={`font-bold ${health.status === 'ok' ? 'text-nx-teal dark:text-nx-teal' : 'text-nx-danger-700 dark:text-nx-danger-300'}`}>
                   {health.status === 'ok' ? 'Superset متصل است' : 'Superset در دسترس نیست'}
                 </p>
-                <p className="text-xs text-nx-mist dark:text-nx-mist">{health.superset_url}</p>
+                <p className="text-xs text-slate-600 dark:text-slate-200">{health.superset_url}</p>
                 {health.error && <p className="text-xs text-nx-danger-500 mt-1">{health.error}</p>}
               </div>
             </div>
@@ -150,7 +150,7 @@ export default function SupersetHealthPage() {
         {health && (
           <div className="grid grid-cols-3 gap-4">
             <div className="bg-white dark:bg-nx-navy rounded-2xl border border-nx-border dark:border-nx-navy-border p-4">
-              <p className="text-2xl font-bold text-nx-navy dark:text-nx-mist/10">{health.datasets.length}</p>
+              <p className="text-2xl font-bold text-nx-navy dark:text-slate-100">{health.datasets.length}</p>
               <p className="text-xs text-nx-mist">کل مجموعه‌داده‌ها</p>
             </div>
             <div className="bg-white dark:bg-nx-navy rounded-2xl border border-nx-border dark:border-nx-navy-border p-4">
@@ -179,7 +179,7 @@ export default function SupersetHealthPage() {
         {/* Dataset Table */}
         <div className="bg-white dark:bg-nx-navy rounded-2xl border border-nx-border dark:border-nx-navy-border overflow-hidden">
           <div className="px-6 py-4 border-b border-nx-border dark:border-nx-navy-border">
-            <h2 className="font-bold text-nx-navy dark:text-nx-mist/10">وضعیت همگام‌سازی</h2>
+            <h2 className="font-bold text-nx-navy dark:text-slate-100">وضعیت همگام‌سازی</h2>
           </div>
           {loading ? (
             <div className="p-12 text-center text-nx-mist">
@@ -194,7 +194,7 @@ export default function SupersetHealthPage() {
           ) : (
             <table className="w-full">
               <thead>
-                <tr className="text-right text-xs text-nx-mist dark:text-nx-mist border-b border-nx-border dark:border-nx-navy-border">
+                <tr className="text-right text-xs text-slate-600 dark:text-slate-200 border-b border-nx-border dark:border-nx-navy-border">
                   <th className="px-6 py-3 font-medium">نام</th>
                   <th className="px-6 py-3 font-medium">جدول</th>
                   <th className="px-6 py-3 font-medium">وضعیت</th>
@@ -205,7 +205,7 @@ export default function SupersetHealthPage() {
               <tbody className="divide-y divide-nx-mist/70">
                 {health?.datasets.map((ds) => (
                   <tr key={ds.id} className="hover:bg-white dark:hover:bg-nx-navy-elevated transition">
-                    <td className="px-6 py-4 text-sm font-medium text-nx-navy dark:text-nx-mist/10">{ds.name}</td>
+                    <td className="px-6 py-4 text-sm font-medium text-nx-navy dark:text-slate-100">{ds.name}</td>
                     <td className="px-6 py-4 text-xs text-nx-mist font-mono">{ds.table_name}</td>
                     <td className="px-6 py-4">
                       {ds.synced ? (

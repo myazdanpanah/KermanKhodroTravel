@@ -65,13 +65,32 @@ def profile_view(request):
     return Response(UserSerializer(request.user).data)
 
 
-@api_view(["PUT"])
+@api_view(["PUT", "PATCH"])
 def profile_update_view(request):
-    """Update current user profile."""
-    serializer = UserSerializer(request.user, data=request.data, partial=True)
+    """Update the current user: name, email, avatar and/or password."""
+    payload = request.data.copy()
+    password = str(payload.pop("password", "") or "")
+    current_password = str(payload.pop("current_password", "") or "")
+
+    if password and current_password and not request.user.check_password(current_password):
+        return Response(
+            {"current_password": ["رمز عبور فعلی درست نیست."]}, status=status.HTTP_400_BAD_REQUEST
+        )
+
+    serializer = UserSerializer(request.user, data=payload, partial=True)
     serializer.is_valid(raise_exception=True)
-    serializer.save()
-    return Response(serializer.data)
+    user = serializer.save()
+
+    if password:
+        if len(password) < 8:
+            return Response(
+                {"password": ["رمز عبور باید حداقل ۸ کاراکتر باشد."]},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        user.set_password(password)
+        user.save(update_fields=["password"])
+
+    return Response(UserSerializer(user).data)
 
 
 # ---- User Management (admin/CEO only) ----

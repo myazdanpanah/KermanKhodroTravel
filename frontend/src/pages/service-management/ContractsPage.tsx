@@ -69,7 +69,7 @@ export default function ContractsPage() {
             <FileText className="h-6 w-6 text-nx-teal" />
             قراردادهای خدماتی
           </h1>
-          <p className="text-sm text-nx-mist dark:text-nx-mist mt-1">{filtered.length} قرارداد</p>
+          <p className="text-sm text-slate-600 dark:text-slate-200 mt-1">{filtered.length} قرارداد</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
@@ -143,7 +143,7 @@ export default function ContractsPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-nx-blue" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-nx-mist dark:text-nx-mist">
+          <div className="text-center py-12 text-slate-600 dark:text-slate-200">
             <FileText className="h-12 w-12 mx-auto mb-3 opacity-30" />
             <p>هیچ قراردادی یافت نشد</p>
           </div>

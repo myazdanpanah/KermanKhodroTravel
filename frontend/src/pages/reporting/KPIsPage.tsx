@@ -65,7 +65,7 @@ export default function KPIsPage() {
           <h1 className="text-2xl font-bold text-white dark:text-white flex items-center gap-3">
             <Target className="h-6 w-6 text-nx-warning-500" /> شاخص‌های کلیدی
           </h1>
-          <p className="text-sm text-nx-mist dark:text-nx-mist mt-1">{kpis.length} شاخص فعال</p>
+          <p className="text-sm text-slate-600 dark:text-slate-200 mt-1">{kpis.length} شاخص فعال</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-4 py-2 bg-nx-warning-500 text-white rounded-lg hover:bg-nx-warning-600">
           <Plus className="h-4 w-4" /> شاخص جدید

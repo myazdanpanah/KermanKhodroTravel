@@ -54,7 +54,7 @@ export default function TechniciansPage() {
             <Users className="h-6 w-6 text-nx-blue" />
             تکنسین‌ها
           </h1>
-          <p className="text-sm text-nx-mist dark:text-nx-mist mt-1">
+          <p className="text-sm text-slate-600 dark:text-slate-200 mt-1">
             {filtered.length} تکنسین
           </p>
         </div>
@@ -129,7 +129,7 @@ export default function TechniciansPage() {
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-4">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-nx-mist dark:text-nx-mist hover:text-nx-navy">
+            <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-slate-600 dark:text-slate-200 hover:text-nx-navy">
               انصراف
             </button>
             <button
@@ -160,7 +160,7 @@ export default function TechniciansPage() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-nx-blue" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-12 text-nx-mist dark:text-nx-mist">
+        <div className="text-center py-12 text-slate-600 dark:text-slate-200">
           <Users className="h-12 w-12 mx-auto mb-3 opacity-30" />
           <p>هیچ تکنسینی یافت نشد</p>
         </div>
@@ -174,7 +174,7 @@ export default function TechniciansPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <h3 className="font-semibold text-nx-navy dark:text-white">{tech.name}</h3>
-                  <p className="text-xs text-nx-mist dark:text-nx-mist mt-0.5">{tech.employee_id}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-200 mt-0.5">{tech.employee_id}</p>
                 </div>
                 <div className="flex items-center gap-1">
                   <button
@@ -187,15 +187,15 @@ export default function TechniciansPage() {
               </div>
               <div className="mt-3 space-y-1.5">
                 {tech.department && (
-                  <p className="text-xs text-nx-mist dark:text-nx-mist">بخش: {tech.department}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-200">بخش: {tech.department}</p>
                 )}
                 {tech.phone && (
-                  <p className="text-xs text-nx-mist dark:text-nx-mist">تلفن: {tech.phone}</p>
+                  <p className="text-xs text-slate-600 dark:text-slate-200">تلفن: {tech.phone}</p>
                 )}
                 {tech.skills && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {tech.skills.split(',').map(skill => (
-                      <span key={skill} className="px-2 py-0.5 bg-nx-mist/10 dark:bg-nx-navy text-nx-mist dark:text-nx-mist text-xs rounded-full">
+                      <span key={skill} className="px-2 py-0.5 bg-nx-mist/10 dark:bg-nx-navy text-slate-600 dark:text-slate-200 text-xs rounded-full">
                         {skill.trim()}
                       </span>
                     ))}
@@ -207,7 +207,7 @@ export default function TechniciansPage() {
                   </span>
                   <div className="flex items-center gap-1">
                     <Star className="h-3 w-3 text-nx-warning-400 fill-nx-warning-400" />
-                    <span className="text-xs text-nx-mist dark:text-nx-mist">{tech.performance_score}</span>
+                    <span className="text-xs text-slate-600 dark:text-slate-200">{tech.performance_score}</span>
                   </div>
                 </div>
               </div>

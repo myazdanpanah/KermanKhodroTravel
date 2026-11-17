@@ -49,7 +49,7 @@ export default function ServiceManagementDashboard() {
             <Headphones className="h-7 w-7 text-nx-blue" />
             مدیریت خدمات پس از فروش
           </h1>
-          <p className="text-sm text-nx-mist dark:text-nx-mist mt-1">
+          <p className="text-sm text-slate-600 dark:text-slate-200 mt-1">
             گارانتی، تعمیرات، قراردادهای خدماتی، SLA و نگهداری پیشگیرانه
           </p>
         </div>
@@ -93,7 +93,7 @@ export default function ServiceManagementDashboard() {
             <p className="text-2xl font-bold text-nx-navy dark:text-white mt-2">
               {(summary as any)?.[key] as number ?? 0}
             </p>
-            <p className="text-xs text-nx-mist dark:text-nx-mist mt-1">{label}</p>
+            <p className="text-xs text-slate-600 dark:text-slate-200 mt-1">{label}</p>
           </button>
         ))}
       </div>
@@ -115,7 +115,7 @@ export default function ServiceManagementDashboard() {
               <Icon className={`h-5 w-5 ${color.split(' ')[0]}`} />
             </div>
             <h3 className="text-sm font-semibold text-nx-navy dark:text-white mt-3">{label}</h3>
-            <p className="text-xs text-nx-mist dark:text-nx-mist mt-1">{desc}</p>
+            <p className="text-xs text-slate-600 dark:text-slate-200 mt-1">{desc}</p>
           </button>
         ))}
       </div>
@@ -137,7 +137,7 @@ export default function ServiceManagementDashboard() {
               <Icon className={`h-5 w-5 ${color.split(' ')[0]}`} />
             </div>
             <h3 className="text-sm font-semibold text-nx-navy dark:text-white mt-3">{label}</h3>
-            <p className="text-xs text-nx-mist dark:text-nx-mist mt-1">{desc}</p>
+            <p className="text-xs text-slate-600 dark:text-slate-200 mt-1">{desc}</p>
           </button>
         ))}
       </div>

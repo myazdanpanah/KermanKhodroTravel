@@ -318,7 +318,7 @@ export default function PageNavBar() {
                     }}
                     onBlur={() => handleRename(page.id)}
                     autoFocus
-                    className="px-2 py-1 text-sm border border-nx-blue dark:border-nx-blue dark:bg-nx-navy dark:text-nx-mist/20 rounded-lg outline-none focus:ring-1 focus:ring-nx-blue min-w-[100px]"
+                    className="px-2 py-1 text-sm border border-nx-blue dark:border-nx-blue dark:bg-nx-navy dark:text-slate-100 rounded-lg outline-none focus:ring-1 focus:ring-nx-blue min-w-[100px]"
                   />
                   <button
                     onClick={() => handleRename(page.id)}

@@ -64,7 +64,7 @@ export default function ServiceRequestsPage() {
             <Headphones className="h-6 w-6 text-nx-blue" />
             درخواست‌های خدمات
           </h1>
-          <p className="text-sm text-nx-mist dark:text-nx-mist mt-1">
+          <p className="text-sm text-slate-600 dark:text-slate-200 mt-1">
             {filtered.length} درخواست
           </p>
         </div>
@@ -124,7 +124,7 @@ export default function ServiceRequestsPage() {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-nx-blue" />
           </div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-nx-mist dark:text-nx-mist">
+          <div className="text-center py-12 text-slate-600 dark:text-slate-200">
             <Headphones className="h-12 w-12 mx-auto mb-3 opacity-30" />
             <p>هیچ درخواستی یافت نشد</p>
           </div>
@@ -133,13 +133,13 @@ export default function ServiceRequestsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-nx-border dark:border-nx-navy-border bg-white dark:bg-nx-navy">
-                  <th className="text-right px-4 py-3 font-medium text-nx-mist dark:text-nx-mist">شماره</th>
-                  <th className="text-right px-4 py-3 font-medium text-nx-mist dark:text-nx-mist">مشتری</th>
-                  <th className="text-right px-4 py-3 font-medium text-nx-mist dark:text-nx-mist">محصول</th>
-                  <th className="text-right px-4 py-3 font-medium text-nx-mist dark:text-nx-mist">اولویت</th>
-                  <th className="text-right px-4 py-3 font-medium text-nx-mist dark:text-nx-mist">وضعیت</th>
-                  <th className="text-right px-4 py-3 font-medium text-nx-mist dark:text-nx-mist">تاریخ</th>
-                  <th className="text-right px-4 py-3 font-medium text-nx-mist dark:text-nx-mist">SLA</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-200">شماره</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-200">مشتری</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-200">محصول</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-200">اولویت</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-200">وضعیت</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-200">تاریخ</th>
+                  <th className="text-right px-4 py-3 font-medium text-slate-600 dark:text-slate-200">SLA</th>
                 </tr>
               </thead>
               <tbody>
@@ -163,7 +163,7 @@ export default function ServiceRequestsPage() {
                           {status.label}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-nx-mist dark:text-nx-mist">
+                      <td className="px-4 py-3 text-xs text-slate-600 dark:text-slate-200">
                         {new Date(req.created_at).toLocaleDateString('fa-IR')}
                       </td>
                       <td className="px-4 py-3">

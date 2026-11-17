@@ -36,7 +36,7 @@ function ProviderCard({
           </div>
           <div>
             <h3 className="font-semibold text-nx-navy dark:text-white">{provider.name}</h3>
-            <div className="text-sm text-nx-mist dark:text-nx-mist flex items-center gap-2">
+            <div className="text-sm text-slate-600 dark:text-slate-200 flex items-center gap-2">
               <span>{provider.protocol.toUpperCase()}</span>
               <span className="w-1 h-1 rounded-full bg-nx-mist" />
               <span className="text-xs font-mono text-nx-mist">{provider.slug}</span>
@@ -49,7 +49,7 @@ function ProviderCard({
       </div>
 
       {provider.description && (
-        <p className="text-sm text-nx-mist dark:text-nx-mist mb-3">{provider.description}</p>
+        <p className="text-sm text-slate-600 dark:text-slate-200 mb-3">{provider.description}</p>
       )}
 
       <div className="flex flex-wrap gap-2 mb-4">
@@ -79,13 +79,13 @@ function ProviderCard({
         </button>
         <button
           onClick={() => onTest(provider.id)}
-          className="px-3 py-1.5 text-xs font-medium text-nx-mist dark:text-nx-mist hover:bg-white dark:hover:bg-nx-navy rounded-lg transition-colors"
+          className="px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-200 hover:bg-white dark:hover:bg-nx-navy rounded-lg transition-colors"
         >
           Test
         </button>
         <button
           onClick={() => onToggle(provider.id)}
-          className="px-3 py-1.5 text-xs font-medium text-nx-mist dark:text-nx-mist hover:bg-white dark:hover:bg-nx-navy rounded-lg transition-colors"
+          className="px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-200 hover:bg-white dark:hover:bg-nx-navy rounded-lg transition-colors"
         >
           {provider.status === 'active' ? 'Disable' : 'Enable'}
         </button>
@@ -366,7 +366,7 @@ function AuditTable({ attempts }: { attempts: SSOLoginAttempt[] }) {
 
   if (!attempts.length) {
     return (
-      <div className="text-center py-12 text-nx-mist dark:text-nx-mist">
+      <div className="text-center py-12 text-slate-600 dark:text-slate-200">
         <div className="text-3xl mb-2">📋</div>
         <div>No login attempts recorded yet</div>
       </div>
@@ -394,9 +394,9 @@ function AuditTable({ attempts }: { attempts: SSOLoginAttempt[] }) {
                   {a.status}
                 </span>
               </td>
-              <td className="py-3 px-4 text-nx-navy dark:text-nx-mist/20">{a.external_email || '—'}</td>
-              <td className="py-3 px-4 text-nx-mist dark:text-nx-mist">{a.provider_name}</td>
-              <td className="py-3 px-4 text-nx-mist dark:text-nx-mist">{a.username || '—'}</td>
+              <td className="py-3 px-4 text-nx-navy dark:text-slate-100">{a.external_email || '—'}</td>
+              <td className="py-3 px-4 text-slate-600 dark:text-slate-200">{a.provider_name}</td>
+              <td className="py-3 px-4 text-slate-600 dark:text-slate-200">{a.username || '—'}</td>
               <td className="py-3 px-4 text-nx-mist font-mono text-xs">{a.ip_address || '—'}</td>
               <td className="py-3 px-4 text-nx-mist text-xs">{new Date(a.created_at).toLocaleString()}</td>
             </tr>
@@ -505,7 +505,7 @@ export default function SSOSettingsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white dark:text-white">SSO & Identity</h1>
-          <p className="text-nx-mist dark:text-nx-mist text-sm mt-1">
+          <p className="text-slate-600 dark:text-slate-200 text-sm mt-1">
             Configure SAML and OIDC identity providers for single sign-on
           </p>
         </div>
@@ -581,7 +581,7 @@ export default function SSOSettingsPage() {
                 />
               ))}
               {providers.length === 0 && (
-                <div className="col-span-full text-center py-16 text-nx-mist dark:text-nx-mist">
+                <div className="col-span-full text-center py-16 text-slate-600 dark:text-slate-200">
                   <div className="text-4xl mb-3">🔐</div>
                   <div className="text-lg font-medium mb-1">No SSO providers configured</div>
                   <div className="text-sm">Add an identity provider to enable single sign-on for your team</div>
@@ -615,10 +615,10 @@ export default function SSOSettingsPage() {
                     <tbody>
                       {mappings.map(m => (
                         <tr key={m.id} className="border-b border-nx-border dark:border-nx-navy-border">
-                          <td className="py-3 px-4 font-mono text-xs text-nx-mist dark:text-nx-mist">{m.external_id}</td>
-                          <td className="py-3 px-4 text-nx-navy dark:text-nx-mist/20">{m.external_email}</td>
-                          <td className="py-3 px-4 text-nx-mist dark:text-nx-mist">{m.provider_name}</td>
-                          <td className="py-3 px-4 text-nx-mist dark:text-nx-mist">{m.username}</td>
+                          <td className="py-3 px-4 font-mono text-xs text-slate-600 dark:text-slate-200">{m.external_id}</td>
+                          <td className="py-3 px-4 text-nx-navy dark:text-slate-100">{m.external_email}</td>
+                          <td className="py-3 px-4 text-slate-600 dark:text-slate-200">{m.provider_name}</td>
+                          <td className="py-3 px-4 text-slate-600 dark:text-slate-200">{m.username}</td>
                           <td className="py-3 px-4 text-xs text-nx-mist">{m.last_login_at ? new Date(m.last_login_at).toLocaleString() : '—'}</td>
                         </tr>
                       ))}
