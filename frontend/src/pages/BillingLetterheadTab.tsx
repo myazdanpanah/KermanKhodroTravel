@@ -31,6 +31,9 @@ interface BillingSettings {
   signature_path: string
   stamp_path: string
   word_template_path: string
+  word_template_subsidiary_path: string
+  word_template_credit_path: string
+  legal_note: string
   manager_name: string
   manager_position: string
   approved_output_path: string
@@ -54,6 +57,9 @@ const EMPTY: BillingSettings = {
   signature_path: '',
   stamp_path: '',
   word_template_path: '',
+  word_template_subsidiary_path: '',
+  word_template_credit_path: '',
+  legal_note: '',
   manager_name: '',
   manager_position: '',
   approved_output_path: '',
@@ -245,20 +251,21 @@ export default function BillingLetterheadTab() {
     }
   }
 
-  const uploadWordTemplate = async (file: File) => {
+  const uploadWordTemplate = async (kind: 'debt' | 'subsidiary' | 'credit', file: File) => {
     if (!file.name.toLowerCase().endsWith('.docx')) {
       toast('فقط فایل Word با پسوند .docx پذیرفته می‌شود', 'error')
       return
     }
-    setUploading('word')
+    setUploading(`word-${kind}`)
     try {
       const fd = new FormData()
       fd.append('file', file)
-      const res = await api.post('/billing/settings/upload-template/', fd, {
+      const res = await api.post(`/billing/settings/upload-template/?kind=${kind}`, fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
-      setForm((prev) => ({ ...prev, word_template_path: res.data.path }))
-      toast('قالب Word بارگذاری شد و از این پس برای نامه‌ها استفاده می‌شود', 'success')
+      const field = kind === 'debt' ? 'word_template_path' : kind === 'subsidiary' ? 'word_template_subsidiary_path' : 'word_template_credit_path'
+      setForm((prev) => ({ ...prev, [field]: res.data.path }))
+      toast('قالب Word بارگذاری شد و از این پس برای این اعلامیه استفاده می‌شود', 'success')
     } catch (err: unknown) {
       const apiError = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
       toast(apiError || 'خطا در بارگذاری قالب Word', 'error')
@@ -336,6 +343,16 @@ export default function BillingLetterheadTab() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="نام مدیر" value={form.manager_name} onChange={set('manager_name')} disabled={!canEdit} />
           <Field label="سمت" value={form.manager_position} onChange={set('manager_position')} disabled={!canEdit} placeholder="مدیر امور اداری و مالی" />
+          <div className="md:col-span-2">
+            <Field
+              label="متن پانویس قانونی"
+              value={form.legal_note}
+              onChange={set('legal_note')}
+              disabled={!canEdit}
+              textarea
+              hint="در انتهای هر سه اعلامیه (بدهی، زیرمجموعه و بستانکاری) چاپ می‌شود."
+            />
+          </div>
         </div>
       </section>
 
@@ -377,15 +394,37 @@ export default function BillingLetterheadTab() {
             onUpload={(file) => uploadAsset('stamp', file)}
           />
           <AssetUpload
-            title="قالب رسمی Word"
-            hint="فایل .docx با placeholderهایی مثل {{ letter_number }}، {{ payer }}، {{ total_debt }}، {{ rows }}. اگر خالی باشد، قالب داخلی سیستم استفاده می‌شود."
+            title="قالب Word — اعلامیه بدهی (اصلی)"
+            hint="فایل .docx با placeholderهای {{ letter_date }}، {{ letter_number }}، {{ payer }}، {{ period_range }}، {{ service_type }} و {{ total_debt }}."
             icon={FileText}
             currentPath={form.word_template_path}
             accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             canEdit={canEdit}
-            uploading={uploading === 'word'}
+            uploading={uploading === 'word-debt'}
             imagePreview={false}
-            onUpload={uploadWordTemplate}
+            onUpload={(file) => uploadWordTemplate('debt', file)}
+          />
+          <AssetUpload
+            title="قالب Word — اعلامیه بدهی (شرکت زیرمجموعه)"
+            hint="همان placeholderها به‌اضافهٔ {{ subsidiary }} برای نام شرکت زیرمجموعه."
+            icon={FileText}
+            currentPath={form.word_template_subsidiary_path}
+            accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            canEdit={canEdit}
+            uploading={uploading === 'word-subsidiary'}
+            imagePreview={false}
+            onUpload={(file) => uploadWordTemplate('subsidiary', file)}
+          />
+          <AssetUpload
+            title="قالب Word — اعلامیه بستانکاری"
+            hint="placeholderها: {{ total_credit }} به‌جای مبلغ بدهی. اگر خالی باشد، قالب داخلی سیستم استفاده می‌شود."
+            icon={FileText}
+            currentPath={form.word_template_credit_path}
+            accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            canEdit={canEdit}
+            uploading={uploading === 'word-credit'}
+            imagePreview={false}
+            onUpload={(file) => uploadWordTemplate('credit', file)}
           />
         </div>
       </section>

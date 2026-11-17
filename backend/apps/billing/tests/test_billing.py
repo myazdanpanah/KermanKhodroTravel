@@ -355,3 +355,103 @@ class WordTemplateTests(TestCase):
         company.save()
         data = render_docx({"company_name": "x", "letter_number": "1"})
         self.assertTrue(data.startswith(b"PK"))  # valid docx zip
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp(prefix="kkt-letters-"))
+class OfficialLetterTests(TestCase):
+    """The three official letters: debt, subsidiary debt, credit note."""
+
+    def _text(self, data: bytes) -> str:
+        from docx import Document
+
+        document = Document(io.BytesIO(data))
+        return "\n".join(p.text for p in document.paragraphs)
+
+    def test_debt_letter_matches_official_text(self):
+        text = self._text(
+            render_docx(
+                {
+                    "variant": "debt",
+                    "payer": "شرکت نمونه سفر",
+                    "letter_number": "1404012",
+                    "letter_date": "1404/01/15",
+                    "period_range": "فروردین ۱۴۰۴ ۱ تا ۳۱",
+                    "service_type": "پرواز",
+                    "total_debt_display": "1,500,000",
+                    "company_name": "سفرهای کرمان خودرو",
+                    "bank_name1": "ملت",
+                    "account_number1": "78466591",
+                    "shaba_number1": "IR650120000000000078466591",
+                    "manager_name": "حمیدرضا فدائی",
+                    "manager_position": "مدیر امور اداری و مالی",
+                }
+            )
+        )
+        self.assertIn("شرکت محترم شرکت نمونه سفر", text)
+        self.assertIn("صورت‌حساب", text)
+        self.assertIn("1404/01/15", text)
+        self.assertIn("1,500,000", text)
+        self.assertIn("بانک ملت شماره حساب: 78466591", text)
+        self.assertIn("مدیر امور اداری و مالی", text)
+        self.assertIn("سامانه مودیان", text)
+
+    def test_subsidiary_letter_mentions_subsidiary(self):
+        text = self._text(
+            render_docx(
+                {
+                    "variant": "subsidiary",
+                    "payer": "هلدینگ کرمان خودرو",
+                    "subsidiary": "سفرهای کرمان خودرو",
+                    "letter_number": "1404013",
+                    "letter_date": "1404/01/16",
+                    "period_range": "فروردین ۱۴۰۴",
+                    "service_type": "هتل",
+                    "total_debt_display": "2,000,000",
+                }
+            )
+        )
+        self.assertIn("شرکت محترم هلدینگ کرمان خودرو", text)
+        self.assertIn("مربوط به سفرهای کرمان خودرو", text)
+        self.assertIn("2,000,000", text)
+
+    def test_credit_letter_uses_credit_amount(self):
+        text = self._text(
+            render_docx(
+                {
+                    "variant": "credit",
+                    "payer": "شرکت نمونه سفر",
+                    "letter_number": "1404014",
+                    "letter_date": "1404/01/17",
+                    "period_range": "فروردین ۱۴۰۴",
+                    "service_type": "ویزا",
+                    "total_credit_display": "750,000",
+                    "company_name": "سفرهای کرمان خودرو",
+                }
+            )
+        )
+        self.assertIn("بستانکار", text)
+        self.assertIn("750,000", text)
+        self.assertIn("خریدهای آینده", text)
+        self.assertNotIn("مشخصات حساب بانکی", text)
+
+    def test_variant_detection_uses_parent_and_credit(self):
+        from apps.billing.services.generation import _variant
+
+        parent = Payer.objects.create(code="9000", name="هلدینگ")
+        child = Payer.objects.create(code="9001", name="زیرمجموعه", parent=parent)
+        request_obj = ApprovalRequest(
+            payer_code=child.code, payer_name=child.name, service_type="پرواز",
+            letter_number="1404015", letter_date="1404/01/01", start_day=1, end_day=31,
+            month="فروردین", year=1404, period_range="فروردین ۱۴۰۴",
+            flight_data=[{"بدهکار": 1000, "بستانکار": 0}],
+        )
+        self.assertEqual(_variant(request_obj), "subsidiary")
+
+        plain = Payer.objects.create(code="9002", name="عادی")
+        credit_request = ApprovalRequest(
+            payer_code=plain.code, payer_name=plain.name, service_type="ویزا",
+            letter_number="1404016", letter_date="1404/01/01", start_day=1, end_day=31,
+            month="فروردین", year=1404, period_range="فروردین ۱۴۰۴",
+            flight_data=[{"بدهکار": 0, "بستانکار": 5000}],
+        )
+        self.assertEqual(_variant(credit_request), "credit")

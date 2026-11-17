@@ -4,19 +4,10 @@ import { useAuthStore } from '../store/authStore'
 import { useThemeStore, syncThemeClass } from '../store/themeStore'
 import { useBrandLogo } from '../store/brandingStore'
 import {
-  LayoutDashboard, BookOpen, FileText, Receipt,
-  CreditCard, Landmark, Users, Truck, Package,
-  ShoppingCart, ClipboardList, RotateCcw,
-  BarChart3, Warehouse, ArrowRightLeft,
-  Play, Box, GitBranch, Wrench, FlaskConical,
-  Upload, Download,
-  Calendar, Tag, Home,
-  Percent, Wallet,
+  LayoutDashboard, FileText, CreditCard, Users, Gauge,
+  Calendar, Target, TrendingUp,
   Settings, ChevronLeft, ChevronDown, LogOut,
-  Shield, Building2, Search, Ship, Bell, Sun, Moon, Menu, X,
-  Headphones, Clock, TrendingUp, Target, DollarSign,
-  FileBarChart, Gauge, Brain, AlertTriangle, MessageSquare,
-  Key,
+  Shield, Building2, Search, Bell, Sun, Moon, Menu, X,
 } from 'lucide-react'
 
 // ─── Navigation Structure ───────────────────────────────────────
@@ -34,89 +25,23 @@ interface NavItem {
   end?: boolean
 }
 
+// The installation is limited to three modules: BI dashboard, finance and CRM.
 const NAV_SECTIONS: NavSection[] = [
+  {
+    id: 'bi',
+    label: 'داشبورد',
+    items: [
+      { to: '/erp', icon: LayoutDashboard, label: 'داشبورد مدیریتی', end: true },
+    ],
+  },
   {
     id: 'finance',
     label: 'مالی',
     items: [
-      { to: '/erp', icon: LayoutDashboard, label: 'داشبورد', end: true },
-      { to: '/erp/chart-of-accounts', icon: BookOpen, label: 'حساب‌ها' },
-      { to: '/erp/invoices', icon: FileText, label: 'فاکتورها' },
-      { to: '/erp/receipts', icon: Receipt, label: 'دریافت‌ها' },
-      { to: '/erp/payments', icon: CreditCard, label: 'پرداخت‌ها' },
-      { to: '/erp/cheques', icon: Landmark, label: 'چک‌ها' },
-      { to: '/erp/customers', icon: Users, label: 'مشتریان' },
-      { to: '/erp/suppliers', icon: Truck, label: 'تأمین‌کنندگان' },
-      { to: '/erp/vouchers', icon: Receipt, label: 'اسناد حسابداری' },
-    ],
-  },
-  {
-    id: 'inventory',
-    label: 'انبار',
-    items: [
-      { to: '/erp/inventory', icon: Warehouse, label: 'داشبورد انبار' },
-      { to: '/erp/inventory/warehouses', icon: Package, label: 'انبارها' },
-      { to: '/erp/inventory/movements', icon: ArrowRightLeft, label: 'جابجایی‌ها' },
-      { to: '/erp/inventory/reservations', icon: ClipboardList, label: 'رزروها' },
-    ],
-  },
-  {
-    id: 'purchasing',
-    label: 'خرید',
-    items: [
-      { to: '/erp/purchasing', icon: ShoppingCart, label: 'داشبورد خرید' },
-      { to: '/erp/purchasing/requests', icon: ClipboardList, label: 'درخواست‌ها' },
-      { to: '/erp/purchasing/orders', icon: ShoppingCart, label: 'سفارشات' },
-      { to: '/erp/purchasing/receipts', icon: Package, label: 'رسید کالا' },
-    ],
-  },
-  {
-    id: 'sales',
-    label: 'فروش',
-    items: [
-      { to: '/erp/sales', icon: BarChart3, label: 'داشبورد فروش' },
-      { to: '/erp/sales/quotations', icon: FileText, label: 'پیش‌فاکتور' },
-      { to: '/erp/sales/orders', icon: ShoppingCart, label: 'سفارشات' },
-      { to: '/erp/sales/invoices', icon: CreditCard, label: 'فاکتورها' },
-      { to: '/erp/sales/returns', icon: RotateCcw, label: 'برگشتی‌ها' },
-    ],
-  },
-  {
-    id: 'manufacturing',
-    label: 'تولید',
-    items: [
-      { to: '/erp/manufacturing', icon: Box, label: 'داشبورد تولید' },
-      { to: '/erp/manufacturing/boms', icon: Box, label: 'لیست مواد' },
-      { to: '/erp/manufacturing/routings', icon: GitBranch, label: 'مسیر تولید' },
-      { to: '/erp/manufacturing/work-centers', icon: Wrench, label: 'مراكز كار' },
-      { to: '/erp/manufacturing/production-orders', icon: Play, label: 'دستورات تولید' },
-      { to: '/erp/manufacturing/quality', icon: FlaskConical, label: 'کنترل کیفیت' },
-    ],
-  },
-  {
-    id: 'trading',
-    label: 'بازرگانی',
-    items: [
-      { to: '/erp/trading', icon: BarChart3, label: 'داشبورد بازرگانی' },
-      { to: '/erp/trading/imports', icon: Upload, label: 'واردات' },
-      { to: '/erp/trading/exports', icon: Download, label: 'صادرات' },
-      { to: '/erp/trading/containers', icon: Package, label: 'کانتینرها' },
-      { to: '/erp/trading/shipments', icon: Ship, label: 'حمل و نقل' },
-    ],
-  },
-  {
-    id: 'service_sales',
-    label: 'فروش خدمات',
-    items: [
-      { to: '/erp/service-sales', icon: Tag, label: 'داشبورد خدمات' },
-      { to: '/erp/service-sales/bookings', icon: Calendar, label: 'رزروها' },
-      { to: '/erp/service-sales/services', icon: Tag, label: 'خدمات' },
-      { to: '/erp/service-sales/tickets', icon: FileText, label: 'بلیط‌ها' },
-      { to: '/erp/service-sales/tours', icon: Home, label: 'تورها' },
-      { to: '/erp/service-sales/hotels', icon: Home, label: 'هتل‌ها' },
-      { to: '/erp/service-sales/passengers', icon: Users, label: 'مسافران' },
-      { to: '/erp/service-sales/commissions', icon: Percent, label: 'كميسيون‌ها' },
-      { to: '/erp/service-sales/refunds', icon: Wallet, label: 'بازپرداخت‌ها' },
+      { to: '/erp/billing/invoices', icon: FileText, label: 'صورت‌حساب‌ها' },
+      { to: '/erp/billing/payments', icon: CreditCard, label: 'پرداخت‌ها' },
+      { to: '/erp/billing/performance', icon: Gauge, label: 'عملکرد' },
+      { to: '/erp/billing/payers', icon: Users, label: 'مشتریان' },
     ],
   },
   {
@@ -124,57 +49,9 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'CRM',
     items: [
       { to: '/erp/crm', icon: Users, label: 'داشبورد CRM', end: true },
-      { to: '/erp/crm/leads', icon: Users, label: 'سرنخ‌ها' },
+      { to: '/erp/crm/leads', icon: Target, label: 'سرنخ‌ها' },
       { to: '/erp/crm/opportunities', icon: TrendingUp, label: 'فرصت‌ها' },
       { to: '/erp/crm/activities', icon: Calendar, label: 'فعالیت‌ها' },
-      { to: '/erp/crm/campaigns', icon: Target, label: 'کمپین‌ها' },
-    ],
-  },
-  {
-    id: 'service_management',
-    label: 'مدیریت خدمات',
-    items: [
-      { to: '/erp/service-management', icon: Headphones, label: 'داشبورد خدمات', end: true },
-      { to: '/erp/service-management/requests', icon: ClipboardList, label: 'درخواست‌ها' },
-      { to: '/erp/service-management/work-orders', icon: Wrench, label: 'دستور کارها' },
-      { to: '/erp/service-management/technicians', icon: Users, label: 'تکنسین‌ها' },
-      { to: '/erp/service-management/warranties', icon: Shield, label: 'گارانتی' },
-      { to: '/erp/service-management/contracts', icon: FileText, label: 'قراردادها' },
-      { to: '/erp/service-management/sla', icon: Clock, label: 'SLA' },
-      { to: '/erp/service-management/maintenance', icon: Settings, label: 'نگهداری' },
-    ],
-  },
-  {
-    id: 'hr',
-    label: 'منابع انسانی',
-    items: [
-      { to: '/erp/hr', icon: Users, label: 'داشبورد HR', end: true },
-      { to: '/erp/hr/employees', icon: Users, label: 'کارکنان' },
-      { to: '/erp/hr/attendance', icon: Calendar, label: 'حضور و غیاب' },
-      { to: '/erp/hr/departments', icon: Building2, label: 'بخش‌ها' },
-      { to: '/erp/hr/payroll', icon: DollarSign, label: 'حقوق' },
-      { to: '/erp/hr/evaluations', icon: TrendingUp, label: 'ارزیابی' },
-      { to: '/erp/hr/recruitment', icon: Target, label: 'استخدام' },
-    ],
-  },
-  {
-    id: 'reporting',
-    label: 'گزارش‌ها و تحلیل',
-    items: [
-      { to: '/erp/reports', icon: FileBarChart, label: 'گزارش‌ها', end: true },
-      { to: '/erp/reports/dashboards', icon: LayoutDashboard, label: 'داشبوردها' },
-      { to: '/erp/reports/kpis', icon: Gauge, label: 'شاخص‌ها' },
-      { to: '/erp/reports/scheduled', icon: Calendar, label: 'زمان‌بندی' },
-    ],
-  },
-  {
-    id: 'ai_insights',
-    label: 'هوش مصنوعی',
-    items: [
-      { to: '/erp/ai', icon: Brain, label: 'داشبورد AI', end: true },
-      { to: '/erp/ai/anomalies', icon: AlertTriangle, label: 'تشخیص ناهنجاری' },
-      { to: '/erp/ai/forecasts', icon: TrendingUp, label: 'پیش‌بینی' },
-      { to: '/erp/ai/nl-query', icon: MessageSquare, label: 'پرسش طبیعی' },
     ],
   },
   {
@@ -182,16 +59,8 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'تنظیمات',
     items: [
       { to: '/erp/settings', icon: Settings, label: 'تنظیمات' },
-      { to: '/erp/settings/users', icon: Shield, label: 'كاربران' },
+      { to: '/erp/settings/users', icon: Shield, label: 'کاربران' },
       { to: '/erp/settings/org', icon: Building2, label: 'ساختار سازمانی' },
-      { to: '/erp/settings/sso', icon: Key, label: 'ورود یکپارچه (SSO)' },
-    ],
-  },
-  {
-    id: 'audit',
-    label: ' Audit Trail',
-    items: [
-      { to: '/erp/audit', icon: ClipboardList, label: 'Audit Log' },
     ],
   },
 ]
@@ -238,6 +107,18 @@ export default function ERPLayout() {
   }, [location.pathname])
 
   // Breadcrumb data (computed once per render)
+  // Only the three licensed modules (plus settings for admins) are reachable.
+  const isAdmin = user?.role === 'admin' || user?.role === 'ceo'
+  const allowedPrefixes = isAdmin ? ['/erp/billing', '/erp/crm', '/erp/settings'] : ['/erp/billing', '/erp/crm']
+  const sections = isAdmin ? NAV_SECTIONS : NAV_SECTIONS.filter((section) => section.id !== 'settings')
+
+  useEffect(() => {
+    const path = location.pathname.replace(/\/$/, '')
+    const isRoot = path === '/erp'
+    const allowed = isRoot || allowedPrefixes.some((prefix) => path.startsWith(prefix))
+    if (!allowed) navigate('/erp', { replace: true })
+  }, [location.pathname, allowedPrefixes, navigate])
+
   const activeSection = NAV_SECTIONS.find((s) =>
     s.items.some((i) =>
       i.end ? location.pathname === i.to : location.pathname.startsWith(i.to) && i.to !== '/erp'
@@ -296,7 +177,7 @@ export default function ERPLayout() {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-2 py-1 space-y-0.5">
-          {NAV_SECTIONS.map((section) => {
+          {sections.map((section) => {
             const isExpanded = expandedSections[section.id]
             const hasActive = section.items.some((item) =>
               item.end

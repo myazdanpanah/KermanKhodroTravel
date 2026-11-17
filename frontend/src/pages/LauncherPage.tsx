@@ -61,25 +61,9 @@ const MODULE_ROUTES: Record<string, string> = {
   ai_insights: '/erp/ai',
 }
 
-// Only modules that are fully developed get surfaced on the launcher.
-// Partially built modules (manufacturing, trading, service_sales, workflow)
-// are intentionally hidden until their UI is complete.
-const DELIVERED_MODULES = new Set([
-  'bi_dashboard',
-  'finance',
-  'crm',
-  'db_manager',
-  'datasets',
-  'llm',
-  'settings',
-  'inventory',
-  'purchasing',
-  'sales',
-  'service_management',
-  'hr',
-  'reporting',
-  'ai_insights',
-])
+// This installation is licensed for three modules only: BI, finance and CRM.
+// Everything else in the upstream navigation stays hidden.
+const DELIVERED_MODULES = new Set(['bi_dashboard', 'finance', 'crm'])
 
 const MODULE_DESCRIPTIONS: Record<string, string> = {
   bi_dashboard: 'داشبوردها و نمودارهای هوشمند',

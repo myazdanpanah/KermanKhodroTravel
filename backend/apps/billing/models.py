@@ -235,8 +235,26 @@ class CompanySettings(models.Model):
         max_length=500,
         blank=True,
         default="",
-        verbose_name="قالب Word نامه",
+        verbose_name="قالب Word اعلامیه بدهی (اصلی)",
         help_text="فایل .docx با placeholderهای {{ }} که به‌جای قالب داخلی استفاده می‌شود.",
+    )
+    word_template_subsidiary_path = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        verbose_name="قالب Word اعلامیه بدهی (شرکت زیرمجموعه)",
+    )
+    word_template_credit_path = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        verbose_name="قالب Word اعلامیه بستانکاری",
+    )
+    legal_note = models.TextField(
+        blank=True,
+        default="",
+        verbose_name="متن پانویس قانونی",
+        help_text="در انتهای هر سه اعلامیه چاپ می‌شود.",
     )
     logo_path = models.CharField(max_length=500, blank=True, default="", verbose_name="لوگو")
     signature_path = models.CharField(max_length=500, blank=True, default="", verbose_name="امضا")

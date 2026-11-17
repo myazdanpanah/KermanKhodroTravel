@@ -36,70 +36,66 @@ SERVICE_KEYS = [
     ("service", "service_data", "خدمات"),
 ]
 
+LEGAL_NOTE = (
+    "**** برابر قانون و با توجه به ماهیت کار آژانس (ارائه خدمات واسطه‌ای) برای هریک از خدمات "
+    "ارائه شده ، صورتحساب به نام و کد ملی مسافر صادر و به سامانه مودیان ارسال می‌گردد. ****"
+)
+
+# The three official letters: debt (main), debt of a subsidiary, credit note.
+LETTER_KINDS = (
+    ("debt", "اعلامیه بدهی (اصلی)"),
+    ("subsidiary", "اعلامیه بدهی (شرکت زیرمجموعه)"),
+    ("credit", "اعلامیه بستانکاری"),
+)
+
 DEFAULT_CSS = """
-@page { size: A4; margin: 20mm 15mm; }
-body { font-family: "B Nazanin", "Vazirmatn", Tahoma, sans-serif; font-size: 12pt; direction: rtl; color: #101D35; }
-h1 { font-size: 15pt; margin: 0 0 4px; }
-.meta { display: flex; justify-content: space-between; font-size: 11pt; margin: 8px 0 12px; }
-table { width: 100%; border-collapse: collapse; font-size: 10pt; }
-th, td { border: 1px solid #9aa7bd; padding: 4px 6px; text-align: center; }
-th { background: #eef2f8; font-weight: bold; }
-tfoot td { font-weight: bold; background: #f7f9fc; }
-.header { text-align: center; border-bottom: 2px solid #101D35; padding-bottom: 8px; margin-bottom: 10px; }
-.footer { margin-top: 24px; font-size: 10pt; }
-.footer .banks { line-height: 1.8; }
-.signature { margin-top: 28px; text-align: left; }
+@page { size: A4; margin: 22mm 18mm; }
+body { font-family: "B Nazanin", "Vazirmatn", Tahoma, sans-serif; font-size: 12.5pt; direction: rtl; color: #101D35; line-height: 1.95; }
+.header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; }
+.header .logo img { height: 62px; }
+.header .meta { text-align: left; font-size: 11pt; line-height: 1.9; }
+p { margin: 0 0 10px; }
+.payer { font-weight: 700; margin: 4px 0 10px; }
+.amount { font-weight: 700; }
+.banks { margin-top: 6px; font-size: 11pt; line-height: 2; }
+.signature { margin-top: 30px; text-align: left; font-size: 11pt; line-height: 1.9; }
+.signature img { height: 46px; margin-bottom: 4px; }
+.legal { margin-top: 28px; font-size: 9.5pt; color: #5a6a85; text-align: justify; }
 """
 
 DEFAULT_HTML = """
 <div class="header">
-  {% if logo_data_uri %}<img src="{{ logo_data_uri }}" alt="logo" height="64">{% endif %}
-  <h1>{{ company_name }}</h1>
-  <div>{{ address }}{% if phone %} — تلفن: {{ phone }}{% endif %}</div>
+  <div class="logo">{% if logo_data_uri %}<img src="{{ logo_data_uri }}" alt="logo">{% endif %}</div>
+  <div class="meta">
+    <div>تاریخ: {{ letter_date }}</div>
+    <div>شماره: {{ letter_number }}</div>
+  </div>
 </div>
-<div class="meta">
-  <div>شماره نامه: <strong>{{ letter_number }}</strong></div>
-  <div>تاریخ: {{ letter_date }}</div>
-</div>
-<div class="meta">
-  <div>شرکت طرف حساب: <strong>{{ payer }}</strong> (کد {{ payer_code }})</div>
-  <div>بازه: {{ period_range }}</div>
-</div>
-<p>با سلام و احترام، صورتحساب خدمات {{ service_type }} به شرح زیر اعلام می‌گردد:</p>
-<table>
-  <thead>
-    <tr>{% for column in columns %}<th>{{ column }}</th>{% endfor %}</tr>
-  </thead>
-  <tbody>
-    {% for row in rows %}
-      <tr>{% for column in columns %}<td>{{ row[column] }}</td>{% endfor %}</tr>
-    {% endfor %}
-  </tbody>
-  <tfoot>
-    <tr>
-      <td colspan="{{ columns|length - 2 }}">جمع</td>
-      <td>{{ "{:,}".format(total_debt) }}</td>
-      <td>{{ "{:,}".format(total_credit) }}</td>
-    </tr>
-  </tfoot>
-</table>
-<div class="footer">
-  {% if total_credit > 0 and total_debt == 0 %}
-    <p>با توجه به مانده بستانکار {{ "{:,}".format(total_credit) }} ریال، خواهشمند است صورتحساب مربوطه را صادر فرمایید.</p>
-  {% else %}
-    <p>مانده بدهکار این دوره: <strong>{{ "{:,}".format(total_debt) }}</strong> ریال.</p>
-  {% endif %}
+<p class="payer">شرکت محترم {{ payer }}</p>
+{% if variant == 'credit' %}
+  <p>احتراماً {{ period_range }}</p>
+  <p><strong>بابت خدمت {{ service_type }} خریداری‌شده، مبلغ <span class="amount">{{ total_credit_display }}</span> ریال</strong></p>
+  <p>نزد شرکت {{ company_name }} <strong>بستانکار</strong> می‌باشید.</p>
+  <p>در نظر داشته باشید که این مبلغ در خریدهای آینده از حساب شما کسر خواهد شد.</p>
+{% else %}
+  <p>احتراماً بدین وسیله صورت‌حساب {% if variant == 'subsidiary' %}مربوط به {{ subsidiary }} {% endif %}{{ period_range }}</p>
+  <p><strong>بابت {{ service_type }} به مبلغ <span class="amount">{{ total_debt_display }}</span> ریال</strong></p>
+  <p>جهت اطلاع و انجام اقدامات لازم به پیوست ایفاد می‌گردد.</p>
+  <p>خواهشمند است دستور فرمائید مبلغ مربوطه به حساب این شرکت واریز شود.</p>
+  <p>مشخصات حساب بانکی شرکت به شرح زیر است:</p>
   <div class="banks">
-    {% if bank_name1 %}<div>بانک {{ bank_name1 }} — حساب {{ account_number1 }} — شبا {{ shaba_number1 }}</div>{% endif %}
-    {% if bank_name2 %}<div>بانک {{ bank_name2 }} — حساب {{ account_number2 }} — شبا {{ shaba_number2 }}</div>{% endif %}
+    {% if bank_name1 %}<div>بانک {{ bank_name1 }} شماره حساب: {{ account_number1 }} شماره شبا: {{ shaba_number1 }}</div>{% endif %}
+    {% if bank_name2 %}<div>بانک {{ bank_name2 }} شماره حساب: {{ account_number2 }} شماره شبا: {{ shaba_number2 }}</div>{% endif %}
   </div>
-  <div class="signature">
-    {% if signature_data_uri %}<img src="{{ signature_data_uri }}" alt="signature" height="48">{% endif %}
-    {% if stamp_data_uri %}<img src="{{ stamp_data_uri }}" alt="stamp" height="56">{% endif %}
-    <div>{{ manager_name }}</div>
-    <div>{{ manager_position }}</div>
-  </div>
+{% endif %}
+<div class="signature">
+  {% if signature_data_uri %}<img src="{{ signature_data_uri }}" alt="signature">{% endif %}
+  {% if stamp_data_uri %}<img src="{{ stamp_data_uri }}" alt="stamp">{% endif %}
+  <div>{{ company_name }}</div>
+  <div>{{ manager_name }}</div>
+  <div>{{ manager_position }}</div>
 </div>
+<p class="legal">{{ legal_note }}</p>
 """
 
 HTML_DOCUMENT = """<!DOCTYPE html>
@@ -129,25 +125,35 @@ def _data_uri(path_value: str) -> str:
 
 
 def _variant(request_obj: ApprovalRequest) -> str:
+    """Pick one of the three official letters (spec §2)."""
     payer = Payer.objects.filter(code=request_obj.payer_code).first()
     if payer is not None and payer.parent_id:
         return "subsidiary"
     if request_obj.total_credit > 0 and request_obj.total_debt == 0:
-        return "creditor"
-    return "simple"
+        return "credit"
+    return "debt"
 
 
 def build_context(request_obj: ApprovalRequest, rows: list[dict], columns: list[str]) -> dict:
     company = CompanySettings.load()
     payer = Payer.objects.filter(code=request_obj.payer_code).first()
+    variant = _variant(request_obj)
+    subsidiary_name = ""
+    recipient = request_obj.payer_name
+    if variant == "subsidiary" and payer is not None and payer.parent is not None:
+        # The letter about a subsidiary's account is addressed to its parent.
+        subsidiary_name = payer.name
+        recipient = payer.parent.name
     return {
         "letter_date": request_obj.letter_date,
         "letter_number": request_obj.letter_number,
-        "payer": request_obj.payer_name,
+        "payer": recipient,
         "payer_code": request_obj.payer_code,
         "period_range": request_obj.period_range,
         "service_type": request_obj.service_type,
-        "subsidiary": payer.parent.name if payer and payer.parent else "",
+        "subsidiary": subsidiary_name,
+        "variant": variant,
+        "legal_note": company.legal_note or LEGAL_NOTE,
         "total_debt": sum(int(r.get("بدهکار") or 0) for r in rows),
         "total_credit": sum(int(r.get("بستانکار") or 0) for r in rows),
         "company_name": company.company_name or "",
@@ -161,6 +167,9 @@ def build_context(request_obj: ApprovalRequest, rows: list[dict], columns: list[
         "total_credit_display": f"{sum(int(r.get('بستانکار') or 0) for r in rows):,}",
         "manager_name": company.manager_name or "",
         "manager_position": company.manager_position or "",
+        "logo_path": company.logo_path,
+        "signature_path": company.signature_path,
+        "stamp_path": company.stamp_path,
         "bank_name1": company.bank_name1,
         "account_number1": company.account_number1,
         "shaba_number1": company.shaba_number1,
@@ -172,7 +181,6 @@ def build_context(request_obj: ApprovalRequest, rows: list[dict], columns: list[
         "stamp_data_uri": _data_uri(company.stamp_path),
         "rows": rows,
         "columns": columns,
-        "variant": _variant(request_obj),
         "generated_on": gregorian_to_persian(dt.date.today()),
     }
 
@@ -210,28 +218,44 @@ def render_pdf(html: str) -> bytes:
     return HTML(string=html).write_pdf()
 
 
+def _template_path_for(variant: str) -> Path | None:
+    """Uploaded .docx for this letter kind (falls back to the main debt one)."""
+    company = CompanySettings.load()
+    candidates = {
+        "debt": [company.word_template_path],
+        "subsidiary": [company.word_template_subsidiary_path, company.word_template_path],
+        "credit": [company.word_template_credit_path],
+    }.get(variant, [company.word_template_path])
+    for relative in candidates:
+        relative = (relative or "").strip()
+        if not relative:
+            continue
+        path = Path(relative)
+        if not path.is_absolute():
+            path = Path(django_settings.MEDIA_ROOT) / relative
+        if path.exists():
+            return path
+    return None
+
+
 def render_docx(context: dict) -> bytes:
     """
-    Word letter: render the uploaded official .docx template when present
-    (docxtpl placeholders), otherwise build a letter programmatically.
+    Word letter: render the uploaded official .docx template for this letter
+    kind (docxtpl placeholders), otherwise build the same letter programmatically.
     """
-    company = CompanySettings.load()
-    template_rel = (company.word_template_path or "").strip()
-    if template_rel:
-        template_file = Path(template_rel)
-        if not template_file.is_absolute():
-            template_file = Path(django_settings.MEDIA_ROOT) / template_rel
-        if template_file.exists():
-            try:
-                from docxtpl import DocxTemplate
+    variant = str(context.get("variant") or "debt")
+    template_file = _template_path_for(variant)
+    if template_file is not None:
+        try:
+            from docxtpl import DocxTemplate
 
-                document = DocxTemplate(str(template_file))
-                document.render(context)
-                buffer = io.BytesIO()
-                document.save(buffer)
-                return buffer.getvalue()
-            except Exception:  # noqa: BLE001 - fall back to the built-in letter
-                pass
+            document = DocxTemplate(str(template_file))
+            document.render(context)
+            buffer = io.BytesIO()
+            document.save(buffer)
+            return buffer.getvalue()
+        except Exception:  # noqa: BLE001 - fall back to the built-in letter
+            pass
 
     return _render_programmatic_docx(context)
 
@@ -246,12 +270,19 @@ def _render_programmatic_docx(context: dict) -> bytes:
     defaults = {
         "company_name": "", "address": "", "letter_number": "", "letter_date": "",
         "payer": "", "payer_code": "", "period_range": "", "service_type": "",
+        "subsidiary": "", "variant": "debt", "legal_note": LEGAL_NOTE,
         "columns": [], "rows": [], "total_debt": 0, "total_credit": 0,
+        "total_debt_display": "0", "total_credit_display": "0",
         "bank_name1": "", "account_number1": "", "shaba_number1": "",
         "bank_name2": "", "account_number2": "", "shaba_number2": "",
         "manager_name": "", "manager_position": "",
+        "logo_path": "", "signature_path": "", "stamp_path": "",
     }
     context = {**defaults, **context}
+    context["total_debt_display"] = context.get("total_debt_display") or f"{context['total_debt']:,}"
+    context["total_credit_display"] = context.get("total_credit_display") or f"{context['total_credit']:,}"
+    if not context.get("legal_note"):
+        context["legal_note"] = LEGAL_NOTE
 
     document = Document()
     section = document.sections[0]
@@ -270,52 +301,64 @@ def _render_programmatic_docx(context: dict) -> bytes:
             pass
         return paragraph
 
-    para(context["company_name"], size=18, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
-    if context["address"]:
-        para(context["address"], size=10, align=WD_ALIGN_PARAGRAPH.CENTER)
-    para(f"شماره نامه: {context['letter_number']}     تاریخ: {context['letter_date']}", size=12)
-    para(f"شرکت طرف حساب: {context['payer']} (کد {context['payer_code']})", size=12)
-    para(f"بازه: {context['period_range']}", size=12)
-    para(f"موضوع: صورتحساب خدمات {context['service_type']}", size=12, bold=True)
+    def image(path_value: str, height: int = 40):
+        if not path_value:
+            return
+        path = Path(path_value)
+        if not path.is_absolute():
+            path = Path(django_settings.MEDIA_ROOT) / path_value
+        if not path.exists() or path.stat().st_size == 0:
+            return
+        paragraph = document.add_paragraph()
+        paragraph.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        try:
+            paragraph.add_run().add_picture(str(path), height=Pt(height))
+        except Exception:  # noqa: BLE001 - unreadable image must not block the letter
+            pass
 
-    columns = context["columns"]
-    table = document.add_table(rows=1, cols=len(columns))
-    table.style = "Table Grid"
-    for index, column in enumerate(columns):
-        cell = table.rows[0].cells[index]
-        cell.text = str(column)
-        for paragraph in cell.paragraphs:
-            paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            for run in paragraph.runs:
-                run.bold = True
-                run.font.size = Pt(10)
-
-    for row in context["rows"]:
-        cells = table.add_row().cells
-        for index, column in enumerate(columns):
-            value = row.get(column, "")
-            cells[index].text = f"{value:,}" if isinstance(value, int) else str(value)
-            for paragraph in cells[index].paragraphs:
-                paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-                for run in paragraph.runs:
-                    run.font.size = Pt(10)
-
-    para(
-        f"جمع بدهکار: {context['total_debt']:,} ریال     جمع بستانکار: {context['total_credit']:,} ریال",
-        size=11,
-        bold=True,
-    )
-    if context["total_credit"] > 0 and context["total_debt"] == 0:
-        para("خواهشمند است صورتحساب مربوطه را صادر فرمایید.", size=11)
-    for bank in (
-        (context["bank_name1"], context["account_number1"], context["shaba_number1"]),
-        (context["bank_name2"], context["account_number2"], context["shaba_number2"]),
-    ):
-        if bank[0]:
-            para(f"بانک {bank[0]} — حساب {bank[1]} — شبا {bank[2]}", size=10)
+    # Header: logo left, date/number right.
+    image(context.get("logo_path", ""), 46)
+    para(f"تاریخ: {context['letter_date']}", size=12)
+    para(f"شماره: {context['letter_number']}", size=12)
     document.add_paragraph()
-    para(context["manager_name"], size=11, align=WD_ALIGN_PARAGRAPH.LEFT)
-    para(context["manager_position"], size=10, align=WD_ALIGN_PARAGRAPH.LEFT)
+    para(f"شرکت محترم {context['payer']}", size=13, bold=True)
+
+    if context["variant"] == "credit":
+        para(f"احتراماً {context['period_range']}", size=12)
+        para(
+            f"بابت خدمت {context['service_type']} خریداری‌شده، مبلغ "
+            f"{context['total_credit_display']} ریال",
+            size=12,
+            bold=True,
+        )
+        para(f"نزد شرکت {context['company_name']} بستانکار می‌باشید.", size=12)
+        para("در نظر داشته باشید که این مبلغ در خریدهای آینده از حساب شما کسر خواهد شد.", size=12)
+    else:
+        about = f"مربوط به {context['subsidiary']} " if context["variant"] == "subsidiary" else ""
+        para(f"احتراماً بدین وسیله صورت‌حساب {about}{context['period_range']}", size=12)
+        para(
+            f"بابت {context['service_type']} به مبلغ {context['total_debt_display']} ریال",
+            size=12,
+            bold=True,
+        )
+        para("جهت اطلاع و انجام اقدامات لازم به پیوست ایفاد می‌گردد.", size=12)
+        para("خواهشمند است دستور فرمائید مبلغ مربوطه به حساب این شرکت واریز شود.", size=12)
+        para("مشخصات حساب بانکی شرکت به شرح زیر است:", size=12)
+        for bank in (
+            (context["bank_name1"], context["account_number1"], context["shaba_number1"]),
+            (context["bank_name2"], context["account_number2"], context["shaba_number2"]),
+        ):
+            if bank[0]:
+                para(f"بانک {bank[0]} شماره حساب: {bank[1]} شماره شبا: {bank[2]}", size=11)
+
+    document.add_paragraph()
+    image(context.get("signature_path", ""), 34)
+    image(context.get("stamp_path", ""), 40)
+    para(context["company_name"], size=12, align=WD_ALIGN_PARAGRAPH.LEFT)
+    para(context["manager_name"], size=12, align=WD_ALIGN_PARAGRAPH.LEFT)
+    para(context["manager_position"], size=11, align=WD_ALIGN_PARAGRAPH.LEFT)
+    document.add_paragraph()
+    para(context["legal_note"], size=9, bold=True, align=WD_ALIGN_PARAGRAPH.CENTER)
 
     buffer = io.BytesIO()
     document.save(buffer)
@@ -373,6 +416,10 @@ def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
             errors.append(f"PDF ({label}): {exc}")
 
         issue_date = persian_date_to_gregorian(request_obj.letter_date) or timezone.localdate()
+        amount = context["total_debt"] - context["total_credit"]
+        if context["variant"] == "credit" or amount <= 0:
+            # Credit notes are not invoices; nothing to add to the invoice ledger.
+            continue
         with transaction.atomic():
             Invoice.objects.get_or_create(
                 letter_number=request_obj.letter_number,
@@ -380,7 +427,7 @@ def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
                 invoice_type=label,
                 defaults={
                     "payer": request_obj.payer_name,
-                    "amount": context["total_debt"] - context["total_credit"],
+                    "amount": amount,
                     "issue_date": issue_date,
                     "file_path": f"{request_obj.letter_number}/{service_key}_{request_obj.letter_number}.pdf",
                 },

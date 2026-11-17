@@ -7,7 +7,7 @@ from django.db import transaction
 from apps.accounts.models import Company
 from apps.billing.models import CompanySettings, InvoiceTemplate, ServiceCategory
 from apps.billing.permissions import PERMISSION_FLAGS
-from apps.billing.services.generation import DEFAULT_CSS, DEFAULT_HTML
+from apps.billing.services.generation import LEGAL_NOTE as DEFAULT_LEGAL_NOTE
 
 SERVICE_CATEGORIES = [
     ("ویزا", "VISA", 1),
@@ -70,8 +70,9 @@ class Command(BaseCommand):
             InvoiceTemplate.objects.create(
                 name="قالب پیش‌فرض",
                 description="قالب رسمی صورتحساب (قابل ویرایش در تنظیمات)",
-                html_content=DEFAULT_HTML,
-                css_content=DEFAULT_CSS,
+                # Empty body => the built-in official letter (three variants) is used.
+                html_content="",
+                css_content="",
                 settings_json={
                     "page_size": "A4",
                     "font_family": "B Nazanin, Vazirmatn, Tahoma, sans-serif",
@@ -88,9 +89,15 @@ class Command(BaseCommand):
             created.append("default invoice template")
 
         settings_obj = CompanySettings.load()
+        fields = []
         if not settings_obj.company_name:
             settings_obj.company_name = company.name
-            settings_obj.save(update_fields=["company_name"])
+            fields.append("company_name")
+        if not settings_obj.legal_note:
+            settings_obj.legal_note = DEFAULT_LEGAL_NOTE
+            fields.append("legal_note")
+        if fields:
+            settings_obj.save(update_fields=fields)
             created.append("company settings")
 
         self.stdout.write(self.style.SUCCESS("Seed complete: " + (", ".join(created) or "nothing to do")))

@@ -649,10 +649,21 @@ def company_settings_asset(request):
     return Response({"ok": True, "path": relative})
 
 
+WORD_TEMPLATE_FIELDS = {
+    "debt": "word_template_path",
+    "subsidiary": "word_template_subsidiary_path",
+    "credit": "word_template_credit_path",
+}
+
+
 @api_view(["POST"])
 @perm_required("can_manage_settings")
 def company_settings_word_template(request):
-    """Upload the official .docx letter template used for Word generation."""
+    """Upload an official .docx letter template for one of the three letters."""
+    kind = str(request.query_params.get("kind") or "debt")
+    field = WORD_TEMPLATE_FIELDS.get(kind)
+    if field is None:
+        return _error("نوع اعلامیه نامعتبر است (debt|subsidiary|credit).")
     uploaded = request.FILES.get("file")
     if uploaded is None:
         return _error("فایلی ارسال نشده است.")
@@ -661,13 +672,13 @@ def company_settings_word_template(request):
 
     target_dir = Path(django_settings.MEDIA_ROOT) / "company_assets"
     target_dir.mkdir(parents=True, exist_ok=True)
-    relative = "company_assets/word_template.docx"
+    relative = f"company_assets/word_template_{kind}.docx"
     (Path(django_settings.MEDIA_ROOT) / relative).write_bytes(uploaded.read())
 
     company = CompanySettings.load()
-    company.word_template_path = relative
-    company.save(update_fields=["word_template_path"])
-    return Response({"ok": True, "path": relative})
+    setattr(company, field, relative)
+    company.save(update_fields=[field])
+    return Response({"ok": True, "kind": kind, "path": relative})
 
 
 # ── misc: permissions, next letter, summary, backup ─────────────────────

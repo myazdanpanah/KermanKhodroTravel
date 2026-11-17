@@ -10,7 +10,11 @@ import ERPLayout from './pages/ERPLayout'
 // ── Route-level code splitting ─────────────────────────────────
 // Every page below is loaded on demand so the initial bundle stays small.
 // Finance module
-const FinanceDashboard = lazy(() => import('./pages/finance/FinanceDashboard'))
+const BillingDashboardPage = lazy(() => import('./pages/billing/BillingDashboardPage'))
+const BillingInvoicesPage = lazy(() => import('./pages/billing/BillingInvoicesPage'))
+const BillingPaymentsPage = lazy(() => import('./pages/billing/BillingPaymentsPage'))
+const BillingPerformancePage = lazy(() => import('./pages/billing/BillingPerformancePage'))
+const BillingPayersPage = lazy(() => import('./pages/billing/BillingPayersPage'))
 const ChartOfAccountsPage = lazy(() => import('./pages/finance/ChartOfAccountsPage'))
 const InvoicesPage = lazy(() => import('./pages/finance/InvoicesPage'))
 const ReceiptsPage = lazy(() => import('./pages/finance/ReceiptsPage'))
@@ -151,7 +155,11 @@ export default function App() {
         {/* ═══ Unified ERP Layout ═══ */}
         <Route path="/erp" element={<PrivateRoute><ERPLayout /></PrivateRoute>}>
           {/* Finance */}
-          <Route index element={<FinanceDashboard />} />
+          <Route index element={<BillingDashboardPage />} />
+          <Route path="billing/invoices" element={<BillingInvoicesPage />} />
+          <Route path="billing/payments" element={<BillingPaymentsPage />} />
+          <Route path="billing/performance" element={<BillingPerformancePage />} />
+          <Route path="billing/payers" element={<BillingPayersPage />} />
           <Route path="chart-of-accounts" element={<ChartOfAccountsPage />} />
           <Route path="invoices" element={<InvoicesPage />} />
           <Route path="receipts" element={<ReceiptsPage />} />
