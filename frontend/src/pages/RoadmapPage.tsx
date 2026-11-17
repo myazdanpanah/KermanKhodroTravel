@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { useLogout } from '../hooks/useLogout'
 import {
   BarChart3, DollarSign, Users, Database, Upload, Settings, Zap,
-  GitBranch, Briefcase, Package, FolderKanban, FileText,
-  Shield, Bell, ArrowLeft, Check, Clock, Rocket, ChevronDown, ChevronUp
+  GitBranch, Briefcase, Package, FolderKanban,
+  Shield, Bell, ArrowLeft, Check, Clock, Rocket, ChevronDown, ChevronUp,
+  ShoppingCart, Factory, Headphones, Ship, Tag, Brain, LineChart,
+  TrendingUp
 } from 'lucide-react'
 
 interface RoadmapItem {
@@ -21,7 +23,7 @@ interface RoadmapItem {
 }
 
 const ROADMAP_ITEMS: RoadmapItem[] = [
-  // Implemented modules
+  // ── Finished modules ─────────────────────────────────────────
   {
     id: 'bi_dashboard',
     label: 'داشبورد هوشمند',
@@ -30,7 +32,7 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
     icon: BarChart3,
     status: 'implemented',
     category: 'هسته',
-    gradient: 'from-indigo-500 to-purple-600',
+    gradient: 'from-nx-blue to-nx-blue',
     route: '/dashboards',
     features: [
       'کشیدن و رها کردن ویجت‌ها',
@@ -51,8 +53,8 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
     icon: DollarSign,
     status: 'implemented',
     category: 'مالی',
-    gradient: 'from-emerald-500 to-teal-600',
-    route: '/finance',
+    gradient: 'from-nx-teal to-nx-teal',
+    route: '/erp',
     features: [
       'ساختار حساب: کل → معین → تفصیلی',
       'فاکتور با شماره‌گذاری خودکار',
@@ -65,6 +67,158 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
     ],
   },
   {
+    id: 'inventory',
+    label: 'مدیریت انبار',
+    labelEn: 'Inventory',
+    description: 'انبارها، موجودی، جابجایی‌ها و رزروها',
+    icon: Package,
+    status: 'implemented',
+    category: 'عملیاتی',
+    gradient: 'from-nx-teal to-nx-teal',
+    route: '/erp/inventory',
+    features: [
+      'چند انباره',
+      'جابجایی و انتقال بین انبارها',
+      'رزرو موجودی',
+      'شمارش و اصلاح موجودی',
+      'هشدار کمبود موجودی',
+      'داشبورد موجودی',
+    ],
+  },
+  {
+    id: 'purchasing',
+    label: 'خرید',
+    labelEn: 'Purchasing',
+    description: 'درخواست خرید، سفارش خرید و رسید کالا',
+    icon: ShoppingCart,
+    status: 'implemented',
+    category: 'عملیاتی',
+    gradient: 'from-nx-blue to-nx-teal',
+    route: '/erp/purchasing',
+    features: [
+      'درخواست خرید چندمرحله‌ای',
+      'سفارش خرید',
+      'رسید کالا',
+      'تأییدیه و گردش وضعیت',
+      'اتصال به انبار و تأمین‌کننده',
+      'داشبورد خرید',
+    ],
+  },
+  {
+    id: 'sales',
+    label: 'فروش',
+    labelEn: 'Sales',
+    description: 'پیش‌فاکتور، سفارش، فاکتور و برگشتی فروش',
+    icon: TrendingUp,
+    status: 'implemented',
+    category: 'عملیاتی',
+    gradient: 'from-nx-teal to-nx-teal',
+    route: '/erp/sales',
+    features: [
+      'پیش‌فاکتور (Quotation)',
+      'سفارش فروش',
+      'فاکتور فروش و مطالبات',
+      'برگشتی فروش',
+      'تأیید و لغو سفارش',
+      'داشبورد فروش',
+    ],
+  },
+  {
+    id: 'crm',
+    label: 'مدیریت ارتباط با مشتری',
+    labelEn: 'CRM',
+    description: 'سرنخ‌ها، فرصت‌ها، فعالیت‌ها و کمپین‌ها',
+    icon: Users,
+    status: 'implemented',
+    category: 'روابط',
+    gradient: 'from-nx-blue to-nx-blue',
+    route: '/erp/crm',
+    features: [
+      'پروفایل مشتری',
+      'ردیابی سرنخ (Lead Tracking)',
+      'خط لوله فروش (Pipeline)',
+      'فعالیت‌ها و تعاملات',
+      'کمپین‌های بازاریابی',
+      'داشبورد CRM',
+    ],
+  },
+  {
+    id: 'service_management',
+    label: 'مدیریت خدمات',
+    labelEn: 'Service Management',
+    description: 'درخواست خدمات، دستور کار، تکنسین، قرارداد و SLA',
+    icon: Headphones,
+    status: 'implemented',
+    category: 'خدمات',
+    gradient: 'from-nx-warning-500 to-nx-danger-600',
+    route: '/erp/service-management',
+    features: [
+      'درخواست خدمات و گردش وضعیت',
+      'دستور کار و تخصیص تکنسین',
+      'مدیریت تکنسین‌ها',
+      'قرارداد و گارانتی',
+      'SLA و نگهداری پیشگیرانه',
+      'داشبورد خدمات',
+    ],
+  },
+  {
+    id: 'hr',
+    label: 'منابع انسانی',
+    labelEn: 'HR',
+    description: 'کارکنان، حضور و غیاب، مرخصی، حقوق و ارزیابی',
+    icon: Briefcase,
+    status: 'implemented',
+    category: 'سازمانی',
+    gradient: 'from-nx-blue to-nx-blue',
+    route: '/erp/hr',
+    features: [
+      'پرونده کارکنان',
+      'حضور و غیاب',
+      'مرخصی و انواع مرخصی',
+      'محاسبه حقوق و دستمزد',
+      'ارزیابی عملکرد',
+      'استخدام و بخش‌ها',
+    ],
+  },
+  {
+    id: 'reporting',
+    label: 'گزارش‌ساز و تحلیل',
+    labelEn: 'Reporting & Analytics',
+    description: 'قالب گزارش، اجرا، خروجی، KPI و گزارش زمان‌بندی‌شده',
+    icon: LineChart,
+    status: 'implemented',
+    category: 'تحلیلی',
+    gradient: 'from-nx-blue to-nx-blue',
+    route: '/erp/reports',
+    features: [
+      'قالب گزارش برای همه ماژول‌ها',
+      'اجرای گزارش و تاریخچه',
+      'خروجی PDF/Excel',
+      'داشبوردهای تحلیلی',
+      'KPI و شاخص‌ها',
+      'گزارش‌های زمان‌بندی‌شده',
+    ],
+  },
+  {
+    id: 'ai_insights',
+    label: 'هوش مصنوعی و بینش',
+    labelEn: 'AI Insights',
+    description: 'کشف ناهنجاری، پیش‌بینی و پرسش به زبان طبیعی',
+    icon: Brain,
+    status: 'implemented',
+    category: 'هوش مصنوعی',
+    gradient: 'from-nx-blue to-nx-blue',
+    route: '/erp/ai',
+    features: [
+      'کشف ناهنجاری (Z-Score)',
+      'پیش‌بینی با رگرسیون خطی',
+      'پرسش به زبان طبیعی (NL Query)',
+      'هشدارهای لحظه‌ای (WebSocket)',
+      'داشبورد بینش‌ها',
+      'پشتیبانی از LLM',
+    ],
+  },
+  {
     id: 'db_manager',
     label: 'مدیریت پایگاه داده',
     labelEn: 'Database Manager',
@@ -72,7 +226,7 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
     icon: Database,
     status: 'implemented',
     category: 'داده',
-    gradient: 'from-orange-500 to-amber-600',
+    gradient: 'from-nx-warning-500 to-nx-warning-600',
     route: '/db-manager',
     features: [
       'اتصال به PostgreSQL, MySQL, SQL Server',
@@ -91,14 +245,14 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
     icon: Upload,
     status: 'implemented',
     category: 'داده',
-    gradient: 'from-pink-500 to-rose-600',
+    gradient: 'from-nx-blue to-nx-danger-600',
     route: '/data/upload',
     features: [
       'آپلود drag-and-drop',
       'پشتیبانی Excel (.xlsx/.xls) و CSV',
       'پردازش و پاکسازی خودکار',
       'ایجاد جدول PostgreSQL',
-      ' Aggregate و GROUP BY',
+      'Aggregate و GROUP BY',
     ],
   },
   {
@@ -109,8 +263,8 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
     icon: Zap,
     status: 'implemented',
     category: 'هوش مصنوعی',
-    gradient: 'from-cyan-500 to-blue-600',
-    route: '/settings/ai',
+    gradient: 'from-nx-blue to-nx-blue',
+    route: '/erp/settings/ai',
     features: [
       'پشتیبانی Ollama, OpenAI, Gemini, Anthropic',
       'رمزنگاری کلیدهای API',
@@ -127,8 +281,8 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
     icon: Settings,
     status: 'implemented',
     category: 'مدیریت',
-    gradient: 'from-gray-500 to-slate-600',
-    route: '/settings',
+    gradient: 'from-nx-muted to-nx-muted',
+    route: '/erp/settings',
     features: [
       'فعال/غیرفعال کردن ماژول‌ها',
       'ساختار شرکت → بخش → تیم',
@@ -137,80 +291,121 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
       'تخصیص دسته‌ای داشبورد',
     ],
   },
-
-  // In-progress modules
   {
-    id: 'crm',
-    label: 'مدیریت ارتباط با مشتری',
-    labelEn: 'CRM',
-    description: 'ردیابی سرنخ‌ها، مدیریت خط لوله فروش و تاریخچه تماس',
-    icon: Users,
-    status: 'in-progress',
-    category: 'روابط',
-    gradient: 'from-violet-500 to-purple-600',
+    id: 'audit',
+    label: 'حسابرسی و انطباق',
+    labelEn: 'Audit',
+    description: 'ثبت تغییرات، ردیابی فعالیت و انطباق مقرراتی',
+    icon: Shield,
+    status: 'implemented',
+    category: 'امنیتی',
+    gradient: 'from-nx-danger-500 to-nx-danger-600',
+    route: '/erp/audit',
     features: [
-      'پروفایل مشتری با جزئیات کامل',
-      'ردیابی سرنخ (Lead Tracking)',
-      'خط لوله فروش (Pipeline)',
-      'تاریخچه تماس و تعاملات',
-      'یادداشت‌ها و وظایف',
-      'گزارش‌های فروش',
+      'لاگ تغییرات (Audit Trail)',
+      'ردیابی فعالیت کاربران',
+      'نمایش Diff تغییرات',
+      'پیکربندی مدل‌های تحت نظارت',
+      'داشبورد خلاصه حسابرسی',
+    ],
+  },
+
+  // ── Partially finished modules ───────────────────────────────
+  {
+    id: 'manufacturing',
+    label: 'تولید',
+    labelEn: 'Manufacturing',
+    description: 'بک‌اند کامل؛ رابط کاربری فعلاً فقط نمایشی/خواندنی است',
+    icon: Factory,
+    status: 'in-progress',
+    category: 'عملیاتی',
+    gradient: 'from-nx-warning-500 to-nx-warning-600',
+    route: '/erp/manufacturing',
+    features: [
+      '✅ BOM، Routing و Work Center (بک‌اند)',
+      '✅ دستور تولید و گردش وضعیت',
+      '✅ کنترل کیفیت (بک‌اند)',
+      '⏳ فرم ایجاد/ویرایش BOM در UI',
+      '⏳ صفحه کنترل کیفیت هنوز فقط نمایشی است',
+      '⏳ برنامه‌ریزی ظرفیت و MRP در UI',
     ],
   },
   {
-    id: 'workflows',
+    id: 'trading',
+    label: 'بازرگانی',
+    labelEn: 'Trading',
+    description: 'بک‌اند کامل؛ صفحات فعلی فقط لیست خواندنی هستند',
+    icon: Ship,
+    status: 'in-progress',
+    category: 'عملیاتی',
+    gradient: 'from-nx-blue to-nx-blue',
+    route: '/erp/trading',
+    features: [
+      '✅ واردات، صادرات، کانتینر و حمل (بک‌اند)',
+      '✅ گردش وضعیت واردات و صادرات',
+      '✅ داشبورد بازرگانی',
+      '⏳ فرم ایجاد کانتینر/حمل در UI',
+      '⏳ مدیریت اسناد گمرکی',
+      '⏳ محاسبه هزینه‌های ارزی',
+    ],
+  },
+  {
+    id: 'service_sales',
+    label: 'فروش خدمات',
+    labelEn: 'Service Sales',
+    description: 'بک‌اند کامل؛ بیشتر صفحات فعلی فقط لیست خواندنی هستند',
+    icon: Tag,
+    status: 'in-progress',
+    category: 'خدمات',
+    gradient: 'from-nx-danger-500 to-nx-blue',
+    route: '/erp/service-sales',
+    features: [
+      '✅ رزرو، بلیط، تور، هتل و مسافر (بک‌اند)',
+      '✅ کمیسیون و بازپرداخت (بک‌اند)',
+      '✅ داشبورد فروش خدمات',
+      '⏳ فرم ایجاد/ویرایش تور و هتل در UI',
+      '⏳ مدیریت مسافران و صدور بلیط',
+      '⏳ تسویه کمیسیون و بازپرداخت',
+    ],
+  },
+  {
+    id: 'workflow',
     label: 'گردش کار',
-    labelEn: 'Workflows',
-    description: 'زنجیره‌های تأیید سفارشی و خودکارسازی فرآیندها',
+    labelEn: 'Workflow Engine',
+    description: 'موتور و API کامل است؛ رابط کاربری هنوز ساخته نشده',
     icon: GitBranch,
     status: 'in-progress',
     category: 'خودکارسازی',
-    gradient: 'from-amber-500 to-orange-600',
+    gradient: 'from-nx-blue to-nx-blue',
     features: [
-      'طراحی گردش کار بصری',
-      'زنجیره‌های تأیید چند سطحی',
-      'اعلان‌ها و یادآوریها',
-      'قانون‌گذاری شرطی',
-      'گزارش وضعیت درخواست‌ها',
-      'اتصال به ماژول‌های دیگر',
+      '✅ تعریف گردش کار و انتقال وضعیت (بک‌اند)',
+      '✅ قوانین SLA و پیگیری (بک‌اند)',
+      '✅ تست‌های موتور گردش کار',
+      '⏳ صفحه طراحی/مدیریت گردش کار',
+      '⏳ صف درخواست‌های در انتظار تأیید',
+      '⏳ اعلان و یادآوری',
+    ],
+  },
+  {
+    id: 'notifications',
+    label: 'سیستم اعلان',
+    labelEn: 'Notifications',
+    description: 'اعلان درون‌برنامه‌ای موجود است؛ ایمیل/SMS هنوز نه',
+    icon: Bell,
+    status: 'in-progress',
+    category: 'ارتباطی',
+    gradient: 'from-nx-blue to-nx-blue',
+    features: [
+      '✅ زنگ اعلان و شمارنده خوانده‌نشده',
+      '✅ اعلان تخصیص داشبورد',
+      '✅ علامت‌گذاری خوانده‌شده',
+      '⏳ ارسال ایمیل و SMS',
+      '⏳ وبهوک و تنظیمات ترجیحی',
+      '⏳ گروه‌بندی و مرکز اعلان‌ها',
     ],
   },
 
-  // Planned modules
-  {
-    id: 'hr',
-    label: 'منابع انسانی',
-    labelEn: 'HR',
-    description: 'مدیریت کارکنان، حضور و غیاب، مرخصی و حقوق',
-    icon: Briefcase,
-    status: 'planned',
-    category: 'سازمانی',
-    gradient: 'from-teal-500 to-emerald-600',
-    features: [
-      'پرونده کارکنان',
-      'حضور و غیاب',
-      'درخواست مرخصی',
-      'محاسبه حقوق و دستمزد',
-      'ارزیابی عملکرد',
-    ],
-  },
-  {
-    id: 'inventory',
-    label: 'مدیریت انبار',
-    labelEn: 'Inventory',
-    description: 'مدیریت موجودی، انبارها و سفارشات خرید',
-    icon: Package,
-    status: 'planned',
-    category: 'عملیاتی',
-    gradient: 'from-rose-500 to-pink-600',
-    features: [
-      'ردیابی موجودی',
-      'چند انباره',
-      'سفارش خرید',
-      'بارکد و اسکنر',
-      'هشدار کمبود موجودی',
-    ],
-  },
+  // ── Planned modules ──────────────────────────────────────────
   {
     id: 'project',
     label: 'مدیریت پروژه',
@@ -219,7 +414,7 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
     icon: FolderKanban,
     status: 'planned',
     category: 'عملیاتی',
-    gradient: 'from-sky-500 to-indigo-600',
+    gradient: 'from-nx-blue to-nx-blue',
     features: [
       'تخته وظایف (Kanban)',
       'نمودار گانت',
@@ -228,80 +423,29 @@ const ROADMAP_ITEMS: RoadmapItem[] = [
       'تخصیص منابع',
     ],
   },
-  {
-    id: 'reports',
-    label: 'گزارش‌ساز',
-    labelEn: 'Reports',
-    description: 'گزارش‌های زمان‌بندی شده با خروجی PDF و ایمیل',
-    icon: FileText,
-    status: 'planned',
-    category: 'تحلیلی',
-    gradient: 'from-lime-500 to-green-600',
-    features: [
-      'گزارش‌های زمان‌بندی شده',
-      'خروجی PDF و Excel',
-      'ارسال ایمیل',
-      'قالب‌های آماده',
-      'گزارش‌ساز بصری',
-    ],
-  },
-  {
-    id: 'audit',
-    label: 'حسابرسی و انطباق',
-    labelEn: 'Audit',
-    description: 'ثبت تغییرات، ردیابی فعالیت و انطباق مقرراتی',
-    icon: Shield,
-    status: 'planned',
-    category: 'امنیتی',
-    gradient: 'from-red-500 to-rose-600',
-    features: [
-      'لاگ تغییرات (Audit Trail)',
-      'ردیابی فعالیت کاربران',
-      'گزارش انطباق',
-      'هشدارهای امنیتی',
-      'بازبینی دسترسی‌ها',
-    ],
-  },
-  {
-    id: 'notifications',
-    label: 'سیستم اعلان',
-    labelEn: 'Notifications',
-    description: 'اعلان‌های ایمیل، SMS و درون‌برنامه‌ای',
-    icon: Bell,
-    status: 'planned',
-    category: 'ارتباطی',
-    gradient: 'from-fuchsia-500 to-purple-600',
-    features: [
-      'اعلان درون‌برنامه‌ای',
-      'ایمیل و SMS',
-      'وب‌هوک',
-      'تنظیمات ترجیحی',
-      'گروه‌بندی اعلان‌ها',
-    ],
-  },
 ]
 
 const STATUS_CONFIG = {
   'implemented': {
     label: 'پیاده‌سازی شده',
     icon: Check,
-    color: 'text-emerald-400',
-    bg: 'bg-emerald-500/20 border-emerald-500/30',
-    dot: 'bg-emerald-400',
+    color: 'text-nx-teal',
+    bg: 'bg-nx-teal/20 border-nx-teal/30',
+    dot: 'bg-nx-teal',
   },
   'in-progress': {
     label: 'در حال توسعه',
     icon: Clock,
-    color: 'text-amber-400',
-    bg: 'bg-amber-500/20 border-amber-500/30',
-    dot: 'bg-amber-400 animate-pulse',
+    color: 'text-nx-warning-400',
+    bg: 'bg-nx-warning-500/20 border-nx-warning-500/30',
+    dot: 'bg-nx-warning-400 animate-pulse',
   },
   'planned': {
     label: 'برنامه‌ریزی شده',
     icon: Rocket,
-    color: 'text-gray-400',
-    bg: 'bg-gray-500/20 border-gray-500/30',
-    dot: 'bg-gray-400',
+    color: 'text-nx-mist',
+    bg: 'bg-nx-muted/20 border-nx-muted/30',
+    dot: 'bg-nx-mist',
   },
 }
 
@@ -334,25 +478,25 @@ export default function RoadmapPage() {
   )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div className="min-h-screen bg-nx-blue">
       {/* Header */}
-      <header className="border-b border-gray-700/50 px-6 py-4 sticky top-0 z-10 bg-gray-900/80 backdrop-blur-xl">
+      <header className="border-b border-nx-navy/50 px-6 py-4 sticky top-0 z-10 bg-nx-navy/80 backdrop-blur-xl">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate('/')}
-              className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-xl transition"
+              className="p-2 text-nx-mist hover:text-white hover:bg-nx-navy-elevated rounded-xl transition"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
               <h1 className="text-lg font-bold text-white">نقشه راه</h1>
-              <p className="text-xs text-gray-400">Nexivo Roadmap</p>
+              <p className="text-xs text-nx-mist">Nexivo Roadmap</p>
             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="p-2 text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-xl transition"
+            className="p-2 text-nx-mist hover:text-white hover:bg-nx-navy-elevated rounded-xl transition"
             title="خروج"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -365,55 +509,55 @@ export default function RoadmapPage() {
       <main className="max-w-6xl mx-auto px-6 py-8">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-5">
+          <div className="bg-nx-navy-elevated border border-nx-navy/50 rounded-2xl p-5">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-emerald-500/20 rounded-xl flex items-center justify-center">
-                <Check className="w-5 h-5 text-emerald-400" />
+              <div className="w-10 h-10 bg-nx-teal/20 rounded-xl flex items-center justify-center">
+                <Check className="w-5 h-5 text-nx-teal" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">{statusCounts.implemented}</p>
-                <p className="text-xs text-gray-400">پیاده‌سازی شده</p>
+                <p className="text-xs text-nx-mist">پیاده‌سازی شده</p>
               </div>
             </div>
-            <div className="w-full bg-gray-700/50 rounded-full h-2 mt-3">
+            <div className="w-full bg-nx-navy-elevated rounded-full h-2 mt-3">
               <div
-                className="bg-emerald-500 h-2 rounded-full transition-all duration-500"
+                className="bg-nx-teal h-2 rounded-full transition-all duration-500"
                 style={{ width: `${(statusCounts.implemented / ROADMAP_ITEMS.length) * 100}%` }}
               />
             </div>
           </div>
 
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-5">
+          <div className="bg-nx-navy-elevated border border-nx-navy/50 rounded-2xl p-5">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-amber-500/20 rounded-xl flex items-center justify-center">
-                <Clock className="w-5 h-5 text-amber-400" />
+              <div className="w-10 h-10 bg-nx-warning-500/20 rounded-xl flex items-center justify-center">
+                <Clock className="w-5 h-5 text-nx-warning-400" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">{statusCounts['in-progress']}</p>
-                <p className="text-xs text-gray-400">در حال توسعه</p>
+                <p className="text-xs text-nx-mist">در حال توسعه</p>
               </div>
             </div>
-            <div className="w-full bg-gray-700/50 rounded-full h-2 mt-3">
+            <div className="w-full bg-nx-navy-elevated rounded-full h-2 mt-3">
               <div
-                className="bg-amber-500 h-2 rounded-full transition-all duration-500"
+                className="bg-nx-warning-500 h-2 rounded-full transition-all duration-500"
                 style={{ width: `${(statusCounts['in-progress'] / ROADMAP_ITEMS.length) * 100}%` }}
               />
             </div>
           </div>
 
-          <div className="bg-gray-800/50 border border-gray-700/50 rounded-2xl p-5">
+          <div className="bg-nx-navy-elevated border border-nx-navy/50 rounded-2xl p-5">
             <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 bg-gray-500/20 rounded-xl flex items-center justify-center">
-                <Rocket className="w-5 h-5 text-gray-400" />
+              <div className="w-10 h-10 bg-nx-muted/20 rounded-xl flex items-center justify-center">
+                <Rocket className="w-5 h-5 text-nx-mist" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-white">{statusCounts.planned}</p>
-                <p className="text-xs text-gray-400">برنامه‌ریزی شده</p>
+                <p className="text-xs text-nx-mist">برنامه‌ریزی شده</p>
               </div>
             </div>
-            <div className="w-full bg-gray-700/50 rounded-full h-2 mt-3">
+            <div className="w-full bg-nx-navy-elevated rounded-full h-2 mt-3">
               <div
-                className="bg-gray-500 h-2 rounded-full transition-all duration-500"
+                className="bg-nx-muted h-2 rounded-full transition-all duration-500"
                 style={{ width: `${(statusCounts.planned / ROADMAP_ITEMS.length) * 100}%` }}
               />
             </div>
@@ -428,8 +572,8 @@ export default function RoadmapPage() {
               onClick={() => setSelectedStatus('all')}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                 selectedStatus === 'all'
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25'
-                  : 'bg-gray-800/50 text-gray-400 border border-gray-700/50 hover:border-gray-600'
+                  ? 'bg-nx-blue text-white shadow-lg shadow-nx-blue/25'
+                  : 'bg-nx-navy-elevated text-nx-mist border border-nx-navy/50 hover:border-nx-muted'
               }`}
             >
               همه ({ROADMAP_ITEMS.length})
@@ -442,7 +586,7 @@ export default function RoadmapPage() {
                   className={`px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
                     selectedStatus === key
                       ? `${config.bg} ${config.color} border`
-                      : 'bg-gray-800/50 text-gray-400 border border-gray-700/50 hover:border-gray-600'
+                      : 'bg-nx-navy-elevated text-nx-mist border border-nx-navy/50 hover:border-nx-muted'
                   }`}
                 >
                   <span className={`w-2 h-2 rounded-full ${config.dot}`} />
@@ -460,8 +604,8 @@ export default function RoadmapPage() {
                 onClick={() => setSelectedCategory(cat)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                   selectedCategory === cat
-                    ? 'bg-gray-700 text-white'
-                    : 'text-gray-500 hover:text-gray-300 hover:bg-gray-800/50'
+                    ? 'bg-nx-navy text-white'
+                    : 'text-nx-mist hover:text-nx-mist hover:bg-nx-navy-elevated'
                 }`}
               >
                 {cat}
@@ -480,12 +624,12 @@ export default function RoadmapPage() {
             return (
               <div
                 key={item.id}
-                className={`bg-gray-800/50 border rounded-2xl overflow-hidden transition-all duration-300 ${
+                className={`bg-nx-navy-elevated border rounded-2xl overflow-hidden transition-all duration-300 ${
                   item.status === 'implemented'
-                    ? 'border-gray-700/50 hover:border-emerald-500/30'
+                    ? 'border-nx-navy/50 hover:border-nx-teal/30'
                     : item.status === 'in-progress'
-                    ? 'border-amber-500/20 hover:border-amber-500/40'
-                    : 'border-gray-700/30 hover:border-gray-600/50'
+                    ? 'border-nx-warning-500/20 hover:border-nx-warning-500/40'
+                    : 'border-nx-navy/30 hover:border-nx-muted/50'
                 }`}
               >
                 <button
@@ -503,9 +647,9 @@ export default function RoadmapPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <h3 className="text-lg font-bold text-white">{item.label}</h3>
-                      <span className="text-xs text-gray-500 font-mono">{item.labelEn}</span>
+                      <span className="text-xs text-nx-mist font-mono">{item.labelEn}</span>
                     </div>
-                    <p className="text-sm text-gray-400 truncate">{item.description}</p>
+                    <p className="text-sm text-nx-mist truncate">{item.description}</p>
                   </div>
 
                   {/* Status Badge */}
@@ -515,33 +659,33 @@ export default function RoadmapPage() {
                   </div>
 
                   {/* Category */}
-                  <span className="text-xs text-gray-500 bg-gray-700/50 px-2.5 py-1 rounded-lg flex-shrink-0 hidden sm:block">
+                  <span className="text-xs text-nx-mist bg-nx-navy-elevated px-2.5 py-1 rounded-lg flex-shrink-0 hidden sm:block">
                     {item.category}
                   </span>
 
                   {/* Expand Arrow */}
-                  <div className="text-gray-500 flex-shrink-0">
+                  <div className="text-nx-mist flex-shrink-0">
                     {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                   </div>
                 </button>
 
                 {/* Expanded Content */}
                 {isExpanded && (
-                  <div className="px-5 pb-5 border-t border-gray-700/30">
+                  <div className="px-5 pb-5 border-t border-nx-navy/30">
                     <div className="pt-4">
-                      <h4 className="text-sm font-semibold text-gray-300 mb-3">قابلیت‌ها</h4>
+                      <h4 className="text-sm font-semibold text-nx-mist mb-3">قابلیت‌ها</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         {item.features.map((feature, idx) => (
                           <div
                             key={idx}
-                            className="flex items-center gap-2 text-sm text-gray-400"
+                            className="flex items-center gap-2 text-sm text-nx-mist"
                           >
                             <div className={`w-1.5 h-1.5 rounded-full ${
                               item.status === 'implemented'
-                                ? 'bg-emerald-400'
+                                ? 'bg-nx-teal'
                                 : item.status === 'in-progress'
-                                ? 'bg-amber-400'
-                                : 'bg-gray-500'
+                                ? 'bg-nx-warning-400'
+                                : 'bg-nx-muted'
                             }`} />
                             {feature}
                           </div>
@@ -554,7 +698,7 @@ export default function RoadmapPage() {
                             e.stopPropagation()
                             navigate(item.route!)
                           }}
-                          className="mt-4 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium rounded-xl transition flex items-center gap-2 w-fit"
+                          className="mt-4 px-4 py-2 bg-nx-blue hover:bg-nx-blue text-white text-sm font-medium rounded-xl transition flex items-center gap-2 w-fit"
                         >
                           <span>ورود به ماژول</span>
                           <ArrowLeft className="w-4 h-4" />
@@ -571,17 +715,17 @@ export default function RoadmapPage() {
         {/* Empty State */}
         {filteredItems.length === 0 && (
           <div className="text-center py-16">
-            <Rocket className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-400 text-lg">ماژولی یافت نشد</p>
-            <p className="text-gray-500 text-sm mt-2">فیلترها را تغییر دهید</p>
+            <Rocket className="w-16 h-16 text-nx-mist mx-auto mb-4" />
+            <p className="text-nx-mist text-lg">ماژولی یافت نشد</p>
+            <p className="text-nx-mist text-sm mt-2">فیلترها را تغییر دهید</p>
           </div>
         )}
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-gray-700/50 px-6 py-3 mt-8">
-        <div className="max-w-6xl mx-auto flex items-center justify-between text-xs text-gray-500">
-          <span>Nexivo v0.4.0 — Organization OS</span>
+      <footer className="border-t border-nx-navy/50 px-6 py-3 mt-8">
+        <div className="max-w-6xl mx-auto flex items-center justify-between text-xs text-nx-mist">
+          <span>Nexivo v0.16.0 — Organization OS</span>
           <span>{ROADMAP_ITEMS.length} ماژول</span>
         </div>
       </footer>

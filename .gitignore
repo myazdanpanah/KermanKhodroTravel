@@ -44,6 +44,17 @@ frontend/build/
 .DS_Store
 Thumbs.db
 
+# Windows reserved device names (stray shell redirect artifacts like `> nul`)
+nul
+con
+prn
+aux
+com[1-9]
+lpt[1-9]
+
+# Local database snapshots (make dump / dev.bat dump)
+backups/
+
 # Testing
 .coverage
 htmlcov/
@@ -52,4 +63,3 @@ htmlcov/
 # Celery
 celerybeat-schedule
 celerybeat.pid
-nul

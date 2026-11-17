@@ -101,24 +101,24 @@ export default function SheetsSyncPage() {
   }
 
   const statusIcon = (status: string) => {
-    if (status === 'success') return <CheckCircle className="w-4 h-4 text-green-500" />
-    if (status === 'error') return <XCircle className="w-4 h-4 text-red-500" />
-    return <Pause className="w-4 h-4 text-gray-400" />
+    if (status === 'success') return <CheckCircle className="w-4 h-4 text-nx-teal" />
+    if (status === 'error') return <XCircle className="w-4 h-4 text-nx-danger-500" />
+    return <Pause className="w-4 h-4 text-nx-mist" />
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900" dir="rtl">
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+    <div className="min-h-screen bg-white dark:bg-nx-navy" dir="rtl">
+      <header className="bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border px-6 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/db-manager" className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+            <Link to="/db-manager" className="p-2 text-nx-mist hover:text-nx-muted dark:hover:text-nx-mist transition">
               <ArrowRight className="w-5 h-5" />
             </Link>
-            <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">همگام‌سازی Google Sheets</h1>
+            <h1 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10">همگام‌سازی Google Sheets</h1>
           </div>
           <button
             onClick={() => { setShowForm(!showForm); setEditingId(null); setForm(EMPTY_FORM) }}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition"
+            className="flex items-center gap-2 px-3 py-2 text-sm bg-nx-blue text-white rounded-lg hover:bg-nx-blue transition"
           >
             <Plus className="w-4 h-4" />
             افزودن همگام‌سازی
@@ -128,36 +128,36 @@ export default function SheetsSyncPage() {
 
       <main className="max-w-4xl mx-auto px-6 py-6 space-y-4">
         {showForm && (
-          <div className="bg-white dark:bg-gray-800 border border-indigo-200 dark:border-indigo-700 rounded-xl p-6 space-y-4">
-            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
+          <div className="bg-white dark:bg-nx-navy border border-nx-blue/10 dark:border-nx-blue rounded-xl p-6 space-y-4">
+            <h3 className="text-sm font-bold text-nx-navy dark:text-nx-mist/10">
               {editingId ? 'ویرایش همگام‌سازی' : 'همگام‌سازی جدید'}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <input placeholder="نام" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-blue" />
               <input placeholder="Spreadsheet ID" value={form.spreadsheet_id} onChange={(e) => setForm({ ...form, spreadsheet_id: e.target.value })}
-                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-mono" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-blue font-mono" />
               <input placeholder="Sheet name" value={form.sheet_name} onChange={(e) => setForm({ ...form, sheet_name: e.target.value })}
-                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-blue" />
               <input placeholder="Table name" value={form.table_name} onChange={(e) => setForm({ ...form, table_name: e.target.value })}
-                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-mono" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-blue font-mono" />
               <select value={form.sync_mode} onChange={(e) => setForm({ ...form, sync_mode: e.target.value })}
-                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500">
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-blue">
                 <option value="replace">Replace</option>
                 <option value="upsert">Upsert</option>
               </select>
               {form.sync_mode === 'upsert' && (
                 <input placeholder="Key column" value={form.key_column} onChange={(e) => setForm({ ...form, key_column: e.target.value })}
-                  className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-mono" />
+                  className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-blue font-mono" />
               )}
               <input placeholder="Cron schedule" value={form.schedule} onChange={(e) => setForm({ ...form, schedule: e.target.value })}
-                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-indigo-500 font-mono" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-blue font-mono" />
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={handleSave} className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
+              <button onClick={handleSave} className="px-4 py-2 text-sm bg-nx-blue text-white rounded-lg hover:bg-nx-blue transition font-medium">
                 {editingId ? 'ذخیره' : 'افزودن'}
               </button>
-              <button onClick={() => { setShowForm(false); setEditingId(null) }} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition">
+              <button onClick={() => { setShowForm(false); setEditingId(null) }} className="px-4 py-2 text-sm text-nx-muted hover:text-nx-navy transition">
                 انصراف
               </button>
             </div>
@@ -165,48 +165,48 @@ export default function SheetsSyncPage() {
         )}
 
         {loading ? (
-          <div className="text-center py-16"><RefreshCw className="w-6 h-6 text-gray-400 mx-auto animate-spin" /></div>
+          <div className="text-center py-16"><RefreshCw className="w-6 h-6 text-nx-mist mx-auto animate-spin" /></div>
         ) : syncs.length === 0 ? (
           <div className="text-center py-16">
-            <Clock className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">همگام‌سازی وجود ندارد</p>
+            <Clock className="w-16 h-16 text-nx-mist dark:text-nx-muted mx-auto mb-4" />
+            <p className="text-nx-muted dark:text-nx-mist">همگام‌سازی وجود ندارد</p>
           </div>
         ) : (
           <div className="space-y-3">
             {syncs.map((s) => (
-              <div key={s.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+              <div key={s.id} className="bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-navy-border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-3">
                     {statusIcon(s.last_sync_status)}
-                    <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{s.name}</span>
-                    {!s.is_active && <span className="px-2 py-0.5 text-[10px] bg-gray-100 dark:bg-gray-700 text-gray-500 rounded-full">غیرفعال</span>}
+                    <span className="text-sm font-bold text-nx-navy dark:text-nx-mist/10">{s.name}</span>
+                    {!s.is_active && <span className="px-2 py-0.5 text-[10px] bg-nx-mist/10 dark:bg-nx-navy text-nx-muted rounded-full">غیرفعال</span>}
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => handleRun(s.id)} disabled={runningId === s.id}
-                      className="flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs border border-nx-border dark:border-nx-muted rounded-lg hover:bg-white dark:hover:bg-nx-navy transition disabled:opacity-50">
                       {runningId === s.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Play className="w-3 h-3" />}
                       اجرای دستی
                     </button>
-                    <button onClick={() => startEdit(s)} className="text-xs text-indigo-600 hover:underline">ویرایش</button>
-                    <button onClick={() => handleDelete(s.id)} className="p-1.5 text-gray-400 hover:text-red-600 transition">
+                    <button onClick={() => startEdit(s)} className="text-xs text-nx-blue hover:underline">ویرایش</button>
+                    <button onClick={() => handleDelete(s.id)} className="p-1.5 text-nx-mist hover:text-nx-danger-600 transition">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex flex-wrap items-center gap-3 text-xs text-nx-muted dark:text-nx-mist">
                   <span className="font-mono">{s.spreadsheet_id}</span>
                   <span>→</span>
                   <span className="font-mono">{s.table_name}</span>
-                  <span className="bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">{s.sync_mode}</span>
+                  <span className="bg-nx-mist/10 dark:bg-nx-navy px-2 py-0.5 rounded">{s.sync_mode}</span>
                   <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {s.schedule}</span>
                 </div>
                 {s.last_sync_at && (
-                  <div className="text-[10px] text-gray-400 dark:text-gray-500 mt-2">
+                  <div className="text-[10px] text-nx-mist dark:text-nx-muted mt-2">
                     آخرین اجرا: {new Date(s.last_sync_at).toLocaleString('fa-IR')}
                   </div>
                 )}
                 {s.last_error && (
-                  <div className="text-[10px] text-red-500 dark:text-red-400 mt-1 font-mono">{s.last_error}</div>
+                  <div className="text-[10px] text-nx-danger-500 dark:text-nx-danger-400 mt-1 font-mono">{s.last_error}</div>
                 )}
               </div>
             ))}

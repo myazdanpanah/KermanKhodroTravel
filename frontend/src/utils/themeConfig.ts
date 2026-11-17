@@ -60,7 +60,7 @@ export function getShadowClass(shadow: WidgetStyle['shadow']): string {
  */
 export function getDarkModeClasses(dark: boolean): { bg: string; card: string; text: string; border: string } {
   if (!dark) {
-    return { bg: 'bg-gray-50', card: 'bg-white', text: 'text-gray-900', border: 'border-gray-200' }
+    return { bg: 'bg-white', card: 'bg-white', text: 'text-gray-900', border: 'border-gray-200' }
   }
-  return { bg: 'bg-gray-900', card: 'bg-gray-800', text: 'text-gray-100', border: 'border-gray-700' }
+  return { bg: 'bg-[#101D35]', card: 'bg-gray-800', text: 'text-gray-100', border: 'border-gray-700' }
 }

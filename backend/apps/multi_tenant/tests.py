@@ -15,9 +15,13 @@ from .models import Tenant, TenantPlan, TenantSubscription, TenantFeature
 class TenantPlanTest(TestCase):
     """Test TenantPlan model."""
 
+    def setUp(self):
+        self.company = Company.objects.create(name="Plan Company")
+
     def test_create_plan(self):
         """Test creating a subscription plan."""
         plan = TenantPlan.objects.create(
+            company=self.company,
             name="Professional",
             plan_type="professional",
             price_monthly=99.99,
@@ -32,6 +36,7 @@ class TenantPlanTest(TestCase):
     def test_free_plan(self):
         """Test free plan defaults."""
         plan = TenantPlan.objects.create(
+            company=self.company,
             name="Free",
             plan_type="free",
             max_users=5,
@@ -46,6 +51,7 @@ class TenantTest(TestCase):
     def setUp(self):
         self.company = Company.objects.create(name="Test Company")
         self.plan = TenantPlan.objects.create(
+            company=self.company,
             name="Starter",
             plan_type="starter",
             max_users=10,
@@ -115,6 +121,7 @@ class TenantSubscriptionTest(TestCase):
         self.company = Company.objects.create(name="Test Company")
         self.tenant = Tenant.objects.create(company=self.company)
         self.plan = TenantPlan.objects.create(
+            company=self.company,
             name="Pro",
             plan_type="professional",
         )
@@ -122,6 +129,7 @@ class TenantSubscriptionTest(TestCase):
     def test_create_subscription(self):
         """Test creating a subscription."""
         sub = TenantSubscription.objects.create(
+            company=self.company,
             tenant=self.tenant,
             plan=self.plan,
             status="active",
@@ -143,6 +151,7 @@ class TenantFeatureTest(TestCase):
     def test_create_feature(self):
         """Test creating a feature flag."""
         feature = TenantFeature.objects.create(
+            company=self.company,
             tenant=self.tenant,
             feature_key="advanced_reporting",
             feature_type="capability",
@@ -154,6 +163,7 @@ class TenantFeatureTest(TestCase):
     def test_toggle_feature(self):
         """Test toggling a feature flag."""
         feature = TenantFeature.objects.create(
+            company=self.company,
             tenant=self.tenant,
             feature_key="sso",
             is_enabled=True,

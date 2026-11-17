@@ -67,6 +67,8 @@ class QuotationService:
         )
 
         subtotal = Decimal("0")
+        discount_total = Decimal("0")
+        tax_total = Decimal("0")
         for line_data in lines_data:
             line = SalesQuotationLine(
                 company=company,
@@ -81,10 +83,14 @@ class QuotationService:
                 tax_percent=Decimal(str(line_data.get("tax_percent", 0))),
             )
             line.save()  # Trigger line_total calculation
-            subtotal += line.line_total
+            subtotal += line.quantity * line.unit_price
+            discount_total += line.discount_amount
+            tax_total += line.tax_amount
 
         quotation.subtotal = subtotal
-        quotation.save(update_fields=["subtotal", "total"])
+        quotation.discount_amount = discount_total
+        quotation.tax_amount = tax_total
+        quotation.save(update_fields=["subtotal", "discount_amount", "tax_amount", "total"])
 
         logger.info(f"Quotation #{quotation_number} created for {customer}")
         return quotation
@@ -192,6 +198,8 @@ class SalesService:
         )
 
         subtotal = Decimal("0")
+        discount_total = Decimal("0")
+        tax_total = Decimal("0")
         for line_data in lines_data:
             line = SalesOrderLine(
                 company=company,
@@ -206,10 +214,14 @@ class SalesService:
                 tax_percent=Decimal(str(line_data.get("tax_percent", 0))),
             )
             line.save()  # Trigger line_total calculation
-            subtotal += line.line_total
+            subtotal += line.quantity * line.unit_price
+            discount_total += line.discount_amount
+            tax_total += line.tax_amount
 
         order.subtotal = subtotal
-        order.save(update_fields=["subtotal", "total"])
+        order.discount_amount = discount_total
+        order.tax_amount = tax_total
+        order.save(update_fields=["subtotal", "discount_amount", "tax_amount", "total"])
 
         logger.info(f"Sales Order #{order_number} created for {customer}")
         return order
@@ -327,6 +339,8 @@ class InvoiceService:
         )
 
         subtotal = Decimal("0")
+        discount_total = Decimal("0")
+        tax_total = Decimal("0")
         for line_data in lines_data:
             line = SalesInvoiceLine(
                 company=company,
@@ -341,10 +355,14 @@ class InvoiceService:
                 tax_percent=Decimal(str(line_data.get("tax_percent", 0))),
             )
             line.save()  # Trigger line_total calculation
-            subtotal += line.line_total
+            subtotal += line.quantity * line.unit_price
+            discount_total += line.discount_amount
+            tax_total += line.tax_amount
 
         invoice.subtotal = subtotal
-        invoice.save(update_fields=["subtotal", "total"])
+        invoice.discount_amount = discount_total
+        invoice.tax_amount = tax_total
+        invoice.save(update_fields=["subtotal", "discount_amount", "tax_amount", "total"])
 
         logger.info(f"Sales Invoice #{invoice_number} created for {customer}")
         return invoice

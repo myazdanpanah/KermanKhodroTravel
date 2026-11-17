@@ -17,9 +17,9 @@ interface Movement {
 }
 
 const TYPE_LABELS: Record<string, { label: string; icon: any; color: string }> = {
-  receipt: { label: 'ورود', icon: ArrowDown, color: 'text-emerald-400' },
-  issue: { label: 'خروج', icon: ArrowUp, color: 'text-red-400' },
-  transfer: { label: 'انتقال', icon: RefreshCw, color: 'text-blue-400' },
+  receipt: { label: 'ورود', icon: ArrowDown, color: 'text-nx-teal' },
+  issue: { label: 'خروج', icon: ArrowUp, color: 'text-nx-danger-400' },
+  transfer: { label: 'انتقال', icon: RefreshCw, color: 'text-nx-blue' },
 }
 
 export default function StockMovementsPage() {
@@ -60,11 +60,11 @@ export default function StockMovementsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">حرکات انبار</h1>
-          <p className="text-gray-400 text-sm mt-1">ورود، خروج و انتقال کالا</p>
+          <p className="text-nx-mist text-sm mt-1">ورود، خروج و انتقال کالا</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="flex items-center gap-2 px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-lg transition text-sm font-medium"
+          className="flex items-center gap-2 px-4 py-2 bg-nx-blue hover:bg-nx-blue text-white rounded-lg transition text-sm font-medium"
         >
           <Plus className="w-4 h-4" />
           حرکت جدید
@@ -72,36 +72,36 @@ export default function StockMovementsPage() {
       </div>
 
       {showForm && (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 space-y-4">
+        <div className="bg-nx-navy border border-nx-navy-border rounded-xl p-4 space-y-4">
           <h3 className="text-white font-bold">ثبت حرکت جدید</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <select
               value={form.movement_type}
               onChange={(e) => setForm({ ...form, movement_type: e.target.value })}
-              className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-orange-500"
+              className="bg-nx-navy border border-nx-navy-border rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-nx-blue"
             >
               <option value="receipt">ورود</option>
               <option value="issue">خروج</option>
               <option value="transfer">انتقال</option>
             </select>
-            <input placeholder="کد انبار" value={form.warehouse} onChange={(e) => setForm({ ...form, warehouse: e.target.value })} className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm" />
-            <input placeholder="نام محصول" value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })} className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm" />
-            <input placeholder="کد محصول" value={form.product_code} onChange={(e) => setForm({ ...form, product_code: e.target.value })} className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm" />
-            <input placeholder="تعداد" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm" />
-            <input placeholder="قیمت واحد" value={form.unit_cost} onChange={(e) => setForm({ ...form, unit_cost: e.target.value })} className="bg-gray-800 border border-gray-700 rounded-lg px-4 py-2 text-white text-sm" />
+            <input placeholder="کد انبار" value={form.warehouse} onChange={(e) => setForm({ ...form, warehouse: e.target.value })} className="bg-nx-navy border border-nx-navy-border rounded-lg px-4 py-2 text-white text-sm" />
+            <input placeholder="نام محصول" value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })} className="bg-nx-navy border border-nx-navy-border rounded-lg px-4 py-2 text-white text-sm" />
+            <input placeholder="کد محصول" value={form.product_code} onChange={(e) => setForm({ ...form, product_code: e.target.value })} className="bg-nx-navy border border-nx-navy-border rounded-lg px-4 py-2 text-white text-sm" />
+            <input placeholder="تعداد" value={form.quantity} onChange={(e) => setForm({ ...form, quantity: e.target.value })} className="bg-nx-navy border border-nx-navy-border rounded-lg px-4 py-2 text-white text-sm" />
+            <input placeholder="قیمت واحد" value={form.unit_cost} onChange={(e) => setForm({ ...form, unit_cost: e.target.value })} className="bg-nx-navy border border-nx-navy-border rounded-lg px-4 py-2 text-white text-sm" />
           </div>
           <div className="flex gap-2">
-            <button onClick={handleCreate} className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-sm">ذخیره</button>
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm">انصراف</button>
+            <button onClick={handleCreate} className="px-4 py-2 bg-nx-teal hover:bg-nx-teal text-white rounded-lg text-sm">ذخیره</button>
+            <button onClick={() => setShowForm(false)} className="px-4 py-2 bg-nx-navy hover:bg-nx-muted text-white rounded-lg text-sm">انصراف</button>
           </div>
         </div>
       )}
 
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+      <div className="bg-nx-navy border border-nx-navy-border rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-800 text-gray-400">
+              <tr className="border-b border-nx-navy-border text-nx-mist">
                 <th className="text-right px-4 py-3 font-medium">نوع</th>
                 <th className="text-right px-4 py-3 font-medium">محصول</th>
                 <th className="text-right px-4 py-3 font-medium">کد</th>
@@ -114,14 +114,14 @@ export default function StockMovementsPage() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={8} className="text-center py-8 text-gray-500">در حال بارگذاری...</td></tr>
+                <tr><td colSpan={8} className="text-center py-8 text-nx-mist">در حال بارگذاری...</td></tr>
               ) : movements.length === 0 ? (
-                <tr><td colSpan={8} className="text-center py-8 text-gray-500">حرکتی ثبت نشده</td></tr>
+                <tr><td colSpan={8} className="text-center py-8 text-nx-mist">حرکتی ثبت نشده</td></tr>
               ) : (
                 movements.map((m) => {
-                  const typeInfo = TYPE_LABELS[m.movement_type] || { label: m.movement_type, icon: ArrowUpDown, color: 'text-gray-400' }
+                  const typeInfo = TYPE_LABELS[m.movement_type] || { label: m.movement_type, icon: ArrowUpDown, color: 'text-nx-mist' }
                   return (
-                    <tr key={m.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition">
+                    <tr key={m.id} className="border-b border-nx-navy/50 hover:bg-nx-navy-elevated transition">
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <typeInfo.icon className={`w-4 h-4 ${typeInfo.color}`} />
@@ -129,14 +129,14 @@ export default function StockMovementsPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-white font-medium">{m.product_name}</td>
-                      <td className="px-4 py-3 text-gray-400 font-mono">{m.product_code}</td>
-                      <td className={`px-4 py-3 text-left font-medium ${m.quantity >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      <td className="px-4 py-3 text-nx-mist font-mono">{m.product_code}</td>
+                      <td className={`px-4 py-3 text-left font-medium ${m.quantity >= 0 ? 'text-nx-teal' : 'text-nx-danger-400'}`}>
                         {m.quantity >= 0 ? '+' : ''}{m.quantity.toLocaleString()}
                       </td>
-                      <td className="px-4 py-3 text-left text-gray-400">{m.unit_cost.toLocaleString()} ریال</td>
+                      <td className="px-4 py-3 text-left text-nx-mist">{m.unit_cost.toLocaleString()} ریال</td>
                       <td className="px-4 py-3 text-left text-white font-medium">{m.total_cost.toLocaleString()} ریال</td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">{m.description || '—'}</td>
-                      <td className="px-4 py-3 text-gray-400 text-xs">{new Date(m.movement_date).toLocaleDateString('fa-IR')}</td>
+                      <td className="px-4 py-3 text-nx-mist text-xs">{m.description || '—'}</td>
+                      <td className="px-4 py-3 text-nx-mist text-xs">{new Date(m.movement_date).toLocaleDateString('fa-IR')}</td>
                     </tr>
                   )
                 })

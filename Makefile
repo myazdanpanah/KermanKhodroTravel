@@ -1,12 +1,18 @@
 # Nexivo - Local Development Makefile
 # ====================================
 
-.PHONY: help install dev migrate seed stop clean
+.PHONY: help install dev migrate seed stop clean dump restore
 
 PYTHON = python
 PIP = pip
 NPM = npm
 MANAGE = $(PYTHON) backend/manage.py
+
+# Local database lives in the nexivo_db container (host port 5544)
+DB_CONTAINER = nexivo_db
+DB_NAME = nexivo
+DB_USER = nexivo_user
+BACKUP_DIR = backups
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-15s\033[0m %s\n", $$1, $$2}'
@@ -27,12 +33,12 @@ migrate: ## Run database migrations
 seed: ## Create dev superuser + sample users (idempotent)
 	cd backend && $(MANAGE) create_dev_data
 
-start-db: ## Start PostgreSQL (requires Docker)
+start-db: ## Start PostgreSQL on host port 5544 (requires Docker)
 	docker start nexivo_db 2>/dev/null || docker run -d --name nexivo_db \
 		-e POSTGRES_DB=nexivo \
 		-e POSTGRES_USER=nexivo_user \
 		-e POSTGRES_PASSWORD=nexivo_pass \
-		-p 5432:5432 \
+		-p 5544:5432 \
 		postgres:15
 
 start-redis: ## Start Redis (requires Docker)
@@ -44,6 +50,25 @@ start-services: start-db start-redis ## Start all required services (Postgres + 
 	@echo "Waiting for PostgreSQL..."
 	@sleep 3
 	@echo "Services started!"
+
+dump: ## Snapshot the local database to backups/nexivo_<timestamp>.sql
+	@mkdir -p $(BACKUP_DIR)
+	@file="$(BACKUP_DIR)/nexivo_$$(date +%Y%m%d_%H%M%S).sql"; \
+	docker exec $(DB_CONTAINER) pg_dump -U $(DB_USER) -d $(DB_NAME) \
+		--clean --if-exists --no-owner > "$$file" \
+		&& echo "Wrote $$file" \
+		|| { echo "Backup FAILED"; rm -f "$$file"; exit 1; }
+
+restore: ## Restore a snapshot (FILE=backups/x.sql, default: newest)
+	@file="$(FILE)"; \
+	if [ -z "$$file" ]; then file=$$(ls -1t $(BACKUP_DIR)/*.sql 2>/dev/null | head -1); fi; \
+	if [ ! -f "$$file" ]; then \
+		echo "No backup found. Run 'make dump' first, or pass FILE=backups/<file>.sql"; exit 1; \
+	fi; \
+	echo "Restoring $$file into $(DB_NAME) on $(DB_CONTAINER)..."; \
+	docker exec -i $(DB_CONTAINER) psql -v ON_ERROR_STOP=1 -U $(DB_USER) -d $(DB_NAME) < "$$file" \
+		&& echo "Restore complete." \
+		|| { echo "Restore FAILED"; exit 1; }
 
 backend: ## Start the Django backend (http://localhost:8000)
 	cd backend && $(MANAGE) runserver 0.0.0.0:8000
@@ -70,11 +95,11 @@ dev-all: migrate seed ## Start backend and frontend (run in background)
 	cd frontend && $(NPM) run dev &
 	@echo "Backend: http://localhost:8000 | Frontend: http://localhost:3000"
 
-stop: ## Stop and remove Docker containers
+stop: ## Stop Docker containers (data is kept)
 	docker stop nexivo_db nexivo_redis 2>/dev/null || true
-	docker rm nexivo_db nexivo_redis 2>/dev/null || true
 
 clean: stop ## Remove all containers, volumes, and __pycache__
+	docker rm nexivo_db nexivo_redis 2>/dev/null || true
 	docker volume rm nexivo_db_data 2>/dev/null || true
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 

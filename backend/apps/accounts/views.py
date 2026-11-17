@@ -6,8 +6,8 @@ from django.db import models
 from .authentication import JWTAuthentication
 from .serializers import (
     LoginSerializer, RegisterSerializer, UserSerializer,
-    CompanySerializer, CompanyModulesSerializer, DivisionSerializer, TeamSerializer,
-    CustomRoleSerializer,
+    CompanySerializer, CompanyModulesSerializer, CompanyBrandingSerializer,
+    DivisionSerializer, TeamSerializer, CustomRoleSerializer,
 )
 from .models import Company, Division, Team, CustomRole, MODULE_CHOICES, ALL_MODULE_IDS
 
@@ -145,6 +145,18 @@ def user_detail_view(request, pk):
         for field in allowed_fields:
             if field in serializer.validated_data:
                 setattr(user, field, serializer.validated_data[field])
+
+        # Optional password reset by an admin/CEO. UserSerializer has no password
+        # field, so handle it explicitly instead of silently ignoring it.
+        new_password = request.data.get("password")
+        if new_password:
+            if len(str(new_password)) < 8:
+                return Response(
+                    {"password": ["Password must be at least 8 characters."]},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+            user.set_password(str(new_password))
+
         user.save()
 
         # Auto-assignment: when a user is added to a division or team,
@@ -447,7 +459,7 @@ def company_modules(request, pk):
 def user_modules(request):
     """Return the modules the current user can access."""
     user = request.user
-    if user.is_staff:
+    if user.is_staff or user.role == "admin":
         modules = ALL_MODULE_IDS
     elif user.company:
         modules = user.company.enabled_modules or []
@@ -461,3 +473,91 @@ def user_modules(request):
         if mid in module_map
     ]
     return Response(result)
+
+
+# ---- System-wide branding (logo + brand colors) ----
+
+BRAND_DEFAULTS = {
+    "id": None,
+    "name": "NEXIVO",
+    "logo_url": None,
+    "primary_color": "#3678F6",
+    "accent_color": "#24C6B2",
+}
+
+
+def _own_company(user):
+    """
+    The caller's own company — never a fallback.
+
+    Branding is tenant data, so an authenticated request must be scoped to the
+    company of the requesting user. A user with no company must not be able to
+    read or write another organization's branding (the previous fallback to the
+    first active company allowed exactly that for a company-less admin).
+    """
+    if not user or not getattr(user, "is_authenticated", False):
+        return None
+    return getattr(user, "company", None)
+
+
+@api_view(["GET", "PUT", "PATCH"])
+@permission_classes([permissions.IsAuthenticated])
+def company_branding(request):
+    """
+    Read or update the system-wide branding for the caller's company.
+
+    GET  — any authenticated user of that company.
+    PUT  — CEO / Admin of that company. Accepts multipart (logo upload) or JSON.
+
+    Strictly scoped to the caller's own company: there is no cross-tenant
+    fallback here (only the public read falls back, for pre-login screens).
+    """
+    company = _own_company(request.user)
+
+    if request.method in ("PUT", "PATCH"):
+        if company is None:
+            return Response(
+                {"error": "You are not assigned to a company, so there is no branding to change. "
+                          "Ask a superuser to assign your account to a company."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        if not _is_admin_or_ceo(request.user):
+            return Response(
+                {"error": "Only a CEO or Admin can change system branding"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+        # Explicit logo removal (a blank ImageField value would be rejected)
+        if str(request.data.get("clear_logo", "")).lower() in ("1", "true", "yes"):
+            if company.logo:
+                company.logo.delete(save=False)
+            company.logo = None
+            company.save(update_fields=["logo"])
+
+        serializer = CompanyBrandingSerializer(
+            company, data=request.data, partial=True, context={"request": request}
+        )
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
+        return Response(serializer.data)
+
+    # GET
+    if company is None:
+        return Response(
+            {"error": "You are not assigned to a company, so no branding is available."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    return Response(CompanyBrandingSerializer(company, context={"request": request}).data)
+
+
+@api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+def branding_public(request):
+    """
+    Public branding for pre-login screens (the login page must match the tenant).
+    Returns NEXIVO defaults when no company is configured.
+    """
+    company = Company.objects.filter(is_active=True).order_by("id").first()
+    if company is None:
+        return Response(BRAND_DEFAULTS)
+    return Response(CompanyBrandingSerializer(company, context={"request": request}).data)

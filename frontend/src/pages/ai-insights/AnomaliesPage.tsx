@@ -52,10 +52,10 @@ export default function AnomaliesPage() {
 
   const severityColor = (s: string) => {
     const colors: Record<string, string> = {
-      critical: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300',
-      high: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
-      medium: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300',
-      low: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+      critical: 'bg-nx-danger-100 text-nx-danger-700 dark:bg-nx-danger-900 dark:text-nx-danger-300',
+      high: 'bg-nx-blue/10 text-nx-blue dark:bg-nx-warning-900 dark:text-nx-warning-300',
+      medium: 'bg-nx-warning-100 text-nx-warning-700 dark:bg-nx-warning-900 dark:text-nx-warning-300',
+      low: 'bg-nx-blue/10 text-nx-blue dark:bg-nx-blue dark:text-nx-blue',
     }
     return colors[s] || colors.medium
   }
@@ -64,16 +64,16 @@ export default function AnomaliesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-red-500 rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 bg-nx-danger-500 rounded-xl flex items-center justify-center">
             <AlertTriangle className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">تشخیص ناهنجاری</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Anomaly Detection</p>
+            <h1 className="text-2xl font-bold text-white dark:text-nx-mist/10">تشخیص ناهنجاری</h1>
+            <p className="text-sm text-nx-mist dark:text-nx-mist">Anomaly Detection</p>
           </div>
         </div>
         <button onClick={handleDetect} disabled={detecting}
-          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition disabled:opacity-50">
+          className="flex items-center gap-2 px-4 py-2 bg-nx-danger-600 text-white rounded-xl hover:bg-nx-danger-700 transition disabled:opacity-50">
           <Shield className="w-4 h-4" />
           {detecting ? 'در حال شناسایی...' : 'شناسایی ناهنجاری'}
         </button>
@@ -82,7 +82,7 @@ export default function AnomaliesPage() {
       {/* Filters */}
       <div className="flex gap-3">
         <select value={filterModule} onChange={(e) => setFilterModule(e.target.value)}
-          className="px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm">
+          className="px-3 py-2 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy text-sm">
           <option value="">All Modules</option>
           <option value="finance">Finance</option>
           <option value="sales">Sales</option>
@@ -91,7 +91,7 @@ export default function AnomaliesPage() {
           <option value="service_management">Service Management</option>
         </select>
         <select value={filterSeverity} onChange={(e) => setFilterSeverity(e.target.value)}
-          className="px-3 py-2 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 text-sm">
+          className="px-3 py-2 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy text-sm">
           <option value="">All Severities</option>
           <option value="critical">Critical</option>
           <option value="high">High</option>
@@ -99,7 +99,7 @@ export default function AnomaliesPage() {
           <option value="low">Low</option>
         </select>
         <button onClick={() => { setLoading(true); fetchAnomalies() }}
-          className="flex items-center gap-1 px-3 py-2 text-sm text-gray-600 dark:text-gray-300 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700">
+          className="flex items-center gap-1 px-3 py-2 text-sm text-nx-mist dark:text-nx-mist border border-nx-mist dark:border-nx-muted rounded-xl hover:bg-white dark:hover:bg-nx-navy">
           <RefreshCw className="w-4 h-4" /> Refresh
         </button>
       </div>
@@ -107,28 +107,28 @@ export default function AnomaliesPage() {
       {/* Anomalies List */}
       {loading ? (
         <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-nx-blue"></div>
         </div>
       ) : anomalies.length === 0 ? (
-        <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+        <div className="text-center py-12 text-nx-mist dark:text-nx-mist">
           <Search className="w-12 h-12 mx-auto mb-3 opacity-50" />
           <p>No anomalies found</p>
         </div>
       ) : (
         <div className="space-y-3">
           {anomalies.map((a) => (
-            <div key={a.id} className="bg-white dark:bg-gray-800 rounded-xl p-5 shadow-sm border border-gray-200 dark:border-gray-700">
+            <div key={a.id} className="bg-white dark:bg-nx-navy rounded-xl p-5 shadow-sm border border-nx-border dark:border-nx-navy-border">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${severityColor(a.severity)}`}>
                       {a.severity.toUpperCase()}
                     </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 capitalize">{a.module}</span>
+                    <span className="text-xs text-nx-mist dark:text-nx-mist capitalize">{a.module}</span>
                   </div>
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">{a.metric_name}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{a.description}</p>
-                  <div className="flex gap-4 mt-2 text-xs text-gray-500 dark:text-gray-400">
+                  <h3 className="font-semibold text-nx-navy dark:text-nx-mist/10">{a.metric_name}</h3>
+                  <p className="text-sm text-nx-mist dark:text-nx-mist mt-1">{a.description}</p>
+                  <div className="flex gap-4 mt-2 text-xs text-nx-mist dark:text-nx-mist">
                     <span>Expected: {a.expected_value}</span>
                     <span>Actual: {a.actual_value}</span>
                     <span>Deviation: {a.deviation_pct}%</span>
@@ -136,7 +136,7 @@ export default function AnomaliesPage() {
                 </div>
                 {!a.is_resolved && (
                   <button onClick={() => handleResolve(a.id)}
-                    className="flex items-center gap-1 px-3 py-1.5 text-sm text-emerald-600 border border-emerald-300 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/20">
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm text-nx-teal border border-nx-teal rounded-lg hover:bg-nx-teal/10 dark:hover:bg-nx-teal/20">
                     <CheckCircle className="w-4 h-4" /> Resolve
                   </button>
                 )}

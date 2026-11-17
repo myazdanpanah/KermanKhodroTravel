@@ -8,7 +8,7 @@ from datetime import date
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from apps.accounts.models import Company
-from apps.finance.models import Customer
+from apps.finance.models import Customer, FiscalYear, AccountGroup, KolAccount
 
 from .models import (
     ServiceCategory, ServiceProvider, Service,
@@ -25,9 +25,61 @@ User = get_user_model()
 class ServiceSalesTestBase(TestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.company = Company.objects.create(name="ServiceTestCo", code="ST")
+        cls.company = Company.objects.create(name="ServiceTestCo")
         cls.user = User.objects.create_user(username="serviceuser", password="pass123", company=cls.company)
-        cls.customer = Customer.objects.create(company=cls.company, name="Test Customer", customer_type="retail")
+        cls.customer = Customer.objects.create(company=cls.company, name="Test Customer")
+
+        # Ledger accounts used by ServiceSalesPostingEngine.
+        group_assets = AccountGroup.objects.create(
+            company=cls.company, code="1", name="Assets",
+        )
+        group_liabilities = AccountGroup.objects.create(
+            company=cls.company, code="2", name="Liabilities",
+        )
+        group_revenue = AccountGroup.objects.create(
+            company=cls.company, code="4", name="Revenue",
+        )
+        group_expense = AccountGroup.objects.create(
+            company=cls.company, code="5", name="Expenses",
+        )
+        KolAccount.objects.create(
+            company=cls.company, group=group_assets, code="131",
+            name="Customer Receivable", account_type="asset",
+            normal_balance="debit",
+        )
+        KolAccount.objects.create(
+            company=cls.company, group=group_revenue, code="404",
+            name="Service Revenue", account_type="revenue",
+            normal_balance="credit",
+        )
+        KolAccount.objects.create(
+            company=cls.company, group=group_liabilities, code="221",
+            name="VAT Payable", account_type="liability",
+            normal_balance="credit",
+        )
+        KolAccount.objects.create(
+            company=cls.company, group=group_liabilities, code="201",
+            name="Supplier Payable", account_type="liability",
+            normal_balance="credit",
+        )
+        KolAccount.objects.create(
+            company=cls.company, group=group_revenue, code="402",
+            name="Sales Return", account_type="revenue",
+            normal_balance="credit",
+        )
+        KolAccount.objects.create(
+            company=cls.company, group=group_expense, code="503",
+            name="Cost of Service", account_type="expense",
+            normal_balance="debit",
+        )
+        FiscalYear.objects.create(
+            company=cls.company,
+            name="2026",
+            start_date_jalali="1405/01/01",
+            end_date_jalali="1405/12/29",
+            start_date=date(2026, 1, 1),
+            end_date=date(2026, 12, 31),
+        )
 
         cls.category = ServiceCategory.objects.create(company=cls.company, name="Flight Tickets")
         cls.provider = ServiceProvider.objects.create(company=cls.company, name="Iran Air", provider_type="airline")
@@ -75,7 +127,7 @@ class BookingTests(ServiceSalesTestBase):
         )
         BookingService.confirm_booking(self.company, booking.id)
         result = BookingService.record_payment(self.company, booking.id, Decimal("5000000"))
-        self.assertEqual(result.status, "draft")  # Not fully paid yet
+        self.assertEqual(result.status, "confirmed")  # Partially paid, still confirmed
 
     def test_complete_booking(self):
         booking = BookingService.create_booking(

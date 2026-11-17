@@ -45,9 +45,9 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: 'لغو شده',
 }
 const STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-  confirmed: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  cancelled: 'bg-red-500/10 text-red-400 border-red-500/20',
+  draft: 'bg-nx-warning-500/10 text-nx-warning-400 border-nx-warning-500/20',
+  confirmed: 'bg-nx-teal/10 text-nx-teal border-nx-teal/20',
+  cancelled: 'bg-nx-danger-500/10 text-nx-danger-400 border-nx-danger-500/20',
 }
 const formatIRR = (n: number) => new Intl.NumberFormat('fa-IR').format(n)
 
@@ -163,7 +163,7 @@ export default function VouchersPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-nx-teal border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -173,31 +173,31 @@ export default function VouchersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">اسناد حسابداری</h1>
-          <p className="text-gray-400 mt-1">{vouchers.length} سند</p>
+          <p className="text-nx-mist mt-1">{vouchers.length} سند</p>
         </div>
         <button onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium transition">
+          className="flex items-center gap-2 px-4 py-2.5 bg-nx-teal hover:bg-nx-teal text-white rounded-xl font-medium transition">
           <Plus className="w-4 h-4" />
           سند جدید
         </button>
       </div>
 
       {vouchers.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">
-          <Calculator className="w-16 h-16 mx-auto mb-4 text-gray-600" />
+        <div className="text-center py-16 text-nx-mist">
+          <Calculator className="w-16 h-16 mx-auto mb-4 text-nx-mist" />
           <p className="text-lg">هنوز سندی ثبت نشده</p>
         </div>
       ) : (
         <div className="space-y-3">
           {vouchers.map(v => (
-            <div key={v.id} className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden hover:border-gray-700 transition-all">
+            <div key={v.id} className="bg-nx-navy-elevated border border-nx-navy-border rounded-2xl overflow-hidden hover:border-nx-navy-border transition-all">
               <button
                 onClick={() => setExpandedId(expandedId === v.id ? null : v.id)}
                 className="w-full flex items-center gap-4 px-5 py-4 text-right"
               >
                 {expandedId === v.id
-                  ? <ChevronDown className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                  : <ChevronRight className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                  ? <ChevronDown className="w-5 h-5 text-nx-mist flex-shrink-0" />
+                  : <ChevronRight className="w-5 h-5 text-nx-mist flex-shrink-0" />
                 }
                 <div className="flex-1">
                   <div className="flex items-center gap-3">
@@ -206,48 +206,48 @@ export default function VouchersPage() {
                       {STATUS_LABELS[v.status]}
                     </span>
                   </div>
-                  <div className="text-sm text-gray-400 mt-1">
+                  <div className="text-sm text-nx-mist mt-1">
                     {v.date_jalali} — {v.description}
                   </div>
                 </div>
                 <div className="text-left space-y-1">
                   <div className="text-sm">
-                    <span className="text-gray-500">بدهکار: </span>
-                    <span className="text-emerald-400 font-bold">{formatIRR(v.total_debit)}</span>
+                    <span className="text-nx-mist">بدهکار: </span>
+                    <span className="text-nx-teal font-bold">{formatIRR(v.total_debit)}</span>
                   </div>
                   <div className="text-sm">
-                    <span className="text-gray-500">بستانکار: </span>
-                    <span className="text-blue-400 font-bold">{formatIRR(v.total_credit)}</span>
+                    <span className="text-nx-mist">بستانکار: </span>
+                    <span className="text-nx-blue font-bold">{formatIRR(v.total_credit)}</span>
                   </div>
                 </div>
               </button>
 
               {/* Expanded entries */}
               {expandedId === v.id && (
-                <div className="border-t border-gray-800 px-5 py-4">
-                  <div className="bg-gray-800/50 rounded-xl overflow-hidden">
+                <div className="border-t border-nx-navy-border px-5 py-4">
+                  <div className="bg-nx-navy-elevated rounded-xl overflow-hidden">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="border-b border-gray-700">
-                          <th className="px-4 py-2 text-right text-gray-400 font-medium">حساب</th>
-                          <th className="px-4 py-2 text-right text-gray-400 font-medium">شرح</th>
-                          <th className="px-4 py-2 text-left text-gray-400 font-medium">بدهکار</th>
-                          <th className="px-4 py-2 text-left text-gray-400 font-medium">بستانکار</th>
+                        <tr className="border-b border-nx-navy-border">
+                          <th className="px-4 py-2 text-right text-nx-mist font-medium">حساب</th>
+                          <th className="px-4 py-2 text-right text-nx-mist font-medium">شرح</th>
+                          <th className="px-4 py-2 text-left text-nx-mist font-medium">بدهکار</th>
+                          <th className="px-4 py-2 text-left text-nx-mist font-medium">بستانکار</th>
                         </tr>
                       </thead>
                       <tbody>
                         {v.entries.map(entry => (
-                          <tr key={entry.id} className="border-b border-gray-700/50">
+                          <tr key={entry.id} className="border-b border-nx-navy/50">
                             <td className="px-4 py-2 text-white">
                               {entry.kol_name}
-                              {entry.moin_name && <span className="text-gray-400"> / {entry.moin_name}</span>}
-                              {entry.tafzili_name && <span className="text-gray-500"> / {entry.tafzili_name}</span>}
+                              {entry.moin_name && <span className="text-nx-mist"> / {entry.moin_name}</span>}
+                              {entry.tafzili_name && <span className="text-nx-mist"> / {entry.tafzili_name}</span>}
                             </td>
-                            <td className="px-4 py-2 text-gray-300">{entry.description || '—'}</td>
-                            <td className="px-4 py-2 text-left text-emerald-400 font-bold">
+                            <td className="px-4 py-2 text-nx-mist">{entry.description || '—'}</td>
+                            <td className="px-4 py-2 text-left text-nx-teal font-bold">
                               {entry.debit ? formatIRR(entry.debit) : '—'}
                             </td>
-                            <td className="px-4 py-2 text-left text-blue-400 font-bold">
+                            <td className="px-4 py-2 text-left text-nx-blue font-bold">
                               {entry.credit ? formatIRR(entry.credit) : '—'}
                             </td>
                           </tr>
@@ -258,12 +258,12 @@ export default function VouchersPage() {
                   <div className="flex items-center gap-2 mt-3">
                     {v.status === 'draft' && (
                       <button onClick={() => handleConfirm(v.id)}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg text-xs font-medium hover:bg-emerald-500/20 transition">
+                        className="flex items-center gap-1 px-3 py-1.5 bg-nx-teal/10 text-nx-teal rounded-lg text-xs font-medium hover:bg-nx-teal/20 transition">
                         <Check className="w-3.5 h-3.5" /> تأیید سند
                       </button>
                     )}
                     <button onClick={() => handleDelete(v.id)}
-                      className="flex items-center gap-1 px-3 py-1.5 bg-red-500/10 text-red-400 rounded-lg text-xs font-medium hover:bg-red-500/20 transition mr-auto">
+                      className="flex items-center gap-1 px-3 py-1.5 bg-nx-danger-500/10 text-nx-danger-400 rounded-lg text-xs font-medium hover:bg-nx-danger-500/20 transition mr-auto">
                       <Trash2 className="w-3.5 h-3.5" /> حذف
                     </button>
                   </div>
@@ -277,14 +277,14 @@ export default function VouchersPage() {
       {/* Create Modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6" dir="rtl">
+          <div className="bg-nx-navy border border-nx-navy-border rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto p-6" dir="rtl">
             <h2 className="text-xl font-bold text-white mb-6">سند حسابداری جدید</h2>
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">سال مالی</label>
+                  <label className="block text-sm text-nx-mist mb-1">سال مالی</label>
                   <select value={selectedFY} onChange={e => setSelectedFY(e.target.value)}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500">
+                    className="w-full bg-nx-navy border border-nx-navy-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-nx-teal">
                     {fiscalYears.map(fy => (
                       <option key={fy.id} value={fy.id}>
                         سال مالی {fy.name}{fy.is_closed ? ' (بسته)' : ' (باز)'}
@@ -293,71 +293,71 @@ export default function VouchersPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">تاریخ</label>
+                  <label className="block text-sm text-nx-mist mb-1">تاریخ</label>
                   <input type="text" value={form.date_jalali} onChange={e => setForm(f => ({ ...f, date_jalali: e.target.value }))}
                     placeholder="۱۴۰۴/۰۴/۲۵"
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500" />
+                    className="w-full bg-nx-navy border border-nx-navy-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-nx-teal" />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">شرح</label>
+                  <label className="block text-sm text-nx-mist mb-1">شرح</label>
                   <input type="text" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500" />
+                    className="w-full bg-nx-navy border border-nx-navy-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-nx-teal" />
                 </div>
               </div>
 
               {/* Entry Lines */}
               <div>
-                <label className="block text-sm text-gray-400 mb-2">سطرهای سند</label>
+                <label className="block text-sm text-nx-mist mb-2">سطرهای سند</label>
                 {form.entries.map((entry, idx) => (
                   <div key={idx} className="grid grid-cols-12 gap-2 mb-2">
                     <select value={entry.kol} onChange={e => {
                       const entries = [...form.entries]; entries[idx].kol = e.target.value; setForm(f => ({ ...f, entries }))
                     }}
-                      className="col-span-3 bg-gray-800 border border-gray-700 rounded-lg px-2 py-2 text-white text-xs focus:outline-none focus:border-emerald-500">
+                      className="col-span-3 bg-nx-navy border border-nx-navy-border rounded-lg px-2 py-2 text-white text-xs focus:outline-none focus:border-nx-teal">
                       <option value="">حساب کل...</option>
                       {kolAccounts.map(k => <option key={k.id} value={k.id}>{k.code} - {k.name}</option>)}
                     </select>
                     <input placeholder="شرح" value={entry.description} onChange={e => {
                       const entries = [...form.entries]; entries[idx].description = e.target.value; setForm(f => ({ ...f, entries }))
                     }}
-                      className="col-span-4 bg-gray-800 border border-gray-700 rounded-lg px-2 py-2 text-white text-xs focus:outline-none focus:border-emerald-500" />
+                      className="col-span-4 bg-nx-navy border border-nx-navy-border rounded-lg px-2 py-2 text-white text-xs focus:outline-none focus:border-nx-teal" />
                     <input type="number" placeholder="بدهکار" value={entry.debit} onChange={e => {
                       const entries = [...form.entries]; entries[idx].debit = e.target.value; setForm(f => ({ ...f, entries }))
                     }}
-                      className="col-span-2 bg-gray-800 border border-gray-700 rounded-lg px-2 py-2 text-white text-xs focus:outline-none focus:border-emerald-500" />
+                      className="col-span-2 bg-nx-navy border border-nx-navy-border rounded-lg px-2 py-2 text-white text-xs focus:outline-none focus:border-nx-teal" />
                     <input type="number" placeholder="بستانکار" value={entry.credit} onChange={e => {
                       const entries = [...form.entries]; entries[idx].credit = e.target.value; setForm(f => ({ ...f, entries }))
                     }}
-                      className="col-span-2 bg-gray-800 border border-gray-700 rounded-lg px-2 py-2 text-white text-xs focus:outline-none focus:border-emerald-500" />
+                      className="col-span-2 bg-nx-navy border border-nx-navy-border rounded-lg px-2 py-2 text-white text-xs focus:outline-none focus:border-nx-teal" />
                     <button onClick={() => {
                       setForm(f => ({ ...f, entries: f.entries.filter((_, i) => i !== idx) }))
-                    }} className="col-span-1 text-red-400 hover:text-red-300 text-sm flex items-center justify-center">✕</button>
+                    }} className="col-span-1 text-nx-danger-400 hover:text-nx-danger-300 text-sm flex items-center justify-center">✕</button>
                   </div>
                 ))}
                 <button onClick={() => setForm(f => ({
                   ...f, entries: [...f.entries, { kol: '', moin: '', tafzili: '', description: '', debit: '', credit: '' }],
-                }))} className="text-sm text-emerald-400 hover:text-emerald-300">+ افزودن سطر</button>
+                }))} className="text-sm text-nx-teal hover:text-nx-teal">+ افزودن سطر</button>
               </div>
 
               {/* Totals */}
-              <div className="bg-gray-800/50 rounded-xl p-4 flex justify-between text-sm">
+              <div className="bg-nx-navy-elevated rounded-xl p-4 flex justify-between text-sm">
                 <span>
-                  بدهکار: <span className="text-emerald-400 font-bold">
+                  بدهکار: <span className="text-nx-teal font-bold">
                     {formatIRR(form.entries.reduce((s, e) => s + (Number(e.debit) || 0), 0))}
                   </span>
                 </span>
                 <span>
-                  بستانکار: <span className="text-blue-400 font-bold">
+                  بستانکار: <span className="text-nx-blue font-bold">
                     {formatIRR(form.entries.reduce((s, e) => s + (Number(e.credit) || 0), 0))}
                   </span>
                 </span>
               </div>
 
               <div className="flex items-center gap-3 pt-2">
-                <button onClick={handleCreate} className="flex-1 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium transition">
+                <button onClick={handleCreate} className="flex-1 px-4 py-2.5 bg-nx-teal hover:bg-nx-teal text-white rounded-xl font-medium transition">
                   ایجاد سند
                 </button>
-                <button onClick={() => setShowCreate(false)} className="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl transition">
+                <button onClick={() => setShowCreate(false)} className="px-4 py-2.5 bg-nx-navy hover:bg-nx-navy text-nx-mist rounded-xl transition">
                   انصراف
                 </button>
               </div>

@@ -54,6 +54,8 @@ class BookingService:
         )
 
         subtotal = Decimal("0")
+        discount_total = Decimal("0")
+        tax_total = Decimal("0")
         for line_data in lines_data:
             service = Service.objects.get(pk=line_data["service_id"], company=company)
             line = BookingLine(
@@ -68,10 +70,14 @@ class BookingService:
                 supplier_cost=service.supplier_cost,
             )
             line.save()
-            subtotal += line.line_total
+            subtotal += line.quantity * line.unit_price
+            discount_total += line.discount_amount
+            tax_total += line.tax_amount
 
         booking.subtotal = subtotal
-        booking.save(update_fields=["subtotal", "total"])
+        booking.discount_amount = discount_total
+        booking.tax_amount = tax_total
+        booking.save(update_fields=["subtotal", "discount_amount", "tax_amount", "total"])
         return booking
 
     @staticmethod

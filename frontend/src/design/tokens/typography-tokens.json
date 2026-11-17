@@ -1,0 +1,50 @@
+{
+  "typography": {
+    "font_family": {
+      "primary": "NEXIVO Sans, 'Geometric Geometric', system-ui, sans-serif",
+      "fallback": "system-ui, sans-serif"
+    },
+    "scale": {
+      "h1": {
+        "size": "48px",
+        "line_height": "1.1",
+        "weight": 700
+      },
+      "h2": {
+        "size": "32px",
+        "line_height": "1.2",
+        "weight": 600
+      },
+      "body_xl": {
+        "size": "20px",
+        "line_height": "1.5",
+        "weight": 400
+      },
+      "body_md": {
+        "size": "16px",
+        "line_height": "1.6",
+        "weight": 400
+      },
+      "body_sm": {
+        "size": "14px",
+        "line_height": "1.5",
+        "weight": 400
+      },
+      "caption": {
+        "size": "12px",
+        "line_height": "1.5",
+        "weight": 300
+      }
+    },
+    "spacing_unit": {
+      "base": "8px",
+      "scale": {
+        "sm": "8px",
+        "md": "16px",
+        "lg": "24px",
+        "xl": "32px",
+        "container": "64px"
+      }
+    }
+  }
+}

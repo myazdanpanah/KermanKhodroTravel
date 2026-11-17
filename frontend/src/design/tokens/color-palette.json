@@ -1,0 +1,88 @@
+{
+ "color": {
+  "brand": {
+   "primary": {
+    "name": "Deep Navy",
+    "hex": "#101D35",
+    "usage": [
+     "background",
+     "primary-text"
+    ]
+   },
+   "accent": {
+    "intelligence": {
+     "name": "Intelligence Blue",
+     "hex": "#3678F6",
+     "usage": [
+      "interactive-element",
+      "data-flow"
+     ]
+    },
+    "secondary": {
+     "name": "Digital Teal",
+     "hex": "#24C6B2",
+     "usage": [
+      "success-state",
+      "action-completed"
+     ]
+    }
+   },
+   "neutral": {
+    "white": "#FFFFFF",
+    "black": "#000000"
+   }
+  },
+  "status": {
+   "danger": {
+    "name": "Signal Red",
+    "hex": "#EF4444",
+    "role": "error / destructive / failed",
+    "shades": {
+     "50": "#FEF2F2",
+     "100": "#FEE2E2",
+     "200": "#FECACA",
+     "300": "#FCA5A5",
+     "400": "#F87171",
+     "500": "#EF4444",
+     "600": "#DC2626",
+     "700": "#B91C1C",
+     "800": "#991B1B",
+     "900": "#7F1D1D",
+     "950": "#450A0A"
+    },
+    "usage": [
+     "error-surface",
+     "error-border",
+     "error-text",
+     "destructive-action"
+    ],
+    "tailwind": "nx-danger-{50..950}"
+   },
+   "warning": {
+    "name": "Caution Amber",
+    "hex": "#F59E0B",
+    "role": "warning / pending / needs attention",
+    "shades": {
+     "50": "#FFFBEB",
+     "100": "#FEF3C7",
+     "200": "#FDE68A",
+     "300": "#FCD34D",
+     "400": "#FBBF24",
+     "500": "#F59E0B",
+     "600": "#D97706",
+     "700": "#B45309",
+     "800": "#92400E",
+     "900": "#78350F",
+     "950": "#451A03"
+    },
+    "usage": [
+     "warning-surface",
+     "warning-border",
+     "warning-text",
+     "pending-state"
+    ],
+    "tailwind": "nx-warning-{50..950}"
+   }
+  }
+ }
+}

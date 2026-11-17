@@ -273,8 +273,8 @@ export default function PageNavBar() {
       onClick={onClick}
       className={`flex items-center gap-2 px-3 py-2 text-xs rounded-lg transition ${
         danger
-          ? 'text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20'
-          : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+          ? 'text-nx-danger-600 dark:text-nx-danger-400 hover:bg-nx-danger-50 dark:hover:bg-nx-danger-900/20'
+          : 'text-nx-navy dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy'
       }`}
     >
       <Icon className="w-3.5 h-3.5 flex-shrink-0" />
@@ -287,7 +287,7 @@ export default function PageNavBar() {
   const accessPage = showAccessControl ? visiblePages.find((p) => p.id === showAccessControl) : null
 
   return (
-    <div ref={menuContainerRef} className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700" dir="rtl">
+    <div ref={menuContainerRef} className="bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border" dir="rtl">
       {/* Tab row */}
       <div className="flex items-center gap-1 px-6 overflow-x-auto py-1 scrollbar-thin">
         {visiblePages.map((page, index) => {
@@ -297,7 +297,7 @@ export default function PageNavBar() {
             <div
               key={page.id}
               className={`relative group flex items-center transition-all ${
-                dragOverIndex === index && dragIndex !== index ? 'border-l-2 border-indigo-500' : ''
+                dragOverIndex === index && dragIndex !== index ? 'border-l-2 border-nx-blue' : ''
               }`}
               draggable={pages.length > 1}
               onDragStart={(e) => handleDragStart(e, index)}
@@ -318,11 +318,11 @@ export default function PageNavBar() {
                     }}
                     onBlur={() => handleRename(page.id)}
                     autoFocus
-                    className="px-2 py-1 text-sm border border-indigo-300 dark:border-indigo-600 dark:bg-gray-800 dark:text-gray-200 rounded-lg outline-none focus:ring-1 focus:ring-indigo-500 min-w-[100px]"
+                    className="px-2 py-1 text-sm border border-nx-blue dark:border-nx-blue dark:bg-nx-navy dark:text-nx-mist/20 rounded-lg outline-none focus:ring-1 focus:ring-nx-blue min-w-[100px]"
                   />
                   <button
                     onClick={() => handleRename(page.id)}
-                    className="p-1 text-indigo-600 hover:text-indigo-800"
+                    className="p-1 text-nx-blue hover:text-nx-blue"
                   >
                     <Check className="w-3.5 h-3.5" />
                   </button>
@@ -332,18 +332,18 @@ export default function PageNavBar() {
                   onClick={() => setActivePage(page.id)}
                   className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium transition rounded-t-lg border-b-2 ${
                     isActive
-                      ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border-indigo-600'
-                      : 'text-gray-500 dark:text-gray-400 border-transparent hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800'
+                      ? 'bg-nx-blue/10 dark:bg-nx-blue/30 text-nx-blue dark:text-nx-blue border-nx-blue'
+                      : 'text-nx-muted dark:text-nx-mist border-transparent hover:text-nx-navy dark:hover:text-nx-mist/20 hover:bg-white dark:hover:bg-nx-navy'
                   } ${dragIndex === index ? 'opacity-50' : ''}`}
                 >
                   {pages.length > 1 && (
                     <GripVertical
-                      className="w-3 h-3 text-gray-400 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition"
+                      className="w-3 h-3 text-nx-mist cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition"
                     />
                   )}
                   {page.name}
                   {pageRoles && pageRoles.length > 0 && (
-                    <Shield className="w-3 h-3 text-amber-500" />
+                    <Shield className="w-3 h-3 text-nx-warning-500" />
                   )}
                   <span
                     role="button"
@@ -353,7 +353,7 @@ export default function PageNavBar() {
                       setShowMenu(showMenu === page.id ? null : page.id)
                       setShowAccessControl(null)
                     }}
-                    className="p-0.5 text-gray-400 hover:text-gray-600 rounded cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="p-0.5 text-nx-mist hover:text-nx-muted rounded cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity"
                     title="منوی صفحه"
                   >
                     <MoreVertical className="w-3.5 h-3.5" />
@@ -367,14 +367,14 @@ export default function PageNavBar() {
         {/* Add page button */}
         <button
           onClick={handleAddPage}
-          className="flex items-center gap-1 px-2 py-1.5 text-xs text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+          className="flex items-center gap-1 px-2 py-1.5 text-xs text-nx-mist hover:text-nx-blue hover:bg-nx-blue/10 rounded-lg transition"
           title="افزودن صفحه جدید"
         >
           <Plus className="w-3.5 h-3.5" />
         </button>
         <button
           onClick={handleImportPage}
-          className="flex items-center gap-1 px-2 py-1.5 text-xs text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition"
+          className="flex items-center gap-1 px-2 py-1.5 text-xs text-nx-mist hover:text-nx-blue hover:bg-nx-blue/10 rounded-lg transition"
           title="وارد کردن صفحه"
         >
           <Upload className="w-3.5 h-3.5" />
@@ -383,12 +383,12 @@ export default function PageNavBar() {
 
       {/* Inline menu panel — scrolls within the tab section */}
       {menuPage && showMenu && (
-        <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-850 px-6 py-2">
+        <div className="border-t border-nx-border dark:border-nx-navy-border bg-white dark:bg-nx-navy px-6 py-2">
           <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">{menuPage.name}</span>
+            <span className="text-xs font-semibold text-nx-muted dark:text-nx-mist">{menuPage.name}</span>
             <button
               onClick={() => setShowMenu(null)}
-              className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition"
+              className="p-0.5 text-nx-mist hover:text-nx-muted dark:hover:text-nx-mist rounded transition"
             >
               <X className="w-3 h-3" />
             </button>
@@ -414,13 +414,13 @@ export default function PageNavBar() {
 
       {/* Inline access control panel */}
       {accessPage && showAccessControl && (
-        <div className="border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-850 px-6 py-2">
+        <div className="border-t border-nx-border dark:border-nx-navy-border bg-white dark:bg-nx-navy px-6 py-2">
           <div className="flex items-center gap-2 mb-2">
-            <Shield className="w-3 h-3 text-amber-500" />
-            <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">نقش‌های مجاز — {accessPage.name}</span>
+            <Shield className="w-3 h-3 text-nx-warning-500" />
+            <span className="text-xs font-semibold text-nx-muted dark:text-nx-mist">نقش‌های مجاز — {accessPage.name}</span>
             <button
               onClick={() => setShowAccessControl(null)}
-              className="p-0.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded transition"
+              className="p-0.5 text-nx-mist hover:text-nx-muted dark:hover:text-nx-mist rounded transition"
             >
               <X className="w-3 h-3" />
             </button>
@@ -432,20 +432,20 @@ export default function PageNavBar() {
               return (
                 <label
                   key={role.value}
-                  className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-gray-400 hover:bg-white dark:hover:bg-gray-700 rounded px-2 py-1 cursor-pointer transition border border-gray-200 dark:border-gray-600"
+                  className="flex items-center gap-1.5 text-xs text-nx-muted dark:text-nx-mist hover:bg-white dark:hover:bg-nx-navy rounded px-2 py-1 cursor-pointer transition border border-nx-border dark:border-nx-muted"
                 >
                   <input
                     type="checkbox"
                     checked={checked}
                     onChange={(e) => handleAccessControlToggle(accessPage.id, role.value, e.target.checked)}
-                    className="w-3 h-3 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                    className="w-3 h-3 text-nx-blue rounded border-nx-mist focus:ring-nx-blue"
                   />
                   {role.label}
                 </label>
               )
             })}
           </div>
-          <p className="text-[10px] text-gray-400 mt-1.5">بدون انتخاب = همه نقش‌ها مجازند</p>
+          <p className="text-[10px] text-nx-mist mt-1.5">بدون انتخاب = همه نقش‌ها مجازند</p>
         </div>
       )}
     </div>

@@ -1077,9 +1077,9 @@ export default function ChartWidget({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-400 dark:text-gray-600 text-sm">
+      <div className="flex items-center justify-center h-full text-nx-mist dark:text-nx-muted text-sm">
         <div className="flex items-center gap-2">
-          <div className="w-4 h-4 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+          <div className="w-4 h-4 border-2 border-nx-blue border-t-transparent rounded-full animate-spin" />
           در حال بارگذاری...
         </div>
       </div>
@@ -1091,16 +1091,16 @@ export default function ChartWidget({
       <div className="h-full overflow-auto">
         {/* Drill-down breadcrumb */}
         {drillBreadcrumb.length > 0 && onDrillUp && (
-          <div className="flex items-center gap-1 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-900/20 text-xs border-b dark:border-gray-700">
-            <button onClick={() => onDrillUp(-1)} className="text-indigo-600 hover:text-indigo-800 font-medium">
+          <div className="flex items-center gap-1 px-3 py-1.5 bg-nx-blue/10 dark:bg-nx-blue/20 text-xs border-b dark:border-nx-navy-border">
+            <button onClick={() => onDrillUp(-1)} className="text-nx-blue hover:text-nx-blue font-medium">
               همه
             </button>
             {drillBreadcrumb.map((crumb, idx) => (
               <span key={idx} className="flex items-center gap-1">
-                <span className="text-gray-400">/</span>
+                <span className="text-nx-mist">/</span>
                 <button
                   onClick={() => onDrillUp(idx)}
-                  className="text-indigo-600 hover:text-indigo-800"
+                  className="text-nx-blue hover:text-nx-blue"
                 >
                   {crumb.value}
                 </button>
@@ -1110,9 +1110,9 @@ export default function ChartWidget({
         )}
         <table className="w-full text-xs border-collapse">
           <thead>
-            <tr className="bg-gray-50 dark:bg-gray-800">
+            <tr className="bg-white dark:bg-nx-navy">
               {tableData.columns.map((col) => (
-                <th key={col} className="px-3 py-2 text-right font-medium text-gray-600 dark:text-gray-400 border-b dark:border-gray-700">
+                <th key={col} className="px-3 py-2 text-right font-medium text-nx-muted dark:text-nx-mist border-b dark:border-nx-navy-border">
                   {col}
                 </th>
               ))}
@@ -1120,7 +1120,7 @@ export default function ChartWidget({
           </thead>
           <tbody>
             {tableData.rows.map((row, idx) => (
-              <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800 transition">
+              <tr key={idx} className="hover:bg-white dark:hover:bg-nx-navy transition">
                 {tableData.columns.map((col) => {
                   const cellVal = Number(row[col])
                   const condBg = !Number.isNaN(cellVal)
@@ -1129,8 +1129,8 @@ export default function ChartWidget({
                   return (
                     <td
                       key={col}
-                      className={`px-3 py-1.5 text-right text-gray-800 dark:text-gray-200 border-b border-gray-100 dark:border-gray-700 ${
-                        onDrillDown ? 'cursor-pointer hover:bg-indigo-50 dark:hover:bg-indigo-900/30' : ''
+                      className={`px-3 py-1.5 text-right text-nx-navy dark:text-nx-mist/20 border-b border-nx-border dark:border-nx-navy-border ${
+                        onDrillDown ? 'cursor-pointer hover:bg-nx-blue/10 dark:hover:bg-nx-blue/30' : ''
                       }`}
                       style={condBg ? { backgroundColor: condBg } : undefined}
                       onClick={onDrillDown ? () => onDrillDown(col, String(row[col] ?? '')) : undefined}
@@ -1153,7 +1153,7 @@ export default function ChartWidget({
     if (error) {
       return (
         <div className="flex items-center justify-center h-full p-4">
-          <span className="text-sm text-red-500 text-center">خطا: {error}</span>
+          <span className="text-sm text-nx-danger-500 text-center">خطا: {error}</span>
         </div>
       )
     }
@@ -1165,21 +1165,21 @@ export default function ChartWidget({
 
       return (
         <div className="flex flex-col items-center justify-center h-full p-4 gap-2">
-          <span className="text-amber-500 text-3xl">🏆</span>
+          <span className="text-nx-warning-500 text-3xl">🏆</span>
           <span
-            className="font-extrabold leading-none text-indigo-600 dark:text-indigo-400"
+            className="font-extrabold leading-none text-nx-blue dark:text-nx-blue"
             style={{ fontSize: `${fontConfig.valueSize || 28}px`, color: leaderColor }}
           >
             {leaderData.name}
           </span>
-          <span className="text-sm text-gray-500 dark:text-gray-400">
+          <span className="text-sm text-nx-muted dark:text-nx-mist">
             {formatKpiValue(leaderData.value, (cfg.kpiFormat as KpiFormat) || undefined)}
           </span>
         </div>
       )
     }
     return (
-      <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+      <div className="flex items-center justify-center h-full text-nx-mist text-sm">
         منبع داده تعیین نشده
       </div>
     )
@@ -1189,7 +1189,7 @@ export default function ChartWidget({
     if (error) {
       return (
         <div className="flex items-center justify-center h-full p-4">
-          <span className="text-sm text-red-500 text-center">خطا: {error}</span>
+          <span className="text-sm text-nx-danger-500 text-center">خطا: {error}</span>
         </div>
       )
     }
@@ -1207,7 +1207,7 @@ export default function ChartWidget({
       return (
         <div className="flex flex-col items-center justify-center h-full p-4">
           <span
-            className="font-extrabold leading-none text-indigo-600 dark:text-indigo-400"
+            className="font-extrabold leading-none text-nx-blue dark:text-nx-blue"
             style={{
               fontSize: `${fontConfig.valueSize || 30}px`,
               color: kpiColor,
@@ -1219,7 +1219,7 @@ export default function ChartWidget({
       )
     }
     return (
-      <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+      <div className="flex items-center justify-center h-full text-nx-mist text-sm">
         منبع داده تعیین نشده
       </div>
     )
@@ -1228,7 +1228,7 @@ export default function ChartWidget({
   if (widget.chartType === 'table' && error) {
     return (
       <div className="flex items-center justify-center h-full p-4">
-        <span className="text-sm text-red-500 text-center">خطا: {error}</span>
+        <span className="text-sm text-nx-danger-500 text-center">خطا: {error}</span>
       </div>
     )
   }
@@ -1236,7 +1236,7 @@ export default function ChartWidget({
   if (error && !loading) {
     return (
       <div className="flex items-center justify-center h-full p-4">
-        <span className="text-sm text-red-500 text-center">خطا: {error}</span>
+        <span className="text-sm text-nx-danger-500 text-center">خطا: {error}</span>
       </div>
     )
   }

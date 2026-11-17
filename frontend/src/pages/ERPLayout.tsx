@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useThemeStore, syncThemeClass } from '../store/themeStore'
+import { useBrandLogo } from '../store/brandingStore'
 import {
   LayoutDashboard, BookOpen, FileText, Receipt,
   CreditCard, Landmark, Users, Truck, Package,
@@ -11,7 +12,7 @@ import {
   Upload, Download,
   Calendar, Tag, Home,
   Percent, Wallet,
-  Settings, ChevronLeft, ChevronDown, LogOut, Zap,
+  Settings, ChevronLeft, ChevronDown, LogOut,
   Shield, Building2, Search, Ship, Bell, Sun, Moon, Menu, X,
   Headphones, Clock, TrendingUp, Target, DollarSign,
   FileBarChart, Gauge, Brain, AlertTriangle, MessageSquare,
@@ -203,6 +204,7 @@ export default function ERPLayout() {
     finance: true,
   })
   const { user, logout } = useAuthStore()
+  const brandLogo = useBrandLogo()
   const navigate = useNavigate()
   const location = useLocation()
   const { dark, toggle: toggleTheme } = useThemeStore()
@@ -246,37 +248,37 @@ export default function ERPLayout() {
   )
 
   return (
-    <div className="min-h-screen bg-gray-50 flex" dir="rtl">
+    <div className="min-h-screen bg-nx-navy flex" dir="rtl">
       {/* ─── Sidebar ──────────────────────────────────── */}
       <aside
         className={`
           ${collapsed ? 'w-16' : 'w-64'}
-          bg-white border-l border-gray-200 flex flex-col
+          bg-nx-navy border-l border-nx-navy-border flex flex-col
           transition-all duration-300 ease-in-out
           fixed h-screen z-30
         `}
       >
         {/* Brand Header */}
-        <div className="h-14 border-b border-gray-200 flex items-center justify-between px-3">
+        <div className="h-14 border-b border-nx-navy-border flex items-center justify-between px-3">
           {!collapsed && (
             <div className="flex items-center gap-2">
-              <div
-                className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ background: 'linear-gradient(135deg, #F16724, #e55a1b)' }}
-              >
-                <Zap className="w-4 h-4 text-white" />
-              </div>
+              <img
+                src={brandLogo}
+                alt="Nexivo"
+                draggable={false}
+                className="h-7 w-auto select-none"
+              />
               <div>
-                <h1 className="text-sm font-bold text-gray-900" style={{ fontFamily: 'Inter, Vazirmatn, sans-serif' }}>
+                <h1 className="text-sm font-bold text-white" style={{ fontFamily: 'Vazirmatn, sans-serif' }}>
                   Nexivo
                 </h1>
-                <p className="text-[10px] text-gray-400">ERP</p>
+                <p className="text-[10px] text-nx-mist">ERP</p>
               </div>
             </div>
           )}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+            className="p-1.5 text-nx-mist hover:text-white hover:bg-white/5 rounded-nx-btn transition"
           >
             <ChevronLeft className={`w-4 h-4 transition-transform ${collapsed ? 'rotate-180' : ''}`} />
           </button>
@@ -285,7 +287,7 @@ export default function ERPLayout() {
         {/* Search (when expanded) */}
         {!collapsed && (
           <div className="px-3 py-2">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg text-gray-400 text-xs">
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-nx-mist/10 rounded-lg text-nx-mist text-xs">
               <Search className="w-3.5 h-3.5" />
               <span>جستجو... ⌘K</span>
             </div>
@@ -311,8 +313,8 @@ export default function ERPLayout() {
                     className={`
                       w-full flex items-center justify-between px-3 py-1.5
                       text-[11px] font-semibold uppercase tracking-wider
-                      ${hasActive ? 'text-orange-600' : 'text-gray-400'}
-                      hover:text-gray-600 transition rounded-lg
+                      ${hasActive ? 'text-nx-blue' : 'text-nx-mist'}
+                      hover:text-white transition rounded-nx-btn
                     `}
                   >
                     <span>{section.label}</span>
@@ -333,8 +335,8 @@ export default function ERPLayout() {
                         className={({ isActive }) =>
                           `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
                             isActive
-                              ? 'bg-orange-50 text-orange-600 border border-orange-200'
-                              : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                              ? 'bg-nx-blue/10 text-nx-blue border border-nx-blue/30'
+                              : 'text-nx-mist hover:bg-white/5 hover:text-white'
                           } ${collapsed ? 'justify-center' : ''}`
                         }
                         title={collapsed ? item.label : undefined}
@@ -351,23 +353,23 @@ export default function ERPLayout() {
         </nav>
 
         {/* User Footer */}
-        <div className="border-t border-gray-200 p-2">
+        <div className="border-t border-nx-navy-border p-2">
           {!collapsed && (
             <div className="flex items-center gap-2 px-3 py-2 mb-1">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold">
+              <div className="w-8 h-8 rounded-full bg-nx-blue flex items-center justify-center text-white text-xs font-bold">
                 {(user?.username?.[0] || 'U').toUpperCase()}
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-medium text-gray-900 truncate">
+                <p className="text-xs font-medium text-white truncate">
                   {user?.first_name || user?.username}
                 </p>
-                <p className="text-[10px] text-gray-400 truncate">{user?.company_name || 'ERP'}</p>
+                <p className="text-[10px] text-nx-mist truncate">{user?.company_name || 'ERP'}</p>
               </div>
             </div>
           )}
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center gap-2 px-3 py-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition text-sm ${
+            className={`w-full flex items-center gap-2 px-3 py-2 text-nx-mist hover:text-nx-danger-400 hover:bg-nx-danger-500/10 rounded-nx-btn transition text-sm ${
               collapsed ? 'justify-center' : ''
             }`}
           >
@@ -382,58 +384,58 @@ export default function ERPLayout() {
         className={`flex-1 ${collapsed ? 'mr-16' : 'mr-64'} transition-all duration-300`}
       >
         {/* Top Navigation Bar */}
-        <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-6 sticky top-0 z-20">
+        <header className="h-14 bg-nx-navy border-b border-nx-navy-border flex items-center justify-between px-6 sticky top-0 z-20">
           <div className="flex items-center gap-4">
             {/* Mobile menu button */}
             <button
               onClick={() => setCollapsed(!collapsed)}
-              className="p-2 text-gray-400 hover:text-gray-600 lg:hidden rounded-lg hover:bg-gray-100 transition"
+              className="p-2 text-nx-mist hover:text-white lg:hidden rounded-nx-btn hover:bg-white/5 transition"
             >
               {collapsed ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
             {/* Breadcrumbs */}
             <nav className="hidden lg:flex items-center gap-2 text-sm">
-              <span className="text-gray-400">خانه</span>
+              <span className="text-nx-mist">خانه</span>
               {activeSection && (
                 <>
-                  <span className="text-gray-300">/</span>
-                  <span className="text-gray-500">{activeSection.label}</span>
+                  <span className="text-nx-mist">/</span>
+                  <span className="text-white">{activeSection.label}</span>
                 </>
               )}
               {activeItem && activeItem.label !== activeSection?.label && (
                 <>
-                  <span className="text-gray-300">/</span>
-                  <span className="text-gray-600 font-medium">{activeItem.label}</span>
+                  <span className="text-nx-mist">/</span>
+                  <span className="text-nx-mist font-medium">{activeItem.label}</span>
                 </>
               )}
             </nav>
           </div>
           <div className="flex items-center gap-3">
             {/* Global Search */}
-            <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+            <button className="p-2 text-nx-mist hover:text-white hover:bg-white/5 rounded-nx-btn transition">
               <Search className="w-5 h-5" />
             </button>
             {/* Notifications */}
-            <button className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+            <button className="relative p-2 text-nx-mist hover:text-white hover:bg-white/5 rounded-nx-btn transition">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-nx-danger-500 rounded-full"></span>
             </button>
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition"
+              className="p-2 text-nx-mist hover:text-white hover:bg-white/5 rounded-nx-btn transition"
               title={dark ? 'حالت روشن' : 'حالت تاریک'}
             >
               {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
             {/* User Menu */}
-            <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-orange-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold">
+            <div className="flex items-center gap-2 pl-3 border-l border-nx-navy-border">
+              <div className="w-8 h-8 rounded-full bg-nx-blue flex items-center justify-center text-white text-xs font-bold">
                 {(user?.username?.[0] || 'U').toUpperCase()}
               </div>
               <div className="hidden sm:block">
-                <p className="text-xs font-medium text-gray-900">{user?.first_name || user?.username}</p>
-                <p className="text-[10px] text-gray-400">{user?.company_name || 'ERP'}</p>
+                <p className="text-xs font-medium text-white">{user?.first_name || user?.username}</p>
+                <p className="text-[10px] text-nx-mist">{user?.company_name || 'ERP'}</p>
               </div>
             </div>
           </div>

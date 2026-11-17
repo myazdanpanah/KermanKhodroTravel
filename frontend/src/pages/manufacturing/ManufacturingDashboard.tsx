@@ -48,7 +48,7 @@ export default function ManufacturingDashboard() {
             <div className="space-y-2 text-sm">
               <div className="flex justify-between"><span>دستورات فعال:</span><span className="font-bold">{summary.active_production_orders}</span></div>
               <div className="flex justify-between"><span>دستورات در انتظار:</span><span className="font-bold">{summary.draft_production_orders}</span></div>
-              <div className="flex justify-between"><span>تکمیل شده:</span><span className="font-bold text-green-500">{summary.completed_production_orders}</span></div>
+              <div className="flex justify-between"><span>تکمیل شده:</span><span className="font-bold text-nx-teal">{summary.completed_production_orders}</span></div>
             </div>
           </Card>
         </Col>

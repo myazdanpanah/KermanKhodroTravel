@@ -19,6 +19,8 @@ if "%1"=="backend" goto backend
 if "%1"=="frontend" goto frontend
 if "%1"=="dev" goto dev
 if "%1"=="stop" goto stop
+if "%1"=="dump" goto dump
+if "%1"=="restore" goto restore
 if "%1"=="test-backend" goto testbackend
 if "%1"=="test-frontend" goto testfrontend
 
@@ -39,7 +41,9 @@ echo   dev.bat start-redis    Start Redis via Docker
 echo   dev.bat start-services Start all required services
 echo   dev.bat backend        Start Django backend (port 8000)
 echo   dev.bat frontend       Start Vite frontend (port 3000)
-echo   dev.bat stop           Stop Docker containers
+echo   dev.bat stop           Stop Docker containers (keeps data)
+echo   dev.bat dump           Snapshot database to backups\nexivo_TIMESTAMP.sql
+echo   dev.bat restore [file] Restore a snapshot (default: newest in backups\)
 echo   dev.bat test-backend   Run Django checks
 echo   dev.bat test-frontend  Run TypeScript typecheck
 echo.
@@ -82,7 +86,7 @@ goto :eof
 
 :startdb
 echo Starting PostgreSQL...
-docker start nexivo_db 2>nul || docker run -d --name nexivo_db -e POSTGRES_DB=nexivo -e POSTGRES_USER=nexivo_user -e POSTGRES_PASSWORD=nexivo_pass -p 5432:5432 postgres:15
+docker start nexivo_db 2>nul || docker run -d --name nexivo_db -e POSTGRES_DB=nexivo -e POSTGRES_USER=nexivo_user -e POSTGRES_PASSWORD=nexivo_pass -p 5544:5432 postgres:15
 goto :eof
 
 :startredis
@@ -126,9 +130,44 @@ echo   dev.bat frontend
 goto :eof
 
 :stop
-echo Stopping containers...
+echo Stopping containers (data is kept)...
 docker stop nexivo_db nexivo_redis 2>nul
-docker rm nexivo_db nexivo_redis 2>nul
+goto :eof
+
+:dump
+if not exist "backups" mkdir backups
+for /f %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyyMMdd_HHmmss"') do set "STAMP=%%i"
+set "DUMPFILE=backups\nexivo_%STAMP%.sql"
+echo Dumping database nexivo from nexivo_db to %DUMPFILE% ...
+docker exec nexivo_db pg_dump -U nexivo_user -d nexivo --clean --if-exists --no-owner > "%DUMPFILE%"
+if errorlevel 1 (
+    echo Backup FAILED
+    del "%DUMPFILE%" 2>nul
+    goto :eof
+)
+echo Wrote %DUMPFILE%
+goto :eof
+
+:restore
+set "DUMPFILE=%~2"
+if not "%DUMPFILE%"=="" goto :restorecheck
+for /f "delims=" %%f in ('dir /b /o-d "backups\*.sql" 2^>nul') do (
+    if not defined DUMPFILE set "DUMPFILE=backups\%%f"
+)
+if not defined DUMPFILE goto :nobackup
+:restorecheck
+if not exist "%DUMPFILE%" goto :nobackup
+echo Restoring %DUMPFILE% into nexivo on nexivo_db ...
+docker exec -i nexivo_db psql -v ON_ERROR_STOP=1 -U nexivo_user -d nexivo < "%DUMPFILE%"
+if errorlevel 1 (
+    echo Restore FAILED
+    goto :eof
+)
+echo Restore complete.
+goto :eof
+
+:nobackup
+echo No backup found. Run 'dev.bat dump' first, or: dev.bat restore backups\FILE.sql
 goto :eof
 
 :testbackend

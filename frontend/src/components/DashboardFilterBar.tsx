@@ -226,11 +226,11 @@ export default function DashboardFilterBar() {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700" dir="rtl">
+    <div className="bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border" dir="rtl">
       {/* Filter bar header + inline active filter items */}
       <div className="flex items-center gap-2 px-6 py-2 flex-wrap">
-        <Filter className="w-4 h-4 text-gray-400 dark:text-gray-500 flex-shrink-0" />
-        <span className="text-sm font-medium text-gray-600 dark:text-gray-300 flex-shrink-0">فیلترها</span>
+        <Filter className="w-4 h-4 text-nx-mist dark:text-nx-muted flex-shrink-0" />
+        <span className="text-sm font-medium text-nx-muted dark:text-nx-mist flex-shrink-0">فیلترها</span>
 
         {/* Inline active control filters — shown directly in the bar */}
         {filterControls
@@ -238,7 +238,7 @@ export default function DashboardFilterBar() {
           .map((c) => (
             <span
               key={c.id}
-              className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-xs border border-indigo-200 dark:border-indigo-700"
+              className="inline-flex items-center gap-1 px-2 py-0.5 bg-nx-blue/10 dark:bg-nx-blue/30 text-nx-blue dark:text-nx-blue rounded-full text-xs border border-nx-blue/10 dark:border-nx-blue"
             >
               <span className="font-medium">{c.label}:</span>
               <span>
@@ -250,7 +250,7 @@ export default function DashboardFilterBar() {
               </span>
               <button
                 onClick={() => handleControlValueChange(c.id, null)}
-                className="hover:text-indigo-900 dark:hover:text-indigo-100 ml-0.5"
+                className="hover:text-nx-blue dark:hover:text-nx-blue/10 ml-0.5"
                 title="حذف فیلتر"
               >
                 <X className="w-3 h-3" />
@@ -262,14 +262,14 @@ export default function DashboardFilterBar() {
         {filters.map((f, idx) => (
           <span
             key={idx}
-            className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full text-xs border border-amber-200 dark:border-amber-700"
+            className="inline-flex items-center gap-1 px-2 py-0.5 bg-nx-warning-50 dark:bg-nx-warning-900/30 text-nx-warning-700 dark:text-nx-warning-300 rounded-full text-xs border border-nx-warning-200 dark:border-nx-warning-700"
             title={`فیلتر اعمال شده توسط: ${getWidgetTitle(f.sourceWidgetId)}`}
           >
             <span className="font-medium">{f.col}:</span>
             <span>{String(f.val)}</span>
             <button
               onClick={() => removeFilter(f.col)}
-              className="hover:text-amber-900 dark:hover:text-amber-100 ml-0.5"
+              className="hover:text-nx-warning-900 dark:hover:text-nx-warning-100 ml-0.5"
               title="حذف فیلتر"
             >
               <X className="w-3 h-3" />
@@ -284,7 +284,7 @@ export default function DashboardFilterBar() {
               setFilterControls(filterControls.map((c) => ({ ...c, value: null })))
               clearFilters()
             }}
-            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition flex-shrink-0"
+            className="inline-flex items-center gap-1 px-2 py-0.5 text-xs text-nx-danger-500 hover:text-nx-danger-700 dark:text-nx-danger-400 dark:hover:text-nx-danger-300 transition flex-shrink-0"
             title="پاک کردن همه فیلترها"
           >
             <RotateCcw className="w-3 h-3" />
@@ -295,7 +295,7 @@ export default function DashboardFilterBar() {
         {/* Expand/collapse toggle */}
         <button
           onClick={() => setExpanded(!expanded)}
-          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition flex-shrink-0"
+          className="p-1 text-nx-mist hover:text-nx-muted dark:hover:text-nx-mist transition flex-shrink-0"
           title={expanded ? 'بستن تنظیمات فیلتر' : 'باز کردن تنظیمات فیلتر'}
         >
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -314,30 +314,30 @@ export default function DashboardFilterBar() {
                   />
                   {/* Filter access indicator */}
                   {control.allowedRoles && control.allowedRoles.length > 0 && (
-                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center z-10" title={`فقط برای: ${control.allowedRoles.join(', ')}`}>
+                    <span className="absolute -top-1 -right-1 w-4 h-4 bg-nx-warning-100 text-nx-warning-600 rounded-full flex items-center justify-center z-10" title={`فقط برای: ${control.allowedRoles.join(', ')}`}>
                       <Shield className="w-2 h-2" />
                     </span>
                   )}
                   <button
                     onClick={() => setEditingFilterRoles(editingFilterRoles === control.id ? null : control.id)}
-                    className="absolute -top-1.5 left-6 w-4 h-4 bg-amber-100 hover:bg-amber-200 text-amber-600 rounded-full flex items-center justify-center text-[8px] transition z-10"
+                    className="absolute -top-1.5 left-6 w-4 h-4 bg-nx-warning-100 hover:bg-nx-warning-200 text-nx-warning-600 rounded-full flex items-center justify-center text-[8px] transition z-10"
                     title="دسترسی فیلتر"
                   >
                     <Shield className="w-2 h-2" />
                   </button>
                   <button
                     onClick={() => removeFilterControl(control.id)}
-                    className="absolute -top-1 -left-1 w-4 h-4 bg-gray-200 hover:bg-red-400 hover:text-white rounded-full flex items-center justify-center text-[8px] text-gray-500 transition z-10"
+                    className="absolute -top-1 -left-1 w-4 h-4 bg-nx-mist/20 hover:bg-nx-danger-400 hover:text-white rounded-full flex items-center justify-center text-[8px] text-nx-muted transition z-10"
                     title="حذف فیلتر"
                   >
                     <Trash2 className="w-2 h-2" />
                   </button>
                   {/* Inline role picker for filter */}
                   {editingFilterRoles === control.id && (
-                    <div ref={editingFilterRef} className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg p-2 z-50 min-w-[140px]">
-                      <div className="text-[10px] font-medium text-gray-600 dark:text-gray-300 mb-1">دسترسی فیلتر:</div>
+                    <div ref={editingFilterRef} className="absolute top-full left-0 mt-1 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted rounded-lg shadow-lg p-2 z-50 min-w-[140px]">
+                      <div className="text-[10px] font-medium text-nx-muted dark:text-nx-mist mb-1">دسترسی فیلتر:</div>
                       {FILTER_ROLE_OPTIONS.map((r) => (
-                        <label key={r.value} className="flex items-center gap-1.5 px-1 py-0.5 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+                        <label key={r.value} className="flex items-center gap-1.5 px-1 py-0.5 rounded hover:bg-white dark:hover:bg-nx-navy cursor-pointer">
                           <input
                             type="checkbox"
                             checked={!control.allowedRoles || control.allowedRoles.length === 0 || control.allowedRoles.includes(r.value)}
@@ -353,12 +353,12 @@ export default function DashboardFilterBar() {
                               }
                               updateFilterControl(control.id, { allowedRoles: newRoles })
                             }}
-                            className="w-3 h-3 text-indigo-600 rounded border-gray-300 dark:border-gray-600 focus:ring-indigo-500"
+                            className="w-3 h-3 text-nx-blue rounded border-nx-mist dark:border-nx-muted focus:ring-nx-blue"
                           />
-                          <span className="text-[10px] text-gray-600 dark:text-gray-400">{r.label}</span>
+                          <span className="text-[10px] text-nx-muted dark:text-nx-mist">{r.label}</span>
                         </label>
                       ))}
-                      <p className="text-[9px] text-gray-400 mt-1">بدون انتخاب = همه</p>
+                      <p className="text-[9px] text-nx-mist mt-1">بدون انتخاب = همه</p>
                     </div>
                   )}
                 </div>
@@ -368,20 +368,20 @@ export default function DashboardFilterBar() {
             {!addingControl ? (
               <button
                 onClick={() => setAddingControl(true)}
-                className="flex items-center gap-1.5 px-3 py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl text-sm text-gray-500 hover:border-indigo-400 hover:text-indigo-600 transition"
+                className="flex items-center gap-1.5 px-3 py-2 border-2 border-dashed border-nx-mist dark:border-nx-muted rounded-xl text-sm text-nx-muted hover:border-nx-blue hover:text-nx-blue transition"
               >
                 <Plus className="w-4 h-4" />
                 افزودن فیلتر
               </button>
             ) : (
-              <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl p-3 space-y-2 min-w-[280px]">
-                <div className="text-xs font-medium text-gray-700 dark:text-gray-300">فیلتر جدید</div>
+              <div className="bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted rounded-xl p-3 space-y-2 min-w-[280px]">
+                <div className="text-xs font-medium text-nx-navy dark:text-nx-mist">فیلتر جدید</div>
 
                 {/* Dataset selector */}
                 <select
                   value={newControlDatasetId || ''}
                   onChange={(e) => setNewControlDatasetId(e.target.value ? parseInt(e.target.value) : null)}
-                  className="w-full px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+                  className="w-full px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
                 >
                   <option value="">مجموعه داده...</option>
                   {datasets.filter((d) => datasetIds.includes(d.id)).map((ds) => (
@@ -394,7 +394,7 @@ export default function DashboardFilterBar() {
                   <select
                     value={newControlCol}
                     onChange={(e) => setNewControlCol(e.target.value)}
-                    className="w-full px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+                    className="w-full px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
                   >
                     <option value="">ستون...</option>
                     {dsForNewControl.column_names.map((col) => (
@@ -407,7 +407,7 @@ export default function DashboardFilterBar() {
                 <select
                   value={newControlType}
                   onChange={(e) => setNewControlType(e.target.value as DashboardFilterControl['type'])}
-                  className="w-full px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+                  className="w-full px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
                 >
                   {CONTROL_TYPES.map((ct) => (
                     <option key={ct.value} value={ct.value}>{ct.label}</option>
@@ -420,12 +420,12 @@ export default function DashboardFilterBar() {
                   value={newControlLabel}
                   onChange={(e) => setNewControlLabel(e.target.value)}
                   placeholder="برچسب (اختیاری)"
-                  className="w-full px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+                  className="w-full px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-xs focus:ring-1 focus:ring-nx-blue outline-none"
                 />
 
                 {/* Filter access control */}
                 <div>
-                  <div className="text-[10px] text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                  <div className="text-[10px] text-nx-muted dark:text-nx-mist mb-1 flex items-center gap-1">
                     <Shield className="w-2.5 h-2.5" />
                     دسترسی فیلتر (اختیاری)
                   </div>
@@ -437,28 +437,28 @@ export default function DashboardFilterBar() {
                         onClick={() => setNewControlRoles((prev) => prev.includes(r.value) ? prev.filter((v) => v !== r.value) : [...prev, r.value])}
                         className={`px-2 py-0.5 rounded-full text-[10px] font-medium border transition ${
                           newControlRoles.includes(r.value)
-                            ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border-indigo-300 dark:border-indigo-600'
-                            : 'bg-gray-50 dark:bg-gray-700 text-gray-400 dark:text-gray-500 border-gray-200 dark:border-gray-600'
+                            ? 'bg-nx-blue/10 dark:bg-nx-blue/40 text-nx-blue dark:text-nx-blue border-nx-blue dark:border-nx-blue'
+                            : 'bg-white dark:bg-nx-navy text-nx-mist dark:text-nx-muted border-nx-border dark:border-nx-muted'
                         }`}
                       >
                         {r.label}
                       </button>
                     ))}
                   </div>
-                  <p className="text-[9px] text-gray-400 mt-0.5">بدون انتخاب = همه</p>
+                  <p className="text-[9px] text-nx-mist mt-0.5">بدون انتخاب = همه</p>
                 </div>
 
                 <div className="flex gap-2">
                   <button
                     onClick={handleAddControl}
                     disabled={!newControlCol || !newControlDatasetId}
-                    className="flex-1 py-1.5 bg-indigo-600 text-white text-xs rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+                    className="flex-1 py-1.5 bg-nx-blue text-white text-xs rounded-lg hover:bg-nx-blue transition disabled:opacity-50"
                   >
                     افزودن
                   </button>
                   <button
                     onClick={() => setAddingControl(false)}
-                    className="px-3 py-1.5 text-gray-500 dark:text-gray-400 text-xs rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                    className="px-3 py-1.5 text-nx-muted dark:text-nx-mist text-xs rounded-lg hover:bg-nx-mist/10 dark:hover:bg-nx-navy transition"
                   >
                     انصراف
                   </button>
@@ -483,23 +483,23 @@ function FilterControlWidget({
   if (control.type === 'dropdown') {
     return (
       <div className="min-w-[160px]">
-        <label className="block text-[10px] text-gray-500 mb-0.5 font-medium">{control.label}</label>
+        <label className="block text-[10px] text-nx-muted mb-0.5 font-medium">{control.label}</label>
         <div className="relative">
           <select
             value={String(control.value || '')}
             onChange={(e) => onChange(e.target.value || null)}
-            className="w-full px-2 py-1.5 pr-6 rounded-lg border border-gray-300 dark:border-gray-600 text-xs bg-white dark:bg-gray-800 dark:text-gray-200 focus:ring-1 focus:ring-indigo-500 outline-none appearance-none"
+            className="w-full px-2 py-1.5 pr-6 rounded-lg border border-nx-mist dark:border-nx-muted text-xs bg-white dark:bg-nx-navy dark:text-nx-mist/20 focus:ring-1 focus:ring-nx-blue outline-none appearance-none"
           >
             <option value="">همه</option>
             {(control.options || []).map((opt) => (
               <option key={opt} value={opt}>{opt}</option>
             ))}
           </select>
-          <ChevronDown className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+          <ChevronDown className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-nx-mist pointer-events-none" />
           {control.value && (
             <button
               onClick={() => onChange(null)}
-              className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute left-5 top-1/2 -translate-y-1/2 text-nx-mist hover:text-nx-muted"
             >
               <X className="w-3 h-3" />
             </button>
@@ -515,7 +515,7 @@ function FilterControlWidget({
     const endStr = val ? new Date(val[1]).toISOString().split('T')[0] : ''
     return (
       <div className="min-w-[240px]">
-        <label className="block text-[10px] text-gray-500 mb-0.5 font-medium">{control.label}</label>
+        <label className="block text-[10px] text-nx-muted mb-0.5 font-medium">{control.label}</label>
         <div className="flex items-center gap-1">
           <input
             type="date"
@@ -525,9 +525,9 @@ function FilterControlWidget({
               if (start !== null && val) onChange([start, val[1]])
               else if (start !== null) onChange([start, Date.now()])
             }}
-            className="flex-1 px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+            className="flex-1 px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted text-xs focus:ring-1 focus:ring-nx-blue outline-none"
           />
-          <span className="text-gray-400 text-xs">تا</span>
+          <span className="text-nx-mist text-xs">تا</span>
           <input
             type="date"
             value={endStr}
@@ -536,7 +536,7 @@ function FilterControlWidget({
               if (end !== null && val) onChange([val[0], end])
               else if (end !== null) onChange([0, end])
             }}
-            className="flex-1 px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+            className="flex-1 px-2 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted text-xs focus:ring-1 focus:ring-nx-blue outline-none"
           />
         </div>
       </div>
@@ -546,20 +546,20 @@ function FilterControlWidget({
   if (control.type === 'text_search') {
     return (
       <div className="min-w-[160px]">
-        <label className="block text-[10px] text-gray-500 mb-0.5 font-medium">{control.label}</label>
+        <label className="block text-[10px] text-nx-muted mb-0.5 font-medium">{control.label}</label>
         <div className="relative">
-          <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400 pointer-events-none" />
+          <Search className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 text-nx-mist pointer-events-none" />
           <input
             type="text"
             value={String(control.value || '')}
             onChange={(e) => onChange(e.target.value || null)}
             placeholder="جستجو..."
-            className="w-full pr-7 pl-6 py-1.5 rounded-lg border border-gray-300 dark:border-gray-600 text-xs focus:ring-1 focus:ring-indigo-500 outline-none"
+            className="w-full pr-7 pl-6 py-1.5 rounded-lg border border-nx-mist dark:border-nx-muted text-xs focus:ring-1 focus:ring-nx-blue outline-none"
           />
           {control.value && (
             <button
               onClick={() => onChange(null)}
-              className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              className="absolute left-2 top-1/2 -translate-y-1/2 text-nx-mist hover:text-nx-muted"
             >
               <X className="w-3 h-3" />
             </button>
@@ -573,10 +573,10 @@ function FilterControlWidget({
     const selected = (control.value as string[] | null) || []
     return (
       <div className="min-w-[160px]">
-        <label className="block text-[10px] text-gray-500 mb-0.5 font-medium">{control.label}</label>
-        <div className="max-h-32 overflow-y-auto border border-gray-300 dark:border-gray-600 rounded-lg p-1.5 space-y-0.5">
+        <label className="block text-[10px] text-nx-muted mb-0.5 font-medium">{control.label}</label>
+        <div className="max-h-32 overflow-y-auto border border-nx-mist dark:border-nx-muted rounded-lg p-1.5 space-y-0.5">
           {(control.options || []).map((opt) => (
-            <label key={opt} className="flex items-center gap-1.5 px-1 py-0.5 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+            <label key={opt} className="flex items-center gap-1.5 px-1 py-0.5 rounded hover:bg-white dark:hover:bg-nx-navy cursor-pointer">
               <input
                 type="checkbox"
                 checked={selected.includes(opt)}
@@ -586,9 +586,9 @@ function FilterControlWidget({
                     : selected.filter((s) => s !== opt)
                   onChange(next.length > 0 ? (next as string[]) : null)
                 }}
-                className="w-3 h-3 text-indigo-600 rounded border-gray-300 dark:border-gray-600 focus:ring-indigo-500"
+                className="w-3 h-3 text-nx-blue rounded border-nx-mist dark:border-nx-muted focus:ring-nx-blue"
               />
-              <span className="text-xs text-gray-700 dark:text-gray-300 truncate">{opt}</span>
+              <span className="text-xs text-nx-navy dark:text-nx-mist truncate">{opt}</span>
             </label>
           ))}
         </div>
@@ -604,7 +604,7 @@ function FilterControlWidget({
     const currentMax = val ? val[1] : max
     return (
       <div className="min-w-[200px]">
-        <label className="block text-[10px] text-gray-500 mb-0.5 font-medium">
+        <label className="block text-[10px] text-nx-muted mb-0.5 font-medium">
           {control.label}: {currentMin} – {currentMax}
         </label>
         <div className="flex items-center gap-2">
@@ -615,7 +615,7 @@ function FilterControlWidget({
               const v = Number(e.target.value)
               onChange([v, currentMax])
             }}
-            className="w-16 px-1.5 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs text-center focus:ring-1 focus:ring-indigo-500 outline-none"
+            className="w-16 px-1.5 py-1 rounded border border-nx-mist dark:border-nx-muted text-xs text-center focus:ring-1 focus:ring-nx-blue outline-none"
           />
           <input
             type="range"
@@ -624,7 +624,7 @@ function FilterControlWidget({
             step={control.step || 1}
             value={currentMax}
             onChange={(e) => onChange([currentMin, Number(e.target.value)])}
-            className="flex-1 accent-indigo-600"
+            className="flex-1 accent-nx-blue"
           />
           <input
             type="number"
@@ -633,7 +633,7 @@ function FilterControlWidget({
               const v = Number(e.target.value)
               onChange([currentMin, v])
             }}
-            className="w-16 px-1.5 py-1 rounded border border-gray-300 dark:border-gray-600 text-xs text-center focus:ring-1 focus:ring-indigo-500 outline-none"
+            className="w-16 px-1.5 py-1 rounded border border-nx-mist dark:border-nx-muted text-xs text-center focus:ring-1 focus:ring-nx-blue outline-none"
           />
         </div>
       </div>

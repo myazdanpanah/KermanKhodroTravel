@@ -54,3 +54,13 @@ class AuditLogMiddleware(MiddlewareMixin):
         if xff:
             return xff.split(",")[0].strip()
         return request.META.get("REMOTE_ADDR")
+
+
+# Re-export the audit model registry helpers here for backwards compatibility.
+# They live in signals.py, but callers (and the tests) import them from
+# middleware, which is the documented public entry point.
+from .signals import (  # noqa: E402,F401
+    register_model,
+    unregister_model,
+    get_audited_models,
+)

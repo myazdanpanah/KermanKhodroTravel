@@ -47,55 +47,55 @@ export default function DashboardsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            <LayoutDashboard className="h-6 w-6 text-cyan-500" /> داشبوردها
+          <h1 className="text-2xl font-bold text-white dark:text-white flex items-center gap-3">
+            <LayoutDashboard className="h-6 w-6 text-nx-blue" /> داشبوردها
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{dashboards.length} داشبورد</p>
+          <p className="text-sm text-nx-mist dark:text-nx-mist mt-1">{dashboards.length} داشبورد</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600">
+        <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-4 py-2 bg-nx-blue text-white rounded-lg hover:bg-nx-blue">
           <Plus className="h-4 w-4" /> داشبورد جدید
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><label className="block text-xs text-gray-500 mb-1">نام *</label><input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm" /></div>
-            <div><label className="block text-xs text-gray-500 mb-1">توضیحات</label><input type="text" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm" /></div>
+            <div><label className="block text-xs text-nx-mist mb-1">نام *</label><input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm" /></div>
+            <div><label className="block text-xs text-nx-mist mb-1">توضیحات</label><input type="text" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm" /></div>
           </div>
           <div className="flex justify-end gap-3 mt-4">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-gray-600">انصراف</button>
-            <button onClick={handleCreate} className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 text-sm">ایجاد</button>
+            <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-nx-mist">انصراف</button>
+            <button onClick={handleCreate} className="px-4 py-2 bg-nx-blue text-white rounded-lg hover:bg-nx-blue text-sm">ایجاد</button>
           </div>
         </div>
       )}
 
       <div className="relative max-w-sm">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-nx-mist" />
         <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="جستجو..."
-          className="w-full pr-10 pl-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
+          className="w-full pr-10 pl-4 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
-          <div className="col-span-3 flex items-center justify-center h-32"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-500" /></div>
+          <div className="col-span-3 flex items-center justify-center h-32"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-nx-blue" /></div>
         ) : filtered.length === 0 ? (
-          <div className="col-span-3 text-center py-8 text-gray-500 text-sm">هیچ داشبوردی یافت نشد</div>
+          <div className="col-span-3 text-center py-8 text-nx-mist text-sm">هیچ داشبوردی یافت نشد</div>
         ) : (
           filtered.map(d => (
-            <div key={d.id} onClick={() => navigate(`/erp/reports/dashboards/${d.id}`)} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition cursor-pointer">
+            <div key={d.id} onClick={() => navigate(`/erp/reports/dashboards/${d.id}`)} className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-5 hover:shadow-md transition cursor-pointer">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="font-medium text-gray-900 dark:text-white">{d.name}</h3>
-                  <p className="text-xs text-gray-500 mt-1">{d.description || 'بدون توضیح'}</p>
+                  <h3 className="font-medium text-nx-navy dark:text-white">{d.name}</h3>
+                  <p className="text-xs text-nx-mist mt-1">{d.description || 'بدون توضیح'}</p>
                 </div>
-                {d.is_default && <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">پیش‌فرض</span>}
+                {d.is_default && <span className="text-xs px-2 py-0.5 rounded-full bg-nx-teal/10 text-nx-teal">پیش‌فرض</span>}
               </div>
               <div className="flex items-center justify-between mt-4">
-                <span className="text-xs text-gray-400">{d.widgets?.length || 0} ویجت</span>
+                <span className="text-xs text-nx-mist">{d.widgets?.length || 0} ویجت</span>
                 <div className="flex gap-2">
-                  <button className="p-1.5 text-gray-400 hover:text-gray-600"><Settings className="h-4 w-4" /></button>
-                  <button onClick={(e) => { e.stopPropagation(); handleDelete(d.id); }} className="p-1.5 text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                  <button className="p-1.5 text-nx-mist hover:text-nx-mist"><Settings className="h-4 w-4" /></button>
+                  <button onClick={(e) => { e.stopPropagation(); handleDelete(d.id); }} className="p-1.5 text-nx-mist hover:text-nx-danger-500"><Trash2 className="h-4 w-4" /></button>
                 </div>
               </div>
             </div>

@@ -110,17 +110,17 @@ export default function TableEditorPage() {
   const totalPages = Math.ceil(totalCount / pageSize)
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900" dir="rtl">
+    <div className="min-h-screen bg-white dark:bg-nx-navy" dir="rtl">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+      <header className="bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border px-6 py-3">
         <div className="max-w-full mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/db-manager" className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+            <Link to="/db-manager" className="p-2 text-nx-mist hover:text-nx-muted dark:hover:text-nx-mist transition">
               <ArrowRight className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">{table}</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
+              <h1 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10">{table}</h1>
+              <p className="text-xs text-nx-muted dark:text-nx-mist">
                 {source === 'local' ? 'Nexivo' : 'خارجی'} · {totalCount.toLocaleString()} ردیف · {schema.length} ستون
               </p>
             </div>
@@ -128,14 +128,14 @@ export default function TableEditorPage() {
           <div className="flex items-center gap-2">
             <Link
               to={`/db-manager/table/${source}/${table}/schema`}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist rounded-lg hover:bg-white dark:hover:bg-nx-navy transition"
             >
               <Settings className="w-4 h-4" />
               اسکیما
             </Link>
             <Link
               to={`/db-manager/table/${source}/${table}/import`}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+              className="flex items-center gap-2 px-3 py-1.5 text-sm bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist rounded-lg hover:bg-white dark:hover:bg-nx-navy transition"
             >
               <Download className="w-4 h-4" />
               وارد کردن
@@ -144,7 +144,7 @@ export default function TableEditorPage() {
               <button
                 onClick={saveChanges}
                 disabled={saving}
-                className="flex items-center gap-2 px-4 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-1.5 text-sm bg-nx-blue text-white rounded-lg hover:bg-nx-blue transition font-medium disabled:opacity-50"
               >
                 {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : null}
                 ذخیره ({pendingChanges.length})
@@ -152,7 +152,7 @@ export default function TableEditorPage() {
             )}
             <button
               onClick={loadData}
-              className="p-2 text-gray-400 hover:text-indigo-600 transition"
+              className="p-2 text-nx-mist hover:text-nx-blue transition"
               title="بازخوانی"
             >
               <RefreshCw className="w-4 h-4" />
@@ -163,7 +163,7 @@ export default function TableEditorPage() {
 
       {/* AG Grid */}
       <div className="p-6">
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+        <div className="bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-navy-border rounded-xl overflow-hidden">
           <div className="ag-theme-alpine" style={{ height: 'calc(100vh - 220px)', width: '100%' }}>
             <AgGridReact
               rowData={rowData}
@@ -190,23 +190,23 @@ export default function TableEditorPage() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 dark:border-gray-700">
-            <div className="text-sm text-gray-500 dark:text-gray-400">
+          <div className="flex items-center justify-between px-4 py-3 border-t border-nx-border dark:border-nx-navy-border">
+            <div className="text-sm text-nx-muted dark:text-nx-mist">
               صفحه {page + 1} از {totalPages} · {totalCount.toLocaleString()} ردیف
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(0, p - 1))}
                 disabled={page === 0}
-                className="p-1.5 text-gray-400 hover:text-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                className="p-1.5 text-nx-mist hover:text-nx-blue disabled:opacity-30 disabled:cursor-not-allowed transition"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
-              <span className="text-sm text-gray-700 dark:text-gray-300 px-2">{page + 1}</span>
+              <span className="text-sm text-nx-navy dark:text-nx-mist px-2">{page + 1}</span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                 disabled={page >= totalPages - 1}
-                className="p-1.5 text-gray-400 hover:text-indigo-600 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                className="p-1.5 text-nx-mist hover:text-nx-blue disabled:opacity-30 disabled:cursor-not-allowed transition"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>

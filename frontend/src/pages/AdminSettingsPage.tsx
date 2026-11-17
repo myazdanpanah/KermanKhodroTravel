@@ -54,12 +54,12 @@ const ACTION_LABELS: Record<string, string> = {
 }
 
 const ACTION_COLORS: Record<string, string> = {
-  dashboard_share: 'bg-blue-100 text-blue-700',
-  dashboard_create: 'bg-green-100 text-green-700',
-  dashboard_delete: 'bg-red-100 text-red-700',
-  page_access_update: 'bg-amber-100 text-amber-700',
-  filter_access_update: 'bg-purple-100 text-purple-700',
-  user_role_change: 'bg-indigo-100 text-indigo-700',
+  dashboard_share: 'bg-nx-blue/10 text-nx-blue',
+  dashboard_create: 'bg-nx-teal/10 text-nx-teal',
+  dashboard_delete: 'bg-nx-danger-100 text-nx-danger-700',
+  page_access_update: 'bg-nx-warning-100 text-nx-warning-700',
+  filter_access_update: 'bg-nx-blue/10 text-nx-blue',
+  user_role_change: 'bg-nx-blue/10 text-nx-blue',
 }
 
 const ROLE_OPTIONS = ALL_ROLES
@@ -76,7 +76,7 @@ export default function AdminSettingsPage() {
   const [activeTab, setActiveTab] = useState<'users' | 'audit' | 'roles'>('users')
   const [customRoles, setCustomRoles] = useState<Array<{ id: number; value: string; label: string; color: string }>>([])
   const [showRoleModal, setShowRoleModal] = useState(false)
-  const [editingRole, setEditingRole] = useState<{ id?: number; value: string; label: string; color: string }>({ value: '', label: '', color: 'bg-gray-100 text-gray-700' })
+  const [editingRole, setEditingRole] = useState<{ id?: number; value: string; label: string; color: string }>({ value: '', label: '', color: 'bg-nx-mist/10 text-nx-navy' })
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
   const [auditLoading, setAuditLoading] = useState(true)
   const [expandedLog, setExpandedLog] = useState<number | null>(null)
@@ -211,8 +211,16 @@ export default function AdminSettingsPage() {
           team: form.team,
           reports_to: form.reports_to,
         }
+        // Optional password reset — only sent when the admin typed one
+        if (form.password) {
+          if (form.password.length < 8) {
+            toast('رمز عبور باید حداقل ۸ کاراکتر باشد', 'error')
+            return
+          }
+          payload.password = form.password
+        }
         await api.put(`/auth/users/${editingUser.id}/`, payload)
-        toast('کاربر به‌روزرسانی شد', 'success')
+        toast(form.password ? 'کاربر و رمز عبور به‌روزرسانی شد' : 'کاربر به‌روزرسانی شد', 'success')
       } else {
         if (!form.password || form.password.length < 8) {
           toast('رمز عبور باید حداقل ۸ کاراکتر باشد', 'error')
@@ -280,7 +288,7 @@ export default function AdminSettingsPage() {
         toast('نقش جدید ساخته شد', 'success')
       }
       setShowRoleModal(false)
-      setEditingRole({ value: '', label: '', color: 'bg-gray-100 text-gray-700' })
+      setEditingRole({ value: '', label: '', color: 'bg-nx-mist/10 text-nx-navy' })
       fetchCustomRoles()
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { error?: string } } }
@@ -300,16 +308,16 @@ export default function AdminSettingsPage() {
   }
 
   const COLOR_OPTIONS = [
-    'bg-gray-100 text-gray-700',
-    'bg-purple-100 text-purple-700',
-    'bg-blue-100 text-blue-700',
-    'bg-emerald-100 text-emerald-700',
-    'bg-amber-100 text-amber-700',
-    'bg-red-100 text-red-700',
-    'bg-indigo-100 text-indigo-700',
-    'bg-pink-100 text-pink-700',
-    'bg-teal-100 text-teal-700',
-    'bg-orange-100 text-orange-700',
+    'bg-nx-mist/10 text-nx-navy',
+    'bg-nx-blue/10 text-nx-blue',
+    'bg-nx-blue/10 text-nx-blue',
+    'bg-nx-teal/10 text-nx-teal',
+    'bg-nx-warning-100 text-nx-warning-700',
+    'bg-nx-danger-100 text-nx-danger-700',
+    'bg-nx-blue/10 text-nx-blue',
+    'bg-nx-blue/10 text-nx-blue',
+    'bg-nx-teal/10 text-nx-teal',
+    'bg-nx-blue/10 text-nx-blue',
   ]
 
   const handleClearAll = async () => {
@@ -336,12 +344,12 @@ export default function AdminSettingsPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">مدیریت کاربران</h1>
-            <p className="text-sm text-gray-500 mt-1">ایجاد، ویرایش و حذف نقش‌ها و دسترسی‌ها</p>
+            <h1 className="text-xl font-bold text-white">مدیریت کاربران</h1>
+            <p className="text-sm text-nx-mist mt-1">ایجاد، ویرایش و حذف نقش‌ها و دسترسی‌ها</p>
           </div>
           <button
             onClick={openCreateModal}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition text-sm font-medium"
+            className="flex items-center gap-2 px-4 py-2 bg-nx-blue text-white rounded-xl hover:bg-nx-blue transition text-sm font-medium"
           >
             <UserPlus className="w-4 h-4" />
             کاربر جدید
@@ -352,14 +360,14 @@ export default function AdminSettingsPage() {
           {ROLE_OPTIONS.map((r) => {
             const count = users.filter((u) => u.role === r.value).length
             return (
-              <div key={r.value} className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
+              <div key={r.value} className="bg-white dark:bg-nx-navy rounded-2xl border border-nx-border dark:border-nx-navy-border p-4">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${r.color}`}>
                     <Users className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{count}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{r.label}</p>
+                    <p className="text-2xl font-bold text-nx-navy dark:text-nx-mist/10">{count}</p>
+                    <p className="text-xs text-nx-mist dark:text-nx-mist">{r.label}</p>
                   </div>
                 </div>
               </div>
@@ -369,16 +377,16 @@ export default function AdminSettingsPage() {
 
         {/* Danger Zone */}
         {user?.isStaff && (
-          <div className="mb-8 bg-white dark:bg-gray-800 rounded-2xl border-2 border-red-200 dark:border-red-800 overflow-hidden">
-            <div className="px-6 py-4 border-b border-red-100 flex items-center justify-between">
+          <div className="mb-8 bg-white dark:bg-nx-navy rounded-2xl border-2 border-nx-danger-200 dark:border-nx-danger-800 overflow-hidden">
+            <div className="px-6 py-4 border-b border-nx-danger-100 flex items-center justify-between">
               <div>
-                <h2 className="font-bold text-red-700 dark:text-red-400">منطقه خطر</h2>
-                <p className="text-xs text-red-400">حذف تمام داشبوردها، صفحات و نمودارها</p>
+                <h2 className="font-bold text-nx-danger-700 dark:text-nx-danger-400">منطقه خطر</h2>
+                <p className="text-xs text-nx-danger-400">حذف تمام داشبوردها، صفحات و نمودارها</p>
               </div>
               <button
                 onClick={handleClearAll}
                 disabled={clearing}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-xl hover:bg-red-700 transition text-sm font-medium disabled:opacity-50"
+                className="flex items-center gap-2 px-4 py-2 bg-nx-danger-600 text-white rounded-xl hover:bg-nx-danger-700 transition text-sm font-medium disabled:opacity-50"
               >
                 <Trash className="w-4 h-4" />
                 {clearing ? 'در حال حذف...' : 'حذف همه داده‌ها'}
@@ -389,38 +397,38 @@ export default function AdminSettingsPage() {
 
         {/* Tabs */}
         <div className="flex items-center gap-1 mb-6">
-          <button onClick={() => setActiveTab('users')} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === 'users' ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
+          <button onClick={() => setActiveTab('users')} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === 'users' ? 'bg-nx-blue/10 dark:bg-nx-blue/40 text-nx-blue dark:text-nx-blue' : 'text-nx-mist dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy'}`}>
             <Users className="w-4 h-4" /> کاربران
           </button>
-          <button onClick={() => setActiveTab('audit')} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === 'audit' ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
+          <button onClick={() => setActiveTab('audit')} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === 'audit' ? 'bg-nx-blue/10 dark:bg-nx-blue/40 text-nx-blue dark:text-nx-blue' : 'text-nx-mist dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy'}`}>
             <History className="w-4 h-4" /> تاریخچه تغییرات
           </button>
-          <button onClick={() => setActiveTab('roles')} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === 'roles' ? 'bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}>
+          <button onClick={() => setActiveTab('roles')} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${activeTab === 'roles' ? 'bg-nx-blue/10 dark:bg-nx-blue/40 text-nx-blue dark:text-nx-blue' : 'text-nx-mist dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy'}`}>
             <Tag className="w-4 h-4" /> مدیریت نقش‌ها
           </button>
-          <Link to="/admin/superset" className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700">
+          <Link to="/admin/superset" className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition text-nx-mist dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy">
             <Database className="w-4 h-4" /> وضعیت Superset
           </Link>
         </div>
 
         {/* Users Table */}
         {activeTab === 'users' && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-              <h2 className="font-bold text-gray-900 dark:text-gray-100">لیست کاربران ({users.length})</h2>
+          <div className="bg-white dark:bg-nx-navy rounded-2xl border border-nx-border dark:border-nx-navy-border overflow-hidden">
+            <div className="px-6 py-4 border-b border-nx-border dark:border-nx-navy-border">
+              <h2 className="font-bold text-nx-navy dark:text-nx-mist/10">لیست کاربران ({users.length})</h2>
             </div>
             {loading ? (
-              <div className="p-12 text-center text-gray-500">در حال بارگذاری...</div>
+              <div className="p-12 text-center text-nx-mist">در حال بارگذاری...</div>
             ) : users.length === 0 ? (
               <div className="p-12 text-center">
-                <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">هنوز کاربری وجود ندارد</p>
+                <Users className="w-12 h-12 text-nx-mist mx-auto mb-3" />
+                <p className="text-nx-mist">هنوز کاربری وجود ندارد</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="text-right text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                    <tr className="text-right text-xs text-nx-mist dark:text-nx-mist border-b border-nx-border dark:border-nx-navy-border">
                       <th className="px-6 py-3 font-medium">کاربر</th>
                       <th className="px-6 py-3 font-medium">ایمیل</th>
                       <th className="px-6 py-3 font-medium">نقش</th>
@@ -428,37 +436,37 @@ export default function AdminSettingsPage() {
                       <th className="px-6 py-3 font-medium">عملیات</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-50">
+                  <tbody className="divide-y divide-nx-mist/70">
                     {users.map((u) => {
                       const roleInfo = ROLE_MAP[u.role] || ROLE_OPTIONS[3]
                       return (
-                        <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                        <tr key={u.id} className="hover:bg-white dark:hover:bg-nx-navy-elevated transition">
                           <td className="px-6 py-4">
                             <div>
-                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                              <p className="text-sm font-medium text-nx-navy dark:text-nx-mist/10">
                                 {u.first_name || u.last_name ? `${u.first_name} ${u.last_name}` : u.username}
                               </p>
-                              <p className="text-xs text-gray-400">@{u.username}</p>
+                              <p className="text-xs text-nx-mist">@{u.username}</p>
                             </div>
                           </td>
-                          <td className="px-6 py-4 text-sm text-gray-600 dark:text-gray-400">{u.email}</td>
+                          <td className="px-6 py-4 text-sm text-nx-mist dark:text-nx-mist">{u.email}</td>
                           <td className="px-6 py-4">
                             <span className={`inline-flex px-2.5 py-0.5 rounded-lg text-xs font-medium ${roleInfo.color}`}>{roleInfo.label}</span>
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex flex-wrap gap-1">
-                              {u.company_name && <span className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 rounded text-[10px]">{u.company_name}</span>}
-                              {u.division_name && <span className="px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded text-[10px]">{u.division_name}</span>}
-                              {u.team_name && <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-600 rounded text-[10px]">{u.team_name}</span>}
-                              {u.reports_to_name && <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 rounded text-[10px]">↑ {u.reports_to_name}</span>}
-                              {!u.company_name && !u.division_name && !u.team_name && <span className="text-xs text-gray-400">-</span>}
+                              {u.company_name && <span className="px-1.5 py-0.5 bg-nx-blue/10 text-nx-blue rounded text-[10px]">{u.company_name}</span>}
+                              {u.division_name && <span className="px-1.5 py-0.5 bg-nx-blue/10 text-nx-blue rounded text-[10px]">{u.division_name}</span>}
+                              {u.team_name && <span className="px-1.5 py-0.5 bg-nx-teal/10 text-nx-teal rounded text-[10px]">{u.team_name}</span>}
+                              {u.reports_to_name && <span className="px-1.5 py-0.5 bg-nx-warning-50 text-nx-warning-600 rounded text-[10px]">↑ {u.reports_to_name}</span>}
+                              {!u.company_name && !u.division_name && !u.team_name && <span className="text-xs text-nx-mist">-</span>}
                             </div>
                           </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-1">
-                              <button onClick={() => openEditModal(u)} className="p-1.5 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 rounded-lg transition" title="ویرایش"><Pencil className="w-4 h-4" /></button>
+                              <button onClick={() => openEditModal(u)} className="p-1.5 text-nx-mist hover:text-nx-blue hover:bg-nx-blue/10 rounded-lg transition" title="ویرایش"><Pencil className="w-4 h-4" /></button>
                               {u.id !== user?.id && (
-                                <button onClick={() => handleDelete(u)} className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition" title="حذف"><Trash2 className="w-4 h-4" /></button>
+                                <button onClick={() => handleDelete(u)} className="p-1.5 text-nx-mist hover:text-nx-danger-500 hover:bg-nx-danger-50 rounded-lg transition" title="حذف"><Trash2 className="w-4 h-4" /></button>
                               )}
                             </div>
                           </td>
@@ -474,58 +482,58 @@ export default function AdminSettingsPage() {
 
         {/* Audit Log */}
         {activeTab === 'audit' && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-              <h2 className="font-bold text-gray-900 dark:text-gray-100">تاریخچه تغییرات دسترسی ({auditLogs.length})</h2>
+          <div className="bg-white dark:bg-nx-navy rounded-2xl border border-nx-border dark:border-nx-navy-border overflow-hidden">
+            <div className="px-6 py-4 border-b border-nx-border dark:border-nx-navy-border">
+              <h2 className="font-bold text-nx-navy dark:text-nx-mist/10">تاریخچه تغییرات دسترسی ({auditLogs.length})</h2>
             </div>
             {auditLoading ? (
-              <div className="p-12 text-center text-gray-500">در حال بارگذاری...</div>
+              <div className="p-12 text-center text-nx-mist">در حال بارگذاری...</div>
             ) : auditLogs.length === 0 ? (
               <div className="p-12 text-center">
-                <History className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500">هنوز تغییری ثبت نشده</p>
+                <History className="w-12 h-12 text-nx-mist mx-auto mb-3" />
+                <p className="text-nx-mist">هنوز تغییری ثبت نشده</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-nx-mist/70">
                 {auditLogs.map((log) => (
-                  <div key={log.id} className="px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
+                  <div key={log.id} className="px-6 py-4 hover:bg-white dark:hover:bg-nx-navy-elevated transition">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <span className={`inline-flex px-2.5 py-0.5 rounded-lg text-xs font-medium ${ACTION_COLORS[log.action] || 'bg-gray-100 text-gray-700'}`}>
+                        <span className={`inline-flex px-2.5 py-0.5 rounded-lg text-xs font-medium ${ACTION_COLORS[log.action] || 'bg-nx-mist/10 text-nx-navy'}`}>
                           {ACTION_LABELS[log.action] || log.action_display}
                         </span>
                         <div>
-                          <p className="text-sm text-gray-900 dark:text-gray-100">
+                          <p className="text-sm text-nx-navy dark:text-nx-mist/10">
                             <span className="font-medium">{log.target_type}</span>
                             {' '}«{log.target_name || log.target_id}»
                           </p>
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-nx-mist">
                             توسط {log.user || 'سیستم'} · {new Date(log.created_at).toLocaleString('fa-IR')}
                           </p>
                         </div>
                       </div>
-                      <button onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)} className="p-1 text-gray-400 hover:text-gray-600 transition">
+                      <button onClick={() => setExpandedLog(expandedLog === log.id ? null : log.id)} className="p-1 text-nx-mist hover:text-nx-mist transition">
                         {expandedLog === log.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </button>
                     </div>
                     {expandedLog === log.id && (
-                      <div className="mt-3 pl-6 border-r-2 border-indigo-200 pr-3 space-y-2">
+                      <div className="mt-3 pl-6 border-r-2 border-nx-blue/10 pr-3 space-y-2">
                         {Object.keys(log.old_value).length > 0 && (
                           <div>
-                            <span className="text-[10px] text-gray-400 uppercase tracking-wide">قبل:</span>
-                            <pre className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg p-2 mt-1 overflow-x-auto">{JSON.stringify(log.old_value, null, 2)}</pre>
+                            <span className="text-[10px] text-nx-mist uppercase tracking-wide">قبل:</span>
+                            <pre className="text-xs text-nx-danger-600 dark:text-nx-danger-400 bg-nx-danger-50 dark:bg-nx-danger-900/20 rounded-lg p-2 mt-1 overflow-x-auto">{JSON.stringify(log.old_value, null, 2)}</pre>
                           </div>
                         )}
                         {Object.keys(log.new_value).length > 0 && (
                           <div>
-                            <span className="text-[10px] text-gray-400 uppercase tracking-wide">بعد:</span>
-                            <pre className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded-lg p-2 mt-1 overflow-x-auto">{JSON.stringify(log.new_value, null, 2)}</pre>
+                            <span className="text-[10px] text-nx-mist uppercase tracking-wide">بعد:</span>
+                            <pre className="text-xs text-nx-teal dark:text-nx-teal bg-nx-teal/10 dark:bg-nx-teal/20 rounded-lg p-2 mt-1 overflow-x-auto">{JSON.stringify(log.new_value, null, 2)}</pre>
                           </div>
                         )}
                         {Object.keys(log.details).length > 0 && (
                           <div>
-                            <span className="text-[10px] text-gray-400 uppercase tracking-wide">جزئیات:</span>
-                            <pre className="text-xs text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 mt-1 overflow-x-auto">{JSON.stringify(log.details, null, 2)}</pre>
+                            <span className="text-[10px] text-nx-mist uppercase tracking-wide">جزئیات:</span>
+                            <pre className="text-xs text-nx-mist dark:text-nx-mist bg-white dark:bg-nx-navy-elevated rounded-lg p-2 mt-1 overflow-x-auto">{JSON.stringify(log.details, null, 2)}</pre>
                           </div>
                         )}
                       </div>
@@ -538,12 +546,12 @@ export default function AdminSettingsPage() {
         )}
         {/* Roles Management */}
         {activeTab === 'roles' && (
-          <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-              <h2 className="font-bold text-gray-900 dark:text-gray-100">مدیریت نقش‌ها</h2>
+          <div className="bg-white dark:bg-nx-navy rounded-2xl border border-nx-border dark:border-nx-navy-border overflow-hidden">
+            <div className="px-6 py-4 border-b border-nx-border dark:border-nx-navy-border flex items-center justify-between">
+              <h2 className="font-bold text-nx-navy dark:text-nx-mist/10">مدیریت نقش‌ها</h2>
               <button
-                onClick={() => { setEditingRole({ value: '', label: '', color: 'bg-gray-100 text-gray-700' }); setShowRoleModal(true) }}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition"
+                onClick={() => { setEditingRole({ value: '', label: '', color: 'bg-nx-mist/10 text-nx-navy' }); setShowRoleModal(true) }}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-nx-blue text-white rounded-lg text-xs font-medium hover:bg-nx-blue transition"
               >
                 <Plus className="w-3.5 h-3.5" /> نقش جدید
               </button>
@@ -551,16 +559,16 @@ export default function AdminSettingsPage() {
             <div className="p-6 space-y-4">
               {/* Built-in roles */}
               <div>
-                <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">نقش‌های پیش‌فرض</h3>
+                <h3 className="text-xs font-bold text-nx-mist dark:text-nx-mist uppercase tracking-wide mb-3">نقش‌های پیش‌فرض</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {ALL_ROLES.map((r) => (
-                    <div key={r.value} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600">
+                    <div key={r.value} className="flex items-center gap-3 p-3 bg-white dark:bg-nx-navy-elevated rounded-xl border border-nx-border dark:border-nx-muted">
                       <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${r.color}`}>
                         <Shield className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{r.label}</p>
-                        <p className="text-[10px] text-gray-400">{r.value}</p>
+                        <p className="text-sm font-medium text-nx-navy dark:text-nx-mist/10">{r.label}</p>
+                        <p className="text-[10px] text-nx-mist">{r.value}</p>
                       </div>
                     </div>
                   ))}
@@ -568,35 +576,35 @@ export default function AdminSettingsPage() {
               </div>
               {/* Custom roles */}
               <div>
-                <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">نقش‌های سفارشی</h3>
+                <h3 className="text-xs font-bold text-nx-mist dark:text-nx-mist uppercase tracking-wide mb-3">نقش‌های سفارشی</h3>
                 {customRoles.length === 0 ? (
                   <div className="text-center py-8">
-                    <Tag className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">هنوز نقش سفارشی ایجاد نشده</p>
+                    <Tag className="w-10 h-10 text-nx-mist mx-auto mb-2" />
+                    <p className="text-sm text-nx-mist">هنوز نقش سفارشی ایجاد نشده</p>
                     <button
-                      onClick={() => { setEditingRole({ value: '', label: '', color: 'bg-gray-100 text-gray-700' }); setShowRoleModal(true) }}
-                      className="mt-2 text-xs text-indigo-600 hover:text-indigo-800 font-medium"
+                      onClick={() => { setEditingRole({ value: '', label: '', color: 'bg-nx-mist/10 text-nx-navy' }); setShowRoleModal(true) }}
+                      className="mt-2 text-xs text-nx-blue hover:text-nx-blue font-medium"
                     >+ ایجاد نقش جدید</button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {customRoles.map((r) => (
-                      <div key={r.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-200 dark:border-gray-600 group">
+                      <div key={r.id} className="flex items-center gap-3 p-3 bg-white dark:bg-nx-navy-elevated rounded-xl border border-nx-border dark:border-nx-muted group">
                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${r.color}`}>
                           <Tag className="w-4 h-4" />
                         </div>
                         <div className="flex-1">
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{r.label}</p>
-                          <p className="text-[10px] text-gray-400">{r.value}</p>
+                          <p className="text-sm font-medium text-nx-navy dark:text-nx-mist/10">{r.label}</p>
+                          <p className="text-[10px] text-nx-mist">{r.value}</p>
                         </div>
                         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition">
                           <button
                             onClick={() => { setEditingRole(r); setShowRoleModal(true) }}
-                            className="p-1 text-gray-400 hover:text-indigo-500 rounded transition"
+                            className="p-1 text-nx-mist hover:text-nx-blue rounded transition"
                           ><Pencil className="w-3 h-3" /></button>
                           <button
                             onClick={() => handleDeleteRole(r.id)}
-                            className="p-1 text-gray-400 hover:text-red-500 rounded transition"
+                            className="p-1 text-nx-mist hover:text-nx-danger-500 rounded transition"
                           ><Trash2 className="w-3 h-3" /></button>
                         </div>
                       </div>
@@ -613,59 +621,59 @@ export default function AdminSettingsPage() {
       {showRoleModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" dir="rtl">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowRoleModal(false)} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="font-bold text-gray-900 dark:text-gray-100">{editingRole.id ? 'ویرایش نقش' : 'نقش جدید'}</h3>
-              <button onClick={() => setShowRoleModal(false)} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
+          <div className="relative bg-white dark:bg-nx-navy rounded-2xl shadow-2xl w-full max-w-md mx-4">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-nx-border dark:border-nx-navy-border">
+              <h3 className="font-bold text-nx-navy dark:text-nx-mist/10">{editingRole.id ? 'ویرایش نقش' : 'نقش جدید'}</h3>
+              <button onClick={() => setShowRoleModal(false)} className="p-1 text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist"><X className="w-5 h-5" /></button>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">شناسه نقش (انگلیسی) *</label>
+                <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">شناسه نقش (انگلیسی) *</label>
                 <input
                   type="text"
                   value={editingRole.value}
                   onChange={(e) => setEditingRole({ ...editingRole, value: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '') })}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
                   placeholder="مثلاً: marketing, hr, it"
                   disabled={!!editingRole.id}
                 />
-                <p className="text-[10px] text-gray-400 mt-1">فقط حروف انگلیسی، عدد و خط زیر</p>
+                <p className="text-[10px] text-nx-mist mt-1">فقط حروف انگلیسی، عدد و خط زیر</p>
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">نام نمایشی (فارسی) *</label>
+                <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">نام نمایشی (فارسی) *</label>
                 <input
                   type="text"
                   value={editingRole.label}
                   onChange={(e) => setEditingRole({ ...editingRole, label: e.target.value })}
-                  className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
                   placeholder="مثلاً: بازاریابی، منابع انسانی"
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">رنگ</label>
+                <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">رنگ</label>
                 <div className="flex flex-wrap gap-2">
                   {COLOR_OPTIONS.map((c) => (
                     <button
                       key={c}
                       onClick={() => setEditingRole({ ...editingRole, color: c })}
-                      className={`w-8 h-8 rounded-lg ${c} flex items-center justify-center transition ring-2 ${editingRole.color === c ? 'ring-indigo-500 ring-offset-2' : 'ring-transparent'}`}
+                      className={`w-8 h-8 rounded-lg ${c} flex items-center justify-center transition ring-2 ${editingRole.color === c ? 'ring-nx-blue ring-offset-2' : 'ring-transparent'}`}
                     >
                       <Tag className="w-3.5 h-3.5" />
                     </button>
                   ))}
                 </div>
               </div>
-              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl">
-                <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">پیش‌نمایش:</p>
+              <div className="p-3 bg-nx-blue/10 dark:bg-nx-blue/20 rounded-xl">
+                <p className="text-xs text-nx-blue dark:text-nx-blue font-medium">پیش‌نمایش:</p>
                 <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium mt-1 ${editingRole.color}`}>
                   <Tag className="w-3.5 h-3.5" />
                   {editingRole.label || 'نام نقش'}
                 </span>
               </div>
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-end gap-3">
-              <button onClick={() => setShowRoleModal(false)} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition">انصراف</button>
-              <button onClick={handleRoleSubmit} className="px-6 py-2 bg-indigo-600 text-white text-sm rounded-xl hover:bg-indigo-700 transition font-medium">
+            <div className="px-6 py-4 border-t border-nx-border dark:border-nx-navy-border flex items-center justify-end gap-3">
+              <button onClick={() => setShowRoleModal(false)} className="px-4 py-2 text-sm text-nx-mist dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy rounded-xl transition">انصراف</button>
+              <button onClick={handleRoleSubmit} className="px-6 py-2 bg-nx-blue text-white text-sm rounded-xl hover:bg-nx-blue transition font-medium">
                 {editingRole.id ? 'ذخیره تغییرات' : 'ساخت نقش'}
               </button>
             </div>
@@ -677,35 +685,35 @@ export default function AdminSettingsPage() {
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" dir="rtl">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowModal(false)} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
-              <h3 className="font-bold text-gray-900 dark:text-gray-100">{editingUser ? 'ویرایش کاربر' : 'کاربر جدید'}</h3>
-              <button onClick={() => setShowModal(false)} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"><X className="w-5 h-5" /></button>
+          <div className="relative bg-white dark:bg-nx-navy rounded-2xl shadow-2xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-nx-border dark:border-nx-navy-border sticky top-0 bg-white dark:bg-nx-navy z-10">
+              <h3 className="font-bold text-nx-navy dark:text-nx-mist/10">{editingUser ? 'ویرایش کاربر' : 'کاربر جدید'}</h3>
+              <button onClick={() => setShowModal(false)} className="p-1 text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist"><X className="w-5 h-5" /></button>
             </div>
 
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">نام</label>
-                  <input type="text" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" />
+                  <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">نام</label>
+                  <input type="text" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">نام خانوادگی</label>
-                  <input type="text" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" />
+                  <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">نام خانوادگی</label>
+                  <input type="text" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none" />
                 </div>
               </div>
 
-              <div>                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">نام کاربری *</label>
-                  <input type="text" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" disabled={!!editingUser} />
+              <div>                <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">نام کاربری *</label>
+                  <input type="text" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none" disabled={!!editingUser} />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">ایمیل *</label>
-                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" />
+                <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">ایمیل *</label>
+                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none" />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">نقش *</label>
+                <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">نقش *</label>
                 {/* Graphical dropdown for role selection */}
                 {(() => {
                   const allRoleOptions = [
@@ -718,24 +726,24 @@ export default function AdminSettingsPage() {
                       <button
                         type="button"
                         onClick={() => setOpenRoleDropdown(!openRoleDropdown)}
-                        className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm hover:border-indigo-400 transition focus:ring-2 focus:ring-indigo-500 outline-none"
+                        className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm hover:border-nx-blue transition focus:ring-2 focus:ring-nx-blue outline-none"
                       >
                         <div className="flex items-center gap-2">
                           {selectedRole ? (
                             <>
                               <span className={`inline-flex px-2 py-0.5 rounded-lg text-xs font-medium ${selectedRole.color}`}>{selectedRole.label}</span>
-                              <span className="text-[10px] text-gray-400">({selectedRole.value})</span>
+                              <span className="text-[10px] text-nx-mist">({selectedRole.value})</span>
                             </>
                           ) : (
-                            <span className="text-gray-400">انتخاب نقش...</span>
+                            <span className="text-nx-mist">انتخاب نقش...</span>
                           )}
                         </div>
-                        <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${openRoleDropdown ? 'rotate-180' : ''}`} />
+                        <ChevronDown className={`w-4 h-4 text-nx-mist transition-transform ${openRoleDropdown ? 'rotate-180' : ''}`} />
                       </button>
                       {openRoleDropdown && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl shadow-xl z-50 p-3 max-h-60 overflow-y-auto">
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted rounded-xl shadow-xl z-50 p-3 max-h-60 overflow-y-auto">
                           {/* Built-in roles section */}
-                          <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">نقش‌های پیش‌فرض</p>
+                          <p className="text-[10px] font-bold text-nx-mist dark:text-nx-mist uppercase tracking-wider mb-2">نقش‌های پیش‌فرض</p>
                           <div className="grid grid-cols-2 gap-1.5 mb-3">
                             {ROLE_OPTIONS.map((r) => (
                               <button
@@ -744,8 +752,8 @@ export default function AdminSettingsPage() {
                                 onClick={() => { setForm({ ...form, role: r.value }); setOpenRoleDropdown(false) }}
                                 className={`flex items-center gap-2 p-2 rounded-lg text-sm font-medium transition ${
                                   form.role === r.value
-                                    ? 'bg-indigo-50 dark:bg-indigo-900/30 ring-2 ring-indigo-500 text-indigo-700 dark:text-indigo-300'
-                                    : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400'
+                                    ? 'bg-nx-blue/10 dark:bg-nx-blue/30 ring-2 ring-nx-blue text-nx-blue dark:text-nx-blue'
+                                    : 'hover:bg-white dark:hover:bg-nx-navy text-nx-mist dark:text-nx-mist'
                                 }`}
                               >
                                 <span className={`w-6 h-6 rounded-md flex items-center justify-center ${r.color}`}>
@@ -758,7 +766,7 @@ export default function AdminSettingsPage() {
                           {/* Custom roles section */}
                           {customRoles.length > 0 && (
                             <>
-                              <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-2">نقش‌های سفارشی</p>
+                              <p className="text-[10px] font-bold text-nx-mist dark:text-nx-mist uppercase tracking-wider mb-2">نقش‌های سفارشی</p>
                               <div className="grid grid-cols-2 gap-1.5">
                                 {customRoles.map((cr) => (
                                   <button
@@ -767,8 +775,8 @@ export default function AdminSettingsPage() {
                                     onClick={() => { setForm({ ...form, role: cr.value }); setOpenRoleDropdown(false) }}
                                     className={`flex items-center gap-2 p-2 rounded-lg text-sm font-medium transition ${
                                       form.role === cr.value
-                                        ? 'bg-indigo-50 dark:bg-indigo-900/30 ring-2 ring-indigo-500 text-indigo-700 dark:text-indigo-300'
-                                        : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400'
+                                        ? 'bg-nx-blue/10 dark:bg-nx-blue/30 ring-2 ring-nx-blue text-nx-blue dark:text-nx-blue'
+                                        : 'hover:bg-white dark:hover:bg-nx-navy text-nx-mist dark:text-nx-mist'
                                     }`}
                                   >
                                     <span className={`w-6 h-6 rounded-md flex items-center justify-center ${cr.color}`}>
@@ -788,38 +796,38 @@ export default function AdminSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">بخش</label>
-                <input type="text" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" placeholder="مثلاً: فروش، مالی، ..." />
+                <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">بخش</label>
+                <input type="text" value={form.department} onChange={(e) => setForm({ ...form, department: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none" placeholder="مثلاً: فروش، مالی، ..." />
               </div>
 
               {/* Org Hierarchy */}
-              <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl space-y-3">
-                <p className="text-xs font-bold text-gray-700 dark:text-gray-300">🏢 ساختار سازمانی</p>
+              <div className="p-4 bg-white dark:bg-nx-navy-elevated rounded-xl space-y-3">
+                <p className="text-xs font-bold text-nx-navy dark:text-nx-mist">🏢 ساختار سازمانی</p>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">شرکت</label>
-                    <select value={form.company || ''} onChange={(e) => setForm({ ...form, company: Number(e.target.value) || null, division: null, team: null })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <label className="block text-[10px] font-medium text-nx-mist dark:text-nx-mist mb-1">شرکت</label>
+                    <select value={form.company || ''} onChange={(e) => setForm({ ...form, company: Number(e.target.value) || null, division: null, team: null })} className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none">
                       <option value="">بدون شرکت</option>
                       {companies.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">واحد</label>
-                    <select value={form.division || ''} onChange={(e) => setForm({ ...form, division: Number(e.target.value) || null, team: null })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" disabled={!form.company}>
+                    <label className="block text-[10px] font-medium text-nx-mist dark:text-nx-mist mb-1">واحد</label>
+                    <select value={form.division || ''} onChange={(e) => setForm({ ...form, division: Number(e.target.value) || null, team: null })} className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none" disabled={!form.company}>
                       <option value="">بدون واحد</option>
                       {filteredDivisions.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">تیم</label>
-                    <select value={form.team || ''} onChange={(e) => setForm({ ...form, team: Number(e.target.value) || null })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none" disabled={!form.division}>
+                    <label className="block text-[10px] font-medium text-nx-mist dark:text-nx-mist mb-1">تیم</label>
+                    <select value={form.team || ''} onChange={(e) => setForm({ ...form, team: Number(e.target.value) || null })} className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none" disabled={!form.division}>
                       <option value="">بدون تیم</option>
                       {filteredTeams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-1">گزارش‌دهی به</label>
-                    <select value={form.reports_to || ''} onChange={(e) => setForm({ ...form, reports_to: Number(e.target.value) || null })} className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 outline-none">
+                    <label className="block text-[10px] font-medium text-nx-mist dark:text-nx-mist mb-1">گزارش‌دهی به</label>
+                    <select value={form.reports_to || ''} onChange={(e) => setForm({ ...form, reports_to: Number(e.target.value) || null })} className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue outline-none">
                       <option value="">بدون مدیر</option>
                       {allUsers.filter((u) => u.id !== editingUser?.id).map((u) => (
                         <option key={u.id} value={u.id}>{u.first_name || u.last_name ? `${u.first_name} ${u.last_name}` : u.username}</option>
@@ -829,17 +837,24 @@ export default function AdminSettingsPage() {
                 </div>
               </div>
 
-              {!editingUser && (
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">رمز عبور *</label>
-                  <input type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none" placeholder="حداقل ۸ کاراکتر" />
-                </div>
-              )}
+              <div>
+                <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">
+                  {editingUser ? 'رمز عبور جدید (اختیاری)' : 'رمز عبور *'}
+                </label>
+                <input
+                  type="password"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/20 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
+                  placeholder={editingUser ? 'برای تغییر رمز، مقدار جدید را وارد کنید' : 'حداقل ۸ کاراکتر'}
+                  autoComplete="new-password"
+                />
+              </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-end gap-3">
-              <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition">انصراف</button>
-              <button onClick={handleSubmit} className="px-6 py-2 bg-indigo-600 text-white text-sm rounded-xl hover:bg-indigo-700 transition font-medium">
+            <div className="px-6 py-4 border-t border-nx-border dark:border-nx-navy-border flex items-center justify-end gap-3">
+              <button onClick={() => setShowModal(false)} className="px-4 py-2 text-sm text-nx-mist dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy rounded-xl transition">انصراف</button>
+              <button onClick={handleSubmit} className="px-6 py-2 bg-nx-blue text-white text-sm rounded-xl hover:bg-nx-blue transition font-medium">
                 {editingUser ? 'ذخیره تغییرات' : 'ساخت کاربر'}
               </button>
             </div>

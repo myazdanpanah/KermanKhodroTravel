@@ -91,19 +91,19 @@ export default function ExternalDbPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900" dir="rtl">
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+    <div className="min-h-screen bg-white dark:bg-nx-navy" dir="rtl">
+      <header className="bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border px-6 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/db-manager" className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+            <Link to="/db-manager" className="p-2 text-nx-mist hover:text-nx-muted dark:hover:text-nx-mist transition">
               <ArrowRight className="w-5 h-5" />
             </Link>
-            <Server className="w-5 h-5 text-emerald-600" />
-            <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">اتصالات پایگاه‌داده خارجی</h1>
+            <Server className="w-5 h-5 text-nx-teal" />
+            <h1 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10">اتصالات پایگاه‌داده خارجی</h1>
           </div>
           <button
             onClick={() => { setShowForm(!showForm); setEditingId(null); setForm(EMPTY_FORM) }}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+            className="flex items-center gap-2 px-3 py-2 text-sm bg-nx-teal text-white rounded-lg hover:bg-nx-teal transition"
           >
             <Plus className="w-4 h-4" />
             افزودن اتصال
@@ -114,29 +114,29 @@ export default function ExternalDbPage() {
       <main className="max-w-4xl mx-auto px-6 py-6 space-y-4">
         {/* Add/Edit form */}
         {showForm && (
-          <div className="bg-white dark:bg-gray-800 border border-emerald-200 dark:border-emerald-700 rounded-xl p-6 space-y-4">
-            <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">
+          <div className="bg-white dark:bg-nx-navy border border-nx-teal/10 dark:border-nx-teal rounded-xl p-6 space-y-4">
+            <h3 className="text-sm font-bold text-nx-navy dark:text-nx-mist/10">
               {editingId ? 'ویرایش اتصال' : 'اتصال جدید'}
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <input placeholder="نام" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
               <input placeholder="هاست" value={form.host} onChange={(e) => setForm({ ...form, host: e.target.value })}
-                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
               <input placeholder="پورت" type="number" value={form.port} onChange={(e) => setForm({ ...form, port: parseInt(e.target.value) || 5432 })}
-                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
               <input placeholder="نام دیتابیس" value={form.database} onChange={(e) => setForm({ ...form, database: e.target.value })}
-                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
               <input placeholder="نام کاربری" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })}
-                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
               <input placeholder="رمز عبور" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })}
-                className="px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-100 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500" />
+                className="px-3 py-2 text-sm border border-nx-border dark:border-nx-muted dark:bg-nx-navy dark:text-nx-mist/10 rounded-lg outline-none focus:ring-2 focus:ring-nx-teal" />
             </div>
             <div className="flex items-center gap-3">
-              <button onClick={handleSave} className="px-4 py-2 text-sm bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition font-medium">
+              <button onClick={handleSave} className="px-4 py-2 text-sm bg-nx-teal text-white rounded-lg hover:bg-nx-teal transition font-medium">
                 {editingId ? 'ذخیره' : 'افزودن'}
               </button>
-              <button onClick={() => { setShowForm(false); setEditingId(null) }} className="px-4 py-2 text-sm text-gray-500 hover:text-gray-700 transition">
+              <button onClick={() => { setShowForm(false); setEditingId(null) }} className="px-4 py-2 text-sm text-nx-muted hover:text-nx-navy transition">
                 انصراف
               </button>
             </div>
@@ -146,42 +146,42 @@ export default function ExternalDbPage() {
         {/* Connection list */}
         {loading ? (
           <div className="text-center py-16">
-            <RefreshCw className="w-6 h-6 text-gray-400 mx-auto animate-spin" />
+            <RefreshCw className="w-6 h-6 text-nx-mist mx-auto animate-spin" />
           </div>
         ) : dbs.length === 0 ? (
           <div className="text-center py-16">
-            <Server className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">اتصال خارجی وجود ندارد</p>
+            <Server className="w-16 h-16 text-nx-mist dark:text-nx-muted mx-auto mb-4" />
+            <p className="text-nx-muted dark:text-nx-mist">اتصال خارجی وجود ندارد</p>
           </div>
         ) : (
           <div className="space-y-3">
             {dbs.map((db) => (
-              <div key={db.id} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5">
+              <div key={db.id} className="bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-navy-border rounded-xl p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-3">
-                    <Server className="w-5 h-5 text-emerald-500" />
+                    <Server className="w-5 h-5 text-nx-teal" />
                     <div>
-                      <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{db.name}</span>
-                      <span className={`mr-2 px-2 py-0.5 rounded-full text-[10px] font-medium ${db.is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'}`}>
+                      <span className="text-sm font-bold text-nx-navy dark:text-nx-mist/10">{db.name}</span>
+                      <span className={`mr-2 px-2 py-0.5 rounded-full text-[10px] font-medium ${db.is_active ? 'bg-nx-teal/10 text-nx-teal dark:bg-nx-teal/30 dark:text-nx-teal' : 'bg-nx-mist/10 text-nx-muted dark:bg-nx-navy dark:text-nx-mist'}`}>
                         {db.is_active ? 'فعال' : 'غیرفعال'}
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <button onClick={() => handleTest(db.id)} disabled={testingId === db.id}
-                      className="flex items-center gap-1 px-3 py-1.5 text-xs border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition disabled:opacity-50">
+                      className="flex items-center gap-1 px-3 py-1.5 text-xs border border-nx-border dark:border-nx-muted rounded-lg hover:bg-white dark:hover:bg-nx-navy transition disabled:opacity-50">
                       {testingId === db.id ? <RefreshCw className="w-3 h-3 animate-spin" /> : <PlugZap className="w-3 h-3" />}
                       تست اتصال
                     </button>
-                    <button onClick={() => startEdit(db)} className="p-1.5 text-gray-400 hover:text-indigo-600 transition">
+                    <button onClick={() => startEdit(db)} className="p-1.5 text-nx-mist hover:text-nx-blue transition">
                       <Edit3 className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleDelete(db.id)} className="p-1.5 text-gray-400 hover:text-red-600 transition">
+                    <button onClick={() => handleDelete(db.id)} className="p-1.5 text-nx-mist hover:text-nx-danger-600 transition">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 font-mono">
+                <div className="flex items-center gap-4 text-xs text-nx-muted dark:text-nx-mist font-mono">
                   <span>{db.host}:{db.port}</span>
                   <span>/</span>
                   <span>{db.database}</span>
@@ -189,7 +189,7 @@ export default function ExternalDbPage() {
                   <span>{db.username}</span>
                 </div>
                 {testResult && testResult.id === db.id && (
-                  <div className={`mt-3 text-xs px-3 py-2 rounded-lg ${testResult.ok ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300'}`}>
+                  <div className={`mt-3 text-xs px-3 py-2 rounded-lg ${testResult.ok ? 'bg-nx-teal/10 dark:bg-nx-teal/20 text-nx-teal dark:text-nx-teal' : 'bg-nx-danger-50 dark:bg-nx-danger-900/20 text-nx-danger-700 dark:text-nx-danger-300'}`}>
                     {testResult.ok ? '✅' : '❌'} {testResult.message}
                   </div>
                 )}

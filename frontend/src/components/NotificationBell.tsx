@@ -102,32 +102,32 @@ export default function NotificationBell() {
             fetchNotifications().finally(() => setLoading(false))
           }
         }}
-        className="relative p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition"
+        className="relative p-2 text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy rounded-xl transition"
         title="اعلان‌ها"
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
+          <span className="absolute -top-0.5 -right-0.5 w-5 h-5 bg-nx-danger-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center animate-pulse">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute top-full left-0 mt-2 w-96 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-2xl z-50 overflow-hidden" dir="rtl">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <h3 className="font-bold text-sm text-gray-900 dark:text-gray-100">اعلان‌ها</h3>
+        <div className="absolute top-full left-0 mt-2 w-96 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-navy-border rounded-2xl shadow-2xl z-50 overflow-hidden" dir="rtl">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-nx-border">
+            <h3 className="font-bold text-sm text-nx-navy dark:text-nx-mist/10">اعلان‌ها</h3>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
-                  className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
+                  className="flex items-center gap-1 text-xs text-nx-blue dark:text-nx-blue hover:text-nx-blue dark:hover:text-nx-blue font-medium"
                 >
                   <CheckCheck className="w-3.5 h-3.5" />
                   همه خوانده شد
                 </button>
               )}
-              <button onClick={() => setOpen(false)} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+              <button onClick={() => setOpen(false)} className="p-1 text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -135,18 +135,18 @@ export default function NotificationBell() {
 
           <div className="max-h-96 overflow-y-auto">
             {loading ? (
-              <div className="p-8 text-center text-gray-400 text-sm">در حال بارگذاری...</div>
+              <div className="p-8 text-center text-nx-mist text-sm">در حال بارگذاری...</div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center">
-                <Bell className="w-10 h-10 text-gray-200 dark:text-gray-600 mx-auto mb-2" />
-                <p className="text-sm text-gray-400">اعلانی وجود ندارد</p>
+                <Bell className="w-10 h-10 text-nx-mist/20 dark:text-nx-mist mx-auto mb-2" />
+                <p className="text-sm text-nx-mist">اعلانی وجود ندارد</p>
               </div>
             ) : (
               notifications.map((n) => (
                 <div
                   key={n.id}
-                  className={`px-4 py-3 border-b border-gray-50 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition cursor-pointer ${
-                    !n.is_read ? 'bg-indigo-50/50 dark:bg-indigo-900/20' : ''
+                  className={`px-4 py-3 border-b border-nx-mist/70 dark:border-nx-navy-border hover:bg-white dark:hover:bg-nx-navy-elevated transition cursor-pointer ${
+                    !n.is_read ? 'bg-nx-blue/10 dark:bg-nx-blue/20' : ''
                   }`}
                   onClick={() => {
                     if (!n.is_read) markAsRead(n.id)
@@ -156,12 +156,12 @@ export default function NotificationBell() {
                     <span className="text-lg mt-0.5">{getTypeIcon(n.type)}</span>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{n.title}</p>
+                        <p className="text-sm font-medium text-nx-navy dark:text-nx-mist/10 truncate">{n.title}</p>
                         {!n.is_read && (
-                          <span className="w-2 h-2 bg-indigo-500 rounded-full flex-shrink-0" />
+                          <span className="w-2 h-2 bg-nx-blue rounded-full flex-shrink-0" />
                         )}
-                      </div>                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-2">{n.message}</p>
-                      <p className="text-[10px] text-gray-400 mt-1">{timeAgo(n.created_at)}</p>
+                      </div>                        <p className="text-xs text-nx-mist dark:text-nx-mist mt-0.5 line-clamp-2">{n.message}</p>
+                      <p className="text-[10px] text-nx-mist mt-1">{timeAgo(n.created_at)}</p>
                     </div>
                     {!n.is_read && (
                       <button
@@ -169,7 +169,7 @@ export default function NotificationBell() {
                           e.stopPropagation()
                           markAsRead(n.id)
                         }}
-                        className="p-1 text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded transition flex-shrink-0"
+                        className="p-1 text-nx-mist hover:text-nx-blue hover:bg-nx-blue/10 dark:hover:bg-nx-blue/30 rounded transition flex-shrink-0"
                         title="خوانده شد"
                       >
                         <Check className="w-3.5 h-3.5" />

@@ -55,93 +55,93 @@ export default function PayrollPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            <DollarSign className="h-6 w-6 text-orange-500" /> حقوق و دستمزد
+          <h1 className="text-2xl font-bold text-white dark:text-white flex items-center gap-3">
+            <DollarSign className="h-6 w-6 text-nx-blue" /> حقوق و دستمزد
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{periods.length} دوره پرداخت</p>
+          <p className="text-sm text-nx-mist dark:text-nx-mist mt-1">{periods.length} دوره پرداخت</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+        <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-4 py-2 bg-nx-blue text-white rounded-lg hover:bg-nx-blue">
           <Plus className="h-4 w-4" /> دوره جدید
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div><label className="block text-xs text-gray-500 mb-1">نام *</label><input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm" /></div>
-            <div><label className="block text-xs text-gray-500 mb-1">تاریخ شروع *</label><input type="date" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm" /></div>
-            <div><label className="block text-xs text-gray-500 mb-1">تاریخ پایان *</label><input type="date" value={form.end_date} onChange={e => setForm({ ...form, end_date: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm" /></div>
+            <div><label className="block text-xs text-nx-mist mb-1">نام *</label><input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm" /></div>
+            <div><label className="block text-xs text-nx-mist mb-1">تاریخ شروع *</label><input type="date" value={form.start_date} onChange={e => setForm({ ...form, start_date: e.target.value })} className="w-full px-3 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm" /></div>
+            <div><label className="block text-xs text-nx-mist mb-1">تاریخ پایان *</label><input type="date" value={form.end_date} onChange={e => setForm({ ...form, end_date: e.target.value })} className="w-full px-3 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm" /></div>
           </div>
           <div className="flex justify-end gap-3 mt-4">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-gray-600">انصراف</button>
-            <button onClick={handleCreate} className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm">ایجاد</button>
+            <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-nx-mist">انصراف</button>
+            <button onClick={handleCreate} className="px-4 py-2 bg-nx-blue text-white rounded-lg hover:bg-nx-blue text-sm">ایجاد</button>
           </div>
         </div>
       )}
 
       <div className="relative max-w-sm">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-nx-mist" />
         <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="جستجو..."
-          className="w-full pr-10 pl-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
+          className="w-full pr-10 pl-4 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm" />
       </div>
 
       {/* Periods */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">دوره‌های پرداخت</h3>
+      <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-6">
+        <h3 className="text-sm font-semibold text-nx-navy dark:text-white mb-4">دوره‌های پرداخت</h3>
         {loading ? (
-          <div className="flex items-center justify-center h-24"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500" /></div>
+          <div className="flex items-center justify-center h-24"><div className="animate-spin rounded-full h-6 w-6 border-b-2 border-nx-blue" /></div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {filteredPeriods.map(p => (
               <div key={p.id} onClick={() => setSelectedPeriod(p.id)}
-                className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedPeriod === p.id ? 'border-orange-500 bg-orange-50 dark:bg-orange-950' : 'border-gray-200 dark:border-gray-700 hover:border-orange-300'}`}>
-                <p className="font-medium text-gray-900 dark:text-white text-sm">{p.name}</p>
-                <p className="text-xs text-gray-500 mt-1">{p.start_date} — {p.end_date}</p>
+                className={`p-3 rounded-lg border cursor-pointer transition-all ${selectedPeriod === p.id ? 'border-nx-blue bg-nx-blue/10 dark:bg-nx-warning-950' : 'border-nx-border dark:border-nx-navy-border hover:border-nx-blue/30'}`}>
+                <p className="font-medium text-nx-navy dark:text-white text-sm">{p.name}</p>
+                <p className="text-xs text-nx-mist mt-1">{p.start_date} — {p.end_date}</p>
                 <div className="flex justify-between items-center mt-2">
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${p.status === 'closed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>{p.status}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${p.status === 'closed' ? 'bg-nx-teal/10 text-nx-teal' : 'bg-nx-warning-100 text-nx-warning-700'}`}>{p.status}</span>
                   {p.status === 'open' && (
                     <button onClick={(e) => { e.stopPropagation(); handleGenerate(p.id); }}
-                      className="text-xs text-orange-500 hover:text-orange-700 flex items-center gap-1"><Play className="h-3 w-3" />تولید</button>
+                      className="text-xs text-nx-blue hover:text-nx-blue flex items-center gap-1"><Play className="h-3 w-3" />تولید</button>
                   )}
                 </div>
               </div>
             ))}
-            {filteredPeriods.length === 0 && <p className="text-sm text-gray-500 col-span-3 text-center py-4">هیچ دوره‌ای یافت نشد</p>}
+            {filteredPeriods.length === 0 && <p className="text-sm text-nx-mist col-span-3 text-center py-4">هیچ دوره‌ای یافت نشد</p>}
           </div>
         )}
       </div>
 
       {/* Records */}
       {selectedPeriod && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">رکوردهای حقوقی</h3>
+        <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border overflow-hidden">
+          <div className="p-4 border-b border-nx-border dark:border-nx-navy-border">
+            <h3 className="text-sm font-semibold text-nx-navy dark:text-white">رکوردهای حقوقی</h3>
           </div>
           {filteredRecords.length === 0 ? (
-            <div className="text-center py-8 text-gray-500 text-sm">هیچ رکوردی یافت نشد</div>
+            <div className="text-center py-8 text-nx-mist text-sm">هیچ رکوردی یافت نشد</div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                    <th className="text-right px-4 py-3 font-medium text-gray-500">کارمند</th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-500">حقوق پایه</th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-500">جمع دریافتی</th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-500">جمع کسورات</th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-500">خالص پرداختی</th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-500">وضعیت</th>
+                  <tr className="border-b border-nx-border dark:border-nx-navy-border bg-white dark:bg-nx-navy">
+                    <th className="text-right px-4 py-3 font-medium text-nx-mist">کارمند</th>
+                    <th className="text-right px-4 py-3 font-medium text-nx-mist">حقوق پایه</th>
+                    <th className="text-right px-4 py-3 font-medium text-nx-mist">جمع دریافتی</th>
+                    <th className="text-right px-4 py-3 font-medium text-nx-mist">جمع کسورات</th>
+                    <th className="text-right px-4 py-3 font-medium text-nx-mist">خالص پرداختی</th>
+                    <th className="text-right px-4 py-3 font-medium text-nx-mist">وضعیت</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredRecords.map(rec => (
-                    <tr key={rec.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750">
+                    <tr key={rec.id} className="border-b border-nx-border dark:border-nx-navy-border hover:bg-white dark:hover:bg-nx-navy">
                       <td className="px-4 py-3 font-medium">{rec.employee_name}</td>
                       <td className="px-4 py-3 text-xs">{rec.base_salary.toLocaleString('fa-IR')}</td>
-                      <td className="px-4 py-3 text-xs text-green-600">{rec.total_earnings.toLocaleString('fa-IR')}</td>
-                      <td className="px-4 py-3 text-xs text-red-600">{rec.total_deductions.toLocaleString('fa-IR')}</td>
+                      <td className="px-4 py-3 text-xs text-nx-teal">{rec.total_earnings.toLocaleString('fa-IR')}</td>
+                      <td className="px-4 py-3 text-xs text-nx-danger-600">{rec.total_deductions.toLocaleString('fa-IR')}</td>
                       <td className="px-4 py-3 text-xs font-semibold">{rec.net_pay.toLocaleString('fa-IR')}</td>
                       <td className="px-4 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${rec.status === 'paid' ? 'bg-green-100 text-green-700' : rec.status === 'approved' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${rec.status === 'paid' ? 'bg-nx-teal/10 text-nx-teal' : rec.status === 'approved' ? 'bg-nx-blue/10 text-nx-blue' : 'bg-nx-mist/10 text-nx-navy'}`}>
                           {rec.status}
                         </span>
                       </td>

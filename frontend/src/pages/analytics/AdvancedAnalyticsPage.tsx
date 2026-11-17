@@ -45,7 +45,7 @@ interface AIDashboardData {
 // ─── Simple SVG Chart Components ────────────────────────────────
 
 function LineChart({ data, width = 600, height = 300 }: { data: AnalyticsDataPoint[]; width?: number; height?: number }) {
-  if (!data.length) return <div className="text-gray-400 text-sm p-4">No data available</div>
+  if (!data.length) return <div className="text-nx-mist text-sm p-4">No data available</div>
 
   const maxVal = Math.max(...data.map(d => d.value))
   const minVal = Math.min(...data.map(d => d.value))
@@ -96,7 +96,7 @@ function LineChart({ data, width = 600, height = 300 }: { data: AnalyticsDataPoi
 }
 
 function BarChart({ data, width = 600, height = 300 }: { data: AnalyticsDataPoint[]; width?: number; height?: number }) {
-  if (!data.length) return <div className="text-gray-400 text-sm p-4">No data available</div>
+  if (!data.length) return <div className="text-nx-mist text-sm p-4">No data available</div>
 
   const maxVal = Math.max(...data.map(d => d.value)) || 1
   const padding = { top: 20, right: 20, bottom: 40, left: 60 }
@@ -133,10 +133,10 @@ function BarChart({ data, width = 600, height = 300 }: { data: AnalyticsDataPoin
 }
 
 function PieChart({ data, width = 300, height = 300 }: { data: AnalyticsDataPoint[]; width?: number; height?: number }) {
-  if (!data.length) return <div className="text-gray-400 text-sm p-4">No data available</div>
+  if (!data.length) return <div className="text-nx-mist text-sm p-4">No data available</div>
 
   const total = data.reduce((sum, d) => sum + d.value, 0)
-  if (total === 0) return <div className="text-gray-400 text-sm p-4">No data available</div>
+  if (total === 0) return <div className="text-nx-mist text-sm p-4">No data available</div>
 
   const cx = width / 2
   const cy = height / 2
@@ -178,15 +178,15 @@ function PieChart({ data, width = 300, height = 300 }: { data: AnalyticsDataPoin
 
 // ─── Metric Card Component ──────────────────────────────────────
 function MetricCard({ metric }: { metric: AnalyticsMetric }) {
-  const trendColor = metric.trend === 'up' ? 'text-green-600' : metric.trend === 'down' ? 'text-red-500' : 'text-gray-500'
-  const trendBg = metric.trend === 'up' ? 'bg-green-50 dark:bg-green-900/20' : metric.trend === 'down' ? 'bg-red-50 dark:bg-red-900/20' : 'bg-gray-50 dark:bg-gray-800'
+  const trendColor = metric.trend === 'up' ? 'text-nx-teal' : metric.trend === 'down' ? 'text-nx-danger-500' : 'text-nx-mist'
+  const trendBg = metric.trend === 'up' ? 'bg-nx-teal/10 dark:bg-nx-teal/20' : metric.trend === 'down' ? 'bg-nx-danger-50 dark:bg-nx-danger-900/20' : 'bg-white dark:bg-nx-navy'
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 hover:shadow-lg transition-all duration-200 group">
+    <div className="bg-white dark:bg-nx-navy rounded-xl p-5 border border-nx-border dark:border-nx-navy-border hover:shadow-lg transition-all duration-200 group">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">{metric.name}</div>
-          <div className="text-2xl font-bold text-gray-900 dark:text-white">{metric.value.toLocaleString()}</div>
+          <div className="text-sm text-nx-mist dark:text-nx-mist mb-1">{metric.name}</div>
+          <div className="text-2xl font-bold text-nx-navy dark:text-white">{metric.value.toLocaleString()}</div>
         </div>
         <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${trendBg}`}>
           {metric.icon}
@@ -195,7 +195,7 @@ function MetricCard({ metric }: { metric: AnalyticsMetric }) {
       <div className={`text-sm mt-2 flex items-center gap-1 ${trendColor}`}>
         <span>{metric.trend === 'up' ? '↑' : metric.trend === 'down' ? '↓' : '→'}</span>
         <span>{Math.abs(metric.change).toFixed(1)}%</span>
-        <span className="text-gray-400 text-xs ml-1">vs last period</span>
+        <span className="text-nx-mist text-xs ml-1">vs last period</span>
       </div>
     </div>
   )
@@ -232,10 +232,10 @@ function AnalyticsWidgetComponent({ widget }: { widget: AnalyticsWidget }) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden hover:shadow-md transition-shadow">
-      <div className="px-5 py-3 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
-        <h3 className="font-semibold text-gray-800 dark:text-gray-200">{widget.title}</h3>
-        <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+    <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border overflow-hidden hover:shadow-md transition-shadow">
+      <div className="px-5 py-3 border-b border-nx-border dark:border-nx-navy-border flex items-center justify-between">
+        <h3 className="font-semibold text-nx-navy dark:text-nx-mist/20">{widget.title}</h3>
+        <span className="text-xs text-nx-mist bg-nx-mist/10 dark:bg-nx-navy px-2 py-0.5 rounded-full">
           {widget.type}
         </span>
       </div>
@@ -439,8 +439,8 @@ export default function AdvancedAnalyticsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="flex items-center gap-3 text-gray-500">
-          <div className="w-5 h-5 border-2 border-indigo-400 border-t-transparent rounded-full animate-spin" />
+        <div className="flex items-center gap-3 text-nx-mist">
+          <div className="w-5 h-5 border-2 border-nx-blue border-t-transparent rounded-full animate-spin" />
           Loading analytics...
         </div>
       </div>
@@ -451,8 +451,8 @@ export default function AdvancedAnalyticsPage() {
     return (
       <div className="flex items-center justify-center h-96">
         <div className="text-center">
-          <div className="text-red-500 text-lg mb-2">⚠️ {error}</div>
-          <button onClick={fetchAnalytics} className="text-indigo-600 hover:underline">
+          <div className="text-nx-danger-500 text-lg mb-2">⚠️ {error}</div>
+          <button onClick={fetchAnalytics} className="text-nx-blue hover:underline">
             Try again
           </button>
         </div>
@@ -465,22 +465,22 @@ export default function AdvancedAnalyticsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Advanced Analytics</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
+          <h1 className="text-2xl font-bold text-white dark:text-white">Advanced Analytics</h1>
+          <p className="text-nx-mist dark:text-nx-mist text-sm mt-1">
             Real-time insights from your ERP modules
           </p>
         </div>
         <div className="flex items-center gap-3">
           {/* Time Range Selector */}
-          <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+          <div className="flex bg-nx-mist/10 dark:bg-nx-navy rounded-lg p-1">
             {(['7d', '30d', '90d'] as const).map(range => (
               <button
                 key={range}
                 onClick={() => setTimeRange(range)}
                 className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
                   timeRange === range
-                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+                    ? 'bg-white dark:bg-nx-navy text-nx-navy dark:text-white shadow-sm'
+                    : 'text-nx-mist dark:text-nx-mist hover:text-nx-navy dark:hover:text-white'
                 }`}
               >
                 {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : '90 Days'}
@@ -489,7 +489,7 @@ export default function AdvancedAnalyticsPage() {
           </div>
           <button
             onClick={fetchAnalytics}
-            className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium flex items-center gap-2"
+            className="px-4 py-2 bg-nx-blue text-white rounded-lg hover:bg-nx-blue transition-colors text-sm font-medium flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -510,24 +510,24 @@ export default function AdvancedAnalyticsPage() {
 
       {/* KPI Summary Bar */}
       {kpiSummary && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-4">
+        <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-4">
           <div className="flex items-center gap-6 flex-wrap">
-            <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">KPI Summary</div>
+            <div className="text-sm text-nx-mist dark:text-nx-mist font-medium">KPI Summary</div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{kpiSummary.on_target} on target</span>
+              <span className="w-2 h-2 rounded-full bg-nx-teal" />
+              <span className="text-sm text-nx-navy dark:text-nx-mist">{kpiSummary.on_target} on target</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{kpiSummary.below_target} below target</span>
+              <span className="w-2 h-2 rounded-full bg-nx-warning-500" />
+              <span className="text-sm text-nx-navy dark:text-nx-mist">{kpiSummary.below_target} below target</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-blue-500" />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{kpiSummary.improving} improving</span>
+              <span className="w-2 h-2 rounded-full bg-nx-blue" />
+              <span className="text-sm text-nx-navy dark:text-nx-mist">{kpiSummary.improving} improving</span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-red-500" />
-              <span className="text-sm text-gray-700 dark:text-gray-300">{kpiSummary.declining} declining</span>
+              <span className="w-2 h-2 rounded-full bg-nx-danger-500" />
+              <span className="text-sm text-nx-navy dark:text-nx-mist">{kpiSummary.declining} declining</span>
             </div>
           </div>
         </div>
@@ -537,8 +537,8 @@ export default function AdvancedAnalyticsPage() {
       {selectedDashboard && (
         <div>
           <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">{selectedDashboard.name}</h2>
-            <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">
+            <h2 className="text-lg font-semibold text-nx-navy dark:text-nx-mist/20">{selectedDashboard.name}</h2>
+            <span className="text-xs text-nx-mist bg-nx-mist/10 dark:bg-nx-navy px-2 py-0.5 rounded-full">
               {selectedDashboard.widgets.length} widgets
             </span>
           </div>
@@ -549,10 +549,10 @@ export default function AdvancedAnalyticsPage() {
               ))}
             </div>
           ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-12 text-center">
-              <div className="text-gray-400 text-lg mb-2">📊</div>
-              <div className="text-gray-500 dark:text-gray-400">No widgets configured for this dashboard</div>
-              <p className="text-gray-400 text-sm mt-1">Add KPIs and report templates to populate widgets</p>
+            <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-12 text-center">
+              <div className="text-nx-mist text-lg mb-2">📊</div>
+              <div className="text-nx-mist dark:text-nx-mist">No widgets configured for this dashboard</div>
+              <p className="text-nx-mist text-sm mt-1">Add KPIs and report templates to populate widgets</p>
             </div>
           )}
         </div>
@@ -561,7 +561,7 @@ export default function AdvancedAnalyticsPage() {
       {/* Dashboard Selector */}
       {dashboards.length > 1 && (
         <div className="mt-8">
-          <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-4">Available Dashboards</h2>
+          <h2 className="text-lg font-semibold text-nx-navy dark:text-nx-mist/20 mb-4">Available Dashboards</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {dashboards.map(dashboard => (
               <button
@@ -569,12 +569,12 @@ export default function AdvancedAnalyticsPage() {
                 onClick={() => setSelectedDashboard(dashboard)}
                 className={`p-4 rounded-xl border text-left transition-all ${
                   selectedDashboard?.id === dashboard.id
-                    ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20 shadow-md'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-indigo-300 hover:shadow-sm'
+                    ? 'border-nx-blue bg-nx-blue/10 dark:bg-nx-blue/20 shadow-md'
+                    : 'border-nx-border dark:border-nx-navy-border hover:border-nx-blue hover:shadow-sm'
                 }`}
               >
-                <div className="font-medium text-gray-800 dark:text-gray-200">{dashboard.name}</div>
-                <div className="text-sm text-gray-500 mt-1">{dashboard.widgets.length} widgets</div>
+                <div className="font-medium text-nx-navy dark:text-nx-mist/20">{dashboard.name}</div>
+                <div className="text-sm text-nx-mist mt-1">{dashboard.widgets.length} widgets</div>
               </button>
             ))}
           </div>

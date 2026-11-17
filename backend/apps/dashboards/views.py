@@ -331,7 +331,7 @@ def dashboard_layout(request, pk):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     # Allow owner, CEO, admin, or anyone with dashboard access
-    if request.user.role != "ceo" and not request.user.is_staff:
+    if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
         if dashboard.owner != request.user and request.user.role not in dashboard.allowed_roles:
             return Response(
                 {"error": "You do not have permission to modify this dashboard"},
@@ -387,7 +387,7 @@ def dashboard_filter_controls(request, pk):
     except Dashboard.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    if request.user.role != "ceo" and not request.user.is_staff:
+    if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
         if dashboard.owner != request.user and request.user.role not in dashboard.allowed_roles:
             return Response(
                 {"error": "You do not have permission to modify this dashboard"},
@@ -412,7 +412,7 @@ def page_create(request, dashboard_pk):
     except Dashboard.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    if request.user.role != "ceo" and not request.user.is_staff:
+    if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
         if dashboard.owner != request.user and request.user.role not in dashboard.allowed_roles:
             return Response(
                 {"error": "You do not have permission to modify this dashboard"},
@@ -455,7 +455,7 @@ def page_detail(request, dashboard_pk, page_pk):
     if request.method == "GET":
         # Enforce per-page access control
         page_roles = page.allowed_roles or []
-        if page_roles and request.user.role != "ceo" and not request.user.is_staff:
+        if page_roles and request.user.role not in ("ceo", "admin") and not request.user.is_staff:
             if request.user.role not in page_roles:
                 return Response(
                     {"error": "You do not have access to this page"},
@@ -505,7 +505,7 @@ def page_duplicate(request, dashboard_pk, page_pk):
     except Dashboard.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    if request.user.role != "ceo" and not request.user.is_staff:
+    if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
         if dashboard.owner != request.user and request.user.role not in dashboard.allowed_roles:
             return Response(
                 {"error": "You do not have permission to modify this dashboard"},
@@ -572,7 +572,7 @@ def page_reorder(request, dashboard_pk):
     except Dashboard.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    if request.user.role != "ceo" and not request.user.is_staff:
+    if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
         if dashboard.owner != request.user and request.user.role not in dashboard.allowed_roles:
             return Response(
                 {"error": "You do not have permission to modify this dashboard"},
@@ -623,7 +623,7 @@ def page_import(request, dashboard_pk):
     except Dashboard.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    if request.user.role != "ceo" and not request.user.is_staff:
+    if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
         if dashboard.owner != request.user and request.user.role not in dashboard.allowed_roles:
             return Response(
                 {"error": "You do not have permission to modify this dashboard"},
@@ -675,7 +675,7 @@ def widget_create(request, dashboard_pk):
     except Dashboard.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    if request.user.role != "ceo" and not request.user.is_staff:
+    if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
         if dashboard.owner != request.user and request.user.role not in dashboard.allowed_roles:
             return Response(
                 {"error": "You do not have permission to modify this dashboard"},
@@ -746,7 +746,7 @@ def dashboard_duplicate(request, pk):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     # Access check
-    if request.user.role != "ceo" and not request.user.is_staff:
+    if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
         if request.user.role not in source.allowed_roles:
             return Response(
                 {"error": "You do not have access to this dashboard"},

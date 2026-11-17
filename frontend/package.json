@@ -12,6 +12,7 @@
   "dependencies": {
     "@ant-design/icons": "^6.3.2",
     "@codemirror/lang-sql": "^6.10.0",
+    "@fontsource/vazirmatn": "^5.3.0",
     "@uiw/react-codemirror": "^4.25.10",
     "ag-grid-community": "^36.0.0",
     "ag-grid-react": "^36.0.0",

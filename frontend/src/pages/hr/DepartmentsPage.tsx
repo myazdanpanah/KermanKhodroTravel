@@ -42,66 +42,66 @@ export default function DepartmentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-3">
-            <Building2 className="h-6 w-6 text-green-500" /> بخش‌ها
+          <h1 className="text-2xl font-bold text-white dark:text-white flex items-center gap-3">
+            <Building2 className="h-6 w-6 text-nx-teal" /> بخش‌ها
           </h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{filtered.length} بخش</p>
+          <p className="text-sm text-nx-mist dark:text-nx-mist mt-1">{filtered.length} بخش</p>
         </div>
-        <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+        <button onClick={() => setShowForm(!showForm)} className="flex items-center gap-2 px-4 py-2 bg-nx-blue text-white rounded-lg hover:bg-nx-blue">
           <Plus className="h-4 w-4" /> بخش جدید
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div><label className="block text-xs text-gray-500 mb-1">نام *</label><input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm" /></div>
-            <div><label className="block text-xs text-gray-500 mb-1">کد</label><input type="text" value={form.code} onChange={e => setForm({ ...form, code: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm" /></div>
-            <div><label className="block text-xs text-gray-500 mb-1">توضیحات</label><input type="text" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm" /></div>
+            <div><label className="block text-xs text-nx-mist mb-1">نام *</label><input type="text" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} className="w-full px-3 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm" /></div>
+            <div><label className="block text-xs text-nx-mist mb-1">کد</label><input type="text" value={form.code} onChange={e => setForm({ ...form, code: e.target.value })} className="w-full px-3 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm" /></div>
+            <div><label className="block text-xs text-nx-mist mb-1">توضیحات</label><input type="text" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="w-full px-3 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm" /></div>
           </div>
           <div className="flex justify-end gap-3 mt-4">
-            <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-gray-600">انصراف</button>
-            <button onClick={handleCreate} className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm">ایجاد</button>
+            <button onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-nx-mist">انصراف</button>
+            <button onClick={handleCreate} className="px-4 py-2 bg-nx-blue text-white rounded-lg hover:bg-nx-blue text-sm">ایجاد</button>
           </div>
         </div>
       )}
 
       <div className="relative max-w-sm">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-nx-mist" />
         <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="جستجو..."
-          className="w-full pr-10 pl-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm" />
+          className="w-full pr-10 pl-4 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm" />
       </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center h-48"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" /></div>
+          <div className="flex items-center justify-center h-48"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-nx-blue" /></div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-12 text-gray-500"><Building2 className="h-12 w-12 mx-auto mb-3 opacity-30" /><p>هیچ بخشی یافت نشد</p></div>
+          <div className="text-center py-12 text-nx-mist"><Building2 className="h-12 w-12 mx-auto mb-3 opacity-30" /><p>هیچ بخشی یافت نشد</p></div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
-                  <th className="text-right px-4 py-3 font-medium text-gray-500">نام</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-500">کد</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-500">توضیحات</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-500">وضعیت</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-500">عملیات</th>
+                <tr className="border-b border-nx-border dark:border-nx-navy-border bg-white dark:bg-nx-navy">
+                  <th className="text-right px-4 py-3 font-medium text-nx-mist">نام</th>
+                  <th className="text-right px-4 py-3 font-medium text-nx-mist">کد</th>
+                  <th className="text-right px-4 py-3 font-medium text-nx-mist">توضیحات</th>
+                  <th className="text-right px-4 py-3 font-medium text-nx-mist">وضعیت</th>
+                  <th className="text-right px-4 py-3 font-medium text-nx-mist">عملیات</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(dept => (
-                  <tr key={dept.id} className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-750">
+                  <tr key={dept.id} className="border-b border-nx-border dark:border-nx-navy-border hover:bg-white dark:hover:bg-nx-navy">
                     <td className="px-4 py-3 font-medium">{dept.name}</td>
                     <td className="px-4 py-3 font-mono text-xs">{dept.code || '—'}</td>
-                    <td className="px-4 py-3 text-gray-500">{dept.description || '—'}</td>
+                    <td className="px-4 py-3 text-nx-mist">{dept.description || '—'}</td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${dept.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${dept.is_active ? 'bg-nx-teal/10 text-nx-teal' : 'bg-nx-danger-100 text-nx-danger-700'}`}>
                         {dept.is_active ? 'فعال' : 'غیرفعال'}
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <button onClick={(e) => { e.stopPropagation(); handleDelete(dept.id); }} className="p-1.5 text-gray-400 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); handleDelete(dept.id); }} className="p-1.5 text-nx-mist hover:text-nx-danger-500"><Trash2 className="h-4 w-4" /></button>
                     </td>
                   </tr>
                 ))}

@@ -11,7 +11,7 @@ export default function QualityControlPage() {
         <Col span={8}><Card><Statistic title="عدم انطباق باز" value={0} prefix={<WarningOutlined />} valueStyle={{ color: '#faad14' }} /></Card></Col>
       </Row>
       <Card>
-        <p className="text-gray-500">کنترل کیفیت شامل بازرسی ورودی، فرآیندی و نهایی است.</p>
+        <p className="text-nx-muted">کنترل کیفیت شامل بازرسی ورودی، فرآیندی و نهایی است.</p>
         <div className="mt-4 space-y-2">
           <div className="flex items-center gap-2"><Tag color="blue">بازرسی ورودی</Tag> <span>بررسی مواد اولیه دریافتی</span></div>
           <div className="flex items-center gap-2"><Tag color="processing">بازرسی فرآیندی</Tag> <span>کنترل کیفیت در مراحل تولید</span></div>

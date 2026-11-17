@@ -24,6 +24,7 @@ from django.db import transaction
 
 from apps.finance.models import JournalVoucher, JournalEntry
 from apps.finance.posting import PostingEngine
+from apps.finance.exceptions import ValidationError
 
 logger = logging.getLogger(__name__)
 

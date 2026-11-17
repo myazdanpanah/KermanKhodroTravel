@@ -20,6 +20,24 @@ export default defineConfig({
         target: process.env.VITE_PROXY_TARGET || 'http://localhost:8000',
         changeOrigin: true,
       },
+      // Uploaded company logos live on the backend's media root
+      '/media': {
+        target: process.env.VITE_PROXY_TARGET || 'http://localhost:8000',
+        changeOrigin: true,
+      },
+    },
+  },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Vendor chunks are cached independently of app code.
+          react: ['react', 'react-dom', 'react-router-dom'],
+          antd: ['antd', '@ant-design/icons'],
+          echarts: ['echarts'],
+          aggrid: ['ag-grid-community', 'ag-grid-react'],
+        },
+      },
     },
   },
 })

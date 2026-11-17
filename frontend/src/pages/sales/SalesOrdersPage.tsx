@@ -54,7 +54,9 @@ export default function SalesOrdersPage() {
     try {
       const { data } = await api.get('/finance/customers/')
       setCustomers(data.results || data)
-    } catch {}
+    } catch {
+      message.error('Failed to load customers')
+    }
   }
 
   useEffect(() => { fetchOrders(); fetchCustomers() }, [])

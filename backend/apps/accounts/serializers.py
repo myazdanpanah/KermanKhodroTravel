@@ -32,7 +32,8 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_accessible_modules(self, obj):
         """Return the list of module slugs this user can access."""
-        if obj.is_staff:
+        # Admins and staff can access every module regardless of subscription.
+        if obj.is_staff or obj.role == "admin":
             return ALL_MODULE_IDS
         if not obj.company:
             return []
@@ -44,15 +45,20 @@ class UserSerializer(serializers.ModelSerializer):
 class CompanySerializer(serializers.ModelSerializer):
     division_count = serializers.SerializerMethodField()
     employee_count = serializers.SerializerMethodField()
+    logo_url = serializers.SerializerMethodField()
 
     class Meta:
         model = Company
         fields = [
             "id", "name", "description", "is_active",
-            "enabled_modules",
+            "enabled_modules", "logo", "logo_url",
+            "primary_color", "accent_color",
             "division_count", "employee_count", "created_at",
         ]
         read_only_fields = ["id", "created_at"]
+
+    def get_logo_url(self, obj):
+        return obj.logo.url if obj.logo else None
 
     def get_division_count(self, obj):
         return obj.divisions.count()
@@ -72,6 +78,36 @@ class CompanyModulesSerializer(serializers.ModelSerializer):
 
     def get_all_modules(self, obj):
         return [{"id": m[0], "label": m[1]} for m in MODULE_CHOICES]
+
+
+class CompanyBrandingSerializer(serializers.ModelSerializer):
+    """Company logo + brand colors — the single source for system-wide branding."""
+    logo_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Company
+        fields = ["id", "name", "logo", "logo_url", "primary_color", "accent_color"]
+        extra_kwargs = {"logo": {"required": False}}
+
+    def get_logo_url(self, obj):
+        return obj.logo.url if obj.logo else None
+
+    def validate_primary_color(self, value):
+        return self._validate_hex(value)
+
+    def validate_accent_color(self, value):
+        return self._validate_hex(value)
+
+    @staticmethod
+    def _validate_hex(value):
+        value = (value or "").strip()
+        if len(value) != 7 or not value.startswith("#"):
+            raise serializers.ValidationError("Use a #RRGGBB hex color.")
+        try:
+            int(value[1:], 16)
+        except ValueError:
+            raise serializers.ValidationError("Use a #RRGGBB hex color.")
+        return value.upper()
 
 
 class DivisionSerializer(serializers.ModelSerializer):

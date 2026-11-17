@@ -70,7 +70,8 @@ export default function ChartOfAccountsPage() {
   const toggleGroup = (id: number) => {
     setExpandedGroups(prev => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
   }
@@ -78,7 +79,8 @@ export default function ChartOfAccountsPage() {
   const toggleKol = (id: number) => {
     setExpandedKols(prev => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
   }
@@ -86,7 +88,8 @@ export default function ChartOfAccountsPage() {
   const toggleMoin = (id: number) => {
     setExpandedMoins(prev => {
       const next = new Set(prev)
-      next.has(id) ? next.delete(id) : next.add(id)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
       return next
     })
   }
@@ -94,7 +97,7 @@ export default function ChartOfAccountsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-nx-teal border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -104,54 +107,54 @@ export default function ChartOfAccountsPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">سرفصل حساب‌ها</h1>
-          <p className="text-gray-400 mt-1">گروه ← کل ← معین ← تفصیلی</p>
+          <p className="text-nx-mist mt-1">گروه ← کل ← معین ← تفصیلی</p>
         </div>
       </div>
 
       {tree.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">
-          <FolderOpen className="w-16 h-16 mx-auto mb-4 text-gray-600" />
+        <div className="text-center py-16 text-nx-mist">
+          <FolderOpen className="w-16 h-16 mx-auto mb-4 text-nx-mist" />
           <p className="text-lg">هنوز حسابی تعریف نشده</p>
         </div>
       ) : (
         <div className="space-y-2">
           {tree.map(group => (
-            <div key={group.id} className="bg-gray-900/50 border border-gray-800 rounded-2xl overflow-hidden">
+            <div key={group.id} className="bg-nx-navy-elevated border border-nx-navy-border rounded-2xl overflow-hidden">
               {/* Group Header */}
               <button
                 onClick={() => toggleGroup(group.id)}
-                className="w-full flex items-center gap-3 px-5 py-4 hover:bg-gray-800/50 transition text-right"
+                className="w-full flex items-center gap-3 px-5 py-4 hover:bg-nx-navy-elevated transition text-right"
               >
                 {expandedGroups.has(group.id)
-                  ? <ChevronDown className="w-5 h-5 text-gray-400" />
-                  : <ChevronRight className="w-5 h-5 text-gray-400" />
+                  ? <ChevronDown className="w-5 h-5 text-nx-mist" />
+                  : <ChevronRight className="w-5 h-5 text-nx-mist" />
                 }
-                <span className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-lg flex items-center justify-center text-white text-sm font-bold">
+                <span className="w-8 h-8 bg-nx-teal rounded-lg flex items-center justify-center text-white text-sm font-bold">
                   {group.code}
                 </span>
                 <span className="text-lg font-bold text-white">{group.name}</span>
-                <span className="text-xs text-gray-500 mr-auto">{group.kols.length} حساب کل</span>
+                <span className="text-xs text-nx-mist mr-auto">{group.kols.length} حساب کل</span>
               </button>
 
               {/* Kol Accounts */}
               {expandedGroups.has(group.id) && (
-                <div className="border-t border-gray-800 pr-12">
+                <div className="border-t border-nx-navy-border pr-12">
                   {group.kols.map(kol => (
                     <div key={kol.id}>
                       <button
                         onClick={() => toggleKol(kol.id)}
-                        className="w-full flex items-center gap-3 px-5 py-3 hover:bg-gray-800/30 transition text-right"
+                        className="w-full flex items-center gap-3 px-5 py-3 hover:bg-nx-navy-elevated transition text-right"
                       >
                         {expandedKols.has(kol.id)
-                          ? <ChevronDown className="w-4 h-4 text-gray-500" />
-                          : <ChevronRight className="w-4 h-4 text-gray-500" />
+                          ? <ChevronDown className="w-4 h-4 text-nx-mist" />
+                          : <ChevronRight className="w-4 h-4 text-nx-mist" />
                         }
-                        <span className="text-sm font-mono text-emerald-400">{kol.code}</span>
+                        <span className="text-sm font-mono text-nx-teal">{kol.code}</span>
                         <span className="text-white">{kol.name}</span>
-                        <span className="text-xs text-gray-500 px-2 py-0.5 bg-gray-800 rounded-full">
+                        <span className="text-xs text-nx-mist px-2 py-0.5 bg-nx-navy rounded-full">
                           {ACCOUNT_TYPE_LABELS[kol.account_type] || kol.account_type}
                         </span>
-                        <span className="text-xs text-gray-600 px-2 py-0.5 bg-gray-800/50 rounded-full">
+                        <span className="text-xs text-nx-mist px-2 py-0.5 bg-nx-navy-elevated rounded-full">
                           {BALANCE_LABELS[kol.normal_balance] || kol.normal_balance}
                         </span>
                       </button>
@@ -163,15 +166,15 @@ export default function ChartOfAccountsPage() {
                             <div key={moin.id}>
                               <button
                                 onClick={() => toggleMoin(moin.id)}
-                                className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-gray-800/20 transition text-right"
+                                className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-nx-navy/20 transition text-right"
                               >
                                 {expandedMoins.has(moin.id)
-                                  ? <ChevronDown className="w-3.5 h-3.5 text-gray-600" />
-                                  : <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
+                                  ? <ChevronDown className="w-3.5 h-3.5 text-nx-mist" />
+                                  : <ChevronRight className="w-3.5 h-3.5 text-nx-mist" />
                                 }
-                                <span className="text-xs font-mono text-cyan-400">{moin.code}</span>
-                                <span className="text-gray-300">{moin.name}</span>
-                                <span className="text-xs text-gray-600 mr-auto">
+                                <span className="text-xs font-mono text-nx-blue">{moin.code}</span>
+                                <span className="text-nx-mist">{moin.name}</span>
+                                <span className="text-xs text-nx-mist mr-auto">
                                   {moin.tafzilis.length} تفصیلی
                                 </span>
                               </button>
@@ -181,8 +184,8 @@ export default function ChartOfAccountsPage() {
                                 <div className="pr-8 pb-2">
                                   {moin.tafzilis.map(t => (
                                     <div key={t.id} className="flex items-center gap-3 px-5 py-1.5 text-right">
-                                      <span className="text-xs font-mono text-purple-400">{t.code}</span>
-                                      <span className="text-gray-400 text-sm">{t.name}</span>
+                                      <span className="text-xs font-mono text-nx-blue">{t.code}</span>
+                                      <span className="text-nx-mist text-sm">{t.name}</span>
                                     </div>
                                   ))}
                                 </div>

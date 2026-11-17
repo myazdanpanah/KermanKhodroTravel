@@ -49,9 +49,9 @@ const STATUS_LABELS: Record<string, string> = {
 }
 
 const STATUS_COLORS: Record<string, string> = {
-  draft: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
-  confirmed: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-  cancelled: 'bg-red-500/10 text-red-400 border-red-500/20',
+  draft: 'bg-nx-warning-500/10 text-nx-warning-400 border-nx-warning-500/20',
+  confirmed: 'bg-nx-teal/10 text-nx-teal border-nx-teal/20',
+  cancelled: 'bg-nx-danger-500/10 text-nx-danger-400 border-nx-danger-500/20',
 }
 
 const formatIRR = (n: number) => new Intl.NumberFormat('fa-IR').format(n) + ' ریال'
@@ -153,7 +153,7 @@ export default function InvoicesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-2 border-nx-teal border-t-transparent rounded-full animate-spin" />
       </div>
     )
   }
@@ -163,11 +163,11 @@ export default function InvoicesPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">فاکتورها</h1>
-          <p className="text-gray-400 mt-1">{invoices.length} فاکتور</p>
+          <p className="text-nx-mist mt-1">{invoices.length} فاکتور</p>
         </div>
         <button
           onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium transition"
+          className="flex items-center gap-2 px-4 py-2.5 bg-nx-teal hover:bg-nx-teal text-white rounded-xl font-medium transition"
         >
           <Plus className="w-4 h-4" />
           فاکتور جدید
@@ -176,15 +176,15 @@ export default function InvoicesPage() {
 
       {/* Filter */}
       <div className="flex items-center gap-2">
-        <Filter className="w-4 h-4 text-gray-400" />
+        <Filter className="w-4 h-4 text-nx-mist" />
         {['', 'sales', 'purchase', 'sales_return', 'purchase_return'].map(t => (
           <button
             key={t}
             onClick={() => setTypeFilter(t)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition ${
               typeFilter === t
-                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                : 'bg-gray-800/50 text-gray-400 hover:text-white border border-transparent'
+                ? 'bg-nx-teal/10 text-nx-teal border border-nx-teal/20'
+                : 'bg-nx-navy-elevated text-nx-mist hover:text-white border border-transparent'
             }`}
           >
             {t ? TYPE_LABELS[t] : 'همه'}
@@ -194,17 +194,17 @@ export default function InvoicesPage() {
 
       {/* Invoice List */}
       {invoices.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">
-          <FileText className="w-16 h-16 mx-auto mb-4 text-gray-600" />
+        <div className="text-center py-16 text-nx-mist">
+          <FileText className="w-16 h-16 mx-auto mb-4 text-nx-mist" />
           <p className="text-lg">هنوز فاکتوری ثبت نشده</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {invoices.map(inv => (
-            <div key={inv.id} className="bg-gray-900/50 border border-gray-800 rounded-2xl p-5 hover:border-gray-700 transition-all">
+            <div key={inv.id} className="bg-nx-navy-elevated border border-nx-navy-border rounded-2xl p-5 hover:border-nx-navy-border transition-all">
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <span className="text-xs text-gray-500">شماره {inv.number}</span>
+                  <span className="text-xs text-nx-mist">شماره {inv.number}</span>
                   <h3 className="text-lg font-bold text-white">
                     {TYPE_LABELS[inv.type] || inv.type}
                   </h3>
@@ -215,31 +215,31 @@ export default function InvoicesPage() {
               </div>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">تاریخ</span>
+                  <span className="text-nx-mist">تاریخ</span>
                   <span className="text-white">{inv.date_jalali}</span>
                 </div>
                 {inv.customer_name && (
                   <div className="flex justify-between">
-                    <span className="text-gray-400">مشتری</span>
+                    <span className="text-nx-mist">مشتری</span>
                     <span className="text-white">{inv.customer_name}</span>
                   </div>
                 )}
                 {inv.supplier_name && (
                   <div className="flex justify-between">
-                    <span className="text-gray-400">تأمین‌کننده</span>
+                    <span className="text-nx-mist">تأمین‌کننده</span>
                     <span className="text-white">{inv.supplier_name}</span>
                   </div>
                 )}
-                <div className="flex justify-between pt-2 border-t border-gray-800">
-                  <span className="text-gray-400">جمع کل</span>
-                  <span className="text-emerald-400 font-bold">{formatIRR(inv.total)}</span>
+                <div className="flex justify-between pt-2 border-t border-nx-navy-border">
+                  <span className="text-nx-mist">جمع کل</span>
+                  <span className="text-nx-teal font-bold">{formatIRR(inv.total)}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2 mt-4 pt-3 border-t border-gray-800">
+              <div className="flex items-center gap-2 mt-4 pt-3 border-t border-nx-navy-border">
                 {inv.status === 'draft' && (
                   <button
                     onClick={() => handleConfirm(inv.id)}
-                    className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 rounded-lg text-xs font-medium hover:bg-emerald-500/20 transition"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-nx-teal/10 text-nx-teal rounded-lg text-xs font-medium hover:bg-nx-teal/20 transition"
                   >
                     <Check className="w-3.5 h-3.5" />
                     تأیید
@@ -247,7 +247,7 @@ export default function InvoicesPage() {
                 )}
                 <button
                   onClick={() => handleDelete(inv.id)}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-red-500/10 text-red-400 rounded-lg text-xs font-medium hover:bg-red-500/20 transition mr-auto"
+                  className="flex items-center gap-1 px-3 py-1.5 bg-nx-danger-500/10 text-nx-danger-400 rounded-lg text-xs font-medium hover:bg-nx-danger-500/20 transition mr-auto"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   حذف
@@ -261,16 +261,16 @@ export default function InvoicesPage() {
       {/* Create Modal */}
       {showCreate && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-gray-700 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6" dir="rtl">
+          <div className="bg-nx-navy border border-nx-navy-border rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6" dir="rtl">
             <h2 className="text-xl font-bold text-white mb-6">فاکتور جدید</h2>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">نوع فاکتور</label>
+                  <label className="block text-sm text-nx-mist mb-1">نوع فاکتور</label>
                   <select
                     value={form.type}
                     onChange={e => setForm(f => ({ ...f, type: e.target.value }))}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-nx-navy border border-nx-navy-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-nx-teal"
                   >
                     {Object.entries(TYPE_LABELS).map(([k, v]) => (
                       <option key={k} value={k}>{v}</option>
@@ -278,23 +278,23 @@ export default function InvoicesPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">تاریخ</label>
+                  <label className="block text-sm text-nx-mist mb-1">تاریخ</label>
                   <input
                     type="text"
                     value={form.date_jalali}
                     onChange={e => setForm(f => ({ ...f, date_jalali: e.target.value }))}
                     placeholder="۱۴۰۴/۰۴/۲۵"
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-nx-navy border border-nx-navy-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-nx-teal"
                   />
                 </div>
               </div>
               {form.type.includes('sales') && (
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">مشتری</label>
+                  <label className="block text-sm text-nx-mist mb-1">مشتری</label>
                   <select
                     value={form.customer}
                     onChange={e => setForm(f => ({ ...f, customer: e.target.value }))}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-nx-navy border border-nx-navy-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-nx-teal"
                   >
                     <option value="">انتخاب مشتری...</option>
                     {customers.map(c => (
@@ -305,11 +305,11 @@ export default function InvoicesPage() {
               )}
               {form.type.includes('purchase') && (
                 <div>
-                  <label className="block text-sm text-gray-400 mb-1">تأمین‌کننده</label>
+                  <label className="block text-sm text-nx-mist mb-1">تأمین‌کننده</label>
                   <select
                     value={form.supplier}
                     onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))}
-                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+                    className="w-full bg-nx-navy border border-nx-navy-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-nx-teal"
                   >
                     <option value="">انتخاب تأمین‌کننده...</option>
                     {suppliers.map(s => (
@@ -319,18 +319,18 @@ export default function InvoicesPage() {
                 </div>
               )}
               <div>
-                <label className="block text-sm text-gray-400 mb-1">توضیحات</label>
+                <label className="block text-sm text-nx-mist mb-1">توضیحات</label>
                 <input
                   type="text"
                   value={form.description}
                   onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-                  className="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-emerald-500"
+                  className="w-full bg-nx-navy border border-nx-navy-border rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-nx-teal"
                 />
               </div>
 
               {/* Line Items */}
               <div>
-                <label className="block text-sm text-gray-400 mb-2">ردیف‌ها</label>
+                <label className="block text-sm text-nx-mist mb-2">ردیف‌ها</label>
                 {form.items.map((item, idx) => (
                   <div key={idx} className="grid grid-cols-12 gap-2 mb-2">
                     <input
@@ -341,7 +341,7 @@ export default function InvoicesPage() {
                         items[idx].description = e.target.value
                         setForm(f => ({ ...f, items }))
                       }}
-                      className="col-span-5 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+                      className="col-span-5 bg-nx-navy border border-nx-navy-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-nx-teal"
                     />
                     <input
                       type="number"
@@ -352,7 +352,7 @@ export default function InvoicesPage() {
                         items[idx].quantity = Number(e.target.value)
                         setForm(f => ({ ...f, items }))
                       }}
-                      className="col-span-2 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+                      className="col-span-2 bg-nx-navy border border-nx-navy-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-nx-teal"
                     />
                     <input
                       type="number"
@@ -363,7 +363,7 @@ export default function InvoicesPage() {
                         items[idx].unit_price = Number(e.target.value)
                         setForm(f => ({ ...f, items }))
                       }}
-                      className="col-span-4 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-emerald-500"
+                      className="col-span-4 bg-nx-navy border border-nx-navy-border rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-nx-teal"
                     />
                     <button
                       onClick={() => {
@@ -372,7 +372,7 @@ export default function InvoicesPage() {
                           items: f.items.filter((_, i) => i !== idx),
                         }))
                       }}
-                      className="col-span-1 text-red-400 hover:text-red-300 text-sm"
+                      className="col-span-1 text-nx-danger-400 hover:text-nx-danger-300 text-sm"
                     >
                       ✕
                     </button>
@@ -385,16 +385,16 @@ export default function InvoicesPage() {
                       items: [...f.items, { description: '', quantity: 1, unit: 'عدد', unit_price: 0 }],
                     }))
                   }
-                  className="text-sm text-emerald-400 hover:text-emerald-300"
+                  className="text-sm text-nx-teal hover:text-nx-teal"
                 >
                   + افزودن ردیف
                 </button>
               </div>
 
               {/* Total */}
-              <div className="bg-gray-800/50 rounded-xl p-4">
+              <div className="bg-nx-navy-elevated rounded-xl p-4">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">جمع کل</span>
+                  <span className="text-nx-mist">جمع کل</span>
                   <span className="text-white font-bold">
                     {formatIRR(form.items.reduce((s, i) => s + i.quantity * i.unit_price, 0))}
                   </span>
@@ -405,13 +405,13 @@ export default function InvoicesPage() {
               <div className="flex items-center gap-3 pt-2">
                 <button
                   onClick={handleCreate}
-                  className="flex-1 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium transition"
+                  className="flex-1 px-4 py-2.5 bg-nx-teal hover:bg-nx-teal text-white rounded-xl font-medium transition"
                 >
                   ایجاد فاکتور
                 </button>
                 <button
                   onClick={() => setShowCreate(false)}
-                  className="px-4 py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl transition"
+                  className="px-4 py-2.5 bg-nx-navy hover:bg-nx-navy text-nx-mist rounded-xl transition"
                 >
                   انصراف
                 </button>

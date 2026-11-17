@@ -53,34 +53,34 @@ export default function DatabaseManagerPage() {
   const externalDbs = filtered.filter((d) => d.type === 'external')
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900" dir="rtl">
+    <div className="min-h-screen bg-white dark:bg-nx-navy" dir="rtl">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+      <header className="bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link to="/dashboards" className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+            <Link to="/dashboards" className="p-2 text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist transition">
               <ChevronRight className="w-5 h-5" />
             </Link>
-            <Database className="w-6 h-6 text-indigo-600" />
-            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">مدیریت پایگاه‌داده</h1>
+            <Database className="w-6 h-6 text-nx-blue" />
+            <h1 className="text-xl font-bold text-nx-navy dark:text-nx-mist/10">مدیریت پایگاه‌داده</h1>
           </div>
           <div className="flex items-center gap-3">
             <Link
               to="/db-manager/sql"
-              className="flex items-center gap-2 px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+              className="flex items-center gap-2 px-3 py-2 text-sm bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist rounded-lg hover:bg-white dark:hover:bg-nx-navy transition"
             >
               SQL Editor
             </Link>
             <Link
               to="/db-manager/syncs"
-              className="flex items-center gap-2 px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+              className="flex items-center gap-2 px-3 py-2 text-sm bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist rounded-lg hover:bg-white dark:hover:bg-nx-navy transition"
             >
               Google Sheets
             </Link>
             {isAdmin && (
               <Link
                 to="/db-manager/connections"
-                className="flex items-center gap-2 px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+                className="flex items-center gap-2 px-3 py-2 text-sm bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist rounded-lg hover:bg-white dark:hover:bg-nx-navy transition"
               >
                 <Server className="w-4 h-4" />
                 اتصالات خارجی
@@ -88,7 +88,7 @@ export default function DatabaseManagerPage() {
             )}
             <Link
               to="/db-manager/import"
-              className="flex items-center gap-2 px-3 py-2 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+              className="flex items-center gap-2 px-3 py-2 text-sm bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist rounded-lg hover:bg-white dark:hover:bg-nx-navy transition"
             >
               <Plus className="w-4 h-4" />
               وارد کردن فایل
@@ -100,17 +100,17 @@ export default function DatabaseManagerPage() {
       {/* Search bar */}
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="relative">
-          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-nx-mist" />
           <input
             type="text"
             placeholder="جستجو در جداول و پایگاه‌داده‌ها..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pr-10 pl-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+            className="w-full pr-10 pl-4 py-2.5 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted rounded-xl text-sm text-nx-navy dark:text-nx-mist/10 placeholder-nx-mist focus:ring-2 focus:ring-nx-blue focus:border-nx-blue outline-none transition"
           />
           <button
             onClick={loadDatabases}
-            className="absolute left-3 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-indigo-600 transition"
+            className="absolute left-3 top-1/2 -translate-y-1/2 p-1 text-nx-mist hover:text-nx-blue transition"
             title="بازخوانی"
           >
             <RefreshCw className="w-4 h-4" />
@@ -122,29 +122,29 @@ export default function DatabaseManagerPage() {
       <main className="max-w-7xl mx-auto px-6 pb-8">
         {loading ? (
           <div className="text-center py-20">
-            <RefreshCw className="w-8 h-8 text-gray-400 mx-auto animate-spin mb-3" />
-            <p className="text-gray-500 dark:text-gray-400">در حال بارگذاری...</p>
+            <RefreshCw className="w-8 h-8 text-nx-mist mx-auto animate-spin mb-3" />
+            <p className="text-nx-mist dark:text-nx-mist">در حال بارگذاری...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
-            <Database className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+            <Database className="w-16 h-16 text-nx-mist dark:text-nx-mist mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-nx-navy dark:text-nx-mist/10 mb-2">
               {search ? 'نتیجه‌ای یافت نشد' : 'پایگاه‌داده‌ای وجود ندارد'}
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-4">
+            <p className="text-nx-mist dark:text-nx-mist mb-4">
               فایلی وارد کنید یا اتصال خارجی اضافه کنید
             </p>
             <div className="flex items-center justify-center gap-3">
               <Link
                 to="/db-manager/import"
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm font-medium"
+                className="px-4 py-2 bg-nx-blue text-white rounded-lg hover:bg-nx-blue transition text-sm font-medium"
               >
                 وارد کردن فایل
               </Link>
               {isAdmin && (
                 <Link
                   to="/db-manager/connections"
-                  className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition text-sm font-medium"
+                  className="px-4 py-2 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist rounded-lg hover:bg-white dark:hover:bg-nx-navy transition text-sm font-medium"
                 >
                   افزودن اتصال خارجی
                 </Link>
@@ -157,11 +157,11 @@ export default function DatabaseManagerPage() {
             {localTables.length > 0 && (
               <section>
                 <div className="flex items-center gap-2 mb-4">
-                  <HardDrive className="w-5 h-5 text-indigo-600" />
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                  <HardDrive className="w-5 h-5 text-nx-blue" />
+                  <h2 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10">
                     جداول Nexivo
                   </h2>
-                  <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full text-xs font-medium">
+                  <span className="px-2 py-0.5 bg-nx-blue/10 dark:bg-nx-blue/30 text-nx-blue dark:text-nx-blue rounded-full text-xs font-medium">
                     {localTables.length}
                   </span>
                 </div>
@@ -170,19 +170,19 @@ export default function DatabaseManagerPage() {
                     <Link
                       key={db.source}
                       to={`/db-manager/table/${db.source}/${db.table_name}`}
-                      className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-5 hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-600 transition"
+                      className="group bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-navy-border rounded-xl p-5 hover:shadow-md hover:border-nx-blue dark:hover:border-nx-blue transition"
                     >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex items-center gap-2">
-                          <Table className="w-5 h-5 text-indigo-500" />
-                          <span className="text-sm font-bold text-gray-900 dark:text-gray-100 group-hover:text-indigo-600 transition">
+                          <Table className="w-5 h-5 text-nx-blue" />
+                          <span className="text-sm font-bold text-nx-navy dark:text-nx-mist/10 group-hover:text-nx-blue transition">
                             {db.name}
                           </span>
                         </div>
                       </div>
-                      <div className="space-y-1.5 text-xs text-gray-500 dark:text-gray-400">
+                      <div className="space-y-1.5 text-xs text-nx-mist dark:text-nx-mist">
                         <div className="flex items-center gap-1.5">
-                          <span className="font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">
+                          <span className="font-mono bg-nx-mist/10 dark:bg-nx-navy px-1.5 py-0.5 rounded">
                             {db.table_name}
                           </span>
                         </div>
@@ -200,11 +200,11 @@ export default function DatabaseManagerPage() {
             {externalDbs.length > 0 && (
               <section>
                 <div className="flex items-center gap-2 mb-4">
-                  <Server className="w-5 h-5 text-emerald-600" />
-                  <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                  <Server className="w-5 h-5 text-nx-teal" />
+                  <h2 className="text-lg font-bold text-white dark:text-nx-mist/10">
                     پایگاه‌داده‌های خارجی
                   </h2>
-                  <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full text-xs font-medium">
+                  <span className="px-2 py-0.5 bg-nx-teal/10 dark:bg-nx-teal/30 text-nx-teal dark:text-nx-teal rounded-full text-xs font-medium">
                     {externalDbs.length}
                   </span>
                 </div>
@@ -243,34 +243,34 @@ function ExternalDbCard({ db }: { db: DatabaseEntry }) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+    <div className="bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-navy-border rounded-xl overflow-hidden">
       <button
         onClick={loadTables}
-        className="w-full p-5 text-right hover:bg-gray-50 dark:hover:bg-gray-750 transition"
+        className="w-full p-5 text-right hover:bg-white dark:hover:bg-nx-navy transition"
       >
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <Server className="w-5 h-5 text-emerald-500" />
-            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">{db.name}</span>
+            <Server className="w-5 h-5 text-nx-teal" />
+            <span className="text-sm font-bold text-nx-navy dark:text-nx-mist/10">{db.name}</span>
           </div>
           {loading ? (
-            <RefreshCw className="w-4 h-4 text-gray-400 animate-spin" />
+            <RefreshCw className="w-4 h-4 text-nx-mist animate-spin" />
           ) : (
-            <ChevronRight className={`w-4 h-4 text-gray-400 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+            <ChevronRight className={`w-4 h-4 text-nx-mist transition-transform ${expanded ? 'rotate-90' : ''}`} />
           )}
         </div>
-        <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+        <div className="text-xs text-nx-mist dark:text-nx-mist space-y-1">
           <div className="font-mono">{db.host}</div>
           <div>{db.database}</div>
         </div>
       </button>
       {expanded && tables.length > 0 && (
-        <div className="border-t border-gray-100 dark:border-gray-700 px-5 py-3 max-h-60 overflow-y-auto space-y-1">
+        <div className="border-t border-nx-border dark:border-nx-navy-border px-5 py-3 max-h-60 overflow-y-auto space-y-1">
           {tables.map((t) => (
             <Link
               key={t}
               to={`/db-manager/table/${db.source}/${t}`}
-              className="block px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition"
+              className="block px-3 py-2 text-sm text-nx-navy dark:text-nx-mist hover:bg-nx-blue/10 dark:hover:bg-nx-blue/20 rounded-lg transition"
             >
               {t}
             </Link>

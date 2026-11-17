@@ -568,10 +568,10 @@ export default function DashboardBuilderPage() {
     const hasActiveFilter = activeFilters.length > 0
     return (
       <div key={w.id} className="group" style={{ direction: 'rtl', textAlign: 'right' }}>
-        <div className={`bg-white dark:bg-gray-800 border h-full overflow-hidden ${shadow} hover:shadow-md transition ${hasActiveFilter ? 'border-indigo-300 dark:border-indigo-600 ring-1 ring-indigo-200 dark:ring-indigo-800' : 'border-gray-200 dark:border-gray-700'}`} style={{ borderRadius: radius }}>
-          <div className="relative flex items-center px-4 py-2 border-b border-gray-100 dark:border-gray-700">
+        <div className={`bg-white dark:bg-nx-navy border h-full overflow-hidden ${shadow} hover:shadow-md transition ${hasActiveFilter ? 'border-nx-blue dark:border-nx-blue ring-1 ring-nx-blue/10 dark:ring-nx-blue' : 'border-nx-border dark:border-nx-navy-border'}`} style={{ borderRadius: radius }}>
+          <div className="relative flex items-center px-4 py-2 border-b border-nx-border dark:border-nx-navy-border">
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate max-w-[60%] text-center">
+              <span className="text-sm font-medium text-nx-navy dark:text-nx-mist/20 truncate max-w-[60%] text-center">
                 {w.title}
               </span>
             </div>
@@ -582,13 +582,13 @@ export default function DashboardBuilderPage() {
                   {activeFilters.map((f) => (
                     <div
                       key={`${f.col}-${f.sourceWidgetId}`}
-                      className="flex items-center gap-0.5 px-1.5 py-0.5 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-600 dark:text-indigo-400 rounded text-[10px] font-medium"
+                      className="flex items-center gap-0.5 px-1.5 py-0.5 bg-nx-blue/10 dark:bg-nx-blue/40 text-nx-blue dark:text-nx-blue rounded text-[10px] font-medium"
                     >
                       <Filter className="w-2.5 h-2.5" />
                       <span className="max-w-[60px] truncate">{String(f.val)}</span>
                       <button
                         onClick={() => removeCrossFilter(f.col, f.sourceWidgetId)}
-                        className="ml-0.5 text-indigo-400 hover:text-indigo-600"
+                        className="ml-0.5 text-nx-blue hover:text-nx-blue"
                       >
                         <XCircle className="w-2.5 h-2.5" />
                       </button>
@@ -597,20 +597,20 @@ export default function DashboardBuilderPage() {
                 </div>
               )}
               {/* Drag handle — always present for clean grid movement */}
-              <div className="drag-handle p-1 text-gray-400 dark:text-gray-500 cursor-grab active:cursor-grabbing md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+              <div className="drag-handle p-1 text-nx-mist dark:text-nx-mist cursor-grab active:cursor-grabbing md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg>
               </div>
               {/* Export dropdown */}
               <div className="relative">
                 <button
                   onClick={() => setExportDropdown(exportDropdown === w.id ? null : w.id)}
-                  className="p-1 text-gray-400 hover:text-green-500 active:text-green-600 transition md:opacity-0 md:group-hover:opacity-100"
+                  className="p-1 text-nx-mist hover:text-nx-teal active:text-nx-teal transition md:opacity-0 md:group-hover:opacity-100"
                   title="خروجی"
                 >
                   <Download className="w-3.5 h-3.5" />
                 </button>
                 {exportDropdown === w.id && (
-                  <div className="absolute left-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-50 py-1 min-w-[120px]">
+                  <div className="absolute left-0 top-full mt-1 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted rounded-lg shadow-lg z-50 py-1 min-w-[120px]">
                     <button
                       onClick={() => {
                         setExportDropdown(null)
@@ -627,9 +627,9 @@ export default function DashboardBuilderPage() {
                           toast('تصویر PNG دانلود شد', 'success')
                         })
                       }}
-                      className="w-full px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center gap-2"
+                      className="w-full px-3 py-2 text-right text-sm text-nx-navy dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy transition flex items-center gap-2"
                     >
-                      <span className="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">PNG</span>
+                      <span className="text-xs font-mono bg-nx-mist/10 dark:bg-nx-navy px-1.5 py-0.5 rounded">PNG</span>
                       <span>تصویر</span>
                     </button>
                     <button
@@ -648,9 +648,9 @@ export default function DashboardBuilderPage() {
                           toast('تصویر SVG دانلود شد', 'success')
                         })
                       }}
-                      className="w-full px-3 py-2 text-right text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition flex items-center gap-2"
+                      className="w-full px-3 py-2 text-right text-sm text-nx-navy dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy transition flex items-center gap-2"
                     >
-                      <span className="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">SVG</span>
+                      <span className="text-xs font-mono bg-nx-mist/10 dark:bg-nx-navy px-1.5 py-0.5 rounded">SVG</span>
                       <span>برداری</span>
                     </button>
                   </div>
@@ -659,7 +659,7 @@ export default function DashboardBuilderPage() {
               {/* Copy chart to clipboard */}
               <button
                 onClick={() => handleCopyChart(w)}
-                className="p-1 text-gray-400 hover:text-blue-500 active:text-blue-600 transition md:opacity-0 md:group-hover:opacity-100"
+                className="p-1 text-nx-mist hover:text-nx-blue active:text-nx-blue transition md:opacity-0 md:group-hover:opacity-100"
                 title="کپی نمودار"
               >
                 <Copy className="w-3.5 h-3.5" />
@@ -667,7 +667,7 @@ export default function DashboardBuilderPage() {
               {/* Full-screen button */}
               <button
                 onClick={() => setFullScreenWidget(w.id)}
-                className="p-1 text-gray-400 hover:text-purple-500 active:text-purple-600 transition md:opacity-0 md:group-hover:opacity-100"
+                className="p-1 text-nx-mist hover:text-nx-blue active:text-nx-blue transition md:opacity-0 md:group-hover:opacity-100"
                 title="تمام صفحه"
               >
                 <Maximize2 className="w-3.5 h-3.5" />
@@ -681,13 +681,13 @@ export default function DashboardBuilderPage() {
                     setShowConfig(true)
                   }
                 }}
-                className="p-1 text-gray-400 hover:text-indigo-500 active:text-indigo-600 transition md:opacity-0 md:group-hover:opacity-100"
+                className="p-1 text-nx-mist hover:text-nx-blue active:text-nx-blue transition md:opacity-0 md:group-hover:opacity-100"
               >
                 <Settings className="w-3.5 h-3.5" />
               </button>
               <button
                 onClick={() => deleteWidget(w.id)}
-                className="p-1 text-gray-400 hover:text-red-500 active:text-red-600 transition md:opacity-0 md:group-hover:opacity-100"
+                className="p-1 text-nx-mist hover:text-nx-danger-500 active:text-nx-danger-600 transition md:opacity-0 md:group-hover:opacity-100"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -733,18 +733,18 @@ export default function DashboardBuilderPage() {
   // Presentation mode — clean view without edit controls
   if (presentMode) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900" dir="rtl">
+      <div className="min-h-screen bg-white dark:bg-nx-navy" dir="rtl">
         {/* Floating exit button */}
         <button
           onClick={() => setPresentMode(false)}
-          className="fixed top-4 left-4 z-50 flex items-center gap-2 px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-full shadow-lg hover:scale-105 transition text-sm font-medium"
+          className="fixed top-4 left-4 z-50 flex items-center gap-2 px-4 py-2 bg-nx-navy dark:bg-white text-white dark:text-nx-navy rounded-full shadow-lg hover:scale-105 transition text-sm font-medium"
         >
           <Minimize2 className="w-4 h-4" />
           خروج از ارائه
         </button>
         {/* Dashboard title */}
         <div className="text-center py-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{activePage?.name || 'داشبورد'}</h1>
+          <h1 className="text-2xl font-bold text-nx-navy dark:text-nx-mist/10">{activePage?.name || 'داشبورد'}</h1>
         </div>
         {/* Grid without editing controls */}
         <main className="px-6 pb-6">
@@ -767,9 +767,9 @@ export default function DashboardBuilderPage() {
                   const radius = ws?.borderRadius ?? 16
                   return (
                     <div key={w.id} style={{ direction: 'rtl', textAlign: 'right' }}>
-                      <div className={`bg-white dark:bg-gray-800 border h-full overflow-hidden ${shadow} border-gray-200 dark:border-gray-700`} style={{ borderRadius: radius }}>
-                        <div className="px-4 py-2 border-b border-gray-100 dark:border-gray-700">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{w.title}</span>
+                      <div className={`bg-white dark:bg-nx-navy border h-full overflow-hidden ${shadow} border-nx-border dark:border-nx-navy-border`} style={{ borderRadius: radius }}>
+                        <div className="px-4 py-2 border-b border-nx-border dark:border-nx-navy-border">
+                          <span className="text-sm font-medium text-nx-navy dark:text-nx-mist/20">{w.title}</span>
                         </div>
                         <div className="p-1 sm:p-2" style={{ height: 'calc(100% - 40px)' }}>
                           <ChartWidget
@@ -805,29 +805,29 @@ export default function DashboardBuilderPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900" dir="rtl">
+    <div className="min-h-screen bg-white dark:bg-nx-navy" dir="rtl">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-3">
+      <header className="bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border px-6 py-3">
         <div className="max-w-full mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Link
               to="/dashboards"
-              className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition"
+              className="p-2 text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist transition"
             >
               <ArrowRight className="w-5 h-5" />
             </Link>
-            <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">ویرایشگر داشبورد</h1>
+            <h1 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10">ویرایشگر داشبورد</h1>
             {/* Device mode toggle — only for editors */}
             {canEdit && (
-              <div className="flex items-center gap-1 mr-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-center gap-1 mr-2 p-1 bg-nx-mist/10 dark:bg-nx-navy rounded-lg">
                 {(['desktop', 'mobile'] as const).map((mode) => (
                   <button
                     key={mode}
                     onClick={() => setDeviceMode(mode)}
                     className={`px-3 py-1 rounded-md text-xs font-medium transition ${
                       deviceMode === mode
-                        ? 'bg-white dark:bg-gray-700 text-indigo-600 dark:text-indigo-300 shadow-sm'
-                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                        ? 'bg-white dark:bg-nx-navy text-nx-blue dark:text-nx-blue shadow-sm'
+                        : 'text-nx-mist dark:text-nx-mist hover:text-nx-navy dark:hover:text-nx-mist/20'
                     }`}
                     title={mode === 'mobile' ? 'ویرایش چیدمان موبایل' : 'ویرایش چیدمان دسکتاپ'}
                   >
@@ -839,11 +839,11 @@ export default function DashboardBuilderPage() {
           </div>
           <div className="flex items-center gap-2">
             {/* Undo/Redo buttons */}
-            <div className="flex items-center gap-0.5 mr-2 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+            <div className="flex items-center gap-0.5 mr-2 p-1 bg-nx-mist/10 dark:bg-nx-navy rounded-lg">
               <button
                 onClick={handleUndo}
                 disabled={!canUndo}
-                className="p-1.5 rounded-md transition text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="p-1.5 rounded-md transition text-nx-mist dark:text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist disabled:opacity-30 disabled:cursor-not-allowed"
                 title="بازگشت (Ctrl+Z)"
               >
                 <Undo2 className="w-3.5 h-3.5" />
@@ -851,7 +851,7 @@ export default function DashboardBuilderPage() {
               <button
                 onClick={handleRedo}
                 disabled={!canRedo}
-                className="p-1.5 rounded-md transition text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 disabled:opacity-30 disabled:cursor-not-allowed"
+                className="p-1.5 rounded-md transition text-nx-mist dark:text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist disabled:opacity-30 disabled:cursor-not-allowed"
                 title="بازگشت (Ctrl+Shift+Z)"
               >
                 <Redo2 className="w-3.5 h-3.5" />
@@ -859,17 +859,17 @@ export default function DashboardBuilderPage() {
             </div>
             {/* Manual refresh + interval selector */}
             <div className="relative" ref={refreshMenuRef}>
-              <div className="flex items-center gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+              <div className="flex items-center gap-1 p-1 bg-nx-mist/10 dark:bg-nx-navy rounded-lg">
                 <button
                   onClick={handleManualRefresh}
-                  className="p-1.5 rounded-md transition text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="p-1.5 rounded-md transition text-nx-mist dark:text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist"
                   title="به‌روزرسانی دستی"
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                 </button>
                 <button
                   onClick={() => setShowRefreshMenu(!showRefreshMenu)}
-                  className="flex items-center gap-0.5 px-1.5 py-1 rounded-md transition text-[10px] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+                  className="flex items-center gap-0.5 px-1.5 py-1 rounded-md transition text-[10px] text-nx-mist dark:text-nx-mist hover:text-nx-navy dark:hover:text-nx-mist"
                   title="تنظیم بازه به‌روزرسانی"
                 >
                   <Clock className="w-3 h-3" />
@@ -878,38 +878,38 @@ export default function DashboardBuilderPage() {
                 </button>
               </div>
               {showRefreshMenu && (
-                <div className="absolute left-0 top-full mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl z-50 py-1 min-w-[160px]">
-                  <div className="px-3 py-1.5 text-[10px] font-medium text-gray-500 dark:text-gray-400">بازه به‌روزرسانی</div>
+                <div className="absolute left-0 top-full mt-1 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted rounded-lg shadow-xl z-50 py-1 min-w-[160px]">
+                  <div className="px-3 py-1.5 text-[10px] font-medium text-nx-mist dark:text-nx-mist">بازه به‌روزرسانی</div>
                   {([1, 5, 15, 30] as const).map((min) => (
                     <button
                       key={min}
                       onClick={() => handleChangeRefreshInterval(min)}
-                      className={`w-full px-3 py-1.5 text-right text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition ${
+                      className={`w-full px-3 py-1.5 text-right text-sm hover:bg-white dark:hover:bg-nx-navy transition ${
                         refreshInterval === min
-                          ? 'text-indigo-600 dark:text-indigo-400 font-medium bg-indigo-50 dark:bg-indigo-900/20'
-                          : 'text-gray-700 dark:text-gray-300'
+                          ? 'text-nx-blue dark:text-nx-blue font-medium bg-nx-blue/10 dark:bg-nx-blue/20'
+                          : 'text-nx-navy dark:text-nx-mist'
                       }`}
                     >
                       {min} دقیقه
                     </button>
                   ))}
-                  <div className="border-t border-gray-100 dark:border-gray-700 mt-1 pt-1">
+                  <div className="border-t border-nx-border dark:border-nx-navy-border mt-1 pt-1">
                     <div className="flex items-center justify-between px-3 py-1.5">
-                      <span className="text-xs text-gray-600 dark:text-gray-400">بی‌صدا</span>
+                      <span className="text-xs text-nx-mist dark:text-nx-mist">بی‌صدا</span>
                       <button
                         onClick={() => {
                           const next = !silentRefresh
                           setSilentRefresh(next)
                           localStorage.setItem('nexivo_silent_refresh', String(next))
                         }}
-                        className={`relative w-8 h-4 rounded-full transition ${silentRefresh ? 'bg-indigo-600' : 'bg-gray-300 dark:bg-gray-600'}`}
+                        className={`relative w-8 h-4 rounded-full transition ${silentRefresh ? 'bg-nx-blue' : 'bg-nx-mist dark:bg-nx-muted'}`}
                       >
                         <span className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow transition transform ${silentRefresh ? 'translate-x-4' : ''}`} />
                       </button>
                     </div>
                   </div>
                   {lastRefreshed && (
-                    <div className="px-3 py-1.5 text-[10px] text-gray-400 dark:text-gray-500 border-t border-gray-100 dark:border-gray-700 mt-1">
+                    <div className="px-3 py-1.5 text-[10px] text-nx-mist dark:text-nx-mist border-t border-nx-border dark:border-nx-navy-border mt-1">
                       آخرین به‌روزرسانی: {lastRefreshed.toLocaleTimeString('fa-IR')}
                     </div>
                   )}
@@ -922,8 +922,8 @@ export default function DashboardBuilderPage() {
               onClick={() => setPresentMode(!presentMode)}
               className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg transition text-sm ${
                 presentMode
-                  ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600'
-                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'
+                  ? 'bg-nx-warning-500 text-white border-nx-warning-500 hover:bg-nx-warning-600'
+                  : 'bg-white dark:bg-nx-navy border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist hover:bg-white dark:hover:bg-nx-navy'
               }`}
               title={presentMode ? 'خروج از حالت ارائه' : 'حالت ارائه'}
             >
@@ -933,7 +933,7 @@ export default function DashboardBuilderPage() {
             {/* PDF Export */}
             <button
               onClick={handleExportPdf}
-              className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition text-sm"
+              className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist rounded-lg hover:bg-white dark:hover:bg-nx-navy transition text-sm"
               title="خروجی PDF"
             >
               <FileText className="w-4 h-4" />
@@ -941,7 +941,7 @@ export default function DashboardBuilderPage() {
             </button>
             <button
               onClick={openShareModal}
-              className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition text-sm"
+              className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist rounded-lg hover:bg-white dark:hover:bg-nx-navy transition text-sm"
               title="اشتراک‌گذاری و دسترسی"
             >
               <Share2 className="w-4 h-4" />
@@ -950,7 +950,7 @@ export default function DashboardBuilderPage() {
             {canEdit && (
               <button
                 onClick={addNewWidget}
-                className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition text-sm"
+                className="flex items-center gap-2 px-3 py-1.5 bg-nx-blue text-white rounded-lg hover:bg-nx-blue transition text-sm"
               >
                 <Plus className="w-4 h-4" />
                 افزودن نمودار
@@ -970,16 +970,16 @@ export default function DashboardBuilderPage() {
       <main className="p-6">
         {currentPageWidgets.length === 0 ? (
           <div className="text-center py-20">
-            <Settings className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+            <Settings className="w-16 h-16 text-nx-mist dark:text-nx-mist mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-nx-navy dark:text-nx-mist/10 mb-2">
               {activePage ? `${activePage.name} خالی است` : 'داشبورد خالی است'}
             </h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">
+            <p className="text-nx-mist dark:text-nx-mist mb-6">
               اولین نمودار خود را اضافه کنید
             </p>
             <button
               onClick={addNewWidget}
-              className="px-6 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition font-medium"
+              className="px-6 py-3 bg-nx-blue text-white rounded-xl hover:bg-nx-blue transition font-medium"
             >
               افزودن نمودار
             </button>
@@ -1034,12 +1034,12 @@ export default function DashboardBuilderPage() {
         if (!w) return null
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" dir="rtl">
-            <div className="relative w-full h-full bg-white dark:bg-gray-800 overflow-hidden flex flex-col">
-              <div className="flex items-center justify-between px-6 py-3 border-b border-gray-200 dark:border-gray-700">
-                <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg">{w.title}</h3>
+            <div className="relative w-full h-full bg-white dark:bg-nx-navy overflow-hidden flex flex-col">
+              <div className="flex items-center justify-between px-6 py-3 border-b border-nx-border dark:border-nx-navy-border">
+                <h3 className="font-bold text-nx-navy dark:text-nx-mist/10 text-lg">{w.title}</h3>
                 <button
                   onClick={() => setFullScreenWidget(null)}
-                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+                  className="p-2 text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy rounded-lg transition"
                 >
                   <Minimize2 className="w-5 h-5" />
                 </button>
@@ -1074,43 +1074,43 @@ export default function DashboardBuilderPage() {
       {showShareModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center" dir="rtl">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowShareModal(false)} />
-          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-              <h3 className="font-bold text-gray-900 dark:text-gray-100">اشتراک‌گذاری و دسترسی</h3>
-              <button onClick={() => setShowShareModal(false)} className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+          <div className="relative bg-white dark:bg-nx-navy rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-nx-border dark:border-nx-navy-border">
+              <h3 className="font-bold text-nx-navy dark:text-nx-mist/10">اشتراک‌گذاری و دسترسی</h3>
+              <button onClick={() => setShowShareModal(false)} className="p-1 text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist">
                 <X className="w-5 h-5" />
               </button>
             </div>
             <div className="p-6">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">نقش‌هایی که به این داشبورد دسترسی دارند:</p>
+              <p className="text-sm text-nx-mist dark:text-nx-mist mb-4">نقش‌هایی که به این داشبورد دسترسی دارند:</p>
               <div className="space-y-2">
                 {ALL_ROLES.map((r) => (
                   <label
                     key={r.value}
-                    className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition"
+                    className="flex items-center gap-3 p-3 rounded-xl border border-nx-border dark:border-nx-muted hover:bg-white dark:hover:bg-nx-navy-elevated cursor-pointer transition"
                   >
                     <input
                       type="checkbox"
                       checked={shareRoles.includes(r.value)}
                       onChange={() => setShareRoles((prev) => prev.includes(r.value) ? prev.filter((v) => v !== r.value) : [...prev, r.value])}
-                      className="w-4 h-4 text-indigo-600 rounded border-gray-300 dark:border-gray-500 focus:ring-indigo-500"
+                      className="w-4 h-4 text-nx-blue rounded border-nx-mist dark:border-nx-muted focus:ring-nx-blue"
                     />
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{r.label}</span>
+                    <span className="text-sm font-medium text-nx-navy dark:text-nx-mist/20">{r.label}</span>
                   </label>
                 ))}
               </div>
-              <p className="text-[10px] text-gray-400 mt-3">بدون انتخاب = همه نقش‌ها مجازند</p>
+              <p className="text-[10px] text-nx-mist mt-3">بدون انتخاب = همه نقش‌ها مجازند</p>
             </div>
-            <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex items-center justify-end gap-3">
+            <div className="px-6 py-4 border-t border-nx-border dark:border-nx-navy-border flex items-center justify-end gap-3">
               <button
                 onClick={() => setShowShareModal(false)}
-                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition"
+                className="px-4 py-2 text-sm text-nx-mist dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy rounded-xl transition"
               >
                 انصراف
               </button>
               <button
                 onClick={handleShareSave}
-                className="px-6 py-2 bg-indigo-600 text-white text-sm rounded-xl hover:bg-indigo-700 transition font-medium"
+                className="px-6 py-2 bg-nx-blue text-white text-sm rounded-xl hover:bg-nx-blue transition font-medium"
               >
                 ذخیره دسترسی‌ها
               </button>
@@ -1122,21 +1122,21 @@ export default function DashboardBuilderPage() {
       {/* PDF Export Progress Overlay */}
       {pdfExporting && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4 text-center">
-            <div className="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <FileText className="w-8 h-8 text-indigo-600 dark:text-indigo-400 animate-pulse" />
+          <div className="bg-white dark:bg-nx-navy rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4 text-center">
+            <div className="w-16 h-16 bg-nx-blue/10 dark:bg-nx-blue/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FileText className="w-8 h-8 text-nx-blue dark:text-nx-blue animate-pulse" />
             </div>
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-2">در حال ساخت PDF</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
+            <h3 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10 mb-2">در حال ساخت PDF</h3>
+            <p className="text-sm text-nx-mist dark:text-nx-mist mb-4">
               صفحه {pdfProgress.current} از {pdfProgress.total} نمودار...
             </p>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mb-2">
+            <div className="w-full bg-nx-mist/20 dark:bg-nx-navy rounded-full h-2.5 mb-2">
               <div
-                className="bg-indigo-600 h-2.5 rounded-full transition-all duration-300"
+                className="bg-nx-blue h-2.5 rounded-full transition-all duration-300"
                 style={{ width: `${pdfProgress.total > 0 ? (pdfProgress.current / pdfProgress.total) * 100 : 0}%` }}
               />
             </div>
-            <p className="text-xs text-gray-400 dark:text-gray-500">لطفاً صبر کنید...</p>
+            <p className="text-xs text-nx-mist dark:text-nx-mist">لطفاً صبر کنید...</p>
           </div>
         </div>
       )}

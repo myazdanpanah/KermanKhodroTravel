@@ -52,14 +52,18 @@ export default function ReservationsPage() {
     try {
       const { data } = await api.get('/inventory/products/')
       setProducts(data.results || data)
-    } catch {}
+    } catch {
+      message.error('Failed to load products')
+    }
   }
 
   const fetchWarehouses = async () => {
     try {
       const { data } = await api.get('/inventory/warehouses/')
       setWarehouses(data.results || data)
-    } catch {}
+    } catch {
+      message.error('Failed to load warehouses')
+    }
   }
 
   useEffect(() => {
@@ -122,7 +126,7 @@ export default function ReservationsPage() {
       render: (_, r) => (
         <div>
           <div className="font-medium">{r.product?.name}</div>
-          <div className="text-gray-500 text-xs">{r.product?.sku}</div>
+          <div className="text-nx-muted text-xs">{r.product?.sku}</div>
         </div>
       ),
     },

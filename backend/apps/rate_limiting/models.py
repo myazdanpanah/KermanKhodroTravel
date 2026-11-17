@@ -46,7 +46,7 @@ class APIKey(BaseModel):
         help_text="SHA-256 hash of the API key",
     )
     key_prefix = models.CharField(
-        max_length=12,
+        max_length=15,
         help_text="Visible prefix of the key (e.g., nxv_ab12...)",
     )
 

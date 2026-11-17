@@ -67,22 +67,22 @@ export default function DataUploadPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900" dir="rtl">
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+    <div className="min-h-screen bg-white dark:bg-nx-navy" dir="rtl">
+      <header className="bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border px-6 py-4">
         <div className="max-w-3xl mx-auto">
-          <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">بارگذاری داده</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400">فایل اکسل یا CSV خود را آپلود کنید</p>
+          <h1 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10">بارگذاری داده</h1>
+          <p className="text-sm text-nx-muted dark:text-nx-mist">فایل اکسل یا CSV خود را آپلود کنید</p>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-6 py-8">
         {success ? (
           <div className="text-center py-16">
-            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <CheckCircle className="w-16 h-16 text-nx-teal mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-nx-navy mb-2">
               فایل با موفقیت بارگذاری شد
             </h3>
-            <p className="text-gray-500">در حال انتقال به داشبوردها...</p>
+            <p className="text-nx-muted">در حال انتقال به داشبوردها...</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -91,28 +91,28 @@ export default function DataUploadPage() {
               {...getRootProps()}
               className={`border-2 border-dashed rounded-2xl p-12 text-center cursor-pointer transition ${
                 isDragActive
-                  ? 'border-indigo-500 bg-indigo-50'
-                  : 'border-gray-300 hover:border-indigo-400 hover:bg-gray-50'
+                  ? 'border-nx-blue bg-nx-blue/10'
+                  : 'border-nx-mist hover:border-nx-blue hover:bg-white'
               }`}
             >
               <input {...getInputProps()} />
               {file ? (
                 <div className="flex items-center justify-center gap-3">
-                  <FileSpreadsheet className="w-10 h-10 text-green-500" />
+                  <FileSpreadsheet className="w-10 h-10 text-nx-teal" />
                   <div>
-                    <p className="font-medium text-gray-900">{file.name}</p>
-                    <p className="text-sm text-gray-500">
+                    <p className="font-medium text-nx-navy">{file.name}</p>
+                    <p className="text-sm text-nx-muted">
                       {(file.size / 1024 / 1024).toFixed(2)} MB
                     </p>
                   </div>
                 </div>
               ) : (
                 <>
-                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-2">
+                  <Upload className="w-12 h-12 text-nx-mist mx-auto mb-4" />
+                  <p className="text-nx-muted mb-2">
                     فایل را اینجا رها کنید یا کلیک کنید
                   </p>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-sm text-nx-mist">
                     فرمت‌های پشتیبانی شده: .xlsx, .xls, .csv
                   </p>
                 </>
@@ -120,28 +120,28 @@ export default function DataUploadPage() {
             </div>
 
             {/* Form */}
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 space-y-4">
+            <div className="bg-white dark:bg-nx-navy rounded-2xl border border-nx-border dark:border-nx-navy-border p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-nx-navy mb-1">
                   نام مجموعه داده
                 </label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                  className="w-full px-4 py-3 rounded-xl border border-nx-mist focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
                   placeholder="مثال: گزارش فروش فروردین"
                   dir="rtl"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-nx-navy mb-1">
                   توضیحات (اختیاری)
                 </label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none"
+                  className="w-full px-4 py-3 rounded-xl border border-nx-mist focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none resize-none"
                   rows={3}
                   placeholder="توضیحاتی درباره این مجموعه داده"
                   dir="rtl"
@@ -149,7 +149,7 @@ export default function DataUploadPage() {
               </div>
 
               {error && (
-                <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+                <div className="flex items-center gap-2 p-3 bg-nx-danger-50 border border-nx-danger-200 rounded-xl text-nx-danger-700 text-sm">
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   {error}
                 </div>
@@ -158,7 +158,7 @@ export default function DataUploadPage() {
               <button
                 onClick={handleUpload}
                 disabled={!file || !name || uploading}
-                className="w-full py-3 bg-indigo-600 text-white rounded-xl font-medium hover:bg-indigo-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 bg-nx-blue text-white rounded-xl font-medium hover:bg-nx-blue transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {uploading ? 'در حال بارگذاری...' : 'بارگذاری و پردازش'}
               </button>

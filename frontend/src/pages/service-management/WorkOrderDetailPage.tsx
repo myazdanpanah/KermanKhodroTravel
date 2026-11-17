@@ -10,20 +10,22 @@ import {
   DollarSign, Users, FileText,
 } from 'lucide-react';
 import { serviceManagementApi, WorkOrder } from '../../api/serviceManagement';
+import { useToast } from '../../components/Toast';
 
 const STATUS_MAP: Record<string, { label: string; color: string; icon: typeof Clock }> = {
-  created: { label: 'ایجاد شده', color: 'bg-gray-100 text-gray-700', icon: Clock },
-  assigned: { label: 'تخصیص یافته', color: 'bg-purple-100 text-purple-700', icon: Users },
-  started: { label: 'شروع شده', color: 'bg-blue-100 text-blue-700', icon: Play },
-  paused: { label: 'متوقف', color: 'bg-yellow-100 text-yellow-700', icon: Clock },
-  completed: { label: 'تکمیل شده', color: 'bg-green-100 text-green-700', icon: CheckCircle },
-  approved: { label: 'تأیید شده', color: 'bg-teal-100 text-teal-700', icon: CheckCircle },
-  closed: { label: 'بسته شده', color: 'bg-gray-100 text-gray-700', icon: XCircle },
+  created: { label: 'ایجاد شده', color: 'bg-nx-mist/10 text-nx-navy', icon: Clock },
+  assigned: { label: 'تخصیص یافته', color: 'bg-nx-blue/10 text-nx-blue', icon: Users },
+  started: { label: 'شروع شده', color: 'bg-nx-blue/10 text-nx-blue', icon: Play },
+  paused: { label: 'متوقف', color: 'bg-nx-warning-100 text-nx-warning-700', icon: Clock },
+  completed: { label: 'تکمیل شده', color: 'bg-nx-teal/10 text-nx-teal', icon: CheckCircle },
+  approved: { label: 'تأیید شده', color: 'bg-nx-teal/10 text-nx-teal', icon: CheckCircle },
+  closed: { label: 'بسته شده', color: 'bg-nx-mist/10 text-nx-navy', icon: XCircle },
 };
 
 export default function WorkOrderDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [order, setOrder] = useState<WorkOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [transitioning, setTransitioning] = useState(false);
@@ -63,7 +65,7 @@ export default function WorkOrderDetailPage() {
       else if (action === 'complete') res = await serviceManagementApi.completeWorkOrder(order.id);
       else if (action === 'approve') res = await serviceManagementApi.approveWorkOrder(order.id);
       if (res) setOrder(res.data.data);
-    } catch {}
+    } catch { toast('خطا در تغییر وضعیت دستور کار', 'error'); }
     setTransitioning(false);
   };
 
@@ -73,13 +75,13 @@ export default function WorkOrderDetailPage() {
       const res = await serviceManagementApi.updateWorkOrder(order.id, costs);
       setOrder(res.data.data);
       setShowCostForm(false);
-    } catch {}
+    } catch { toast('خطا در ثبت هزینه‌ها', 'error'); }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-nx-blue" />
       </div>
     );
   }
@@ -90,10 +92,10 @@ export default function WorkOrderDetailPage() {
   const StatusIcon = status.icon;
 
   const costBreakdown = [
-    { label: 'هزینه نیروی کار', value: order.actual_labor_cost, color: 'text-blue-600' },
-    { label: 'هزینه قطعات', value: order.actual_parts_cost, color: 'text-green-600' },
-    { label: 'هزینه خارجی', value: order.actual_external_cost, color: 'text-purple-600' },
-    { label: 'هزینه سربار', value: order.actual_overhead, color: 'text-orange-600' },
+    { label: 'هزینه نیروی کار', value: order.actual_labor_cost, color: 'text-nx-blue' },
+    { label: 'هزینه قطعات', value: order.actual_parts_cost, color: 'text-nx-teal' },
+    { label: 'هزینه خارجی', value: order.actual_external_cost, color: 'text-nx-blue' },
+    { label: 'هزینه سربار', value: order.actual_overhead, color: 'text-nx-blue' },
   ];
 
   return (
@@ -102,14 +104,14 @@ export default function WorkOrderDetailPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <button onClick={() => navigate('/erp/service-management/work-orders')}
-            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition">
+            className="p-2 text-nx-mist hover:text-nx-mist hover:bg-nx-mist/10 rounded-lg transition">
             <ArrowRight className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-white dark:text-white">
               {order.work_order_number}
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-nx-mist dark:text-nx-mist">
               درخواست: {order.service_request_number} — {order.technician_name || 'بدون تکنسین'}
             </p>
           </div>
@@ -126,59 +128,59 @@ export default function WorkOrderDetailPage() {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Problem & Diagnosis */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">مشکل و تشخیص</h3>
+          <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-6">
+            <h3 className="text-sm font-semibold text-nx-navy dark:text-white mb-3">مشکل و تشخیص</h3>
             <div className="space-y-4">
               <div>
-                <h4 className="text-xs font-medium text-gray-500 mb-1">مشکل گزارش شده</h4>
-                <p className="text-sm text-gray-700 dark:text-gray-300">{order.problem || '—'}</p>
+                <h4 className="text-xs font-medium text-nx-mist mb-1">مشکل گزارش شده</h4>
+                <p className="text-sm text-nx-navy dark:text-nx-mist">{order.problem || '—'}</p>
               </div>
               {order.diagnosis && (
-                <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
-                  <h4 className="text-xs font-medium text-gray-500 mb-1">تشخیص</h4>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">{order.diagnosis}</p>
+                <div className="pt-3 border-t border-nx-border dark:border-nx-navy-border">
+                  <h4 className="text-xs font-medium text-nx-mist mb-1">تشخیص</h4>
+                  <p className="text-sm text-nx-navy dark:text-nx-mist">{order.diagnosis}</p>
                 </div>
               )}
               {order.resolution && (
-                <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
-                  <h4 className="text-xs font-medium text-gray-500 mb-1">راه حل</h4>
-                  <p className="text-sm text-gray-700 dark:text-gray-300">{order.resolution}</p>
+                <div className="pt-3 border-t border-nx-border dark:border-nx-navy-border">
+                  <h4 className="text-xs font-medium text-nx-mist mb-1">راه حل</h4>
+                  <p className="text-sm text-nx-navy dark:text-nx-mist">{order.resolution}</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Actions */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">عملیات</h3>
+          <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-6">
+            <h3 className="text-sm font-semibold text-nx-navy dark:text-white mb-3">عملیات</h3>
             <div className="flex flex-wrap gap-2">
               {order.status === 'created' && (
                 <button onClick={() => handleAction('start')} disabled={transitioning}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition text-sm">
+                  className="flex items-center gap-2 px-4 py-2 bg-nx-blue text-white rounded-lg hover:bg-nx-blue transition text-sm">
                   <Play className="h-4 w-4" /> شروع کار
                 </button>
               )}
               {order.status === 'started' && (
                 <button onClick={() => handleAction('complete')} disabled={transitioning}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm">
+                  className="flex items-center gap-2 px-4 py-2 bg-nx-teal text-white rounded-lg hover:bg-nx-teal transition text-sm">
                   <CheckCircle className="h-4 w-4" /> تکمیل کار
                 </button>
               )}
               {order.status === 'completed' && (
                 <button onClick={() => handleAction('approve')} disabled={transitioning}
-                  className="flex items-center gap-2 px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition text-sm">
+                  className="flex items-center gap-2 px-4 py-2 bg-nx-teal text-white rounded-lg hover:bg-nx-teal transition text-sm">
                   <CheckCircle className="h-4 w-4" /> تأیید کار
                 </button>
               )}
               <button onClick={() => setShowCostForm(!showCostForm)}
-                className="flex items-center gap-2 px-4 py-2 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition text-sm border border-orange-200">
+                className="flex items-center gap-2 px-4 py-2 bg-nx-blue/10 text-nx-blue rounded-lg hover:bg-nx-blue/10 transition text-sm border border-nx-blue/30">
                 <DollarSign className="h-4 w-4" /> ثبت هزینه
               </button>
             </div>
 
             {/* Cost Form */}
             {showCostForm && (
-              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+              <div className="mt-4 pt-4 border-t border-nx-border dark:border-nx-navy-border">
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
                     { key: 'actual_labor_cost', label: 'هزینه نیروی کار' },
@@ -188,16 +190,16 @@ export default function WorkOrderDetailPage() {
                     { key: 'actual_hours', label: 'ساعت کار' },
                   ].map(({ key, label }) => (
                     <div key={key}>
-                      <label className="block text-xs text-gray-500 mb-1">{label}</label>
+                      <label className="block text-xs text-nx-mist mb-1">{label}</label>
                       <input type="number" value={(costs as any)[key]}
                         onChange={e => setCosts({ ...costs, [key]: Number(e.target.value) })}
-                        className="w-full px-3 py-1.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-sm" />
+                        className="w-full px-3 py-1.5 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm" />
                     </div>
                   ))}
                 </div>
                 <div className="flex justify-end gap-2 mt-3">
-                  <button onClick={() => setShowCostForm(false)} className="px-3 py-1.5 text-sm text-gray-600">انصراف</button>
-                  <button onClick={handleCostUpdate} className="px-3 py-1.5 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600">ذخیره</button>
+                  <button onClick={() => setShowCostForm(false)} className="px-3 py-1.5 text-sm text-nx-mist">انصراف</button>
+                  <button onClick={handleCostUpdate} className="px-3 py-1.5 bg-nx-blue text-white rounded-lg text-sm hover:bg-nx-blue">ذخیره</button>
                 </div>
               </div>
             )}
@@ -205,19 +207,19 @@ export default function WorkOrderDetailPage() {
 
           {/* Operations */}
           {order.operations && order.operations.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">عملیات انجام شده</h3>
+            <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-6">
+              <h3 className="text-sm font-semibold text-nx-navy dark:text-white mb-3">عملیات انجام شده</h3>
               <div className="space-y-3">
                 {order.operations.map(op => (
-                  <div key={op.id} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                    <span className="text-xs font-mono text-gray-400 w-6">{op.sequence}</span>
+                  <div key={op.id} className="flex items-center gap-3 p-3 bg-white dark:bg-nx-navy rounded-lg">
+                    <span className="text-xs font-mono text-nx-mist w-6">{op.sequence}</span>
                     <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">{op.name}</p>
-                      {op.description && <p className="text-xs text-gray-500 mt-0.5">{op.description}</p>}
+                      <p className="text-sm font-medium text-nx-navy dark:text-white">{op.name}</p>
+                      {op.description && <p className="text-xs text-nx-mist mt-0.5">{op.description}</p>}
                     </div>
-                    <span className="text-xs text-gray-400">{op.labor_hours}h</span>
+                    <span className="text-xs text-nx-mist">{op.labor_hours}h</span>
                     <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                      op.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                      op.status === 'completed' ? 'bg-nx-teal/10 text-nx-teal' : 'bg-nx-mist/10 text-nx-navy'
                     }`}>
                       {op.status === 'completed' ? 'تکمیل' : op.status}
                     </span>
@@ -231,25 +233,25 @@ export default function WorkOrderDetailPage() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Cost Summary */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">خلاصه هزینه‌ها</h3>
+          <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-6">
+            <h3 className="text-sm font-semibold text-nx-navy dark:text-white mb-4">خلاصه هزینه‌ها</h3>
             <div className="space-y-3">
               {costBreakdown.map(({ label, value, color }) => (
                 <div key={label} className="flex justify-between items-center">
-                  <span className="text-xs text-gray-500">{label}</span>
+                  <span className="text-xs text-nx-mist">{label}</span>
                   <span className={`text-sm font-medium ${color}`}>{value.toLocaleString('fa-IR')} ریال</span>
                 </div>
               ))}
-              <div className="pt-3 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
-                <span className="text-sm font-semibold text-gray-900 dark:text-white">جمع کل</span>
-                <span className="text-lg font-bold text-orange-600">{order.actual_total_cost.toLocaleString('fa-IR')} ریال</span>
+              <div className="pt-3 border-t border-nx-border dark:border-nx-navy-border flex justify-between items-center">
+                <span className="text-sm font-semibold text-nx-navy dark:text-white">جمع کل</span>
+                <span className="text-lg font-bold text-nx-blue">{order.actual_total_cost.toLocaleString('fa-IR')} ریال</span>
               </div>
             </div>
           </div>
 
           {/* Time Tracking */}
-          <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">زمان</h3>
+          <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-6">
+            <h3 className="text-sm font-semibold text-nx-navy dark:text-white mb-3">زمان</h3>
             <dl className="space-y-2">
               {[
                 { label: 'ساعت تخمینی', value: `${order.estimated_hours}h` },
@@ -259,8 +261,8 @@ export default function WorkOrderDetailPage() {
                 { label: 'تأیید', value: order.approved_date ? new Date(order.approved_date).toLocaleString('fa-IR') : '—' },
               ].map(({ label, value }) => (
                 <div key={label} className="flex justify-between">
-                  <dt className="text-xs text-gray-500">{label}</dt>
-                  <dd className="text-xs font-medium text-gray-900 dark:text-white">{value}</dd>
+                  <dt className="text-xs text-nx-mist">{label}</dt>
+                  <dd className="text-xs font-medium text-nx-navy dark:text-white">{value}</dd>
                 </div>
               ))}
             </dl>
@@ -268,12 +270,12 @@ export default function WorkOrderDetailPage() {
 
           {/* Required Parts */}
           {order.required_parts && (
-            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
-                <FileText className="h-4 w-4 text-gray-400" />
+            <div className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border p-6">
+              <h3 className="text-sm font-semibold text-nx-navy dark:text-white mb-3 flex items-center gap-2">
+                <FileText className="h-4 w-4 text-nx-mist" />
                 قطعات مورد نیاز
               </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300">{order.required_parts}</p>
+              <p className="text-sm text-nx-mist dark:text-nx-mist">{order.required_parts}</p>
             </div>
           )}
         </div>

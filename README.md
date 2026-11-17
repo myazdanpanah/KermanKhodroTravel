@@ -34,6 +34,10 @@
 - [Database Manager](#database-manager)
 - [LLM Gateway](#llm-gateway)
 - [Filter System](#filter-system)
+- [Design System](#design-system)
+- [Branding & White-labelling](#branding--white-labelling)
+- [User Management](#user-management)
+- [Developer Workflows](#developer-workflows)
 - [Running Tests](#running-tests)
 - [Environment Variables](#environment-variables)
 - [CI/CD](#cicd)
@@ -589,6 +593,162 @@ Integrate AI capabilities across your organization:
 - **Usage Tracking** — Monitor token usage and costs per provider
 - **Test Connection** — Verify provider connectivity before activation
 
+
+---
+
+## Design System
+
+Nexivo is styled through a token layer — components never hard-code hex values.
+Tokens live in `frontend/src/design/tokens/` and are exposed to Tailwind as
+`nx-*` utilities (`frontend/tailwind.config.js`). Full details:
+[docs/NEXIVO-COMPLETE-GUIDE.md](docs/NEXIVO-COMPLETE-GUIDE.md#10-nexivo-design-system).
+
+### Brand palette
+
+| Token | Name | Hex | Usage |
+|---|---|---|---|
+| `nx-navy` | Deep Navy | `#101D35` | OS canvas, primary text |
+| `nx-blue` | Intelligence Blue | `#3678F6` | action signal (runtime-themable) |
+| `nx-teal` | Digital Teal | `#24C6B2` | success signal (runtime-themable) |
+| `nx-mist` | Silver Mist | `#A5B4CC` | disabled text, separators |
+| `nx-border` | — | `#E5E7EB` | default border |
+| `nx-muted` | — | `#6B7280` | disabled text |
+
+### Status palette
+
+| Token | Name | Base | Role |
+|---|---|---|---|
+| `nx-danger` | Signal Red | `#EF4444` | error, destructive, failed |
+| `nx-warning` | Caution Amber | `#F59E0B` | warning, pending, needs attention |
+
+Both ship a full `50…950` scale. Success deliberately reuses `nx-teal` — do not
+introduce a second green. Every former `red`/`rose`/`amber`/`yellow`/`orange`
+Tailwind utility has been migrated to these tokens (245 lines across 71 files,
+zero legacy utilities left), so status colouring is now semantic and re-themable
+from a single place.
+
+### Typography & shape
+
+- **Vazirmatn**, self-hosted via `@fontsource/vazirmatn` (15 woff2 files in the
+  build, no CDN references).
+- Radius: `rounded-nx-card` (12px), `rounded-nx-btn` (4px).
+- Shadows: `shadow-nx-card`, `shadow-nx-elevated`.
+
+### Rules
+
+- Use `nx-*` tokens only — no `gray-*`, `indigo-*`, `emerald-*`, or raw
+  `red/amber` utilities.
+- The ERP content canvas is **Deep Navy**; cards inside it are elevated surfaces.
+- Body copy on dark is `text-nx-mist`; headings are white.
+- Runtime colours (`nx-blue`, `nx-teal`) are CSS variables — a company colour
+  change applies without a rebuild, only a reload.
+
+---
+
+## Branding & White-labelling
+
+Each company can carry its own logo and colours, applied system-wide: splash,
+login, sidebar, launcher, buttons, charts and focus rings.
+
+- **Settings → برندینگ** (admin/CEO): upload a logo with live preview, set primary
+  (`nx-blue`) and accent (`nx-teal`) colours, reset to NEXIVO defaults.
+- Uploaded logos are served from `/media/companies/…`; Vite and nginx proxy
+  `/media`.
+- Branding is fetched before first paint from
+  `GET /api/v1/auth/branding/public/` (anonymous, falls back to the first active
+  company, then to NEXIVO defaults) and cached in `localStorage` so there is no
+  colour flash.
+
+### Endpoints & security model
+
+| Method | Path | Auth | Behaviour |
+|---|---|---|---|
+| GET | `/api/v1/auth/company/branding/` | any user | caller's own company; **400** if the user has no company |
+| PUT/PATCH | `/api/v1/auth/company/branding/` | CEO/admin | caller's own company; **403** if the user has no company |
+| GET | `/api/v1/auth/branding/public/` | anonymous | first active company, or NEXIVO defaults |
+
+Writes are **strictly company-scoped**: there is no "fall back to the first
+active company" on the authenticated endpoint, so an admin without a company
+cannot modify another tenant's branding. The fallback exists only on the public
+read used by the login screen. This is covered by regression tests
+(`CompanyBrandingScopeTests`).
+
+---
+
+## User Management
+
+`/erp/settings/users` (admin/CEO only) is the single place to create and modify
+people:
+
+- **Create** — username, email, first/last name, role, department, password
+  (≥8 chars), company, division, team and reports-to.
+- **Edit** — the same fields, plus an optional new password (a reset, only sent
+  when typed). Usernames are read-only after creation.
+- **Delete** — with a confirmation step; deleting yourself is blocked.
+- Plus **Roles** (custom role labels/colours) and **Audit** (change history) tabs.
+
+Server-side rules: role hierarchy is enforced (a non-staff caller cannot assign a
+role above their own), assigning a division/team replicates that unit's existing
+dashboard assignments, and `accessible_modules` is derived from the company's
+enabled modules. Covered by `UserManagementTests`.
+
+> **Dev note:** the seeded users start with **no company**, so branding and
+> modules are unavailable until you assign one here.
+
+---
+
+## Developer Workflows
+
+Identical tasks exist for Windows (`dev.bat`) and macOS/Linux (`make`):
+
+| Task | Effect |
+|---|---|
+| `install` | install backend + frontend dependencies |
+| `setup` | install → migrate → seed |
+| `start-services` | start PostgreSQL and Redis containers |
+| `backend` / `frontend` | run one dev server (8000 / 3000) |
+| `dev` | migrate, seed, then both servers |
+| `stop` | **stop** containers only — data is preserved |
+| `clean` | remove containers **and volumes** (destroys the DB) |
+| `dump` | snapshot PostgreSQL into `backups/` |
+| `restore` | restore a snapshot (default: newest) |
+| `test-backend` / `test-frontend` | Django check / TypeScript typecheck |
+
+PostgreSQL is published on host port **5544** (`-p 5544:5432`) because 5432 is
+commonly occupied; `backend/.env` already points there. `make` is unavailable in
+Git Bash on Windows — use `dev.bat`.
+
+---
+
+## Forking for a Customer
+
+Every customer deployment is a fork that should stay as close to upstream as
+possible, with the difference expressed as **configuration** rather than code:
+
+1. Clone, rename the remote to `upstream`, create a `customer/<name>` branch.
+2. `cp .env.example backend/.env` and set secrets, `DB_PORT=5544`, hosts, HTTPS.
+3. Assign `admin`/`ceo` to the customer's company, then brand it in
+   Settings → برندینگ (logo + primary/accent colours).
+4. Trim `Company.enabled_modules` to what the customer bought.
+5. Build the org tree (divisions → teams → users) and create a fiscal year before
+   entering finance data.
+6. Replace `frontend/public/brand/*` with the customer's real assets.
+7. `dump` the database after seeding, before go-live.
+
+The full checklist — including the white-label QA list and how to merge upstream
+changes later — is in
+[docs/NEXIVO-COMPLETE-GUIDE.md §19](docs/NEXIVO-COMPLETE-GUIDE.md#19-forking-nexivo-for-a-customer).
+
+---
+
+## Documentation
+
+- **[docs/NEXIVO-COMPLETE-GUIDE.md](docs/NEXIVO-COMPLETE-GUIDE.md)** — the
+  complete engineering and operations guide: architecture, domain model, every
+  backend app, API surface, frontend structure, design system, branding, user
+  management, local workflows, backups, deployment, testing, known issues and the
+  fork checklist.
+
 ---
 
 ## Testing
@@ -654,7 +814,9 @@ The GitHub Actions workflow runs on every push and PR to `main`:
 
 ## Screenshots
 
-> Screenshots will be added after the first public release.
+Captured UI evidence lives in [`screenshots/`](screenshots): login (with logo),
+splash glow and flash frames, the module launcher, the ERP finance and employees
+screens, and the Branding settings tab (`branding-settings-final.png`).
 
 ---
 

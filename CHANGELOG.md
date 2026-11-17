@@ -2,6 +2,19 @@
 
 All notable changes to the Nexivo platform are documented here.
 
+## [Unreleased] — November 16, 2026
+
+### 🚀 Build & Performance
+- **Route-level code splitting** — `App.tsx` now lazy-loads every page with `React.lazy` + `Suspense`. The main bundle dropped from **4.69 MB (1.37 MB gzip)** to **~127 kB (40 kB gzip)**; each page is a small on-demand chunk.
+- **Vendor chunking** — `vite.config.ts` splits React, Ant Design, ECharts, and AG Grid into cacheable vendor chunks.
+- **Docker builds** — Added `backend/.dockerignore` and `frontend/.dockerignore` so local `.venv`, `node_modules`, build output, and secrets never enter the Docker build context.
+
+### 🐛 Fixes
+- **Audit log migrations** — `apps/audit_log` had models but no migrations, which made a fresh database (CI, Docker, `manage.py test`) fail with `relation "accounts_user" does not exist`. Added `audit_log/0001_initial`.
+- **ESLint 9** — `npm run lint` failed because no flat config existed. Added `eslint.config.js`; fixed all 13 lint errors (empty catch blocks, unused expressions).
+- **Test suite green** — Full backend suite now passes (**553 tests, 0 failures**). Fixed stale fixtures (`sales`, `service_sales`), `TenantPlan`/`TenantFeature` company FK fixtures, `rate_limiting` key prefix length (migration `0002`), LLM patch targets in `ai_insights`, and re-exported audit model registry helpers from `middleware`.
+- **Sales/service-sales totals** — Invoice, order, quotation, and booking creation now aggregate `subtotal`, `discount_amount`, and `tax_amount` separately instead of folding tax into subtotal. Added the missing `PostingEngine.create_voucher` used by sales, trading, and service-sales posting engines.
+
 ## [Unreleased] — June 25, 2026
 
 ### 🎨 Chart Styling & Formatting

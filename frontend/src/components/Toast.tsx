@@ -55,7 +55,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={t.id}
             className={`flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-medium text-white animate-slide-in ${
-              t.type === 'error' ? 'bg-red-500' : t.type === 'success' ? 'bg-emerald-500' : 'bg-blue-500'
+              t.type === 'error' ? 'bg-nx-danger-500' : t.type === 'success' ? 'bg-nx-teal' : 'bg-nx-blue'
             }`}
           >
             {t.type === 'error' && <AlertCircle className="w-4 h-4 flex-shrink-0" />}

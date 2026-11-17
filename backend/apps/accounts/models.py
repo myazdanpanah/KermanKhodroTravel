@@ -36,6 +36,18 @@ class Company(models.Model):
     description = models.TextField(blank=True, default="")
     logo = models.ImageField(upload_to="companies/", blank=True, null=True)
 
+    # ── System-wide branding (NEXIVO Design System tokens) ─────────
+    # Defaults match color-palette.json; a CEO/Admin can override them
+    # per company from Settings → Branding.
+    primary_color = models.CharField(
+        max_length=7, default="#3678F6",
+        help_text="Intelligence Blue — primary action signal (#RRGGBB)",
+    )
+    accent_color = models.CharField(
+        max_length=7, default="#24C6B2",
+        help_text="Digital Teal — status/success signal (#RRGGBB)",
+    )
+
     # Which Nexivo modules this company has subscribed to / enabled.
     # Stored as a JSON list of module slugs, e.g. ["bi_dashboard", "datasets"].
     # A superuser bypasses this; a normal user only sees modules that are:

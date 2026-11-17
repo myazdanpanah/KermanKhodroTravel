@@ -22,4 +22,7 @@ urlpatterns = [
     # Module Management
     path("companies/<int:pk>/modules/", views.company_modules, name="company-modules"),
     path("user-modules/", views.user_modules, name="user-modules"),
+    # System-wide branding (logo + brand colors)
+    path("company/branding/", views.company_branding, name="company-branding"),
+    path("branding/public/", views.branding_public, name="branding-public"),
 ]

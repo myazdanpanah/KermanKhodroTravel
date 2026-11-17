@@ -671,7 +671,7 @@ class LLMNLQueryTest(TestCase):
         result = NLQueryService._try_llm_query(self.company, 'show invoices')
         self.assertIsNone(result)
 
-    @patch('apps.ai_insights.services.chat_completion')
+    @patch('apps.llm.service.chat_completion')
     @patch('apps.llm.models.LLMProvider.objects')
     def test_try_llm_query_parses_json_response(self, mock_manager, mock_chat):
         """_try_llm_query parses valid JSON from LLM response."""
@@ -684,7 +684,7 @@ class LLMNLQueryTest(TestCase):
         self.assertEqual(result['module'], 'finance')
         self.assertEqual(result['rows'], [[50]])
 
-    @patch('apps.ai_insights.services.chat_completion')
+    @patch('apps.llm.service.chat_completion')
     @patch('apps.llm.models.LLMProvider.objects')
     def test_try_llm_query_handles_markdown_json(self, mock_manager, mock_chat):
         """_try_llm_query extracts JSON from markdown code blocks."""
@@ -696,7 +696,7 @@ class LLMNLQueryTest(TestCase):
         self.assertIsNotNone(result)
         self.assertEqual(result['module'], 'sales')
 
-    @patch('apps.ai_insights.services.chat_completion')
+    @patch('apps.llm.service.chat_completion')
     @patch('apps.llm.models.LLMProvider.objects')
     def test_try_llm_query_returns_none_on_invalid_json(self, mock_manager, mock_chat):
         """_try_llm_query returns None when LLM returns invalid JSON."""
@@ -705,7 +705,7 @@ class LLMNLQueryTest(TestCase):
         result = NLQueryService._try_llm_query(self.company, 'query')
         self.assertIsNone(result)
 
-    @patch('apps.ai_insights.services.chat_completion')
+    @patch('apps.llm.service.chat_completion')
     @patch('apps.llm.models.LLMProvider.objects')
     def test_try_llm_query_returns_none_on_exception(self, mock_manager, mock_chat):
         """_try_llm_query returns None when LLM call raises an exception."""

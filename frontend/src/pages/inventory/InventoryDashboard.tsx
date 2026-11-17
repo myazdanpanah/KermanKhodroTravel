@@ -39,17 +39,17 @@ export default function InventoryDashboard() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 border-nx-blue border-t-transparent rounded-full" />
       </div>
     )
   }
 
   const kpis = [
-    { label: 'انبارها', value: summary?.total_warehouses ?? 0, icon: Warehouse, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-    { label: 'محصولات', value: summary?.total_products ?? 0, icon: Package, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
-    { label: 'ارزش موجودی', value: `${((summary?.total_inventory_value ?? 0) / 1_000_000).toFixed(1)}M`, icon: TrendingDown, color: 'text-purple-400', bg: 'bg-purple-500/10' },
-    { label: 'کمبود موجودی', value: summary?.low_stock_items ?? 0, icon: AlertTriangle, color: 'text-red-400', bg: 'bg-red-500/10' },
-    { label: 'رزروهای فعال', value: summary?.pending_reservations ?? 0, icon: ShoppingCart, color: 'text-amber-400', bg: 'bg-amber-500/10' },
+    { label: 'انبارها', value: summary?.total_warehouses ?? 0, icon: Warehouse, color: 'text-nx-blue', bg: 'bg-nx-blue/10' },
+    { label: 'محصولات', value: summary?.total_products ?? 0, icon: Package, color: 'text-nx-teal', bg: 'bg-nx-teal/10' },
+    { label: 'ارزش موجودی', value: `${((summary?.total_inventory_value ?? 0) / 1_000_000).toFixed(1)}M`, icon: TrendingDown, color: 'text-nx-blue', bg: 'bg-nx-blue/10' },
+    { label: 'کمبود موجودی', value: summary?.low_stock_items ?? 0, icon: AlertTriangle, color: 'text-nx-danger-400', bg: 'bg-nx-danger-500/10' },
+    { label: 'رزروهای فعال', value: summary?.pending_reservations ?? 0, icon: ShoppingCart, color: 'text-nx-warning-400', bg: 'bg-nx-warning-500/10' },
   ]
 
   return (
@@ -57,34 +57,34 @@ export default function InventoryDashboard() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-white">داشبورد انبار</h1>
-        <p className="text-gray-400 text-sm mt-1">مدیریت موجودی و حرکات انبار</p>
+        <p className="text-nx-mist text-sm mt-1">مدیریت موجودی و حرکات انبار</p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {kpis.map((kpi) => (
-          <div key={kpi.label} className="bg-gray-900 border border-gray-800 rounded-xl p-4">
+          <div key={kpi.label} className="bg-nx-navy border border-nx-navy-border rounded-xl p-4">
             <div className="flex items-center justify-between mb-3">
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${kpi.bg}`}>
                 <kpi.icon className={`w-5 h-5 ${kpi.color}`} />
               </div>
             </div>
             <div className="text-2xl font-bold text-white">{kpi.value}</div>
-            <div className="text-xs text-gray-400 mt-1">{kpi.label}</div>
+            <div className="text-xs text-nx-mist mt-1">{kpi.label}</div>
           </div>
         ))}
       </div>
 
       {/* Stock Table */}
-      <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-        <div className="p-4 border-b border-gray-800 flex items-center gap-2">
-          <ArrowUpDown className="w-5 h-5 text-orange-400" />
+      <div className="bg-nx-navy border border-nx-navy-border rounded-xl overflow-hidden">
+        <div className="p-4 border-b border-nx-navy-border flex items-center gap-2">
+          <ArrowUpDown className="w-5 h-5 text-nx-warning-400" />
           <h2 className="text-lg font-bold text-white">موجودی فعلی</h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-gray-800 text-gray-400">
+              <tr className="border-b border-nx-navy-border text-nx-mist">
                 <th className="text-right px-4 py-3 font-medium">محصول</th>
                 <th className="text-right px-4 py-3 font-medium">کد</th>
                 <th className="text-right px-4 py-3 font-medium">انبار</th>
@@ -98,20 +98,20 @@ export default function InventoryDashboard() {
             <tbody>
               {stock.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-8 text-gray-500">
+                  <td colSpan={8} className="text-center py-8 text-nx-mist">
                     موجودی یافت نشد
                   </td>
                 </tr>
               ) : (
                 stock.map((item, idx) => (
-                  <tr key={idx} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition">
+                  <tr key={idx} className="border-b border-nx-navy/50 hover:bg-nx-navy-elevated transition">
                     <td className="px-4 py-3 text-white font-medium">{item.product_name}</td>
-                    <td className="px-4 py-3 text-gray-400">{item.product_code}</td>
-                    <td className="px-4 py-3 text-gray-400">{item.warehouse}</td>
+                    <td className="px-4 py-3 text-nx-mist">{item.product_code}</td>
+                    <td className="px-4 py-3 text-nx-mist">{item.warehouse}</td>
                     <td className="px-4 py-3 text-left text-white">{item.quantity_on_hand.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-left text-amber-400">{item.quantity_reserved.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-left text-emerald-400">{item.quantity_available.toLocaleString()}</td>
-                    <td className="px-4 py-3 text-left text-gray-400">{item.unit_cost.toLocaleString()} ریال</td>
+                    <td className="px-4 py-3 text-left text-nx-warning-400">{item.quantity_reserved.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-left text-nx-teal">{item.quantity_available.toLocaleString()}</td>
+                    <td className="px-4 py-3 text-left text-nx-mist">{item.unit_cost.toLocaleString()} ریال</td>
                     <td className="px-4 py-3 text-left text-white font-medium">{item.total_value.toLocaleString()} ریال</td>
                   </tr>
                 ))

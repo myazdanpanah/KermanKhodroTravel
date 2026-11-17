@@ -41,7 +41,7 @@ export default function SalesInvoicesPage() {
   }
 
   const fetchReceivables = async () => {
-    try {      const { data } = await api.get('/sales/invoices/receivables/'); setReceivables(data) } catch {}
+    try {      const { data } = await api.get('/sales/invoices/receivables/'); setReceivables(data) } catch { message.error('Failed to load receivables') }
   }
 
   useEffect(() => { fetchInvoices(); fetchReceivables() }, [])
@@ -68,7 +68,7 @@ export default function SalesInvoicesPage() {
     { title: 'تاریخ', dataIndex: 'invoice_date', render: (v) => v ? new Date(v).toLocaleDateString('fa-IR') : '—' },
     { title: 'مبلغ کل', dataIndex: 'total', render: (v) => v?.toLocaleString('fa-IR') + ' ریال' },
     { title: 'پرداخت شده', dataIndex: 'amount_paid', render: (v) => v?.toLocaleString('fa-IR') + ' ریال' },
-    { title: 'مانده', dataIndex: 'balance_due', render: (v) => <span className={v > 0 ? 'text-red-500 font-bold' : ''}>{v?.toLocaleString('fa-IR')} ریال</span> },
+    { title: 'مانده', dataIndex: 'balance_due', render: (v) => <span className={v > 0 ? 'text-nx-danger-500 font-bold' : ''}>{v?.toLocaleString('fa-IR')} ریال</span> },
     { title: 'وضعیت', dataIndex: 'status', render: (s) => <Tag color={statusColors[s]}>{statusLabels[s]}</Tag> },
     {
       title: 'عملیات', key: 'actions',

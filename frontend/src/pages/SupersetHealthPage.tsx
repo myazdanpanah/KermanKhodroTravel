@@ -90,30 +90,30 @@ export default function SupersetHealthPage() {
   const unsyncedCount = health?.datasets.filter((d) => !d.synced).length ?? 0
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900" dir="rtl">
+    <div className="min-h-screen bg-white dark:bg-nx-navy" dir="rtl">
       {/* Header */}
-      <header className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+      <header className="bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link to="/dashboards" className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition">
+            <Link to="/dashboards" className="p-2 text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist transition">
               <ArrowRight className="w-5 h-5" />
             </Link>
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                health?.status === 'ok' ? 'bg-emerald-500' : health?.status === 'error' ? 'bg-red-500' : 'bg-gray-400'
+                health?.status === 'ok' ? 'bg-nx-teal' : health?.status === 'error' ? 'bg-nx-danger-500' : 'bg-nx-mist'
               }`}>
                 <Database className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">وضعیت Superset</h1>
-                <p className="text-xs text-gray-500 dark:text-gray-400">بررسی اتصال و همگام‌سازی مجموعه‌داده‌ها</p>
+                <h1 className="text-lg font-bold text-nx-navy dark:text-nx-mist/10">وضعیت Superset</h1>
+                <p className="text-xs text-nx-mist dark:text-nx-mist">بررسی اتصال و همگام‌سازی مجموعه‌داده‌ها</p>
               </div>
             </div>
           </div>
           <button
             onClick={fetchHealth}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-600 transition text-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist rounded-xl hover:bg-white dark:hover:bg-nx-muted transition text-sm"
           >
             <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             بروزرسانی
@@ -126,21 +126,21 @@ export default function SupersetHealthPage() {
         {health && (
           <div className={`rounded-2xl border p-6 ${
             health.status === 'ok'
-              ? 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800'
-              : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+              ? 'bg-nx-teal/10 dark:bg-nx-teal/20 border-nx-teal/10 dark:border-nx-teal'
+              : 'bg-nx-danger-50 dark:bg-nx-danger-900/20 border-nx-danger-200 dark:border-nx-danger-800'
           }`}>
             <div className="flex items-center gap-3">
               {health.status === 'ok' ? (
-                <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                <CheckCircle className="w-6 h-6 text-nx-teal dark:text-nx-teal" />
               ) : (
-                <XCircle className="w-6 h-6 text-red-600 dark:text-red-400" />
+                <XCircle className="w-6 h-6 text-nx-danger-600 dark:text-nx-danger-400" />
               )}
               <div>
-                <p className={`font-bold ${health.status === 'ok' ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300'}`}>
+                <p className={`font-bold ${health.status === 'ok' ? 'text-nx-teal dark:text-nx-teal' : 'text-nx-danger-700 dark:text-nx-danger-300'}`}>
                   {health.status === 'ok' ? 'Superset متصل است' : 'Superset در دسترس نیست'}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{health.superset_url}</p>
-                {health.error && <p className="text-xs text-red-500 mt-1">{health.error}</p>}
+                <p className="text-xs text-nx-mist dark:text-nx-mist">{health.superset_url}</p>
+                {health.error && <p className="text-xs text-nx-danger-500 mt-1">{health.error}</p>}
               </div>
             </div>
           </div>
@@ -149,17 +149,17 @@ export default function SupersetHealthPage() {
         {/* Stats */}
         {health && (
           <div className="grid grid-cols-3 gap-4">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{health.datasets.length}</p>
-              <p className="text-xs text-gray-500">کل مجموعه‌داده‌ها</p>
+            <div className="bg-white dark:bg-nx-navy rounded-2xl border border-nx-border dark:border-nx-navy-border p-4">
+              <p className="text-2xl font-bold text-nx-navy dark:text-nx-mist/10">{health.datasets.length}</p>
+              <p className="text-xs text-nx-mist">کل مجموعه‌داده‌ها</p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
-              <p className="text-2xl font-bold text-emerald-600">{syncedCount}</p>
-              <p className="text-xs text-gray-500">همگام‌شده</p>
+            <div className="bg-white dark:bg-nx-navy rounded-2xl border border-nx-border dark:border-nx-navy-border p-4">
+              <p className="text-2xl font-bold text-nx-teal">{syncedCount}</p>
+              <p className="text-xs text-nx-mist">همگام‌شده</p>
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4">
-              <p className="text-2xl font-bold text-amber-600">{unsyncedCount}</p>
-              <p className="text-xs text-gray-500">نیاز به همگام‌سازی</p>
+            <div className="bg-white dark:bg-nx-navy rounded-2xl border border-nx-border dark:border-nx-navy-border p-4">
+              <p className="text-2xl font-bold text-nx-warning-600">{unsyncedCount}</p>
+              <p className="text-xs text-nx-mist">نیاز به همگام‌سازی</p>
             </div>
           </div>
         )}
@@ -169,7 +169,7 @@ export default function SupersetHealthPage() {
           <button
             onClick={handleSyncAll}
             disabled={syncingAll}
-            className="flex items-center gap-2 px-5 py-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition text-sm font-medium disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-3 bg-nx-blue text-white rounded-xl hover:bg-nx-blue transition text-sm font-medium disabled:opacity-50"
           >
             {syncingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
             همگام‌سازی همه ({unsyncedCount} مورد)
@@ -177,24 +177,24 @@ export default function SupersetHealthPage() {
         )}
 
         {/* Dataset Table */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
-            <h2 className="font-bold text-gray-900 dark:text-gray-100">وضعیت همگام‌سازی</h2>
+        <div className="bg-white dark:bg-nx-navy rounded-2xl border border-nx-border dark:border-nx-navy-border overflow-hidden">
+          <div className="px-6 py-4 border-b border-nx-border dark:border-nx-navy-border">
+            <h2 className="font-bold text-nx-navy dark:text-nx-mist/10">وضعیت همگام‌سازی</h2>
           </div>
           {loading ? (
-            <div className="p-12 text-center text-gray-500">
+            <div className="p-12 text-center text-nx-mist">
               <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
               در حال بارگذاری...
             </div>
           ) : health?.datasets.length === 0 ? (
             <div className="p-12 text-center">
-              <Database className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500">هنوز مجموعه‌داده‌ای وجود ندارد</p>
+              <Database className="w-12 h-12 text-nx-mist mx-auto mb-3" />
+              <p className="text-nx-mist">هنوز مجموعه‌داده‌ای وجود ندارد</p>
             </div>
           ) : (
             <table className="w-full">
               <thead>
-                <tr className="text-right text-xs text-gray-500 dark:text-gray-400 border-b border-gray-100 dark:border-gray-700">
+                <tr className="text-right text-xs text-nx-mist dark:text-nx-mist border-b border-nx-border dark:border-nx-navy-border">
                   <th className="px-6 py-3 font-medium">نام</th>
                   <th className="px-6 py-3 font-medium">جدول</th>
                   <th className="px-6 py-3 font-medium">وضعیت</th>
@@ -202,29 +202,29 @@ export default function SupersetHealthPage() {
                   <th className="px-6 py-3 font-medium">عملیات</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
+              <tbody className="divide-y divide-nx-mist/70">
                 {health?.datasets.map((ds) => (
-                  <tr key={ds.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition">
-                    <td className="px-6 py-4 text-sm font-medium text-gray-900 dark:text-gray-100">{ds.name}</td>
-                    <td className="px-6 py-4 text-xs text-gray-500 font-mono">{ds.table_name}</td>
+                  <tr key={ds.id} className="hover:bg-white dark:hover:bg-nx-navy-elevated transition">
+                    <td className="px-6 py-4 text-sm font-medium text-nx-navy dark:text-nx-mist/10">{ds.name}</td>
+                    <td className="px-6 py-4 text-xs text-nx-mist font-mono">{ds.table_name}</td>
                     <td className="px-6 py-4">
                       {ds.synced ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-lg text-xs font-medium">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-nx-teal/10 dark:bg-nx-teal/30 text-nx-teal dark:text-nx-teal rounded-lg text-xs font-medium">
                           <CheckCircle className="w-3 h-3" /> همگام
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-lg text-xs font-medium">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-nx-warning-100 dark:bg-nx-warning-900/30 text-nx-warning-700 dark:text-nx-warning-300 rounded-lg text-xs font-medium">
                           <AlertTriangle className="w-3 h-3" /> ناهماهنگ
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 text-xs text-gray-500">{ds.superset_dataset_id ?? '-'}</td>
+                    <td className="px-6 py-4 text-xs text-nx-mist">{ds.superset_dataset_id ?? '-'}</td>
                     <td className="px-6 py-4">
                       {!ds.synced && health?.status === 'ok' && (
                         <button
                           onClick={() => handleSyncSingle(ds.id)}
                           disabled={syncingId === ds.id}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-medium hover:bg-indigo-200 dark:hover:bg-indigo-800/40 transition disabled:opacity-50"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-nx-blue/10 dark:bg-nx-blue/30 text-nx-blue dark:text-nx-blue rounded-lg text-xs font-medium hover:bg-nx-blue/10 dark:hover:bg-nx-blue/40 transition disabled:opacity-50"
                         >
                           {syncingId === ds.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
                           همگام‌سازی

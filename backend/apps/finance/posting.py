@@ -64,6 +64,46 @@ class PostingEngine:
 
     @staticmethod
     @transaction.atomic
+    def create_voucher(
+        company,
+        description="",
+        created_by=None,
+        date=None,
+        date_jalali="",
+        source_type="manual",
+        source_id=None,
+        fiscal_year=None,
+    ) -> JournalVoucher:
+        """
+        Create an empty draft journal voucher for a posting engine.
+
+        Module posting engines (sales, purchasing, trading, service_sales)
+        call this to obtain a numbered voucher, then attach their own
+        JournalEntry rows. The fiscal year defaults to the open one.
+        """
+        fy = fiscal_year or PostingEngine.get_open_fiscal_year(company)
+        if not fy:
+            raise ValidationError("No open fiscal year found. Create one first.")
+
+        today = date or timezone.localdate()
+        if not date_jalali:
+            date_jalali = today.strftime("%Y/%m/%d")
+
+        return JournalVoucher.objects.create(
+            company=company,
+            fiscal_year=fy,
+            number=PostingEngine._next_voucher_number(company, fy.id),
+            date_jalali=date_jalali,
+            date=today,
+            description=description,
+            source_type=source_type,
+            source_id=source_id,
+            status="draft",
+            created_by=created_by,
+        )
+
+    @staticmethod
+    @transaction.atomic
     def post_invoice(invoice: Invoice, user: Any) -> JournalVoucher:
         """
         Post an invoice to the general ledger.

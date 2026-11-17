@@ -57,7 +57,8 @@ class RequireModule(permissions.BasePermission):
         user = getattr(request, "user", None)
         if not user or not user.is_authenticated:
             return False
-        if user.is_staff:
+        # Staff users and organization admins bypass module subscriptions.
+        if user.is_staff or getattr(user, "role", None) == "admin":
             return True
         if not user.company:
             return False

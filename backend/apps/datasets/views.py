@@ -41,8 +41,8 @@ def dataset_list(request):
     datasets = Dataset.objects.filter(status="ready")
 
     # Role-based filtering: users only see datasets for their role
-    if request.user.role == "ceo" or request.user.is_staff:
-        pass  # CEO sees everything
+    if request.user.role in ("ceo", "admin") or request.user.is_staff:
+        pass  # CEO/Admin see everything
     else:
         datasets = datasets.filter(allowed_roles__contains=request.user.role)
 
@@ -138,7 +138,7 @@ def dataset_detail(request, pk):
         return Response(status=status.HTTP_404_NOT_FOUND)
 
     # Role check
-    if request.user.role != "ceo" and not request.user.is_staff:
+    if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
         if request.user.role not in dataset.allowed_roles:
             return Response(
                 {"error": "You do not have access to this dataset"},
@@ -196,7 +196,7 @@ def dataset_query(request, pk):
 
     # Role check (mirrors dataset_detail): a non-CEO/staff user may only
     # query datasets shared with their role.
-    if request.user.role != "ceo" and not request.user.is_staff:
+    if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
         if request.user.role not in dataset.allowed_roles:
             return Response(
                 {"error": "You do not have access to this dataset"},

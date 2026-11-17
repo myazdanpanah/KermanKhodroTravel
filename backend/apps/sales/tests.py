@@ -11,7 +11,9 @@ from django.contrib.auth import get_user_model
 
 from apps.accounts.models import Company
 from apps.core.models import BaseModel
-from apps.finance.models import Customer, JournalVoucher, JournalEntry, Account, FiscalYear
+from apps.finance.models import (
+    Customer, FiscalYear, AccountGroup, KolAccount,
+)
 
 from .models import (
     SalesQuotation, SalesQuotationLine,
@@ -30,7 +32,7 @@ class SalesTestBase(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.company = Company.objects.create(name="Test Co", code="TC")
+        cls.company = Company.objects.create(name="Test Co")
         cls.user = User.objects.create_user(
             username="sales_user", password="pass123",
             company=cls.company,
@@ -38,32 +40,46 @@ class SalesTestBase(TestCase):
         cls.customer = Customer.objects.create(
             company=cls.company,
             name="Test Customer",
-            customer_type="wholesale",
         )
 
-        # Create accounts for posting tests
-        cls.ar_account = Account.objects.create(
-            company=cls.company, code="131", name="Customer Receivable",
-            account_type="asset",
+        # Ledger accounts used by SalesPostingEngine (posting.py):
+        # 131 = receivables, 401 = sales revenue, 221 = VAT, 402 = returns.
+        group_assets = AccountGroup.objects.create(
+            company=cls.company, code="1", name="Assets",
         )
-        cls.revenue_account = Account.objects.create(
-            company=cls.company, code="401", name="Sales Revenue",
-            account_type="revenue",
+        group_liabilities = AccountGroup.objects.create(
+            company=cls.company, code="2", name="Liabilities",
         )
-        cls.vat_account = Account.objects.create(
-            company=cls.company, code="221", name="VAT Payable",
-            account_type="liability",
+        group_revenue = AccountGroup.objects.create(
+            company=cls.company, code="4", name="Revenue",
         )
-        cls.return_account = Account.objects.create(
-            company=cls.company, code="402", name="Sales Return",
-            account_type="revenue",
+        cls.ar_account = KolAccount.objects.create(
+            company=cls.company, group=group_assets, code="131",
+            name="Customer Receivable", account_type="asset",
+            normal_balance="debit",
+        )
+        cls.revenue_account = KolAccount.objects.create(
+            company=cls.company, group=group_revenue, code="401",
+            name="Sales Revenue", account_type="revenue",
+            normal_balance="credit",
+        )
+        cls.vat_account = KolAccount.objects.create(
+            company=cls.company, group=group_liabilities, code="221",
+            name="VAT Payable", account_type="liability",
+            normal_balance="credit",
+        )
+        cls.return_account = KolAccount.objects.create(
+            company=cls.company, group=group_revenue, code="402",
+            name="Sales Return", account_type="revenue",
+            normal_balance="credit",
         )
         cls.fiscal_year = FiscalYear.objects.create(
             company=cls.company,
             name="2026",
+            start_date_jalali="1405/01/01",
+            end_date_jalali="1405/12/29",
             start_date=date(2026, 1, 1),
             end_date=date(2026, 12, 31),
-            is_current=True,
         )
 
 
