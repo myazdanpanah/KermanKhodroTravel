@@ -507,7 +507,10 @@ class InvoicePdfContentTests(TestCase):
             letter_number="1404/9999/00123", letter_date="1404/03/10",
             period_range="خرداد ۱۴۰۴", service_category="پرواز",
         )
-        self.rows = [
+        self.rows = self._make_rows(self.ROW_COUNT)
+
+    def _make_rows(self, count: int) -> list[dict]:
+        return [
             {
                 "ردیف": index, "قرارداد": str(1000 + index),
                 "نام مسافر": self.LONG_NAME if index == 2 else f"مسافر شماره {index}",
@@ -515,15 +518,16 @@ class InvoicePdfContentTests(TestCase):
                 "تاریخ پرواز": "1404/03/12",
                 "بدهکار": 1_000_000 * index, "بستانکار": 0, "مانده": 1_000_000 * index,
             }
-            for index in range(1, self.ROW_COUNT + 1)
+            for index in range(1, count + 1)
         ]
 
-    def _pages(self) -> list[str]:
+    def _pages(self, rows: list[dict] | None = None) -> list[str]:
         import pymupdf
 
         from apps.billing.services.generation import render_invoice_pdf
 
-        data = render_invoice_pdf(self.request, "flight", self.rows, self.request.letter_number)
+        rows = self.rows if rows is None else rows
+        data = render_invoice_pdf(self.request, "flight", rows, self.request.letter_number)
         self.assertTrue(data.startswith(b"%PDF-"))
         document = pymupdf.open(stream=data, filetype="pdf")
         try:
@@ -546,6 +550,16 @@ class InvoicePdfContentTests(TestCase):
         self.assertTrue(all(page.strip() for page in pages), "a page rendered blank")
         # Text exists, so a template that renders empty-but-valid PDFs fails here.
         self.assertGreater(len("".join(pages)), 200)
+
+    def test_eight_rows_fit_on_one_page_and_nine_break_to_two(self):
+        """The per-page chunk is eight rows; an off-by-one must fail here."""
+        single = self._pages(self._make_rows(8))
+        self.assertEqual(len(single), 1, "eight rows spilled onto a second page")
+        self.assertTrue(single[0].strip(), "the single page rendered blank")
+
+        double = self._pages(self._make_rows(9))
+        self.assertEqual(len(double), 2, "nine rows did not break to a second page")
+        self.assertTrue(all(page.strip() for page in double), "a page rendered blank")
 
     def test_pdf_contains_title_totals_and_passenger(self):
         from apps.billing.services.normalize import to_persian_digits
