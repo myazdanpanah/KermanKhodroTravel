@@ -47,8 +47,8 @@ from .services.generation import (
     GenerationError,
     build_context,
     regenerate_file,
+    html_to_pdf,
     render_html,
-    render_pdf,
 )
 from .services.normalize import gregorian_to_persian, persian_date_to_gregorian
 from .services.numbers import (
@@ -616,7 +616,7 @@ def template_preview(request):
     context = build_context(fake_request, sample_rows, FLIGHT_COLUMNS)
     request.data.get("sample_context") and context.update(request.data["sample_context"])
     try:
-        pdf = render_pdf(render_html(context, template))
+        pdf = html_to_pdf(render_html(context, template))
     except GenerationError as exc:
         return _error(str(exc), status.HTTP_503_SERVICE_UNAVAILABLE)
     if not pdf:

@@ -411,6 +411,145 @@ class BillingApiTests(TestCase):
         self.assertEqual(CompanySettings.objects.count(), 1)
 
 
+class PdfBrowserTests(TestCase):
+    """One browser launch per request, and browser failures are not hidden."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = User.objects.create_user(
+            username="kkt_pdf_admin", password="pass12345", role="admin",
+            is_staff=True, is_superuser=True,
+        )
+        self.client.force_authenticate(user=self.admin)
+        Payer.objects.create(code="2001", name="شرکت آلفا")
+
+    def test_one_browser_launch_serves_every_pdf_of_a_request(self):
+        from unittest import mock
+
+        from apps.billing.services import generation
+
+        class FakeBrowser:
+            launches = 0
+            renders = 0
+            found = True
+            launch_error = None
+
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def start(self):
+                FakeBrowser.launches += 1
+                return self
+
+            def render(self, html):
+                FakeBrowser.renders += 1
+                return b"%PDF-1.4 fake"
+
+            def close(self):
+                pass
+
+        payload = {
+            "payer_code": "2001",
+            "payer_name": "شرکت آلفا",
+            "service_type": "ویزا",
+            "letter_number": "1404101",
+            "letter_date": "1404/01/15",
+            "start_day": 1,
+            "end_day": 31,
+            "month": "فروردین",
+            "year": 1404,
+            "period_range": "فروردین ۱۴۰۴ - ۱ تا ۳۱",
+            "flight_data": [{"ردیف": 1, "قرارداد": "1", "نام مسافر": "A", "مسیر": "KER-MHD",
+                             "شماره بلیط": "1", "تاریخ پرواز": "", "بدهکار": 1000,
+                             "بستانکار": 0, "مانده": 1000}],
+            "hotel_data": [{"ردیف": 1, "قرارداد": "2", "نام مسافر": "B", "هتل": "هتل نمونه",
+                            "نوع اتاق": "دبل", "تاریخ ورود و خروج": "", "تعداد نفرات": 2,
+                            "بدهکار": 2000, "بستانکار": 0, "مانده": 2000}],
+            "service_data": [{"ردیف": 1, "قرارداد": "3", "نام مسافر": "C", "شرح خدمات": "ویزا",
+                              "تاریخ": "", "توضیحات": "", "بدهکار": 3000,
+                              "بستانکار": 0, "مانده": 3000}],
+        }
+        created = self.client.post("/api/v1/billing/approvals/", payload, format="json")
+        self.assertEqual(created.status_code, status.HTTP_201_CREATED)
+
+        with mock.patch.object(generation, "PdfBrowser", FakeBrowser):
+            approved = self.client.post(
+                f"/api/v1/billing/approvals/{created.data['id']}/approve/", {}, format="json"
+            )
+
+        self.assertEqual(approved.status_code, status.HTTP_200_OK)
+        self.assertEqual(FakeBrowser.launches, 1)
+        self.assertEqual(FakeBrowser.renders, 3)
+
+    def test_browser_failure_is_reported_instead_of_falling_back(self):
+        from unittest import mock
+
+        from apps.billing.services import generation
+
+        class BrokenBrowser:
+            found = True
+            launch_error = None
+
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def start(self):
+                return self
+
+            def render(self, html):
+                raise generation.GenerationError(generation.BROWSER_LAUNCH_ERROR)
+
+            def close(self):
+                pass
+
+        with mock.patch.object(generation, "PdfBrowser", BrokenBrowser), mock.patch.object(
+            generation, "_weasyprint_pdf"
+        ) as weasyprint_fallback:
+            with self.assertRaises(generation.GenerationError) as raised:
+                generation.html_to_pdf("<p>نمونه</p>")
+
+        self.assertIn("مرورگر", str(raised.exception))
+        weasyprint_fallback.assert_not_called()
+
+    def test_approval_records_the_pdf_failure_in_persian(self):
+        from unittest import mock
+
+        from apps.billing.services import generation
+
+        class BrokenBrowser:
+            found = True
+            launch_error = None
+
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def start(self):
+                return self
+
+            def render(self, html):
+                raise generation.GenerationError(generation.BROWSER_LAUNCH_ERROR)
+
+            def close(self):
+                pass
+
+        approval = ApprovalRequest.objects.create(
+            requester=self.admin, requester_name="admin", payer_code="2001", payer_name="آلفا",
+            service_type="ویزا", letter_number="1404102", letter_date="1404/01/15",
+            start_day=1, end_day=31, month="فروردین", year=1404, period_range="x",
+            flight_data=[{"بدهکار": 1000, "بستانکار": 0}],
+        )
+        with mock.patch.object(generation, "PdfBrowser", BrokenBrowser):
+            response = self.client.post(
+                f"/api/v1/billing/approvals/{approval.id}/approve/", {}, format="json"
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        approval.refresh_from_db()
+        self.assertIn("مرورگر", approval.generation_error)
+        self.assertFalse(approval.files.filter(file_name__endswith=".pdf").exists())
+        self.assertTrue(approval.files.filter(file_name__endswith=".docx").exists())
+
+
 @override_settings(MEDIA_ROOT=tempfile.mkdtemp(prefix="kkt-word-test-"))
 class WordTemplateTests(TestCase):
     """The uploaded official .docx template is rendered with the letter context."""

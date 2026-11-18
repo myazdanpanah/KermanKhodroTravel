@@ -3,8 +3,8 @@ Document generation (spec §5.2 step 6, §8).
 
 Produces, for every non-empty service block of an approved request:
   * a Word (.docx) letter built with python-docx (RTL, B Nazanin),
-  * an HTML→PDF letter rendered from the active ``InvoiceTemplate`` with
-    WeasyPrint (best Persian shaping; wkhtmltopdf is forbidden).
+  * the صورتحساب as a PDF rendered from HTML by a headless Edge/Chrome
+    (one browser launch shared by every document of the request).
 
 Both artifacts go through :func:`apps.billing.services.files.save_final_file`,
 so they exist on disk and in the DB BLOB.
@@ -15,8 +15,17 @@ from __future__ import annotations
 import base64
 import datetime as dt
 import io
+import json
+import os
+import shutil
+import subprocess
+import tempfile
+import time
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Iterator
 
+import requests
 from django.conf import settings as django_settings
 from django.db import transaction
 from django.utils import timezone
@@ -200,22 +209,6 @@ def render_html(context: dict, template: InvoiceTemplate | None = None) -> str:
     env = Environment(autoescape=select_autoescape(["html", "xml"]))
     body = env.from_string(html).render(**context)
     return HTML_DOCUMENT.format(css=css, body=body)
-
-
-def render_pdf(html: str) -> bytes:
-    """
-    HTML -> PDF with WeasyPrint. Imported lazily: WeasyPrint needs native
-    libraries (libpango/cairo) that exist in the Linux image but not on a bare
-    Windows machine.
-    """
-    try:
-        from weasyprint import HTML
-    except Exception as exc:  # noqa: BLE001
-        raise GenerationError(
-            "موتور PDF (WeasyPrint) روی این سیستم در دسترس نیست؛ تولید PDF باید روی "
-            "سرور لینوکس/Docker انجام شود."
-        ) from exc
-    return HTML(string=html).write_pdf()
 
 
 # ── invoice PDF (HTML -> PDF) ────────────────────────────────────────────
@@ -405,49 +398,235 @@ def build_invoice_context(
     }
 
 
-def html_to_pdf(html: str) -> bytes:
-    """Render HTML to PDF with a headless Chromium/Edge, WeasyPrint as fallback."""
-    import os
-    import subprocess
-    import tempfile
+PDF_BROWSER_CANDIDATES = (
+    r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+    r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+    r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+    "/usr/bin/microsoft-edge",
+    "/usr/bin/google-chrome",
+    "/usr/bin/chromium",
+    "/usr/bin/chromium-browser",
+)
 
-    candidates = [
-        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
-        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
-        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-        "/usr/bin/microsoft-edge",
-        "/usr/bin/google-chrome",
-        "/usr/bin/chromium",
-    ]
-    browser = next((path for path in candidates if os.path.exists(path)), None)
-    if browser:
-        with tempfile.TemporaryDirectory() as folder:
-            html_path = os.path.join(folder, "invoice.html")
-            pdf_path = os.path.join(folder, "invoice.pdf")
-            with open(html_path, "w", encoding="utf-8") as handle:
-                handle.write(html)
+BROWSER_LAUNCH_ERROR = (
+    "مرورگر PDF (Microsoft Edge یا Google Chrome) اجرا نشد؛ صورت‌حساب PDF ساخته نشد. "
+    "نصب مرورگر یا مسیر آن (متغیر PDF_BROWSER_PATH) را بررسی کنید."
+)
+
+
+def _find_pdf_browser() -> str | None:
+    """Locate a Chromium-family binary, honouring the PDF_BROWSER_PATH override."""
+    override = os.environ.get("PDF_BROWSER_PATH", "").strip()
+    for path in ([override] if override else []) + list(PDF_BROWSER_CANDIDATES):
+        if path and os.path.exists(path):
+            return path
+    for name in ("microsoft-edge", "google-chrome", "chromium", "chrome", "msedge"):
+        found = shutil.which(name)
+        if found:
+            return found
+    return None
+
+
+class PdfBrowser:
+    """
+    One headless Chromium/Edge process shared by every PDF of a request.
+
+    Starting a browser costs about a second, and approving a batch produces one
+    invoice per service, so the process is launched once and driven over the
+    DevTools protocol instead of being spawned per file.
+    """
+
+    def __init__(self, timeout: int = 90):
+        self.timeout = timeout
+        self.path = _find_pdf_browser()
+        self.launch_error: str | None = None
+        self._process = None
+        self._port: int | None = None
+        self._profile: str | None = None
+
+    @property
+    def found(self) -> bool:
+        return self.path is not None
+
+    def start(self) -> "PdfBrowser":
+        if self.path is None:
+            self.launch_error = (
+                "برای تولید PDF نه مرورگر headless (Edge/Chrome) پیدا شد و نه WeasyPrint در دسترس است."
+            )
+            return self
+        self._profile = tempfile.mkdtemp(prefix="kkt-pdf-")
+        try:
+            self._process = subprocess.Popen(
+                [
+                    self.path,
+                    "--headless=new",
+                    "--disable-gpu",
+                    "--disable-extensions",
+                    "--no-first-run",
+                    "--no-default-browser-check",
+                    f"--user-data-dir={self._profile}",
+                    "--remote-debugging-port=0",
+                    "about:blank",
+                ],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            self._port = self._wait_for_port()
+        except Exception as exc:  # noqa: BLE001 - surfaced to the caller below
+            self.launch_error = f"{BROWSER_LAUNCH_ERROR} ({exc})"
+            self.close()
+            return self
+        if not self._port:
+            self.launch_error = BROWSER_LAUNCH_ERROR
+            self.close()
+        return self
+
+    def _wait_for_port(self, timeout: float = 15.0) -> int | None:
+        """Chromium writes the DevTools port to <profile>/DevToolsActivePort."""
+        port_file = Path(self._profile) / "DevToolsActivePort"  # type: ignore[arg-type]
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if port_file.exists():
+                try:
+                    return int(port_file.read_text(encoding="utf-8").splitlines()[0])
+                except (ValueError, IndexError):
+                    pass
+            if self._process is not None and self._process.poll() is not None:
+                return None
+            time.sleep(0.1)
+        return None
+
+    def render(self, html: str) -> bytes:
+        if self.launch_error:
+            raise GenerationError(self.launch_error)
+        if self._port is None or self._profile is None:
+            raise GenerationError(BROWSER_LAUNCH_ERROR)
+
+        folder = tempfile.mkdtemp(prefix="kkt-pdf-doc-", dir=self._profile)
+        html_path = Path(folder) / "invoice.html"
+        html_path.write_text(html, encoding="utf-8")
+        target = None
+        try:
+            response = requests.put(
+                f"http://127.0.0.1:{self._port}/json/new?about:blank", timeout=10
+            )
+            response.raise_for_status()
+            target = response.json()
+            data = self._print(target["webSocketDebuggerUrl"], html_path.as_uri())
+        except GenerationError:
+            raise
+        except Exception as exc:  # noqa: BLE001 - any CDP hiccup is a real failure
+            raise GenerationError(f"تبدیل صورت‌حساب به PDF با مرورگر ناموفق بود: {exc}") from exc
+        finally:
+            if target and self._port:
+                try:
+                    requests.get(
+                        f"http://127.0.0.1:{self._port}/json/close/{target['id']}", timeout=5
+                    )
+                except Exception:  # noqa: BLE001 - closing a tab must never fail a render
+                    pass
+            shutil.rmtree(folder, ignore_errors=True)
+
+        if not data.startswith(b"%PDF-"):
+            raise GenerationError("مرورگر خروجی PDF معتبری برنگرداند (فایل خالی بود).")
+        return data
+
+    def _print(self, websocket_url: str, page_url: str) -> bytes:
+        import websocket  # websocket-client; a thin CDP client
+
+        def receive(ws, wanted):
+            while True:
+                message = json.loads(ws.recv())
+                if wanted(message):
+                    return message
+
+        def command(ws, command_id: int, method: str, params: dict | None = None) -> dict:
+            payload = {"id": command_id, "method": method}
+            if params:
+                payload["params"] = params
+            ws.send(json.dumps(payload))
+            reply = receive(ws, lambda message: message.get("id") == command_id)
+            if "error" in reply:
+                raise GenerationError(f"مرورگر PDF خطا داد: {reply['error'].get('message', reply['error'])}")
+            return reply.get("result", {})
+
+        ws = websocket.create_connection(
+            websocket_url, timeout=self.timeout, suppress_origin=True
+        )
+        try:
             try:
-                subprocess.run(
-                    [
-                        browser,
-                        "--headless",
-                        "--disable-gpu",
-                        f"--print-to-pdf={pdf_path}",
-                        "--no-pdf-header-footer",
-                        "--virtual-time-budget=2000",
-                        html_path,
-                    ],
-                    check=True,
-                    timeout=90,
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
+                command(ws, 1, "Page.enable")
+                # Wait for both the navigate acknowledgement and the load event:
+                # they may arrive in either order, and printing before the page
+                # has loaded makes Chromium answer "Printing failed".
+                ws.send(json.dumps({"id": 2, "method": "Page.navigate", "params": {"url": page_url}}))
+                navigated = loaded = False
+                while not (navigated and loaded):
+                    message = json.loads(ws.recv())
+                    if message.get("id") == 2:
+                        if "error" in message:
+                            raise GenerationError(
+                                f"مرورگر PDF خطا داد: {message['error'].get('message', message['error'])}"
+                            )
+                        navigated = True
+                    elif message.get("method") == "Page.loadEventFired":
+                        loaded = True
+                result = command(
+                    ws,
+                    3,
+                    "Page.printToPDF",
+                    {
+                        "printBackground": True,
+                        "preferCSSPageSize": True,
+                        "displayHeaderFooter": False,
+                        "marginTop": 0,
+                        "marginBottom": 0,
+                        "marginLeft": 0,
+                        "marginRight": 0,
+                    },
                 )
-                if os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 0:
-                    with open(pdf_path, "rb") as handle:
-                        return handle.read()
-            except Exception:  # noqa: BLE001 - fall through to WeasyPrint
-                pass
+            except GenerationError:
+                raise
+            except Exception as exc:  # noqa: BLE001 - timeout / protocol / socket
+                raise GenerationError(
+                    "مرورگر PDF در زمان مقرر پاسخ نداد؛ تولید صورت‌حساب ناموفق بود. "
+                    f"({type(exc).__name__})"
+                ) from exc
+        finally:
+            ws.close()
+        return base64.b64decode(result.get("data") or "")
 
+    def close(self) -> None:
+        if self._process is not None and self._process.poll() is None:
+            self._process.terminate()
+            try:
+                self._process.wait(timeout=10)
+            except subprocess.TimeoutExpired:  # pragma: no cover - stubborn process
+                self._process.kill()
+        self._process = None
+        if self._profile:
+            shutil.rmtree(self._profile, ignore_errors=True)
+            self._profile = None
+
+    def __enter__(self) -> "PdfBrowser":
+        return self.start()
+
+    def __exit__(self, *exc_info) -> None:
+        self.close()
+
+
+@contextmanager
+def pdf_session() -> Iterator[PdfBrowser]:
+    """Start one browser for the caller and always shut it down afterwards."""
+    browser = PdfBrowser()
+    browser.start()
+    try:
+        yield browser
+    finally:
+        browser.close()
+
+
+def _weasyprint_pdf(html: str) -> bytes:
     try:
         from weasyprint import HTML
     except Exception as exc:  # noqa: BLE001
@@ -457,12 +636,35 @@ def html_to_pdf(html: str) -> bytes:
     return HTML(string=html).write_pdf()
 
 
-def render_invoice_pdf(request_obj: ApprovalRequest, service_key: str, rows: list[dict], letter_number: str) -> bytes:
+def html_to_pdf(html: str, browser: PdfBrowser | None = None) -> bytes:
+    """
+    Render HTML to PDF.
+
+    Pass ``browser`` to reuse one launch across several documents; without it a
+    single request-scoped browser is started. WeasyPrint is used only when no
+    Chromium-family binary exists at all — a browser that is present but fails
+    is reported to the caller instead of being silently replaced.
+    """
+    if browser is None:
+        with pdf_session() as session:
+            return html_to_pdf(html, session)
+    if browser.found:
+        return browser.render(html)
+    return _weasyprint_pdf(html)
+
+
+def render_invoice_pdf(
+    request_obj: ApprovalRequest,
+    service_key: str,
+    rows: list[dict],
+    letter_number: str,
+    browser: PdfBrowser | None = None,
+) -> bytes:
     if Environment is None:  # pragma: no cover
         raise GenerationError("Jinja2 در دسترس نیست؛ بازسازی محیط لازم است.")
     context = build_invoice_context(request_obj, service_key, rows, letter_number)
     html = Environment(autoescape=select_autoescape(["html", "xml"])).from_string(INVOICE_HTML).render(**context)
-    return html_to_pdf(html)
+    return html_to_pdf(html, browser)
 
 
 def _template_path_for(variant: str) -> Path | None:
@@ -647,7 +849,10 @@ def regenerate_file(final_file) -> bytes:
         attr, _label = SERVICE_ATTRS[final_file.service_type]
         rows = list(getattr(final_file.request, attr) or [])
         letter = final_file.letter_number or final_file.request.letter_number
-        return render_invoice_pdf(final_file.request, final_file.service_type, rows, letter)
+        with pdf_session() as browser:
+            return render_invoice_pdf(
+                final_file.request, final_file.service_type, rows, letter, browser=browser
+            )
     return render_docx(context)
 
 
@@ -665,68 +870,72 @@ def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
     template = active_template()
     errors: list[str] = []
 
-    for service_key, attr, label in SERVICE_KEYS:
-        rows = list(getattr(request_obj, attr) or [])
-        if not rows:
-            continue
-        columns = _columns_for(service_key)
-        context = build_context(request_obj, rows, columns)
-        context["service_type"] = f"{request_obj.service_type} — {label}"
-        # Each service carries its own letter number; a batch of flight + hotel +
-        # services therefore yields separate letters instead of one shared one.
-        letter = (request_obj.service_letters or {}).get(service_key) or request_obj.letter_number
-        context["letter_number"] = letter
-        # Letter numbers contain slashes (YYYY/CODE/NNNNN); file names must not.
-        letter_slug = (letter or "letter").replace("/", "-")
+    # One browser launch serves every invoice of this batch.
+    with pdf_session() as browser:
+        for service_key, attr, label in SERVICE_KEYS:
+            rows = list(getattr(request_obj, attr) or [])
+            if not rows:
+                continue
+            columns = _columns_for(service_key)
+            context = build_context(request_obj, rows, columns)
+            context["service_type"] = f"{request_obj.service_type} — {label}"
+            # Each service carries its own letter number; a batch of flight + hotel +
+            # services therefore yields separate letters instead of one shared one.
+            letter = (request_obj.service_letters or {}).get(service_key) or request_obj.letter_number
+            context["letter_number"] = letter
+            # Letter numbers contain slashes (YYYY/CODE/NNNNN); file names must not.
+            letter_slug = (letter or "letter").replace("/", "-")
 
-        try:
-            docx_bytes = render_docx(context)
-            produced.append(
-                save_final_file(
-                    request_obj,
-                    service_key,
-                    f"{service_key}_{letter_slug}.docx",
-                    docx_bytes,
-                    letter_number=letter,
+            try:
+                docx_bytes = render_docx(context)
+                produced.append(
+                    save_final_file(
+                        request_obj,
+                        service_key,
+                        f"{service_key}_{letter_slug}.docx",
+                        docx_bytes,
+                        letter_number=letter,
+                    )
                 )
-            )
-        except Exception as exc:  # noqa: BLE001
-            errors.append(f"Word ({label}): {exc}")
+            except Exception as exc:  # noqa: BLE001
+                errors.append(f"Word ({label}): {exc}")
 
-        try:
-            pdf_bytes = render_invoice_pdf(request_obj, service_key, rows, letter)
-            produced.append(
-                save_final_file(
-                    request_obj,
-                    service_key,
-                    f"{service_key}_{letter_slug}.pdf",
-                    pdf_bytes,
-                    letter_number=letter,
+            try:
+                pdf_bytes = render_invoice_pdf(
+                    request_obj, service_key, rows, letter, browser=browser
                 )
-            )
-        except Exception as exc:  # noqa: BLE001
-            errors.append(f"PDF ({label}): {exc}")
+                produced.append(
+                    save_final_file(
+                        request_obj,
+                        service_key,
+                        f"{service_key}_{letter_slug}.pdf",
+                        pdf_bytes,
+                        letter_number=letter,
+                    )
+                )
+            except Exception as exc:  # noqa: BLE001
+                errors.append(f"PDF ({label}): {exc}")
 
-        issue_date = persian_date_to_gregorian(request_obj.letter_date) or timezone.localdate()
-        amount = context["total_debt"] - context["total_credit"]
-        if context["variant"] == "credit" or amount <= 0:
-            # Credit notes are not invoices; nothing to add to the invoice ledger.
-            continue
-        invoice_type = label
-        if service_key == "service":
-            invoice_type = (request_obj.service_category or "").strip() or label
-        with transaction.atomic():
-            Invoice.objects.get_or_create(
-                letter_number=letter,
-                payer_code=request_obj.payer_code,
-                invoice_type=invoice_type,
-                defaults={
-                    "payer": request_obj.payer_name,
-                    "amount": amount,
-                    "issue_date": issue_date,
-                    "file_path": f"{letter_slug}/{service_key}_{letter_slug}.pdf",
-                },
-            )
+            issue_date = persian_date_to_gregorian(request_obj.letter_date) or timezone.localdate()
+            amount = context["total_debt"] - context["total_credit"]
+            if context["variant"] == "credit" or amount <= 0:
+                # Credit notes are not invoices; nothing to add to the invoice ledger.
+                continue
+            invoice_type = label
+            if service_key == "service":
+                invoice_type = (request_obj.service_category or "").strip() or label
+            with transaction.atomic():
+                Invoice.objects.get_or_create(
+                    letter_number=letter,
+                    payer_code=request_obj.payer_code,
+                    invoice_type=invoice_type,
+                    defaults={
+                        "payer": request_obj.payer_name,
+                        "amount": amount,
+                        "issue_date": issue_date,
+                        "file_path": f"{letter_slug}/{service_key}_{letter_slug}.pdf",
+                    },
+                )
 
     if errors and not produced:
         request_obj.generation_error = "; ".join(errors)[:2000]

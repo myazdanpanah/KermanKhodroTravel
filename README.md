@@ -193,6 +193,7 @@ cd frontend && npm install && npm run dev      # http://localhost:3000
 | `DB_HOST` / `DB_PORT` | `localhost` / `5432` | آدرس DB (برای کانتینر محلی: `127.0.0.1:5544`) |
 | `REDIS_URL` | `redis://localhost:6379/0` | بروکر Celery و لایهٔ Channels |
 | `SUPERSET_API_URL` و … | — | فقط برای BI/Superset؛ برای مشتری لازم نیست |
+| `PDF_BROWSER_PATH` | — | مسیر دستی Edge/Chrome برای تولید PDF (وقتی مرورگر در مسیرهای پیش‌فرض نیست) |
 
 - `ALLOWED_HOSTS = ["*"]` است؛ برای تولید محدود شود.
 - CORS فقط `localhost:3000` و `localhost:5173` را مجاز می‌کند؛ دامنهٔ تولید باید در `settings.py` اضافه شود.
@@ -281,7 +282,7 @@ can_submit, can_approve, can_edit_template
    - هدر: لوگو، تاریخ، شمارهٔ صورت‌حساب؛ عنوان «صورت حساب {نوع خدمت} {شرکت}»
    - جدول ۹ ستونی، **۸ ردیف در هر صفحه**، **جمع هر صفحه** و **جمع کل** در پایان
    - فوتر: محل امضا، مهر و نام/سمت مدیر؛ لوگو/امضا/مهر به‌صورت data-URI تزریق می‌شوند
-   - موتور PDF: Edge سپس Chrome به‌صورت headless (`--print-to-pdf`)، و در نبودشان `WeasyPrint`. روی سرور لینوکسی بدون مرورگر، WeasyPrint باید نصب و فونت‌ها موجود باشد.
+   - موتور PDF: یک پروسهٔ headless Edge/Chrome که **برای هر درخواست فقط یک‌بار** بالا می‌آید (`PdfBrowser` در همان فایل، با پروتکل DevTools) و همهٔ صورت‌حساب‌های آن درخواست را چاپ می‌کند؛ یک تأیید سه‌خدمتی با سه ردیف PDF در حدود ۴ ثانیه تمام می‌شود. فقط وقتی هیچ مرورگری پیدا نشود `WeasyPrint` استفاده می‌شود؛ اگر مرورگر موجود باشد ولی بالا نیاید یا چاپ را برنگرداند، `GenerationError` با پیام فارسی پرتاب و در `generation_error` درخواست ثبت می‌شود (دیگر به‌صورت خاموش به WeasyPrint برنمی‌گردد).
 3. ستون‌ها بر اساس نوع خدمت نگاشت می‌شوند: پرواز (مسیر/تاریخ پرواز/`بلیط: …`)، هتل (هتل + نوع اتاق، بازهٔ ورود و خروج، نفرات)، سایر خدمات (شرح خدمات/تاریخ/توضیحات).
 4. پس از پنجرهٔ نگه‌داری، فقط payload فایل پاک می‌شود؛ `regenerate_file` همان ورودی ذخیره‌شده را دوباره می‌سازد (Word و PDF هر دو).
 
@@ -371,7 +372,9 @@ cd backend && ../.venv/Scripts/python.exe manage.py test apps.billing.tests.test
 cd frontend && npx tsc --noEmit && npm run build
 ```
 
-وضعیت فعلی: **۳۹ تست بیلینگ سبز**، `tsc` بدون خطا، بیلد production موفق.
+وضعیت فعلی: **۴۲ تست بیلینگ سبز**، `tsc` بدون خطا، بیلد production موفق.
+
+تست‌های موتور PDF: `test_one_browser_launch_serves_every_pdf_of_a_request` (یک `PdfBrowser` برای سه صورت‌حساب)، `test_browser_failure_is_reported_instead_of_falling_back` (بدون فراخوانی WeasyPrint) و `test_approval_records_the_pdf_failure_in_persian` (پیام فارسی در `generation_error`، Word ساخته می‌شود، PDF نه).
 
 تست‌های مهم که نباید بی‌دلیل تغییر کنند:
 
@@ -388,7 +391,7 @@ cd frontend && npx tsc --noEmit && npm run build
 - **بکاپ/بازیابی:** `make dump` / `make restore FILE=backups/x.sql` (ویندوز: `dev.bat dump|restore`). قبل از هر مهاجرت سنگین یک dump بگیرید.
 - **فایل‌های تولیدی:** در `MEDIA_ROOT/approved` (یا مسیر تنظیمات). حجم را کنترل کنید؛ `purge_billing_files` را روزانه در cron بگذارید: `0 3 * * * python manage.py purge_billing_files --hours 24`.
 - **فونت:** برای PDF درست، `B Nazanin` باید روی ماشینی که PDF می‌سازد نصب باشد؛ وگرنه Tahoma جایگزین می‌شود (شکل ظاهری تغییر می‌کند). روی لینوکس فونت را در `~/.fonts` نصب و `fc-cache -f` بزنید.
-- **مرورگر headless:** مسیرهای پیش‌فرض Edge/Chrome در `generation.py` جست‌وجو می‌شوند؛ در Docker باید Chromium نصب باشد یا به WeasyPrint تکیه کنید (اختلاف جزئی در شکست صفحات).
+- **مرورگر headless:** مسیرهای پیش‌فرض Edge/Chrome در `generation.py` جست‌وجو می‌شوند (یا `PDF_BROWSER_PATH`). در Docker باید Chromium نصب باشد؛ در نبود آن WeasyPrint استفاده می‌شود (اختلاف جزئی در شکست صفحات). کتابخانهٔ `websocket-client` کلاینت CDP است و در `requirements.txt` آمده است.
 
 ---
 
