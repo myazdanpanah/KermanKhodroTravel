@@ -47,7 +47,7 @@ export default function CRMPage() {
             <Users className="h-7 w-7 text-nx-blue" />
             مدیریت ارتباط با مشتری
           </h1>
-          <p className="text-sm text-slate-600 dark:text-slate-200 mt-1">
+          <p className="text-sm text-slate-300 mt-1">
             سرنخ‌ها، فرصت‌ها، فعالیت‌ها و کمپین‌ها
           </p>
         </div>

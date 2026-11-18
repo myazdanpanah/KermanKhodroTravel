@@ -78,6 +78,8 @@ interface Approval {
   payer_name: string
   service_type: string
   letter_number: string
+  service_letters?: Record<string, string>
+  service_category?: string
   period_range: string
   status: 'pending' | 'approved' | 'rejected'
   status_display: string
@@ -123,10 +125,9 @@ export default function BillingIssuePage() {
   const [blocks, setBlocks] = useState<Record<ServiceKey, Block>>(EMPTY_BLOCKS)
   const [uploading, setUploading] = useState<ServiceKey | null>(null)
 
-  // Manual row editor
+  // Manual row editor — a grid, so several passengers can be entered at once.
   const [manualOpen, setManualOpen] = useState(false)
-  const [manualDraft, setManualDraft] = useState<Record<string, string>>({})
-  const [manualDates, setManualDates] = useState<Record<string, string>>({})
+  const [draftRows, setDraftRows] = useState<Record<string, string>[]>([])
 
   const startJalali = useMemo(() => isoToJalali(startDate), [startDate])
 
@@ -176,31 +177,58 @@ export default function BillingIssuePage() {
   })
   const serviceType = uploadedLabels.join('، ')
 
-  const uploadExcel = async (service: ServiceKey, file: File) => {
-    setUploading(service)
-    try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const up = await api.post('/billing/upload/excel/', fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-      const processed = await api.post('/billing/process/excel/', {
-        tmp_id: up.data.tmp_id,
-        type: service,
-      })
-      setBlocks((prev) => ({
-        ...prev,
-        [service]: { columns: processed.data.columns, rows: processed.data.rows, totals: processed.data.totals },
-      }))
-      setActiveService(service)
-      const serviceLabel = SERVICES.find((item) => item.key === service)?.label || ''
-      toast(`فایل ${file.name} خوانده شد (${processed.data.rows.length} ردیف) — نوع خدمت: ${serviceLabel}`, 'success')
-    } catch (err: unknown) {
-      const apiError = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
-      toast(apiError || 'خطا در خواندن فایل اکسل', 'error')
-    } finally {
-      setUploading(null)
+  // A batch may mix flight, hotel and service workbooks: each file is typed by
+  // the server from its own columns and merged into its block, so one approval
+  // produces one invoice and one letter per service.
+  const uploadExcels = async (files: File[]) => {
+    setUploading(activeService)
+    const merged: Record<ServiceKey, { columns: string[]; rows: Record<string, unknown>[] }> = {
+      flight: { columns: [], rows: [] },
+      hotel: { columns: [], rows: [] },
+      service: { columns: [], rows: [] },
     }
+    const labels: string[] = []
+    let failures = 0
+
+    for (const file of files) {
+      try {
+        const fd = new FormData()
+        fd.append('file', file)
+        const up = await api.post('/billing/upload/excel/', fd, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        })
+        const detected = (up.data.detected_type || activeService) as ServiceKey
+        const processed = await api.post('/billing/process/excel/', {
+          tmp_id: up.data.tmp_id,
+          type: detected,
+        })
+        merged[detected].columns = processed.data.columns
+        merged[detected].rows.push(...processed.data.rows)
+        labels.push(`${SERVICES.find((item) => item.key === detected)?.label || detected}: ${processed.data.rows.length} ردیف`)
+      } catch (err: unknown) {
+        failures += 1
+        const apiError = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+        toast(`${file.name}: ${apiError || 'خطای خواندن فایل'}`, 'error')
+      }
+    }
+
+    setBlocks((prev) => {
+      const next = { ...prev }
+      for (const key of SERVICES.map((service) => service.key)) {
+        if (merged[key].rows.length === 0) continue
+        const existing = prev[key]
+        const rows = [...existing.rows, ...merged[key].rows].map((row, index) => ({ ...row, ردیف: index + 1 }))
+        next[key] = {
+          columns: merged[key].columns.length ? merged[key].columns : existing.columns,
+          rows,
+          totals: {},
+        }
+      }
+      return next
+    })
+    if (labels.length) toast(`خوانده شد — ${labels.join('، ')}`, 'success')
+    if (failures && labels.length === 0) toast('هیچ فایلی خوانده نشد', 'error')
+    setUploading(null)
   }
 
   const clearBlock = (service: ServiceKey) =>
@@ -214,58 +242,72 @@ export default function BillingIssuePage() {
   }
 
   const openManualEditor = () => {
-    setManualDraft({})
-    setManualDates({})
+    // Start with three blank lines: the common case is a group, not one person.
+    setDraftRows([{}, {}, {}])
     setManualOpen(true)
   }
 
-  const addManualRow = () => {
+  const blankRow = (): Record<string, string> =>
+    Object.fromEntries(MANUAL_FIELDS[activeService].map((field) => [field.key, '']))
+
+  const addDraftRow = () => setDraftRows((rows) => [...rows, blankRow()])
+
+  const setDraftCell = (index: number, key: string, value: string) =>
+    setDraftRows((rows) => rows.map((row, i) => (i === index ? { ...row, [key]: value } : row)))
+
+  const removeDraftRow = (index: number) =>
+    setDraftRows((rows) => rows.filter((_, i) => i !== index))
+
+  const commitDrafts = () => {
     const fields = MANUAL_FIELDS[activeService]
-    for (const field of fields) {
-      if (field.required && !String(manualDraft[field.key] || '').trim()) {
-        toast(`${field.label} را وارد کنید`, 'error')
+    const filled = draftRows.filter((row) => Object.values(row).some((value) => String(value || '').trim()))
+    if (filled.length === 0) {
+      toast('حداقل یک ردیف را پر کنید', 'error')
+      return
+    }
+    for (const [index, draft] of filled.entries()) {
+      const missing = fields.find((field) => field.required && !String(draft[field.key] || '').trim())
+      if (missing) {
+        toast(`ردیف ${index + 1}: ${missing.label} را وارد کنید`, 'error')
         return
       }
     }
 
-    const row: Record<string, unknown> = {}
-    for (const field of fields) {
-      if (field.type === 'date') {
-        const iso = manualDates[field.key] || ''
-        row[field.key] = iso ? formatJalali(iso) : ''
-      } else if (field.type === 'money' || field.type === 'number') {
-        row[field.key] = Number(manualDraft[field.key] || 0)
-      } else {
-        row[field.key] = String(manualDraft[field.key] || '').trim()
+    const newRows = filled.map((draft) => {
+      const row: Record<string, unknown> = {}
+      for (const field of fields) {
+        const raw = String(draft[field.key] || '').trim()
+        if (field.type === 'money' || field.type === 'number') {
+          row[field.key] = Number(raw.replace(/[,٬\s]/g, '').replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))) || 0
+        } else {
+          row[field.key] = raw
+        }
       }
-    }
-
-    if (activeService === 'hotel') {
-      row['تاریخ ورود و خروج'] = `ورود: ${row['تاریخ ورود'] || '—'}  خروج: ${row['تاریخ خروج'] || '—'}`
-      delete row['تاریخ ورود']
-      delete row['تاریخ خروج']
-      row['تعداد نفرات'] = Number(row['تعداد نفرات'] || 1)
-    }
-
-    const debt = Number(row['بدهکار'] || 0)
-    const credit = Number(row['بستانکار'] || 0)
-    row['مانده'] = debt - credit
+      if (activeService === 'hotel') {
+        row['تاریخ ورود و خروج'] = `ورود: ${row['تاریخ ورود'] || '—'}  خروج: ${row['تاریخ خروج'] || '—'}`
+        delete row['تاریخ ورود']
+        delete row['تاریخ خروج']
+        row['تعداد نفرات'] = Number(row['تعداد نفرات'] || 1)
+      }
+      row['مانده'] = Number(row['بدهکار'] || 0) - Number(row['بستانکار'] || 0)
+      return row as Record<string, unknown>
+    })
 
     setBlocks((prev) => {
       const current = prev[activeService]
-      const rows: Record<string, unknown>[] = [...current.rows, row].map((item, index) => ({ ...item, ردیف: index + 1 }))
+      const rows: Record<string, unknown>[] = [...current.rows, ...newRows].map((item, index) => ({ ...item, ردیف: index + 1 }))
       return {
         ...prev,
         [activeService]: {
           columns: current.columns.length ? current.columns : defaultColumns(activeService),
           rows,
-          totals: { debt: rows.reduce((s, r) => s + Number(r['بدهکار'] || 0), 0), credit: rows.reduce((s, r) => s + Number(r['بستانکار'] || 0), 0) },
+          totals: {},
         },
       }
     })
-    setManualDraft({})
-    setManualDates({})
-    toast('ردیف به جدول اضافه شد', 'success')
+    setDraftRows([{}, {}, {}])
+    setManualOpen(false)
+    toast(`${newRows.length} ردیف به جدول اضافه شد`, 'success')
   }
 
   const removeManualRow = (service: ServiceKey, index: number) => {
@@ -304,6 +346,7 @@ export default function BillingIssuePage() {
         service_type: serviceType,
         letter_number: letterNumber,
         letter_date: formatJalali(letterDate),
+        service_category: categories.find((item) => String(item.id) === serviceCategoryId)?.name || '',
         start_day: startJalali?.day || 1,
         end_day: isoToJalali(endDate)?.day || 1,
         month: startJalali ? String(startJalali.month) : '',
@@ -327,6 +370,23 @@ export default function BillingIssuePage() {
       toast(data?.error || 'خطا در ثبت درخواست', 'error')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const downloadFile = async (file: { id: number; file_name: string }) => {
+    try {
+      const res = await api.get(`/billing/files/${file.id}/download/`, { responseType: 'blob' })
+      const url = URL.createObjectURL(new Blob([res.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.download = file.file_name
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 2000)
+    } catch (err: unknown) {
+      const apiError = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
+      toast(apiError || 'دانلود فایل ناموفق بود؛ دوباره تلاش کنید.', 'error')
     }
   }
 
@@ -417,15 +477,16 @@ export default function BillingIssuePage() {
         <div className="flex flex-wrap items-center gap-3">
           <label className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-nx-navy text-nx-mist text-sm cursor-pointer border border-nx-navy-border hover:border-nx-blue/50 transition ${uploading ? 'opacity-60' : ''}`}>
             <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-            {uploading === activeService ? 'در حال خواندن…' : `بارگذاری اکسل ${SERVICES.find((s) => s.key === activeService)?.label}`}
+            {uploading ? 'در حال خواندن…' : 'بارگذاری اکسل (چند فایل هم‌زمان)'}
             <input
               type="file"
               accept=".xlsx,.xls"
+              multiple
               className="hidden"
               disabled={Boolean(uploading)}
               onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) void uploadExcel(activeService, file)
+                const files = Array.from(e.target.files || [])
+                if (files.length) void uploadExcels(files)
                 e.target.value = ''
               }}
             />
@@ -515,7 +576,16 @@ export default function BillingIssuePage() {
             {!loading && approvals.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-xs text-nx-mist">درخواستی ثبت نشده است.</td></tr>}
             {approvals.map((approval) => (
               <tr key={approval.id} className="border-t border-nx-navy-border hover:bg-nx-navy/40">
-                <td className="px-4 py-3 text-white" dir="ltr">{approval.letter_number || '—'}</td>
+                <td className="px-4 py-3 text-white" dir="ltr">
+                  {approval.service_letters && Object.keys(approval.service_letters).length > 0
+                    ? Object.entries(approval.service_letters).map(([key, letter]) => (
+                        <div key={key} className="text-[11px]">
+                          {letter}
+                          <span className="text-nx-mist mr-1">({SERVICES.find((s) => s.key === key)?.label || key})</span>
+                        </div>
+                      ))
+                    : approval.letter_number || '—'}
+                </td>
                 <td className="px-4 py-3 text-nx-mist">{approval.payer_name}</td>
                 <td className="px-4 py-3 text-nx-mist">{approval.service_type}</td>
                 <td className="px-4 py-3 text-nx-mist">{approval.period_range}</td>
@@ -527,15 +597,7 @@ export default function BillingIssuePage() {
                     {approval.files.map((file) => (
                       <button
                         key={file.id}
-                        onClick={async () => {
-                          const res = await api.get(`/billing/files/${file.id}/download/`, { responseType: 'blob' })
-                          const url = URL.createObjectURL(res.data)
-                          const link = document.createElement('a')
-                          link.href = url
-                          link.download = file.file_name
-                          link.click()
-                          URL.revokeObjectURL(url)
-                        }}
+                        onClick={() => void downloadFile(file)}
                         className="inline-flex items-center gap-1 text-[11px] text-nx-blue hover:underline"
                       >
                         <Download className="w-3 h-3" /> {file.file_name}
@@ -565,73 +627,77 @@ export default function BillingIssuePage() {
 
       {manualOpen && (
         <div className="fixed inset-0 z-[120] bg-black/50 flex items-start justify-center p-4 overflow-y-auto" onClick={() => setManualOpen(false)}>
-          <div className={`${CARD} w-full max-w-3xl p-5 my-6`} onClick={(event) => event.stopPropagation()} dir="rtl">
+          <div className={`${CARD} w-full max-w-5xl p-5 my-6`} onClick={(event) => event.stopPropagation()} dir="rtl">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-sm font-bold text-white">افزودن دستی خدمت — {SERVICES.find((s) => s.key === activeService)?.label}</h3>
-                <p className="text-[11px] text-nx-mist mt-0.5">ردیف جدید مثل ردیف‌های اکسل به همان جدول اضافه و با ثبت درخواست در دیتابیس ذخیره می‌شود.</p>
+                <p className="text-[11px] text-nx-mist mt-0.5">ردیف‌ها مثل ردیف‌های اکسل به همان جدول اضافه و با ثبت درخواست در دیتابیس ذخیره می‌شوند.</p>
               </div>
               <button onClick={() => setManualOpen(false)} className="p-1.5 rounded-lg text-nx-mist hover:bg-nx-navy"><X className="w-4 h-4" /></button>
             </div>
 
-            {activeService === 'service' && categories.length > 0 && (
-              <div className="mb-3">
-                <label className="block text-[11px] text-nx-mist mb-1">انتخاب خدمت از فهرست</label>
-                <select
-                  value={manualDraft['شرح خدمات'] || ''}
-                  onChange={(e) => setManualDraft({ ...manualDraft, 'شرح خدمات': e.target.value })}
-                  className={INPUT}
-                >
-                  <option value="">انتخاب یا تایپ دستی…</option>
-                  {categories.filter((c) => c.is_active).map((c) => (
-                    <option key={c.id} value={c.name}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <datalist id="passenger-suggestions">
+              {passengers.map((name) => <option key={name} value={name} />)}
+            </datalist>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {MANUAL_FIELDS[activeService].map((field) => (
-                <div key={field.key}>
-                  <label className="block text-[11px] text-nx-mist mb-1">
-                    {field.label}{field.required ? ' *' : ''}
-                  </label>
-                  {field.type === 'date' ? (
-                    <JalaliDateInput
-                      value={manualDates[field.key] || ''}
-                      onChange={(iso) => setManualDates({ ...manualDates, [field.key]: iso })}
-                    />
-                  ) : field.type === 'passenger' ? (
-                    <>
-                      <input
-                        list="passenger-suggestions"
-                        value={manualDraft[field.key] || ''}
-                        onChange={(e) => setManualDraft({ ...manualDraft, [field.key]: e.target.value })}
-                        className={INPUT}
-                        placeholder="نام مسافر را بنویسید یا انتخاب کنید"
-                      />
-                      <datalist id="passenger-suggestions">
-                        {passengers.map((name) => <option key={name} value={name} />)}
-                      </datalist>
-                    </>
-                  ) : (
-                    <input
-                      type={field.type === 'money' || field.type === 'number' ? 'number' : 'text'}
-                      value={manualDraft[field.key] || ''}
-                      onChange={(e) => setManualDraft({ ...manualDraft, [field.key]: e.target.value })}
-                      className={INPUT}
-                    />
-                  )}
-                </div>
-              ))}
+            <div className="overflow-x-auto rounded-xl border border-nx-navy-border">
+              <table className="w-full text-xs min-w-[720px]">
+                <thead className="bg-nx-navy text-nx-mist">
+                  <tr>
+                    <th className="px-2 py-2 text-right font-medium">#</th>
+                    {MANUAL_FIELDS[activeService].map((field) => (
+                      <th key={field.key} className="px-2 py-2 text-right font-medium whitespace-nowrap">
+                        {field.label}{field.required ? ' *' : ''}
+                      </th>
+                    ))}
+                    <th className="px-2 py-2" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {draftRows.map((draft, index) => (
+                    <tr key={index} className="border-t border-nx-navy-border">
+                      <td className="px-2 py-1.5 text-nx-mist">{index + 1}</td>
+                      {MANUAL_FIELDS[activeService].map((field) => (
+                        <td key={field.key} className="px-1.5 py-1.5">
+                          <input
+                            type={field.type === 'money' || field.type === 'number' ? 'number' : 'text'}
+                            list={field.type === 'passenger' ? 'passenger-suggestions' : undefined}
+                            value={draft[field.key] || ''}
+                            onChange={(e) => setDraftCell(index, field.key, e.target.value)}
+                            placeholder={field.type === 'date' ? '1404/03/02' : undefined}
+                            className={`${INPUT} !py-1.5 !text-xs min-w-[90px]`}
+                            dir={field.type === 'money' || field.type === 'number' || field.type === 'date' ? 'ltr' : 'rtl'}
+                          />
+                        </td>
+                      ))}
+                      <td className="px-1.5 py-1.5">
+                        <button onClick={() => removeDraftRow(index)} className="p-1 rounded text-rose-400 hover:bg-rose-400/10">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-            <div className="flex items-center justify-between mt-4">
-              <p className="text-[11px] text-nx-mist">مانده به‌صورت خودکار از بدهکار منهای بستانکار محاسبه می‌شود.</p>
+            {activeService === 'service' && categories.length > 0 && (
+              <p className="text-[11px] text-nx-mist mt-2">
+                شرح خدمات را می‌توانید از فهرست خدمات هم انتخاب کنید؛ دستهٔ انتخابی صفحه به‌عنوان نوع صورت‌حساب استفاده می‌شود.
+              </p>
+            )}
+
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-4">
+              <div className="flex items-center gap-2">
+                <button onClick={addDraftRow} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-nx-navy-border text-nx-mist text-xs hover:border-nx-blue/50">
+                  <Plus className="w-3.5 h-3.5" /> ردیف جدید
+                </button>
+                <p className="text-[11px] text-nx-mist">هر تعداد مسافر را می‌توانید در یک نشست وارد کنید؛ مانده خودکار محاسبه می‌شود.</p>
+              </div>
               <div className="flex gap-2">
                 <button onClick={() => setManualOpen(false)} className="px-4 py-2 rounded-xl border border-nx-navy-border text-nx-mist text-sm">بستن</button>
-                <button onClick={addManualRow} className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-nx-blue text-white text-sm">
-                  <Save className="w-4 h-4" /> افزودن ردیف
+                <button onClick={commitDrafts} className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-nx-blue text-white text-sm">
+                  <Save className="w-4 h-4" /> ثبت ردیف‌ها
                 </button>
               </div>
             </div>

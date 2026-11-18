@@ -248,6 +248,53 @@ class BillingApiTests(TestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_multi_service_batch_gets_a_letter_and_invoice_each(self):
+        payload = {
+            "payer_code": "2001",
+            "payer_name": "شرکت آلفا",
+            "service_type": "پرواز، هتل، تور",
+            "service_category": "تور",
+            "letter_number": "1404001",
+            "letter_date": "1404/01/15",
+            "start_day": 1,
+            "end_day": 31,
+            "month": "فروردین",
+            "year": 1404,
+            "period_range": "فروردین ۱۴۰۴",
+            "flight_data": [{"ردیف": 1, "قرارداد": "1", "نام مسافر": "A", "مسیر": "KER-MHD",
+                             "شماره بلیط": "1", "بدهکار": 1000, "بستانکار": 0, "مانده": 1000}],
+            "hotel_data": [{"ردیف": 1, "قرارداد": "2", "نام مسافر": "B", "هتل": "پارس",
+                            "نوع اتاق": "دو تخته", "تعداد نفرات": 2,
+                            "تاریخ ورود و خروج": "ورود: 1404/01/16 خروج: 1404/01/18",
+                            "بدهکار": 2000, "بستانکار": 0, "مانده": 2000}],
+            "service_data": [{"ردیف": 1, "قرارداد": "3", "نام مسافر": "C", "شرح خدمات": "تور",
+                              "تاریخ": "1404/01/17", "توضیحات": "",
+                              "بدهکار": 3000, "بستانکار": 0, "مانده": 3000}],
+        }
+        created = self.client.post("/api/v1/billing/approvals/", payload, format="json")
+        self.assertEqual(created.status_code, status.HTTP_201_CREATED)
+        approval_id = created.data["id"]
+        approved = self.client.post(f"/api/v1/billing/approvals/{approval_id}/approve/", {}, format="json")
+        self.assertEqual(approved.status_code, status.HTTP_200_OK)
+
+        approval = ApprovalRequest.objects.get(pk=approval_id)
+        self.assertEqual(len(approval.reserved_numbers), 3)
+        self.assertEqual(set(approval.service_letters), {"flight", "hotel", "service"})
+        self.assertEqual(len(set(approval.service_letters.values())), 3)
+
+        # Each letter carries its own artifacts.
+        self.assertEqual(
+            set(approval.files.values_list("letter_number", flat=True)),
+            set(approval.service_letters.values()),
+        )
+        # And its own invoice, typed by the service (category for services).
+        invoices = Invoice.objects.filter(payer_code="2001")
+        self.assertEqual(invoices.count(), 3)
+        self.assertEqual(
+            set(invoices.values_list("invoice_type", flat=True)), {"پرواز", "هتل", "تور"}
+        )
+        self.assertEqual(len(set(invoices.values_list("letter_number", flat=True))), 3)
+
     def test_approval_flow_approve_reserves_number_and_generates_docx(self):
         payload = {
             "payer_code": "2001",

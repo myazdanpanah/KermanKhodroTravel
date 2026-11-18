@@ -36,6 +36,7 @@ export interface Invoice {
   issue_date: string
   issue_date_jalali: string
   file_path: string
+  file_id?: number | null
   created_at: string
 }
 
@@ -59,4 +60,5 @@ export const rial = (value: number | undefined | null) => `${num(value)} ریا�
 export const INPUT =
   'w-full px-3 py-2.5 rounded-xl border border-nx-navy-border bg-nx-navy-elevated text-white placeholder:text-nx-mist/45 text-sm focus:ring-2 focus:ring-nx-blue focus:border-nx-blue outline-none transition'
 
-export const CARD = 'rounded-xl border border-nx-navy-border bg-nx-navy-elevated'
+// `dark-surface` keeps muted copy light inside these always-navy cards.
+export const CARD = 'dark-surface rounded-xl border border-nx-navy-border bg-nx-navy-elevated'

@@ -44,6 +44,23 @@ html:not(.dark) .text-slate-600 {
   color: #475569;
 }
 
+/* Always-dark surfaces (navy cards, launcher, login, sidebars) keep light copy
+   in both themes: the light-theme slate override above would otherwise paint
+   near-black text on #101D35 / #1E2A42. */
+/* Always-dark cards opt in with `.dark-surface` (billing cards, popovers) so
+   muted copy stays light even in the light theme, without touching the white
+   cards that live inside the same navy shell. */
+html .dark-surface .text-slate-600,
+html .dark-surface .text-slate-700,
+html .dark-surface .text-slate-800 {
+  color: #cbd5e1;
+}
+
+/* The shared Jalali picker ships its own label colour and ignores the theme. */
+html .dark-surface .pc-date-picker__label {
+  color: #cbd5e1 !important;
+}
+
 /* Grid layout styles */
 /* Force LTR inside the grid container so react-grid-layout positions items correctly,
    then flip the whole thing back to RTL with transform */

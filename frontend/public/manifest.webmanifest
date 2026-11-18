@@ -1,0 +1,27 @@
+{
+  "name": "کرمان خودرو | سیستم مالی",
+  "short_name": "کرمان خودرو",
+  "description": "صورت‌حساب، اعلامیه و مدیریت مالی کرمان خودرو",
+  "lang": "fa",
+  "dir": "rtl",
+  "start_url": "/erp",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b1524",
+  "theme_color": "#0b1524",
+  "icons": [
+    {
+      "src": "/brand/nexivo-favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/nexivo-mark.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

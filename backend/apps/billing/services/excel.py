@@ -85,6 +85,55 @@ def _require(rows: list[dict], columns: list[str], required: list[str], label: s
         raise ExcelError(f"ستون‌های لازم در فایل {label} وجود ندارد: {', '.join(missing)}")
 
 
+# Workbooks from different offices name the same column differently
+# ("قرارداد" vs "شماره قرارداد", "اتاق" vs "نوع اتاق"). Every processor reads the
+# canonical name, so aliases are promoted to it before processing.
+COLUMN_ALIASES: dict[str, tuple[str, ...]] = {
+    "شماره قرارداد": ("قرارداد", "شماره قرار داد", "قرارداد شماره", "شمارهٔ قرارداد"),
+    "نام مسافر": ("مسافر", "نام و نام خانوادگی", "نام و نام خانوادگی مسافر", "نام مسافران"),
+    "مسیر": ("مسیر پرواز", "مسیر رفت", "مسیر حرکت"),
+    "شماره بلیط": ("شماره بلیت", "بلیط", "بلیت", "شماره بلیط/بلیت"),
+    "هتل": ("نام هتل",),
+    "اتاق": ("نوع اتاق", "نوع اقامت", "اتاق/نوع اتاق"),
+    "تعداد نفرات": ("تعداد مسافر", "تعداد افراد", "تعداد", "نفرات"),
+    "تاریخ ورود": ("ورود", "تاریخ ورود به هتل", "تاریخ چک‌این"),
+    "تاریخ خروج": ("خروج", "تاریخ خروج از هتل", "تاریخ چک‌اوت"),
+    "تاریخ پرواز": ("تاریخ حرکت", "تاریخ پرواز/حرکت", "پرواز"),
+    "تاریخ": ("تاریخ خدمت", "تاریخ سرویس", "تاریخ ارائه خدمت"),
+    "شرح خدمات": ("خدمات", "شرح خدمت", "نوع خدمت", "شرح"),
+    "توضیحات": ("ملاحظات", "توضیح"),
+    "بدهکار": ("بدهی", "مبلغ بدهکار"),
+    "بستانکار": ("بستانکاری", "مبلغ بستانکار"),
+}
+
+# Columns that carry both stay dates in one cell: "ورود: 1404/03/05 خروج: 1404/03/07".
+STAY_RANGE_NAMES = ("تاریخ ورود و خروج", "تاریخ اقامت", "ورود و خروج")
+
+
+def _with_aliases(columns: list[str], rows: list[dict]) -> tuple[list[str], list[dict]]:
+    """Promote known column aliases to their canonical names."""
+    rename: dict[str, str] = {}
+    for canonical, aliases in COLUMN_ALIASES.items():
+        if canonical in columns:
+            continue
+        for alias in aliases:
+            if alias in columns:
+                rename[alias] = canonical
+                break
+    if not rename:
+        return columns, rows
+
+    new_columns = [rename.get(column, column) for column in columns]
+    new_rows = []
+    for row in rows:
+        mapped = dict(row)
+        for alias, canonical in rename.items():
+            if canonical not in mapped and alias in mapped:
+                mapped[canonical] = mapped[alias]
+        new_rows.append(mapped)
+    return new_columns, new_rows
+
+
 def _flight_date(row: dict) -> str:
     for candidate in ("تاریخ پرواز", "مسیر", "توضیحات"):
         match = _FLIGHT_DATE_RE.search(to_english_digits(_clean(row.get(candidate))))
@@ -137,6 +186,9 @@ def _passenger_count(row: dict, columns: list[str]) -> int:
 
 
 def _stay_range(row: dict) -> str:
+    combined = _clean(_lookup(row, *STAY_RANGE_NAMES))
+    if combined:
+        return to_english_digits(combined)
     check_in = to_english_digits(_clean(_lookup(row, "تاریخ ورود")))
     check_out = to_english_digits(_clean(_lookup(row, "تاریخ خروج")))
     if check_in and check_out:
@@ -208,6 +260,7 @@ def process(file_type: str, columns: list[str], rows: list[dict]) -> list[dict]:
     processor = PROCESSORS.get(file_type)
     if processor is None:
         raise ExcelError("نوع فایل نامعتبر است.")
+    columns, rows = _with_aliases(columns, rows)
     return processor(columns, rows)
 
 

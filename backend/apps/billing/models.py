@@ -321,6 +321,12 @@ class ApprovalRequest(models.Model):
     flight_data = models.JSONField(default=list, blank=True, verbose_name="داده پرواز")
     hotel_data = models.JSONField(default=list, blank=True, verbose_name="داده هتل")
     reserved_numbers = models.JSONField(default=list, blank=True, verbose_name="شماره‌های رزرو")
+    service_letters = models.JSONField(
+        default=dict, blank=True, verbose_name="شماره نامه هر خدمت"
+    )
+    service_category = models.CharField(
+        max_length=100, blank=True, default="", verbose_name="دسته خدمت"
+    )
     status = models.CharField(
         max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING, verbose_name="وضعیت"
     )

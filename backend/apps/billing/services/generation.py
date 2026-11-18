@@ -383,6 +383,7 @@ def _context_for(request_obj: ApprovalRequest, service_key: str) -> dict:
         raise GenerationError(f"ردیفی برای {label} ثبت نشده است.")
     context = build_context(request_obj, rows, _columns_for(service_key))
     context["service_type"] = f"{request_obj.service_type} — {label}"
+    context["letter_number"] = (request_obj.service_letters or {}).get(service_key) or request_obj.letter_number
     return context
 
 
@@ -420,14 +421,22 @@ def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
         columns = _columns_for(service_key)
         context = build_context(request_obj, rows, columns)
         context["service_type"] = f"{request_obj.service_type} — {label}"
+        # Each service carries its own letter number; a batch of flight + hotel +
+        # services therefore yields separate letters instead of one shared one.
+        letter = (request_obj.service_letters or {}).get(service_key) or request_obj.letter_number
+        context["letter_number"] = letter
         # Letter numbers contain slashes (YYYY/CODE/NNNNN); file names must not.
-        letter_slug = (request_obj.letter_number or "letter").replace("/", "-")
+        letter_slug = (letter or "letter").replace("/", "-")
 
         try:
             docx_bytes = render_docx(context)
             produced.append(
                 save_final_file(
-                    request_obj, service_key, f"{service_key}_{letter_slug}.docx", docx_bytes
+                    request_obj,
+                    service_key,
+                    f"{service_key}_{letter_slug}.docx",
+                    docx_bytes,
+                    letter_number=letter,
                 )
             )
         except Exception as exc:  # noqa: BLE001
@@ -437,7 +446,11 @@ def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
             pdf_bytes = render_pdf(render_html(context, template))
             produced.append(
                 save_final_file(
-                    request_obj, service_key, f"{service_key}_{letter_slug}.pdf", pdf_bytes
+                    request_obj,
+                    service_key,
+                    f"{service_key}_{letter_slug}.pdf",
+                    pdf_bytes,
+                    letter_number=letter,
                 )
             )
         except Exception as exc:  # noqa: BLE001
@@ -448,11 +461,14 @@ def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
         if context["variant"] == "credit" or amount <= 0:
             # Credit notes are not invoices; nothing to add to the invoice ledger.
             continue
+        invoice_type = label
+        if service_key == "service":
+            invoice_type = (request_obj.service_category or "").strip() or label
         with transaction.atomic():
             Invoice.objects.get_or_create(
-                letter_number=request_obj.letter_number,
+                letter_number=letter,
                 payer_code=request_obj.payer_code,
-                invoice_type=label,
+                invoice_type=invoice_type,
                 defaults={
                     "payer": request_obj.payer_name,
                     "amount": amount,

@@ -186,6 +186,9 @@ def invoice_list(request):
     start = request.query_params.get("start_date")
     end = request.query_params.get("end_date")
     payer = request.query_params.get("payer")
+    invoice_type = request.query_params.get("type")
+    if invoice_type and invoice_type != "all":
+        queryset = queryset.filter(invoice_type=invoice_type)
     if payer_code:
         queryset = queryset.filter(payer_code=payer_code)
     if payer:
@@ -376,24 +379,44 @@ def approval_approve(request, pk: int):
     if approval.status != ApprovalRequest.STATUS_PENDING:
         return _error("این درخواست قبلاً بررسی شده است.")
 
-    blocks = [
-        bool(approval.flight_data),
-        bool(approval.hotel_data),
-        bool(approval.service_data),
+    # One letter (and one invoice) per service: flight, hotel and services each
+    # get their own sequence number when a batch carries several of them.
+    block_keys = [
+        key
+        for key, rows in (
+            ("flight", approval.flight_data),
+            ("hotel", approval.hotel_data),
+            ("service", approval.service_data),
+        )
+        if rows
     ]
-    count = max(1, sum(blocks))
+    count = max(1, len(block_keys))
 
     with transaction.atomic():
-        numbers = reserve_numbers(approval.payer_code, str(approval.year % 100).zfill(2), count)
-        approval.letter_number = full_letter_number(
-            str(approval.year % 100).zfill(2), numbers[0], approval.payer_code
+        year_two = str(approval.year % 100).zfill(2)
+        numbers = reserve_numbers(approval.payer_code, year_two, count)
+        service_letters = {
+            key: full_letter_number(year_two, number, approval.payer_code)
+            for key, number in zip(block_keys, numbers)
+        }
+        approval.letter_number = (
+            service_letters.get("flight") or next(iter(service_letters.values()), "")
+            or full_letter_number(year_two, numbers[0], approval.payer_code)
         )
+        approval.service_letters = service_letters
         approval.reserved_numbers = numbers
         approval.status = ApprovalRequest.STATUS_APPROVED
         approval.approved_by = request.user
         approval.approved_at = timezone.now()
         approval.save(
-            update_fields=["letter_number", "reserved_numbers", "status", "approved_by", "approved_at"]
+            update_fields=[
+                "letter_number",
+                "service_letters",
+                "reserved_numbers",
+                "status",
+                "approved_by",
+                "approved_at",
+            ]
         )
 
     mode = _enqueue_generation(approval.id)
@@ -854,3 +877,21 @@ def passenger_suggestions(request):
         if len(names) >= 500:
             break
     return Response(sorted(names.keys())[:500])
+
+
+@api_view(["GET"])
+@perm_required("can_view")
+def invoice_types(request):
+    """Distinct invoice types for the per-service filters on the invoices screen."""
+    from .models import ServiceCategory
+
+    types = list(
+        Invoice.objects.order_by().values_list("invoice_type", flat=True).distinct()
+    )
+    for label in ("پرواز", "هتل"):
+        if label not in types:
+            types.append(label)
+    for name in ServiceCategory.objects.filter(is_active=True).values_list("name", flat=True):
+        if name not in types:
+            types.append(name)
+    return Response(types)

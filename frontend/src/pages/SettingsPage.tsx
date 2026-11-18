@@ -708,7 +708,7 @@ export default function SettingsPage() {
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
                   activeTab === tab.id
                     ? 'bg-nx-blue/10 dark:bg-nx-blue/40 text-nx-blue dark:text-nx-blue'
-                    : 'text-slate-600 dark:text-slate-200 hover:bg-nx-mist/10 dark:hover:bg-nx-navy'
+                    : 'text-slate-300 hover:bg-nx-mist/10 dark:hover:bg-nx-navy'
                 }`}
               >
                 <Icon className="w-4 h-4" /> {tab.label}

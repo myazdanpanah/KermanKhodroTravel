@@ -49,14 +49,22 @@ class PayerSerializer(serializers.ModelSerializer):
 
 class InvoiceSerializer(serializers.ModelSerializer):
     issue_date_jalali = serializers.SerializerMethodField()
+    file_id = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
         fields = [
             "id", "letter_number", "payer", "payer_code", "invoice_type",
-            "amount", "issue_date", "issue_date_jalali", "file_path", "created_at",
+            "amount", "issue_date", "issue_date_jalali", "file_path", "created_at", "file_id",
         ]
-        read_only_fields = ["id", "created_at", "issue_date_jalali"]
+        read_only_fields = ["id", "created_at", "issue_date_jalali", "file_id"]
+
+    def get_file_id(self, obj):
+        """Newest generated document for this letter, for the download button."""
+        from .models import FinalFile
+
+        match = FinalFile.objects.filter(letter_number=obj.letter_number).order_by("-id").first()
+        return match.id if match else None
 
     def get_issue_date_jalali(self, obj) -> str:
         from .services.normalize import gregorian_to_persian
@@ -135,13 +143,14 @@ class ApprovalRequestSerializer(serializers.ModelSerializer):
             "id", "requester", "requester_username", "requester_name", "payer_code", "payer_name",
             "service_type", "letter_number", "letter_date", "start_day", "end_day", "month", "year",
             "period_range", "service_data", "flight_data", "hotel_data", "reserved_numbers",
+            "service_letters", "service_category",
             "status", "status_display", "rejection_reason", "approved_by", "approved_at",
             "generation_completed_at", "generation_error", "created_at", "files",
         ]
         read_only_fields = [
             "id", "requester", "requester_username", "requester_name", "status", "rejection_reason",
             "approved_by", "approved_at", "generation_completed_at", "generation_error",
-            "created_at", "reserved_numbers",
+            "created_at", "reserved_numbers", "service_letters",
         ]
 
     def validate_payer_code(self, value: str) -> str:

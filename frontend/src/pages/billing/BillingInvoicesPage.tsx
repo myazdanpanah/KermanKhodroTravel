@@ -4,7 +4,7 @@ import { useToast } from '../../components/Toast'
 import { useAuthStore } from '../../store/authStore'
 import JalaliDateInput from '../../components/JalaliDateInput'
 import { CARD, INPUT, rial, type Invoice } from './shared'
-import { FileText, Filter, Trash2, Wallet, X } from 'lucide-react'
+import { Download, FileText, Filter, Trash2, Wallet, X } from 'lucide-react'
 import { todayIso } from '../../lib/jalali'
 
 export default function BillingInvoicesPage() {
@@ -21,12 +21,19 @@ export default function BillingInvoicesPage() {
   const [payer, setPayer] = useState('')
   const [start, setStart] = useState('')
   const [end, setEnd] = useState('')
+  const [type, setType] = useState('all')
+  const [types, setTypes] = useState<string[]>([])
 
   const load = useCallback(async () => {
     setLoading(true)
     try {
       const res = await api.get('/billing/invoices/', {
-        params: { payer: payer || undefined, start_date: start || undefined, end_date: end || undefined },
+        params: {
+          payer: payer || undefined,
+          start_date: start || undefined,
+          end_date: end || undefined,
+          type: type === 'all' ? undefined : type,
+        },
       })
       setRows(res.data)
     } catch {
@@ -35,11 +42,36 @@ export default function BillingInvoicesPage() {
       setLoading(false)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [payer, start, end])
+  }, [payer, start, end, type])
 
   useEffect(() => {
     void load()
   }, [load])
+
+  useEffect(() => {
+    api.get('/billing/invoices/types/')
+      .then((res) => setTypes(res.data))
+      .catch(() => undefined)
+  }, [])
+
+  const download = async (row: Invoice) => {
+    try {
+      const endpoint = row.file_id
+        ? `/billing/files/${row.file_id}/download/`
+        : `/billing/files/by-letter/${encodeURIComponent(row.letter_number)}/`
+      const res = await api.get(endpoint, { responseType: 'blob' })
+      const url = URL.createObjectURL(new Blob([res.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${row.invoice_type}_${row.letter_number.replace(/\//g, '-')}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 2000)
+    } catch {
+      toast('دانلود فایل ناموفق بود', 'error')
+    }
+  }
 
   const total = useMemo(() => rows.reduce((sum, row) => sum + Number(row.amount || 0), 0), [rows])
 
@@ -100,6 +132,22 @@ export default function BillingInvoicesPage() {
         </div>
       </div>
 
+      <div className="flex flex-wrap gap-2">
+        {['all', ...types].map((item) => (
+          <button
+            key={item}
+            onClick={() => setType(item)}
+            className={`px-3.5 py-1.5 rounded-full text-xs border transition ${
+              type === item
+                ? 'bg-nx-blue/15 text-nx-blue border-nx-blue/40'
+                : 'text-nx-mist border-nx-navy-border hover:border-nx-blue/40'
+            }`}
+          >
+            {item === 'all' ? 'همهٔ خدمات' : item}
+          </button>
+        ))}
+      </div>
+
       <div className={`${CARD} p-4 grid grid-cols-1 md:grid-cols-4 gap-3`}>
         <div>
           <label className="block text-xs text-nx-mist mb-1.5">شرکت</label>
@@ -155,6 +203,13 @@ export default function BillingInvoicesPage() {
                         ثبت پرداخت
                       </button>
                     )}
+                    <button
+                      onClick={() => void download(row)}
+                      className="p-1.5 rounded-lg text-nx-blue hover:bg-nx-blue/10"
+                      title="دانلود فایل نامه"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
                     {canDelete && (
                       <button onClick={() => void remove(row)} className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-400/10" title="حذف">
                         <Trash2 className="w-4 h-4" />

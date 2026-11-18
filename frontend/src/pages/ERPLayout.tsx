@@ -8,7 +8,7 @@ import {
   LayoutDashboard, FileText, CreditCard, Users, Gauge, Plus,
   Calendar, Target, TrendingUp,
   Settings, ChevronLeft, ChevronDown,
-  Shield, Search, Bell, Sun, Moon, Menu, X, Briefcase,
+  Shield, Search, Bell, Sun, Moon, Menu, Briefcase,
 } from 'lucide-react'
 
 // ─── Navigation Structure ───────────────────────────────────────
@@ -71,6 +71,8 @@ const NAV_SECTIONS: NavSection[] = [
 
 export default function ERPLayout() {
   const [collapsed, setCollapsed] = useState(false)
+  // Mobile: off-canvas drawer plus the bottom tab bar (PWA-style navigation).
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     finance: true,
   })
@@ -88,6 +90,11 @@ export default function ERPLayout() {
   const toggleSection = (sectionId: string) => {
     setExpandedSections((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }))
   }
+
+  // Close the mobile drawer whenever the route changes.
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [location.pathname])
 
   // Sync dark mode class to <html>
   useEffect(() => {
@@ -138,13 +145,22 @@ export default function ERPLayout() {
 
   return (
     <div className="min-h-screen bg-nx-navy flex" dir="rtl">
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
       {/* ─── Sidebar ──────────────────────────────────── */}
       <aside
         className={`
           ${collapsed ? 'w-16' : 'w-64'}
           bg-nx-navy border-l border-nx-navy-border flex flex-col
-          transition-all duration-300 ease-in-out
-          fixed h-screen z-30
+          transition-transform lg:transition-all duration-300 ease-in-out
+          fixed top-0 right-0 h-screen z-40
+          ${mobileOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
         `}
       >
         {/* Brand Header */}
@@ -245,17 +261,21 @@ export default function ERPLayout() {
 
       {/* ─── Main Content ─────────────────────────────── */}
       <main
-        className={`flex-1 ${collapsed ? 'mr-16' : 'mr-64'} transition-all duration-300`}
+        className={`flex-1 min-w-0 w-full overflow-x-hidden mr-0 ${collapsed ? 'lg:mr-16' : 'lg:mr-64'} pb-[76px] lg:pb-0 transition-all duration-300`}
       >
         {/* Top Navigation Bar */}
         <header className="h-14 bg-nx-navy border-b border-nx-navy-border flex items-center justify-between px-6 sticky top-0 z-20">
           <div className="flex items-center gap-4">
             {/* Mobile menu button */}
             <button
-              onClick={() => setCollapsed(!collapsed)}
+              onClick={() => {
+                setCollapsed(false)
+                setMobileOpen(true)
+              }}
               className="p-2 text-nx-mist hover:text-white lg:hidden rounded-nx-btn hover:bg-white/5 transition"
+              aria-label="منو"
             >
-              {collapsed ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              <Menu className="w-5 h-5" />
             </button>
             {/* Breadcrumbs */}
             <nav className="hidden lg:flex items-center gap-2 text-sm">
@@ -298,6 +318,50 @@ export default function ERPLayout() {
         </header>
         <Outlet />
       </main>
+
+      {/* ─── Mobile bottom navigation ─────────────────── */}
+      <nav
+        className="fixed bottom-0 inset-x-0 z-30 lg:hidden bg-nx-navy/95 backdrop-blur border-t border-nx-navy-border"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <div className="grid grid-cols-5">
+          {[
+            { to: '/erp', icon: LayoutDashboard, label: 'داشبورد', end: true },
+            ...(canIssue ? [{ to: '/erp/billing/issue', icon: Plus, label: 'صدور', end: false }] : []),
+            { to: '/erp/billing/invoices', icon: FileText, label: 'صورت‌حساب', end: false },
+            { to: '/erp/billing/payments', icon: CreditCard, label: 'پرداخت', end: false },
+          ].map((item) => {
+            const active = item.end
+              ? location.pathname === item.to
+              : location.pathname.startsWith(item.to)
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={`flex flex-col items-center gap-0.5 py-2 text-[10px] transition ${
+                  active ? 'text-nx-blue' : 'text-nx-mist'
+                }`}
+              >
+                <item.icon className="w-5 h-5" />
+                <span>{item.label}</span>
+              </NavLink>
+            )
+          })}
+          <button
+            onClick={() => {
+              setCollapsed(false)
+              setMobileOpen(true)
+            }}
+            className={`flex flex-col items-center gap-0.5 py-2 text-[10px] ${
+              mobileOpen ? 'text-nx-blue' : 'text-nx-mist'
+            }`}
+          >
+            <Menu className="w-5 h-5" />
+            <span>منو</span>
+          </button>
+        </div>
+      </nav>
     </div>
   )
 }
