@@ -80,6 +80,19 @@ services:
       - redis
     command: celery -A nexivo worker --loglevel=info
 
+  celery-beat:
+    build: ./backend
+    container_name: nexivo_celery_beat
+    environment:
+      - DATABASE_URL=postgresql://nexivo_user:${POSTGRES_PASSWORD:-nexivo_pass}@postgres:5432/nexivo
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - postgres
+      - redis
+    command: celery -A nexivo beat --loglevel=info
+
   frontend:
     build:
       context: ./frontend

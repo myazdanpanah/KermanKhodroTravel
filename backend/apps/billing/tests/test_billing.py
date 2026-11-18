@@ -1203,3 +1203,29 @@ class FileRetentionTests(TestCase):
 
         final_file.refresh_from_db()
         self.assertIsNotNone(final_file.file_data)
+
+    def test_beat_task_purges_expired_files_and_logs_the_count(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        from apps.billing.models import FinalFile as FinalFileModel
+        from apps.billing.services.files import save_final_file
+        from apps.billing.tasks import purge_expired_files_task
+
+        final_file = save_final_file(
+            self.approval, "flight", "flight_beat.docx", b"PK-beat", letter_number="1404701"
+        )
+        FinalFileModel.objects.filter(pk=final_file.pk).update(
+            created_at=timezone.now() - timedelta(hours=25)
+        )
+
+        with self.assertLogs("apps.billing.tasks", level="INFO") as logs:
+            result = purge_expired_files_task()
+
+        self.assertEqual(result, {"purged": 1, "older_than_hours": 24})
+        self.assertIn("Purged 1 expired billing file(s)", logs.output[0])
+
+        final_file.refresh_from_db()
+        self.assertIsNone(final_file.file_data)
+        self.assertIsNotNone(final_file.purged_at)

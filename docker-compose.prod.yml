@@ -55,6 +55,23 @@ services:
     command: celery -A nexivo worker --loglevel=info
     restart: unless-stopped
 
+  celery-beat:
+    build:
+      context: ./backend
+    container_name: nexivo_celery_beat
+    environment:
+      - POSTGRES_DB=nexivo
+      - POSTGRES_USER=nexivo_user
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - postgres
+      - redis
+    command: celery -A nexivo beat --loglevel=info
+    restart: unless-stopped
+
   frontend:
     build:
       context: ./frontend

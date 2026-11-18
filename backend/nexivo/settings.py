@@ -184,6 +184,15 @@ REDIS_URL = config("REDIS_URL", default="redis://redis:6379/0")
 CELERY_BROKER_URL = REDIS_URL
 CELERY_RESULT_BACKEND = REDIS_URL
 
+# Periodic maintenance; run `celery -A nexivo beat` alongside the worker.
+CELERY_BEAT_SCHEDULE = {
+    # Releases generated-file payloads past the retention window every hour.
+    "purge-expired-billing-files": {
+        "task": "billing.purge_expired_files",
+        "schedule": 3600.0,
+    },
+}
+
 # Django Channels (WebSocket support for real-time alerts)
 try:
     CHANNEL_LAYERS = {

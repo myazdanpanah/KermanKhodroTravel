@@ -7,6 +7,7 @@ import logging
 from celery import shared_task
 
 from .models import ApprovalRequest
+from .services.files import RETENTION_HOURS, purge_expired_files
 from .services.generation import generate_request
 
 logger = logging.getLogger(__name__)
@@ -41,3 +42,15 @@ def generate_invoice_task(self, request_id: int) -> dict:
         return {"ok": False, "error": str(exc)}
 
     return {"ok": True, "files": [f.file_name for f in files]}
+
+
+@shared_task(name="billing.purge_expired_files")
+def purge_expired_files_task(older_than_hours: int = RETENTION_HOURS) -> dict:
+    """Scheduled release of expired generated-file payloads (spec §7)."""
+    purged = purge_expired_files(older_than_hours=older_than_hours)
+    logger.info(
+        "Purged %s expired billing file(s) (retention window: %s h)",
+        purged,
+        older_than_hours,
+    )
+    return {"purged": purged, "older_than_hours": older_than_hours}
