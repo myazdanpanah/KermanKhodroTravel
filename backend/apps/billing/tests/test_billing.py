@@ -15,10 +15,13 @@ from rest_framework.test import APIClient
 
 from apps.billing.models import (
     ApprovalRequest,
+    AvailableLetterNumber,
     BillingAuditEntry,
     CompanySettings,
+    FinalFile,
     Invoice,
     InvoiceTemplate,
+    LetterSequence,
     ManualDebt,
     Payer,
     Payment,
@@ -1353,3 +1356,122 @@ class DockerImageTests(TestCase):
         self.assertIn("chromium", dockerfile)
         self.assertIn("libpango-1.0-0", dockerfile)
         self.assertIn("libpangoft2-1.0-0", dockerfile)
+
+
+@override_settings(MEDIA_ROOT=tempfile.mkdtemp(prefix="kkt-backup-"))
+class BackupRestoreTests(TestCase):
+    """Backup carries every table; restore repairs the letter numbering."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="backup_admin", password="pass12345", role="admin",
+            is_staff=True, is_superuser=True,
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.admin)
+        self.payer = Payer.objects.create(code="7001", name="شرکت پشتیبان")
+        self.approval = ApprovalRequest.objects.create(
+            requester=self.admin, requester_name="backup_admin", payer_code="7001",
+            payer_name="شرکت پشتیبان", service_type="پرواز", letter_number="1404/7001/00012",
+            letter_date="1404/03/01", start_day=1, end_day=31, month="3", year=1404,
+            period_range="از 1404/03/01 تا 1404/03/31",
+            status=ApprovalRequest.STATUS_APPROVED,
+            flight_data=[{"ردیف": 1, "نام مسافر": "مسافر", "بدهکار": 1000}],
+        )
+        self.invoice = Invoice.objects.create(
+            letter_number="1404/7001/00012", payer="شرکت پشتیبان", payer_code="7001",
+            invoice_type="پرواز", amount=2_500_000, issue_date=dt.date(2025, 6, 1),
+        )
+
+    def _snapshot(self) -> dict:
+        import json
+
+        # The endpoint is a POST so a GET never leaks a full ledger dump.
+        response = self.client.post("/api/v1/billing/admin/backup/")
+        self.assertEqual(response.status_code, 200)
+        return json.loads(response.content)
+
+    def _restore(self, payload: dict, confirm: str = "true"):
+        import json
+
+        from django.core.files.uploadedfile import SimpleUploadedFile
+
+        return self.client.post(
+            "/api/v1/billing/admin/restore/",
+            {
+                "confirm": confirm,
+                "file": SimpleUploadedFile(
+                    "kkt-backup.json",
+                    json.dumps(payload).encode("utf-8"),
+                    content_type="application/json",
+                ),
+            },
+            format="multipart",
+        )
+
+    def test_snapshot_contains_requests_files_and_numbering(self):
+        from apps.billing.services.files import save_final_file
+
+        save_final_file(
+            self.approval, "flight", "flight_1404.docx", b"PK-backup",
+            letter_number="1404/7001/00012",
+        )
+        LetterSequence.objects.create(payer_code="7001", year="04", last_number=12)
+        AvailableLetterNumber.objects.create(payer_code="7001", year="04", number=12)
+
+        payload = self._snapshot()
+
+        for table in (
+            "approval_requests", "final_files", "letter_sequences", "available_letter_numbers"
+        ):
+            self.assertIn(table, payload["tables"])
+        self.assertEqual(len(payload["tables"]["approval_requests"]), 1)
+        self.assertEqual(len(payload["tables"]["letter_sequences"]), 1)
+        file_row = payload["tables"]["final_files"][0]
+        self.assertNotIn("file_data", file_row)
+        import base64
+
+        self.assertEqual(base64.b64decode(file_row["file_data_b64"]), b"PK-backup")
+
+    def test_restore_repairs_a_stale_sequence_so_numbers_are_not_reissued(self):
+        from apps.billing.services.files import save_final_file
+        from apps.billing.services.numbers import peek, reserve_numbers
+
+        save_final_file(
+            self.approval, "flight", "flight_1404.docx", b"PK-backup",
+            letter_number="1404/7001/00012",
+        )
+        # A subsidiary whose code sorts before its parent: the restore must
+        # still be able to create both in one pass.
+        Payer.objects.create(code="7000", name="زیرمجموعه", parent=self.payer)
+        LetterSequence.objects.filter(payer_code="7001", year="04").delete()
+        LetterSequence.objects.create(payer_code="7001", year="04", last_number=3)
+        AvailableLetterNumber.objects.create(payer_code="7001", year="04", number=12)
+        AvailableLetterNumber.objects.create(payer_code="7001", year="04", number=13)
+
+        payload = self._snapshot()
+        # Lose everything after the snapshot was taken.
+        Invoice.objects.all().delete()
+        FinalFile.objects.all().delete()
+        ApprovalRequest.objects.all().delete()
+        LetterSequence.objects.all().delete()
+        AvailableLetterNumber.objects.all().delete()
+
+        response = self._restore(payload)
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.assertEqual(Invoice.objects.count(), 1)
+        self.assertEqual(ApprovalRequest.objects.count(), 1)
+        self.assertEqual(bytes(FinalFile.objects.get().file_data), b"PK-backup")
+        self.assertEqual(Payer.objects.get(code="7000").parent_id, "7001")
+        # The printed number 12 is owned by the invoice again and never reissued.
+        self.assertEqual(peek("7001", "04"), 13)
+        self.assertEqual(reserve_numbers("7001", "04", 1), [13])
+        self.assertFalse(
+            AvailableLetterNumber.objects.filter(payer_code="7001", year="04", number=12).exists()
+        )
+
+    def test_restore_requires_an_explicit_confirmation(self):
+        payload = self._snapshot()
+        self.assertEqual(self._restore(payload, confirm="no").status_code, 400)
+        self.assertEqual(Invoice.objects.count(), 1)

@@ -326,7 +326,7 @@ can_submit, can_approve, can_edit_template
 | `GET/PUT /settings/` | تنظیمات شرکت (تک‌رکورد) | `can_view` / `can_manage_settings` |
 | `POST /settings/upload-asset/` | آپلود لوگو/امضا/مهر | `can_manage_settings` |
 | `POST /settings/upload-template/` | آپلود قالب Word | `can_manage_settings` |
-| `POST /admin/backup/`, `/admin/restore/` | پشتیبان‌گیری/بازیابی | `can_manage_settings` |
+| `POST /admin/backup/`, `/admin/restore/` | پشتیبان‌گیری/بازیابی کامل: طرف حساب‌ها، صورت‌حساب‌ها (با ابطال‌ها)، پرداخت‌ها، بدهی/اعتبار، درخواست‌های صدور، فایل‌های نهایی (BLOB به base64) و جدول‌های شمارهٔ نامه؛ بازیابی شمارندهٔ هر شرکت/سال را با بالاترین شمارهٔ چاپ‌شده هم‌تراز می‌کند و شمارهٔ آزادی را که قبلاً چاپ شده حذف می‌کند | `can_manage_settings` |
 | `GET /me/` | مجوزهای کاربر جاری | `can_view` (کاربر بدون این فلگ ۴۰۳ می‌گیرد) |
 | `GET /next-letter/` | شمارهٔ نامهٔ بعدی | `can_issue` |
 | `GET /passengers/?q=` | پیشنهاد مسافران از تاریخچه | `can_view` |

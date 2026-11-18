@@ -44,6 +44,7 @@ from .serializers import (
 from .services import excel as excel_service
 from .services.aging import aging_report
 from .services.audit import record_deletion, reverse_invoice
+from .services.backup import RestoreError, restore_tables, serialize_tables
 from .services.balance import balances_for, payer_balance, total_outstanding
 from .services.files import purge_expired_files, read_bytes, save_final_file
 from .services.generation import (
@@ -846,17 +847,6 @@ def dashboard_summary(request):
     )
 
 
-BACKUP_MODELS = [
-    ("payers", Payer),
-    ("invoices", Invoice),
-    ("payments", Payment),
-    ("debts", ManualDebt),
-    ("credits", Credit),
-    ("service_categories", ServiceCategory),
-    ("templates", InvoiceTemplate),
-]
-
-
 @api_view(["POST"])
 @perm_required("can_manage_settings")
 def admin_backup(request):
@@ -866,10 +856,8 @@ def admin_backup(request):
     payload = {
         "generated_at": timezone.now().isoformat(),
         "settings": CompanySettingsSerializer(CompanySettings.load()).data,
-        "tables": {},
+        "tables": serialize_tables(),
     }
-    for name, model in BACKUP_MODELS:
-        payload["tables"][name] = list(model.objects.all().values())
     body = json.dumps(payload, ensure_ascii=False, cls=DjangoJSONEncoder, indent=1)
     response = HttpResponse(body, content_type="application/json")
     stamp = timezone.now().strftime("%Y%m%d-%H%M%S")
@@ -896,21 +884,18 @@ def admin_restore(request):
     settings_data = payload.get("settings") or {}
     tables = payload.get("tables") or {}
 
-    with transaction.atomic():
-        for name, model in BACKUP_MODELS:
-            if name == "templates":
-                continue  # templates are versioned; keep existing history
-            model.objects.all().delete()
-            rows = tables.get(name) or []
-            if rows:
-                model.objects.bulk_create([model(**row) for row in rows])
-        company = CompanySettings.load()
-        for field, value in settings_data.items():
-            if hasattr(company, field):
-                setattr(company, field, value)
-        company.save()
+    try:
+        with transaction.atomic():
+            restored = restore_tables(tables)
+            company = CompanySettings.load()
+            for field, value in settings_data.items():
+                if hasattr(company, field):
+                    setattr(company, field, value)
+            company.save()
+    except RestoreError as exc:
+        return _error(str(exc))
 
-    return Response({"ok": True, "restored": {name: len(tables.get(name) or []) for name, _ in BACKUP_MODELS}})
+    return Response({"ok": True, "restored": restored})
 
 
 @api_view(["GET"])
