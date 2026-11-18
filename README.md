@@ -278,10 +278,12 @@ can_submit, can_approve, can_edit_template
 
 1. **نامه = Word (`.docx`)** — قالب Word آپلودی شرکت (سه قالب: اصلی، زیرمجموعه، بستانکاری) با placeholderهای `{{ }}` و `docxtpl`؛ اگر قالبی آپلود نشده باشد، قالب داخلی `services/templates/` استفاده می‌شود. لوگو/امضا/مهر و اطلاعات شرکت تزریق می‌شوند.
 2. **صورت‌حساب = PDF** — از HTML ساخته می‌شود (`INVOICE_HTML` + `INVOICE_CSS` با Jinja)، نه از Word:
-   - A4 افقی، فونت `'B Nazanin', 'Vazirmatn', Tahoma, Arial`، جهت RTL، اعداد فارسی
+   - A4 افقی، جهت RTL، اعداد فارسی. فونت **Vazirmatn داخل خود PDF جاسازی می‌شود** (دو زیرمجموعهٔ arabic و latin با وزن ۴۰۰/۷۰۰ از `services/assets/`، مجوز SIL OFL)؛ بنابراین خروجی روی هر ماشینی یکسان است و به نصب B Nazanin یا Tahoma وابسته نیست. B Nazanin همچنان در نامهٔ Word استفاده می‌شود، چون آن را Word روی سیستم کاربر رندر می‌کند.
+   - عرض ستون‌ها با `<colgroup>` ثابت است (ردیف ۵٪، قرارداد ۹٪، مسافر ۱۶٪، شرح خدمات ۲۰٪، تاریخ ۱۰٪، توضیحات ۱۲٪، بدهکار ۱۰٪، بستانکار ۸٪، مانده ۱۰٪) و `overflow-wrap: anywhere` باعث می‌شود نام‌های طولانی در همان سلول بشکنند و جدول از حاشیهٔ صفحه بیرون نزند.
    - هدر: لوگو، تاریخ، شمارهٔ صورت‌حساب؛ عنوان «صورت حساب {نوع خدمت} {شرکت}»
    - جدول ۹ ستونی، **۸ ردیف در هر صفحه**، **جمع هر صفحه** و **جمع کل** در پایان
    - فوتر: محل امضا، مهر و نام/سمت مدیر؛ لوگو/امضا/مهر به‌صورت data-URI تزریق می‌شوند
+   - نکتهٔ مهم Jinja: استایل‌شیت با `{{ css|safe }}` درج می‌شود؛ اگر `safe` حذف شود، فاصله‌گذاری HTML کوتیشن‌های `font-family` را به `&#39;` تبدیل می‌کند، کل اعلان فونت بی‌اثر می‌شود و خروجی بی‌صدا با فونت پیش‌فرض (Times New Roman) چاپ می‌شود. تست `test_stylesheet_is_not_html_escaped` مراقب این رگرسیون است.
    - موتور PDF: یک پروسهٔ headless Edge/Chrome که **برای هر درخواست فقط یک‌بار** بالا می‌آید (`PdfBrowser` در همان فایل، با پروتکل DevTools) و همهٔ صورت‌حساب‌های آن درخواست را چاپ می‌کند؛ یک تأیید سه‌خدمتی با سه ردیف PDF در حدود ۴ ثانیه تمام می‌شود. فقط وقتی هیچ مرورگری پیدا نشود `WeasyPrint` استفاده می‌شود؛ اگر مرورگر موجود باشد ولی بالا نیاید یا چاپ را برنگرداند، `GenerationError` با پیام فارسی پرتاب و در `generation_error` درخواست ثبت می‌شود (دیگر به‌صورت خاموش به WeasyPrint برنمی‌گردد).
 3. ستون‌ها بر اساس نوع خدمت نگاشت می‌شوند: پرواز (مسیر/تاریخ پرواز/`بلیط: …`)، هتل (هتل + نوع اتاق، بازهٔ ورود و خروج، نفرات)، سایر خدمات (شرح خدمات/تاریخ/توضیحات).
 4. پس از پنجرهٔ نگه‌داری، فقط payload فایل پاک می‌شود؛ `regenerate_file` همان ورودی ذخیره‌شده را دوباره می‌سازد (Word و PDF هر دو).
@@ -372,7 +374,7 @@ cd backend && ../.venv/Scripts/python.exe manage.py test apps.billing.tests.test
 cd frontend && npx tsc --noEmit && npm run build
 ```
 
-وضعیت فعلی: **۴۲ تست بیلینگ سبز**، `tsc` بدون خطا، بیلد production موفق.
+وضعیت فعلی: **۴۵ تست بیلینگ سبز**، `tsc` بدون خطا، بیلد production موفق.
 
 تست‌های موتور PDF: `test_one_browser_launch_serves_every_pdf_of_a_request` (یک `PdfBrowser` برای سه صورت‌حساب)، `test_browser_failure_is_reported_instead_of_falling_back` (بدون فراخوانی WeasyPrint) و `test_approval_records_the_pdf_failure_in_persian` (پیام فارسی در `generation_error`، Word ساخته می‌شود، PDF نه).
 
@@ -390,7 +392,7 @@ cd frontend && npx tsc --noEmit && npm run build
 - `docker-compose.prod.yml`: نسخهٔ تولید (Gunicorn + Nginx/Vite build). پیش از استقرار: `DEBUG=0`، `SECRET_KEY` تصادفی، دامنه در `ALLOWED_HOSTS` و `CORS_ALLOWED_ORIGINS`، سرو `media/` و بکاپ دیتابیس.
 - **بکاپ/بازیابی:** `make dump` / `make restore FILE=backups/x.sql` (ویندوز: `dev.bat dump|restore`). قبل از هر مهاجرت سنگین یک dump بگیرید.
 - **فایل‌های تولیدی:** در `MEDIA_ROOT/approved` (یا مسیر تنظیمات). حجم را کنترل کنید؛ `purge_billing_files` را روزانه در cron بگذارید: `0 3 * * * python manage.py purge_billing_files --hours 24`.
-- **فونت:** برای PDF درست، `B Nazanin` باید روی ماشینی که PDF می‌سازد نصب باشد؛ وگرنه Tahoma جایگزین می‌شود (شکل ظاهری تغییر می‌کند). روی لینوکس فونت را در `~/.fonts` نصب و `fc-cache -f` بزنید.
+- **فونت:** لازم نیست هیچ فونتی روی سرور نصب باشد؛ Vazirmatn (OFL) در `services/assets/` همراه کد است و به‌صورت base64 داخل CSS صورت‌حساب جاسازی می‌شود. فقط برای نامهٔ Word، نصب B Nazanin روی سیستم کاربر نهایی لازم است (در Docker فونت لازم نیست).
 - **مرورگر headless:** مسیرهای پیش‌فرض Edge/Chrome در `generation.py` جست‌وجو می‌شوند (یا `PDF_BROWSER_PATH`). در Docker باید Chromium نصب باشد؛ در نبود آن WeasyPrint استفاده می‌شود (اختلاف جزئی در شکست صفحات). کتابخانهٔ `websocket-client` کلاینت CDP است و در `requirements.txt` آمده است.
 
 ---

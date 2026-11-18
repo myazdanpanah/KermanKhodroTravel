@@ -411,6 +411,64 @@ class BillingApiTests(TestCase):
         self.assertEqual(CompanySettings.objects.count(), 1)
 
 
+class InvoicePdfLayoutTests(TestCase):
+    """The invoice HTML must carry its own font and unescaped stylesheet."""
+
+    def setUp(self):
+        from apps.billing.models import ApprovalRequest
+
+        self.request = ApprovalRequest(
+            payer_code="9999", payer_name="شرکت نمونه", service_type="ویزا",
+            letter_number="1404/9999/00123", letter_date="1404/03/10",
+            period_range="خرداد ۱۴۰۴", service_category="ویزا",
+        )
+        self.rows = [
+            {"ردیف": 1, "قرارداد": "1", "نام مسافر": "محمدرضا نوروزی‌پور تهرانی‌اصل",
+             "مسیر": "KER-MHD", "شماره بلیط": "1", "تاریخ پرواز": "1404/03/12",
+             "بدهکار": 1000, "بستانکار": 0, "مانده": 1000},
+        ]
+
+    def _html(self) -> str:
+        from apps.billing.services import generation as generation_service
+
+        context = generation_service.build_invoice_context(
+            self.request, "flight", self.rows, "1404/9999/00123"
+        )
+        return generation_service.Environment(
+            autoescape=generation_service.select_autoescape(["html", "xml"])
+        ).from_string(generation_service.INVOICE_HTML).render(**context)
+
+    def test_stylesheet_is_not_html_escaped(self):
+        html = self._html()
+        # Jinja used to turn the quotes into &#39;, which killed the whole
+        # font-family declaration and silently fell back to Times New Roman.
+        self.assertNotIn("&#39;", html)
+        self.assertIn("font-family: 'KKT Vazirmatn'", html)
+
+    def test_vazirmatn_is_embedded_with_both_weights(self):
+        from apps.billing.services import generation as generation_service
+
+        css = generation_service.INVOICE_CSS
+        self.assertEqual(css.count("@font-face"), 4)  # 400/700 for arabic + latin
+        self.assertEqual(css.count("data:font/woff2;base64,"), 4)
+        self.assertTrue((generation_service.ASSETS_DIR / "OFL.txt").exists())
+        for name in (
+            "vazirmatn-arabic-400-normal.woff2",
+            "vazirmatn-arabic-700-normal.woff2",
+            "vazirmatn-latin-400-normal.woff2",
+            "vazirmatn-latin-700-normal.woff2",
+        ):
+            self.assertTrue((generation_service.ASSETS_DIR / name).exists(), name)
+
+    def test_long_passenger_names_wrap_instead_of_overflowing(self):
+        html = self._html()
+        # Fixed column widths plus wrapping keep an unbreakable long name inside
+        # its cell instead of stretching the table past the page margins.
+        self.assertIn("table-layout: fixed", html)
+        self.assertIn("overflow-wrap: anywhere", html)
+        self.assertIn('<col class="c-passenger">', html)
+
+
 class PdfBrowserTests(TestCase):
     """One browser launch per request, and browser failures are not hidden."""
 

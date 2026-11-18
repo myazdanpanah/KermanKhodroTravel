@@ -218,9 +218,46 @@ def render_html(context: dict, template: InvoiceTemplate | None = None) -> str:
 # the company logo, signature and stamp, matching the layout the finance team
 # sends to customers.
 
-INVOICE_FONT_STACK = "'B Nazanin', 'Vazirmatn', Tahoma, Arial, sans-serif"
+INVOICE_FONT_FAMILY = "KKT Vazirmatn"
+# The invoice PDF uses the embedded face first so the output is identical on
+# every machine; B Nazanin stays available for the Word letter, where the font
+# is referenced by name and applied by Word on the user's computer.
+INVOICE_FONT_STACK = f"'{INVOICE_FONT_FAMILY}', 'B Nazanin', Tahoma, Arial, sans-serif"
+
+ASSETS_DIR = Path(__file__).with_name("assets")
+
+
+def _embedded_font_faces() -> str:
+    """
+    Embed Vazirmatn (SIL OFL, `assets/OFL.txt`) in the invoice stylesheet.
+
+    The PDF is rendered on whatever machine runs the backend, which may not
+    have B Nazanin; without an embedded face Chromium falls back to Tahoma (or
+    worse, the default serif) and the invoice looks different per machine.
+    """
+    faces = []
+    subsets = (
+        ("arabic", "U+0600-06FF, U+0750-077F, U+0870-088E, U+FB50-FDFF, U+FE70-FEFF"),
+        # Slashes, Latin passenger names and ticket numbers need the Latin face;
+        # without it Chromium falls back to Times/Tahoma for those characters.
+        ("latin", "U+0000-00FF, U+2000-206F, U+20AC"),
+    )
+    for weight in (400, 700):
+        for subset, unicode_range in subsets:
+            path = ASSETS_DIR / f"vazirmatn-{subset}-{weight}-normal.woff2"
+            if not path.exists():  # pragma: no cover - assets ship with the app
+                continue
+            encoded = base64.b64encode(path.read_bytes()).decode("ascii")
+            faces.append(
+                f"@font-face {{ font-family: '{INVOICE_FONT_FAMILY}'; font-style: normal; "
+                f"font-weight: {weight}; unicode-range: {unicode_range}; "
+                f"src: url(data:font/woff2;base64,{encoded}) format('woff2'); }}"
+            )
+    return "\n".join(faces)
+
 
 INVOICE_CSS = f"""
+{_embedded_font_faces()}
 @page {{ size: A4 landscape; margin: 1cm; }}
 body {{ font-family: {INVOICE_FONT_STACK}; font-size: 12px; line-height: 1.4; margin: 0; direction: rtl; }}
 .page {{ page-break-after: avoid; }}
@@ -229,8 +266,17 @@ body {{ font-family: {INVOICE_FONT_STACK}; font-size: 12px; line-height: 1.4; ma
 .left-info div {{ margin-bottom: 2px; font-weight: bold; }}
 .logo {{ max-height: 60px; max-width: 150px; }}
 .header-box {{ border: 1.75px solid #000; padding: 8px 12px; margin-bottom: 6px; text-align: center; font-weight: bold; font-size: 16px; background-color: #f9f9f9; }}
-.data-table {{ width: 100%; border-collapse: collapse; margin: 8px 0; border: 1.75px solid #000; table-layout: auto; }}
-.data-table th, .data-table td {{ border: 1.75px solid #000; padding: 6px 8px; text-align: center; font-size: 13px; font-weight: bold; }}
+.data-table {{ width: 100%; border-collapse: collapse; margin: 8px 0; border: 1.75px solid #000; table-layout: fixed; }}
+.data-table th, .data-table td {{ border: 1.75px solid #000; padding: 6px 8px; text-align: center; font-size: 13px; font-weight: bold; overflow-wrap: anywhere; word-break: break-word; }}
+.data-table col.c-rank {{ width: 5%; }}
+.data-table col.c-contract {{ width: 9%; }}
+.data-table col.c-passenger {{ width: 16%; }}
+.data-table col.c-description {{ width: 20%; }}
+.data-table col.c-date {{ width: 10%; }}
+.data-table col.c-notes {{ width: 12%; }}
+.data-table col.c-debit {{ width: 10%; }}
+.data-table col.c-credit {{ width: 8%; }}
+.data-table col.c-balance {{ width: 10%; }}
 .data-table th {{ background-color: #f0f0f0; }}
 .totals-row {{ margin-top: 6px; display: flex; justify-content: space-between; border-top: 1.75px solid #000; padding-top: 5px; font-size: 12px; }}
 .footer {{ margin-top: 20px; display: flex; justify-content: space-between; align-items: flex-end; }}
@@ -238,7 +284,7 @@ body {{ font-family: {INVOICE_FONT_STACK}; font-size: 12px; line-height: 1.4; ma
 
 INVOICE_HTML = """
 <!DOCTYPE html>
-<html dir="rtl" lang="fa"><head><meta charset="UTF-8"><style>{{ css }}</style></head>
+<html dir="rtl" lang="fa"><head><meta charset="UTF-8"><style>{{ css|safe }}</style></head>
 <body>
 {% for page in pages %}
   <div class="page"{% if not loop.first %} style="page-break-before: always;"{% endif %}>
@@ -251,6 +297,10 @@ INVOICE_HTML = """
     </div>
     <div class="header-box">صورت حساب {{ service_type }} {{ buyer_name }}</div>
     <table class="data-table">
+      <colgroup>
+        <col class="c-rank"><col class="c-contract"><col class="c-passenger"><col class="c-description">
+        <col class="c-date"><col class="c-notes"><col class="c-debit"><col class="c-credit"><col class="c-balance">
+      </colgroup>
       <thead><tr>
         <th>ردیف</th><th>شماره قرارداد</th><th>نام مسافر</th><th>شرح خدمات</th>
         <th>تاریخ</th><th>توضیحات</th><th>بدهکار (ریال)</th><th>بستانکار (ریال)</th><th>مانده در خط</th>
