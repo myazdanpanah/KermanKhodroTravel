@@ -8,7 +8,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from django.conf import settings as django_settings
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Count, Q, Sum
 from django.http import FileResponse, HttpResponse
 from django.utils import timezone
@@ -267,6 +267,20 @@ def payment_list(request):
     serializer.is_valid(raise_exception=True)
     data = serializer.validated_data
 
+    # A retried request (or a double click that kept its token) names itself, so
+    # the original payment is returned instead of being booked a second time.
+    idempotency_key = str(
+        request.headers.get("Idempotency-Key") or payload.get("idempotency_key") or ""
+    ).strip()
+    if len(idempotency_key) > 100:
+        return _error("کلید یکتایی درخواست حداکثر ۱۰۰ کاراکتر است.")
+    if idempotency_key:
+        existing = Payment.objects.filter(
+            created_by=request.user, idempotency_key=idempotency_key
+        ).first()
+        if existing is not None:
+            return Response(PaymentSerializer(existing).data)
+
     if tracking and Payment.objects.filter(payer_code=code, tracking_number=tracking).exists():
         return _error(
             "پرداختی با همین شمارهٔ پیگیری برای این شرکت قبلاً ثبت شده است.",
@@ -290,7 +304,19 @@ def payment_list(request):
             status.HTTP_429_TOO_MANY_REQUESTS,
         )
 
-    serializer.save(created_by=request.user)
+    try:
+        with transaction.atomic():
+            serializer.save(
+                created_by=request.user, idempotency_key=idempotency_key or None
+            )
+    except IntegrityError:
+        # Two parallel retries: the other one won, so answer with its row.
+        existing = Payment.objects.filter(
+            created_by=request.user, idempotency_key=idempotency_key
+        ).first()
+        if existing is None:
+            raise
+        return Response(PaymentSerializer(existing).data)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 

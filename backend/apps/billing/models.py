@@ -138,12 +138,22 @@ class Payment(models.Model):
         related_name="registered_payments",
         verbose_name="ثبت‌کننده",
     )
+    # Client-supplied retry token: a second POST with the same key returns the
+    # row that was already booked instead of charging the payer twice.
+    idempotency_key = models.CharField(
+        max_length=100, null=True, blank=True, verbose_name="کلید یکتایی درخواست"
+    )
 
     class Meta:
         verbose_name = "پرداخت"
         verbose_name_plural = "پرداخت‌ها"
         ordering = ["-payment_date", "-id"]
         indexes = [models.Index(fields=["payer_code"], name="idx_payments_payer_code")]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["created_by", "idempotency_key"], name="uniq_payment_idempotency"
+            )
+        ]
 
     def __str__(self):
         return f"{self.payer_name} - {self.amount}"

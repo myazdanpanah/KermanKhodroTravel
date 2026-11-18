@@ -1543,3 +1543,75 @@ class ApprovalNotificationTests(TestCase):
         self.assertIn("رد شد", note.title)
         self.assertIn("مدارک ناقص است", note.message)
         self.assertEqual(note.target_id, str(self.approval.pk))
+
+
+class PaymentIdempotencyTests(TestCase):
+    """A retried payment POST must return the first row, never book it twice."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="idem_admin", password="pass12345", role="admin",
+            is_staff=True, is_superuser=True,
+        )
+        Payer.objects.create(code="2001", name="شرکت ایدمپوتنت")
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.admin)
+
+    def test_same_idempotency_key_returns_the_original_payment(self):
+        payload = {
+            "payer_code": "2001",
+            "payment_date": "1404/05/01",
+            "amount": 1_200_000,
+            "tracking_number": "TRK-9",
+        }
+
+        first = self.client.post(
+            "/api/v1/billing/payments/", payload, format="json",
+            HTTP_IDEMPOTENCY_KEY="retry-1",
+        )
+        second = self.client.post(
+            "/api/v1/billing/payments/", payload, format="json",
+            HTTP_IDEMPOTENCY_KEY="retry-1",
+        )
+
+        self.assertEqual(first.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(second.status_code, status.HTTP_200_OK)
+        self.assertEqual(second.data["id"], first.data["id"])
+        self.assertEqual(Payment.objects.count(), 1)
+        self.assertEqual(Payment.objects.get().created_by, self.admin)
+        # The derived balance saw the transfer exactly once.
+        self.assertEqual(payer_balance("2001")["payments"], 1_200_000)
+
+    def test_a_replay_returns_the_stored_row_even_with_a_different_payload(self):
+        stored = Payment.objects.create(
+            payer_code="2001", payer_name="شرکت ایدمپوتنت",
+            payment_date=dt.date(2025, 7, 1), amount=750_000,
+            created_by=self.admin, idempotency_key="race-1",
+        )
+
+        response = self.client.post(
+            "/api/v1/billing/payments/",
+            {"payer_code": "2001", "payment_date": "1404/05/02", "amount": 750_000},
+            format="json",
+            HTTP_IDEMPOTENCY_KEY="race-1",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["id"], stored.pk)
+        self.assertEqual(Payment.objects.count(), 1)
+        self.assertEqual(payer_balance("2001")["payments"], 750_000)
+
+    def test_body_key_is_honoured_too(self):
+        payload = {
+            "payer_code": "2001",
+            "payment_date": "1404/05/03",
+            "amount": 400_000,
+            "idempotency_key": "body-key-1",
+        }
+        first = self.client.post("/api/v1/billing/payments/", payload, format="json")
+        second = self.client.post("/api/v1/billing/payments/", payload, format="json")
+
+        self.assertEqual(first.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(second.status_code, status.HTTP_200_OK)
+        self.assertEqual(Payment.objects.count(), 1)
+        self.assertEqual(payer_balance("2001")["payments"], 400_000)
