@@ -404,7 +404,7 @@ cd frontend && npx tsc --noEmit && npm run build
 - **فایل‌های تولیدی:** در `MEDIA_ROOT/approved` (یا مسیر تنظیمات). حجم را کنترل کنید؛ `purge_billing_files` را روزانه در cron بگذارید: `0 3 * * * python manage.py purge_billing_files --hours 24`.
 - **فونت:** لازم نیست هیچ فونتی روی سرور نصب باشد؛ Vazirmatn (OFL) در `services/assets/` همراه کد است و به‌صورت base64 داخل CSS صورت‌حساب جاسازی می‌شود. فقط برای نامهٔ Word، نصب B Nazanin روی سیستم کاربر نهایی لازم است (در Docker فونت لازم نیست).
 - **مرورگر headless:** `_find_pdf_browser` اول `PDF_BROWSER_PATH` و سپس مسیرهای ویندوز/لینوکس Edge و Chrome را می‌گردد؛ روی مک مسیر bundle (`/Applications/…`) در فهرست نیست، پس باید `PDF_BROWSER_PATH` را ست کرد. `--headless=new` نیاز به Chrome/Edge نسخهٔ ۱۱۲ به بالا دارد. کتابخانهٔ `websocket-client` کلاینت CDP است و در `requirements.txt` آمده است.
-- **تصویر Docker پیش‌فرض نه مرورگر دارد نه کتابخانه‌های WeasyPrint:** `backend/Dockerfile` از `python:3.11-slim` استفاده می‌کند و نه Chromium نصب می‌کند نه pango/cairo (وابستگی‌های سیستمی WeasyPrint). یعنی در آن تصویر تولید PDF صورت‌حساب شکست می‌خورد؛ برای استقرار Docker باید Chromium (یا بستهٔ سیستمی WeasyPrint) به تصویر اضافه شود. اگر کانتینر با کاربر root اجرا شود، `PdfBrowser` خودش `--no-sandbox` را اضافه می‌کند (Chromium به‌عنوان root سندباکس را راه نمی‌اندازد)؛ روی کاربر عادی و روی ویندوز این فلگ اضافه نمی‌شود.
+- **تصویر Docker:** `backend/Dockerfile` روی `python:3.11-slim` علاوه بر `gcc`/`libpq-dev`، بستهٔ `chromium` (مسیر اصلی تولید PDF)، کتابخانه‌های pango (`libpango-1.0-0`، `libpangoft2-1.0-0`، `libharfbuzz0b`) برای پشتوانهٔ WeasyPrint و فونت‌های `fonts-vazirmatn`/`fonts-noto-core` را نصب می‌کند؛ بدون این‌ها تولید صورت‌حساب در کانتینر شکست می‌خورد. اگر کانتینر با کاربر root اجرا شود، `PdfBrowser` خودش `--no-sandbox` را اضافه می‌کند (Chromium به‌عنوان root سندباکس را راه نمی‌اندازد)؛ روی کاربر عادی و روی ویندوز این فلگ اضافه نمی‌شود.
 
 ---
 
@@ -427,7 +427,7 @@ cd frontend && npx tsc --noEmit && npm run build
 ## کارهای باقی‌مانده / محدودیت‌ها
 
 - ماژول‌های Nexivo (انبار، خرید، فروش، تولید، ترابر) برای این مشتری پیاده/آزمایش نشده‌اند؛ در لانچر پنهان‌اند.
-- PDF بدون مرورگر به WeasyPrint برمی‌گردد، اما این مسیر فقط وقتی کار می‌کند که pango/cairo نصب باشند؛ در تصویر Docker فعلی هیچ‌کدام نیست (بالا را ببینید). اگر مرورگر موجود باشد ولی خطا بدهد، `GenerationError` فارسی ثبت می‌شود و PDF ساخته نمی‌شود — عمداً به WeasyPrint برنمی‌گردد.
+- PDF بدون مرورگر به WeasyPrint برمی‌گردد؛ تصویر Docker هر دو مسیر را دارد (Chromium و pango)، پس نبود مرورگر در استقرار مستند رخ نمی‌دهد. اگر مرورگر موجود باشد ولی خطا بدهد، `GenerationError` فارسی ثبت می‌شود و PDF ساخته نمی‌شود — عمداً به WeasyPrint برنمی‌گردد.
 - مسیر مرورگر روی مک در فهرست پیش‌فرض نیست؛ آنجا `PDF_BROWSER_PATH` لازم است.
 - Superset برای BI پیکربندی نشده و داشبورد مدیریتی از داده‌های خود سیستم تغذیه می‌شود.
 - حذف تاریخچه (`can_delete_history`) و بازیابی/پشتیبان‌گیری درون‌برنامه‌ای باید قبل از استفاده روی دادهٔ واقعی آزمایش شود.

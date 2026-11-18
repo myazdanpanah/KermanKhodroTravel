@@ -1339,3 +1339,17 @@ class AgingReportTests(TestCase):
         denied.force_authenticate(user=viewer)
         self.assertEqual(denied.get("/api/v1/billing/aging/").status_code, 403)
         self.assertEqual(APIClient().get("/api/v1/billing/aging/").status_code, 403)
+
+
+class DockerImageTests(TestCase):
+    """Docker deployment: invoice PDFs need a browser and Pango in the image."""
+
+    def test_dockerfile_installs_the_pdf_dependencies(self):
+        dockerfile = (Path(__file__).resolve().parents[3] / "Dockerfile").read_text(
+            encoding="utf-8"
+        )
+        # Chromium drives the invoice path; without it every letter falls back
+        # to WeasyPrint, which in turn needs the Pango runtime.
+        self.assertIn("chromium", dockerfile)
+        self.assertIn("libpango-1.0-0", dockerfile)
+        self.assertIn("libpangoft2-1.0-0", dockerfile)
