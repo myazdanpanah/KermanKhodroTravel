@@ -2,9 +2,8 @@
 Letter numbering (spec §5.1).
 
 Format: YYYY/COMPANYCODE/NNNNN — the four-digit Jalali year, the payer's
-company code and a five-digit per-payer, per-year sequence. Deleted invoices
-release their number into ``available_letter_numbers`` and the lowest free
-number is reused first.
+company code and a five-digit per-payer, per-year sequence. A reversed invoice
+keeps its number: a printed letter number is never handed out twice.
 
 Reservation runs inside a single transaction and locks the sequence row, so
 two concurrent approvals can never receive the same number.
@@ -156,14 +155,6 @@ def number_from_letter(letter_number: str) -> int | None:
         # Legacy YYYYNNN numbers stored without separators.
         return int(runs[0][-3:])
     return int(runs[-1])
-
-
-def release_invoice_number(invoice: Invoice) -> None:
-    """Recycle the number of a deleted invoice (no-op when unparsable)."""
-    number = number_from_letter(invoice.letter_number)
-    if number is None:
-        return
-    release_numbers(invoice.payer_code, year_from_invoice(invoice), [number])
 
 
 def peek_letter(

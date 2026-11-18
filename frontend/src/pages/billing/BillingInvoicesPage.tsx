@@ -112,7 +112,7 @@ export default function BillingInvoicesPage() {
   }
 
   const remove = async (invoice: Invoice) => {
-    if (!confirm(`صورت‌حساب ${invoice.letter_number} حذف شود؟ شمارهٔ نامه آزاد می‌شود.`)) return
+    if (!confirm(`صورت‌حساب ${invoice.letter_number} ابطال شود؟ ردیف و شمارهٔ نامه حفظ می‌شوند و شماره دوباره استفاده نمی‌شود.`)) return
     try {
       await api.delete(`/billing/invoices/${invoice.id}/`)
       toast('صورت‌حساب حذف شد', 'success')

@@ -14,6 +14,7 @@ from rest_framework.test import APIClient
 
 from apps.billing.models import (
     ApprovalRequest,
+    BillingAuditEntry,
     CompanySettings,
     Invoice,
     InvoiceTemplate,
@@ -375,6 +376,94 @@ class BillingApiTests(TestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_invoice_delete_reverses_and_keeps_the_letter_number(self):
+        reserved = reserve_numbers("2001", "04", 1)
+        invoice = Invoice.objects.create(
+            letter_number=full_letter_number("04", reserved[0], "2001"),
+            payer="شرکت آلفا", payer_code="2001", invoice_type="پرواز",
+            amount=2_000_000, issue_date=dt.date(2025, 4, 1),
+        )
+        self.assertEqual(payer_balance("2001")["balance"], 2_000_000)
+
+        response = self.client.delete(
+            f"/api/v1/billing/invoices/{invoice.id}/",
+            {"reason": "اشتباه ثبت شده"}, format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        invoice.refresh_from_db()  # the row survives
+        self.assertIsNotNone(invoice.reversed_at)
+        self.assertEqual(invoice.reversed_by, self.admin)
+        self.assertEqual(invoice.reversal_reason, "اشتباه ثبت شده")
+
+        self.assertEqual(payer_balance("2001")["balance"], 0)
+        self.assertEqual(self.client.get("/api/v1/billing/invoices/").data, [])
+        listed = self.client.get("/api/v1/billing/invoices/?include_reversed=1").data
+        self.assertEqual(len(listed), 1)
+        self.assertTrue(listed[0]["is_reversed"])
+
+        # The printed number is never handed out a second time.
+        self.assertEqual(peek("2001", "04"), reserved[0] + 1)
+        self.assertEqual(reserve_numbers("2001", "04", 1), [reserved[0] + 1])
+
+    def test_invoice_reversal_is_audited_with_the_actor(self):
+        invoice = Invoice.objects.create(
+            letter_number="1404/2001/00007", payer="شرکت آلفا", payer_code="2001",
+            invoice_type="هتل", amount=500_000, issue_date=dt.date(2025, 4, 1),
+        )
+        self.client.delete(
+            f"/api/v1/billing/invoices/{invoice.id}/", {"reason": "ابطال تست"}, format="json"
+        )
+
+        entry = BillingAuditEntry.objects.get()
+        self.assertEqual(entry.entity, "invoice")
+        self.assertEqual(entry.action, BillingAuditEntry.ACTION_REVERSED)
+        self.assertEqual(entry.object_id, str(invoice.id))
+        self.assertEqual(entry.actor, self.admin)
+        self.assertEqual(entry.reason, "ابطال تست")
+        self.assertEqual(entry.snapshot["letter_number"], "1404/2001/00007")
+        self.assertEqual(entry.snapshot["amount"], 500_000)
+
+    def test_bulk_delete_reverses_the_ledger_instead_of_erasing_it(self):
+        for index, amount in enumerate((1_000, 2_000), start=1):
+            Invoice.objects.create(
+                letter_number=f"1404/2001/0000{index}", payer="شرکت آلفا",
+                payer_code="2001", invoice_type="پرواز", amount=amount,
+                issue_date=dt.date(2025, 4, index),
+            )
+        self.assertEqual(payer_balance("2001")["balance"], 3_000)
+
+        response = self.client.delete(
+            "/api/v1/billing/invoices/", {"reason": "بازسازی دفتر"}, format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["reversed"], 2)
+        self.assertEqual(Invoice.objects.count(), 2)
+        self.assertFalse(Invoice.objects.filter(reversed_at__isnull=True).exists())
+        self.assertEqual(payer_balance("2001")["balance"], 0)
+        self.assertEqual(BillingAuditEntry.objects.filter(action="reversed").count(), 2)
+
+    def test_deleting_a_payment_records_who_deleted_it(self):
+        payment = Payment.objects.create(
+            payer_code="2001", payer_name="شرکت آلفا", payment_date=dt.date(2025, 4, 2),
+            amount=750_000, tracking_number="TRK-9",
+        )
+        response = self.client.delete(
+            f"/api/v1/billing/payments/{payment.id}/",
+            {"reason": "واریز تکراری"}, format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+        self.assertFalse(Payment.objects.exists())
+        entry = BillingAuditEntry.objects.get()
+        self.assertEqual(entry.entity, "payment")
+        self.assertEqual(entry.action, BillingAuditEntry.ACTION_DELETED)
+        self.assertEqual(entry.actor, self.admin)
+        self.assertEqual(entry.reason, "واریز تکراری")
+        self.assertEqual(entry.snapshot["amount"], 750_000)
+        self.assertEqual(entry.snapshot["tracking_number"], "TRK-9")
 
     def test_multi_service_batch_gets_a_letter_and_invoice_each(self):
         payload = {

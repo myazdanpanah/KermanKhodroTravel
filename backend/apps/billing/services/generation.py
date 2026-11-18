@@ -1032,7 +1032,7 @@ def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
             if service_key == "service":
                 invoice_type = (request_obj.service_category or "").strip() or label
             with transaction.atomic():
-                Invoice.objects.get_or_create(
+                invoice, created = Invoice.objects.get_or_create(
                     letter_number=letter,
                     payer_code=request_obj.payer_code,
                     invoice_type=invoice_type,
@@ -1043,6 +1043,12 @@ def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
                         "file_path": f"{letter_slug}/{service_key}_{letter_slug}.pdf",
                     },
                 )
+                if not created and invoice.reversed_at is not None:
+                    # Regenerating an aborted invoice would emit a document that
+                    # never reaches the ledger; surface it instead.
+                    errors.append(
+                        f"{invoice_type}: صورتحساب {letter} ابطال شده و دوباره به دفتر اضافه نشد."
+                    )
 
     if errors and not produced:
         request_obj.generation_error = "; ".join(errors)[:2000]

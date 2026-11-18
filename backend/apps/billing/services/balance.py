@@ -7,6 +7,11 @@ from django.db.models import Sum
 from ..models import Credit, Invoice, ManualDebt, Payment
 
 
+def active_invoices():
+    """Invoices still on the ledger; a reversed one keeps its row but not its debt."""
+    return Invoice.objects.filter(reversed_at__isnull=True)
+
+
 def _sum(queryset, field: str = "amount") -> int:
     value = queryset.aggregate(total=Sum(field)).get("total")
     return int(value or 0)
@@ -18,7 +23,7 @@ def payer_balance(payer_code: str) -> dict:
 
     Positive means the customer owes us; negative means we owe the customer.
     """
-    invoices = _sum(Invoice.objects.filter(payer_code=payer_code))
+    invoices = _sum(active_invoices().filter(payer_code=payer_code))
     debts = _sum(ManualDebt.objects.filter(payer_code=payer_code))
     payments = _sum(Payment.objects.filter(payer_code=payer_code))
     credits = _sum(Credit.objects.filter(payer_code=payer_code))
@@ -35,17 +40,14 @@ def payer_balance(payer_code: str) -> dict:
 
 def balances_for(queryset) -> dict[str, dict]:
     """Bulk variant: one query per table, mapped by payer_code."""
-    def grouped(model):
-        rows = (
-            model.objects.values("payer_code")
-            .annotate(total=Sum("amount"))
-        )
+    def grouped(queryset):
+        rows = queryset.values("payer_code").annotate(total=Sum("amount"))
         return {row["payer_code"]: int(row["total"] or 0) for row in rows}
 
-    invoices = grouped(Invoice)
-    debts = grouped(ManualDebt)
-    payments = grouped(Payment)
-    credits = grouped(Credit)
+    invoices = grouped(active_invoices())
+    debts = grouped(ManualDebt.objects.all())
+    payments = grouped(Payment.objects.all())
+    credits = grouped(Credit.objects.all())
 
     result = {}
     for payer in queryset:
@@ -66,7 +68,7 @@ def balances_for(queryset) -> dict[str, dict]:
 
 def total_outstanding() -> dict:
     return {
-        "invoices": _sum(Invoice.objects.all()),
+        "invoices": _sum(active_invoices()),
         "manual_debts": _sum(ManualDebt.objects.all()),
         "payments": _sum(Payment.objects.all()),
         "credits": _sum(Credit.objects.all()),

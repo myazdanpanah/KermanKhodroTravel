@@ -56,8 +56,12 @@ class InvoiceSerializer(serializers.ModelSerializer):
         fields = [
             "id", "letter_number", "payer", "payer_code", "invoice_type",
             "amount", "issue_date", "issue_date_jalali", "file_path", "created_at", "file_id",
+            "is_reversed", "reversed_at", "reversal_reason",
         ]
-        read_only_fields = ["id", "created_at", "issue_date_jalali", "file_id"]
+        read_only_fields = [
+            "id", "created_at", "issue_date_jalali", "file_id",
+            "is_reversed", "reversed_at", "reversal_reason",
+        ]
 
     def get_file_id(self, obj):
         """Newest generated document for this letter, for the download button."""

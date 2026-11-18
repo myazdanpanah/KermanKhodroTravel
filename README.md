@@ -98,7 +98,7 @@ KermanKhodroTravel/
 │   │   │   ├── urls.py
 │   │   │   ├── services/
 │   │   │   │   ├── balance.py      # فرمول مشتق مانده
-│   │   │   │   ├── numbers.py      # شماره نامه: رزرو/آزادسازی/پیش‌نمایش
+│   │   │   │   ├── numbers.py      # شماره نامه: رزرو/پیش‌نمایش (شمارهٔ ابطال‌شده آزاد نمی‌شود)
 │   │   │   │   ├── normalize.py    # ارقام فارسی و تاریخ شمسی
 │   │   │   │   ├── generation.py   # Word نامه + PDF صورت‌حساب
 │   │   │   │   ├── files.py        # ذخیره/بازیابی/انقضای فایل‌ها
@@ -237,7 +237,8 @@ can_submit, can_approve, can_edit_template
 | مدل | نقش |
 |---|---|
 | `Payer` | طرف حساب (کد یکتا، نام، نوع `legal`/`person`، `parent` برای شرکت زیرمجموعه، شناسه/کد اقتصادی، تلفن، آدرس) |
-| `Invoice` | یک ردیف دفتر کل به‌ازای هر فایل تولیدشده: payer_code، نوع خدمت، شماره نامه، مبلغ، تاریخ صدور، مسیر فایل (ردیف‌های JSON روی `ApprovalRequest` است، نه اینجا) |
+| `Invoice` | یک ردیف دفتر کل به‌ازای هر فایل تولیدشده: payer_code، نوع خدمت، شماره نامه، مبلغ، تاریخ صدور، مسیر فایل و فیلدهای ابطال (`reversed_at`/`reversed_by`/`reversal_reason`). ردیف ابطال‌شده باقی می‌ماند و در مانده حساب نمی‌شود |
+| `BillingAuditEntry` | ردپای ابطال و حذف ردیف‌های مالی: موجودیت، شناسه، عملیات، دلیل، تصویر کامل رکورد و کاربر |
 | `Payment` | پرداخت: payer، مبلغ، تاریخ، شماره پیگیری، توضیح، `created_at` (فیلد «سازنده» وجود ندارد) |
 | `ManualDebt` | بدهی دستی (بدون صورت‌حساب) |
 | `Credit` | بستانکاری/اعتبار |
@@ -303,13 +304,14 @@ can_submit, can_approve, can_edit_template
 | `GET/PUT/DELETE /payers/<code>/` | جزئیات/ویرایش/حذف | `can_view` / `can_manage_companies` |
 | `GET /payers/<code>/balance/` | ماندهٔ مشتق‌شده | `can_view` |
 | `GET /invoices/?type=&payer_code=` | فهرست صورت‌حساب‌ها با فیلتر خدمت | `can_view` |
-| `DELETE /invoices/` | **حذف کل دفتر کل** و آزادسازی همهٔ شماره‌ها | `can_delete_history` |
-| `GET /invoices/<id>/` | جزئیات ردیف‌ها | `can_view` |
+| `DELETE /invoices/` | **ابطال گروهی** همهٔ صورت‌حساب‌های فعال (ردیفی حذف نمی‌شود؛ شماره‌ها آزاد نمی‌شوند) | `can_delete_history` |
+| `GET /invoices/<id>/` | جزئیات ردیف | `can_view` |
+| `DELETE /invoices/<id>/` | **ابطال** صورت‌حساب (ردیف و شمارهٔ نامه باقی می‌مانند؛ دلیل اختیاری در `reason`) | `can_delete_history` |
 | `GET /invoices/types/` | انواع خدمت موجود در داده | `can_view` |
 | `GET/POST /payments/` | فهرست/ثبت پرداخت | `can_view` / `can_pay` |
-| `DELETE /payments/<id>/` | حذف پرداخت | `can_delete_payment` |
+| `DELETE /payments/<id>/` | حذف پرداخت + ثبت در `BillingAuditEntry` | `can_delete_payment` |
 | `GET/POST /debts/`, `/credits/` | بدهی دستی و بستانکاری | `can_view` / `can_issue` |
-| `DELETE /debts/<id>/`, `/credits/<id>/` | حذف ردیف | `can_delete_history` |
+| `DELETE /debts/<id>/`, `/credits/<id>/` | حذف ردیف + ثبت در `BillingAuditEntry` | `can_delete_history` |
 | `POST /upload/excel/`, `/process/excel/` | آپلود و پردازش فایل‌های ورودی | `can_issue` |
 | `GET/POST /approvals/` | درخواست‌ها | `can_view` / ثبت با `can_submit` |
 | `GET /approvals/pending/`, `/approvals/mine/` | صف تأیید | `can_view` / `can_submit` |

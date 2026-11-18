@@ -86,6 +86,18 @@ class Invoice(models.Model):
     issue_date = models.DateField(verbose_name="تاریخ صدور")
     file_path = models.CharField(max_length=500, blank=True, default="", verbose_name="مسیر فایل")
     created_at = models.DateTimeField(auto_now_add=True)
+    # An issued invoice is never deleted: it is reversed in place so its letter
+    # number stays taken and the audit trail keeps pointing at a real row.
+    reversed_at = models.DateTimeField(null=True, blank=True, verbose_name="زمان ابطال")
+    reversed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="reversed_invoices",
+        verbose_name="ابطان",
+    )
+    reversal_reason = models.CharField(max_length=500, blank=True, default="", verbose_name="دلیل ابطال")
 
     class Meta:
         verbose_name = "صورتحساب"
@@ -96,6 +108,10 @@ class Invoice(models.Model):
             models.Index(fields=["letter_number"], name="idx_invoices_letter_number"),
             models.Index(fields=["issue_date"], name="idx_invoices_issue_date"),
         ]
+
+    @property
+    def is_reversed(self) -> bool:
+        return self.reversed_at is not None
 
     def __str__(self):
         return f"{self.letter_number} - {self.payer}"
@@ -482,3 +498,36 @@ class InvoiceTemplate(models.Model):
         if self.is_active:
             InvoiceTemplate.objects.exclude(pk=self.pk).update(is_active=False)
         super().save(*args, **kwargs)
+
+
+class BillingAuditEntry(models.Model):
+    """Who reversed or deleted a money row, and what that row held."""
+
+    ACTION_REVERSED = "reversed"
+    ACTION_DELETED = "deleted"
+    ACTIONS = [(ACTION_REVERSED, "ابطال"), (ACTION_DELETED, "حذف")]
+
+    entity = models.CharField(max_length=20, verbose_name="موجودیت")
+    object_id = models.CharField(max_length=40, verbose_name="شناسه")
+    object_label = models.CharField(max_length=200, blank=True, default="", verbose_name="عنوان")
+    action = models.CharField(max_length=20, choices=ACTIONS, verbose_name="عملیات")
+    reason = models.CharField(max_length=500, blank=True, default="", verbose_name="دلیل")
+    snapshot = models.JSONField(default=dict, blank=True, verbose_name="تصویر رکورد")
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="billing_audit_entries",
+        verbose_name="کاربر",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "ردپای ابطال و حذف"
+        verbose_name_plural = "ردپای ابطال و حذف"
+        ordering = ["-created_at", "-id"]
+        indexes = [models.Index(fields=["entity", "object_id"], name="idx_billing_audit_object")]
+
+    def __str__(self):
+        return f"{self.get_action_display()} {self.entity} #{self.object_id}"

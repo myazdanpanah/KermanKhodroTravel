@@ -42,6 +42,7 @@ from .serializers import (
     ServiceCategorySerializer,
 )
 from .services import excel as excel_service
+from .services.audit import record_deletion, reverse_invoice
 from .services.balance import balances_for, payer_balance, total_outstanding
 from .services.files import purge_expired_files, read_bytes, save_final_file
 from .services.generation import (
@@ -55,7 +56,6 @@ from .services.normalize import gregorian_to_persian, persian_date_to_gregorian,
 from .services.numbers import (
     full_letter_number,
     peek_letter,
-    release_invoice_number,
     release_numbers,
     reserve_numbers,
 )
@@ -180,13 +180,17 @@ def invoice_list(request):
     if request.method == "DELETE":
         if not has_perm(request.user, "can_delete_history"):
             return _error("شما مجوز حذف تاریخچه را ندارید.", status.HTTP_403_FORBIDDEN)
+        reason = str(request.data.get("reason") or "")
         with transaction.atomic():
-            for invoice in Invoice.objects.all():
-                release_invoice_number(invoice)
-            Invoice.objects.all().delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+            reversed_count = 0
+            for invoice in Invoice.objects.filter(reversed_at__isnull=True):
+                reverse_invoice(invoice, request.user, reason)
+                reversed_count += 1
+        return Response({"reversed": reversed_count})
 
     queryset = Invoice.objects.all()
+    if request.query_params.get("include_reversed") not in ("1", "true", "yes"):
+        queryset = queryset.filter(reversed_at__isnull=True)
     payer_code = request.query_params.get("payer_code")
     start = request.query_params.get("start_date")
     end = request.query_params.get("end_date")
@@ -221,10 +225,11 @@ def invoice_detail(request, pk: int):
         return Response(InvoiceSerializer(invoice).data)
     if not has_perm(request.user, "can_delete_history"):
         return _error("شما مجوز حذف تاریخچه را ندارید.", status.HTTP_403_FORBIDDEN)
+    if invoice.reversed_at is not None:
+        return _error("این صورتحساب قبلاً ابطال شده است.")
     with transaction.atomic():
-        release_invoice_number(invoice)
-        invoice.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
+        reverse_invoice(invoice, request.user, str(request.data.get("reason") or ""))
+    return Response(InvoiceSerializer(invoice).data)
 
 
 # ── payments / debts / credits ───────────────────────────────────────────
@@ -286,7 +291,9 @@ def payment_detail(request, pk: int):
     payment = Payment.objects.filter(pk=pk).first()
     if payment is None:
         return _error("پرداخت یافت نشد.", status.HTTP_404_NOT_FOUND)
-    payment.delete()
+    with transaction.atomic():
+        record_deletion(request.user, "payment", payment, str(request.data.get("reason") or ""))
+        payment.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -318,7 +325,9 @@ def debt_detail(request, pk: int):
     debt = ManualDebt.objects.filter(pk=pk).first()
     if debt is None:
         return _error("بدهی یافت نشد.", status.HTTP_404_NOT_FOUND)
-    debt.delete()
+    with transaction.atomic():
+        record_deletion(request.user, "debt", debt, str(request.data.get("reason") or ""))
+        debt.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
@@ -348,7 +357,9 @@ def credit_detail(request, pk: int):
     credit = Credit.objects.filter(pk=pk).first()
     if credit is None:
         return _error("اعتبار یافت نشد.", status.HTTP_404_NOT_FOUND)
-    credit.delete()
+    with transaction.atomic():
+        record_deletion(request.user, "credit", credit, str(request.data.get("reason") or ""))
+        credit.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
