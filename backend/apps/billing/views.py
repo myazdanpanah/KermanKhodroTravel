@@ -423,6 +423,33 @@ def approval_detail(request, pk: int):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+
+def _notify_approval_outcome(approval, *, approved: bool, reason: str = "") -> None:
+    """Put the outcome in the requester's bell (dashboards Notification)."""
+    from apps.dashboards.models import Notification
+
+    if not approval.requester_id:
+        return
+    letters = "، ".join(
+        value for value in (approval.service_letters or {}).values() if value
+    )
+    letters = letters or approval.letter_number
+    outcome = "تأیید شد" if approved else "رد شد"
+    message = f"درخواست {approval.service_type} برای {approval.payer_name} {outcome}."
+    if approved and letters:
+        message += f" شماره نامه: {letters}"
+    if not approved and reason:
+        message += f" دلیل: {reason}"
+    Notification.objects.create(
+        recipient_id=approval.requester_id,
+        notification_type="system",
+        title=f"درخواست {approval.service_type} {outcome}",
+        message=message,
+        target_type="billing_request",
+        target_id=str(approval.pk),
+    )
+
+
 @api_view(["POST"])
 @perm_required("can_approve")
 def approval_approve(request, pk: int):
@@ -471,6 +498,7 @@ def approval_approve(request, pk: int):
                 "approved_at",
             ]
         )
+        _notify_approval_outcome(approval, approved=True)
 
     mode = _enqueue_generation(approval.id)
     approval.refresh_from_db()
@@ -492,6 +520,7 @@ def approval_reject(request, pk: int):
     approval.status = ApprovalRequest.STATUS_REJECTED
     approval.rejection_reason = reason[:500]
     approval.save(update_fields=["status", "rejection_reason"])
+    _notify_approval_outcome(approval, approved=False, reason=approval.rejection_reason)
     return Response(ApprovalRequestSerializer(approval).data)
 
 

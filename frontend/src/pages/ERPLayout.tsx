@@ -4,11 +4,12 @@ import { useAuthStore } from '../store/authStore'
 import { useThemeStore, syncThemeClass } from '../store/themeStore'
 import { useBrandLogo } from '../store/brandingStore'
 import UserMenu from '../components/UserMenu'
+import NotificationBell from '../components/NotificationBell'
 import {
   LayoutDashboard, FileText, CreditCard, Users, Gauge, Plus,
   Calendar, Target, TrendingUp,
   Settings, ChevronLeft, ChevronDown,
-  Shield, Search, Bell, Sun, Moon, Menu, Briefcase, Check, X,
+  Shield, Search, Sun, Moon, Menu, Briefcase, Check, X,
 } from 'lucide-react'
 
 // ─── Navigation Structure ───────────────────────────────────────
@@ -303,11 +304,8 @@ export default function ERPLayout() {
             <button className="p-2 text-nx-mist hover:text-white hover:bg-white/5 rounded-nx-btn transition">
               <Search className="w-5 h-5" />
             </button>
-            {/* Notifications */}
-            <button className="relative p-2 text-nx-mist hover:text-white hover:bg-white/5 rounded-nx-btn transition">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-nx-danger-500 rounded-full"></span>
-            </button>
+            {/* Notifications: unread approvals and rejections live here */}
+            <NotificationBell />
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}

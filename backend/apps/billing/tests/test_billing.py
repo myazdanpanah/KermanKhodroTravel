@@ -1475,3 +1475,71 @@ class BackupRestoreTests(TestCase):
         payload = self._snapshot()
         self.assertEqual(self._restore(payload, confirm="no").status_code, 400)
         self.assertEqual(Invoice.objects.count(), 1)
+
+
+class ApprovalNotificationTests(TestCase):
+    """Approve/reject must reach the requester's bell, not just the DB."""
+
+    def setUp(self):
+        self.approver = User.objects.create_user(
+            username="notif_approver", password="pass12345", role="admin",
+            is_staff=True, is_superuser=True,
+        )
+        self.requester = User.objects.create_user(
+            username="notif_requester", password="pass12345", role="sales",
+            can_submit=True,
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.approver)
+        self.approval = ApprovalRequest.objects.create(
+            requester=self.requester, requester_name="notif_requester", payer_code="9001",
+            payer_name="شرکت اعلان", service_type="پرواز", letter_number="",
+            letter_date="1404/04/01", start_day=1, end_day=31, month="4", year=1404,
+            period_range="از 1404/04/01 تا 1404/04/31",
+            flight_data=[{"ردیف": 1, "نام مسافر": "مسافر", "بدهکار": 500_000}],
+        )
+
+    def _bell(self, user):
+        from apps.dashboards.models import Notification
+
+        return Notification.objects.filter(recipient=user)
+
+    def test_approval_notifies_the_requester_with_the_letter_number(self):
+        from unittest import mock
+
+        from apps.billing import views
+
+        with mock.patch.object(views, "_enqueue_generation", lambda _id: "inline"):
+            response = self.client.post(
+                f"/api/v1/billing/approvals/{self.approval.pk}/approve/", {}, format="json"
+            )
+        self.assertEqual(response.status_code, 200)
+
+        self.approval.refresh_from_db()
+        note = self._bell(self.requester).get()
+        self.assertIn("تأیید شد", note.title)
+        self.assertIn(self.approval.letter_number, note.message)
+        self.assertEqual(note.target_type, "billing_request")
+        self.assertEqual(note.target_id, str(self.approval.pk))
+        self.assertFalse(note.is_read)
+        # The bell is per-user: the approver does not get their own action.
+        self.assertFalse(self._bell(self.approver).exists())
+
+        requester_client = APIClient()
+        requester_client.force_authenticate(user=self.requester)
+        bell = requester_client.get("/api/v1/dashboards/notifications/").data
+        self.assertEqual(bell["unread_count"], 1)
+        self.assertEqual(bell["notifications"][0]["title"], note.title)
+
+    def test_rejection_notifies_the_requester_with_the_reason(self):
+        response = self.client.post(
+            f"/api/v1/billing/approvals/{self.approval.pk}/reject/",
+            {"reason": "مدارک ناقص است"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        note = self._bell(self.requester).get()
+        self.assertIn("رد شد", note.title)
+        self.assertIn("مدارک ناقص است", note.message)
+        self.assertEqual(note.target_id, str(self.approval.pk))
