@@ -23,7 +23,7 @@ from django.utils import timezone
 
 from ..models import ApprovalRequest, CompanySettings, FinalFile, Invoice, InvoiceTemplate, Payer
 from .files import save_final_file
-from .normalize import gregorian_to_persian, persian_date_to_gregorian
+from .normalize import gregorian_to_persian, persian_date_to_gregorian, to_persian_digits
 
 try:  # Jinja2 ships with WeasyPrint but is imported eagerly for the HTML path
     from jinja2 import Environment, select_autoescape
@@ -218,6 +218,253 @@ def render_pdf(html: str) -> bytes:
     return HTML(string=html).write_pdf()
 
 
+# ── invoice PDF (HTML -> PDF) ────────────────────────────────────────────
+#
+# The Word file is the official letter. The PDF is the صورتحساب table rendered
+# from HTML (A4 landscape, eight rows per page, per-page and grand totals) with
+# the company logo, signature and stamp, matching the layout the finance team
+# sends to customers.
+
+INVOICE_FONT_STACK = "'B Nazanin', 'Vazirmatn', Tahoma, Arial, sans-serif"
+
+INVOICE_CSS = f"""
+@page {{ size: A4 landscape; margin: 1cm; }}
+body {{ font-family: {INVOICE_FONT_STACK}; font-size: 12px; line-height: 1.4; margin: 0; direction: rtl; }}
+.page {{ page-break-after: avoid; }}
+.header-top {{ display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }}
+.left-info {{ text-align: left; font-size: 14px; line-height: 1.4; }}
+.left-info div {{ margin-bottom: 2px; font-weight: bold; }}
+.logo {{ max-height: 60px; max-width: 150px; }}
+.header-box {{ border: 1.75px solid #000; padding: 8px 12px; margin-bottom: 6px; text-align: center; font-weight: bold; font-size: 16px; background-color: #f9f9f9; }}
+.data-table {{ width: 100%; border-collapse: collapse; margin: 8px 0; border: 1.75px solid #000; table-layout: auto; }}
+.data-table th, .data-table td {{ border: 1.75px solid #000; padding: 6px 8px; text-align: center; font-size: 13px; font-weight: bold; }}
+.data-table th {{ background-color: #f0f0f0; }}
+.totals-row {{ margin-top: 6px; display: flex; justify-content: space-between; border-top: 1.75px solid #000; padding-top: 5px; font-size: 12px; }}
+.footer {{ margin-top: 20px; display: flex; justify-content: space-between; align-items: flex-end; }}
+"""
+
+INVOICE_HTML = """
+<!DOCTYPE html>
+<html dir="rtl" lang="fa"><head><meta charset="UTF-8"><style>{{ css }}</style></head>
+<body>
+{% for page in pages %}
+  <div class="page"{% if not loop.first %} style="page-break-before: always;"{% endif %}>
+    <div class="header-top">
+      <div class="right-logo">{% if seller.logo %}<img src="{{ seller.logo }}" class="logo">{% endif %}</div>
+      <div class="left-info">
+        <div>تاریخ: {{ invoice_date }}</div>
+        <div>شماره صورتحساب: {{ invoice_number }}</div>
+      </div>
+    </div>
+    <div class="header-box">صورت حساب {{ service_type }} {{ buyer_name }}</div>
+    <table class="data-table">
+      <thead><tr>
+        <th>ردیف</th><th>شماره قرارداد</th><th>نام مسافر</th><th>شرح خدمات</th>
+        <th>تاریخ</th><th>توضیحات</th><th>بدهکار (ریال)</th><th>بستانکار (ریال)</th><th>مانده در خط</th>
+      </tr></thead>
+      <tbody>
+      {% for row in page.rows %}
+        <tr>
+          <td>{{ loop.index + (page.page_num - 1) * 8 }}</td>
+          <td>{{ row.contract }}</td>
+          <td>{{ row.passenger }}</td>
+          <td>{{ row.description }}</td>
+          <td>{{ row.date }}</td>
+          <td>{{ row.notes }}</td>
+          <td>{{ row.debt_display }}</td>
+          <td>{{ row.credit_display }}</td>
+          <td>{{ row.balance_display }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    <div class="totals-row">
+      <div>جمع بدهکار این صفحه: {{ page.total_debt_display }} ریال</div>
+      <div>جمع بستانکار این صفحه: {{ page.total_credit_display }} ریال</div>
+      <div>مانده این صفحه: {{ page.total_balance_display }} ریال</div>
+    </div>
+    {% if page.is_last %}
+      <div class="totals-row">
+        <div>جمع کل نهایی بدهکار: {{ grand_total_debt_display }} ریال</div>
+        <div>جمع کل نهایی بستانکار: {{ grand_total_credit_display }} ریال</div>
+        <div>مانده نهایی: {{ grand_total_balance_display }} ریال</div>
+      </div>
+      <div class="footer">
+        <div class="signature">
+          {% if seller.signature %}<img src="{{ seller.signature }}" style="max-height: 60px;">{% else %}<p>................................</p>{% endif %}
+          <p>{{ seller.manager_name }}<br>{{ seller.manager_position }}</p>
+        </div>
+        <div class="stamp">
+          {% if seller.stamp %}<img src="{{ seller.stamp }}" style="max-height: 60px;">{% else %}<p>................................</p>{% endif %}
+          <p>مهر شرکت</p>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+{% endfor %}
+</body></html>
+"""
+
+
+def _persian_number(value: int | float) -> str:
+    return to_persian_digits(f"{int(value):,}")
+
+
+def _format_balance(value: int | float) -> str:
+    value = int(value)
+    if value < 0:
+        return f"({to_persian_digits(f'{abs(value):,}')})"
+    return to_persian_digits(f"{value:,}")
+
+
+def _invoice_row(row: dict, service_key: str) -> dict:
+    """Map one stored data row onto the invoice table columns."""
+    if service_key == "flight":
+        description = str(row.get("مسیر") or "")
+        date = str(row.get("تاریخ پرواز") or "")
+        notes = f"بلیط: {row.get('شماره بلیط')}" if row.get("شماره بلیط") else ""
+    elif service_key == "hotel":
+        description = " — ".join(
+            part for part in (str(row.get("هتل") or ""), str(row.get("نوع اتاق") or "")) if part
+        )
+        date = str(row.get("تاریخ ورود و خروج") or "")
+        notes = f"{row.get('تعداد نفرات')} نفر" if row.get("تعداد نفرات") else ""
+    else:
+        description = str(row.get("شرح خدمات") or "")
+        date = str(row.get("تاریخ") or "")
+        notes = str(row.get("توضیحات") or "")
+
+    debt = int(row.get("بدهکار") or 0)
+    credit = int(row.get("بستانکار") or 0)
+    return {
+        "contract": str(row.get("قرارداد") or ""),
+        "passenger": str(row.get("نام مسافر") or ""),
+        "description": description,
+        "date": date,
+        "notes": notes,
+        "debt": debt,
+        "credit": credit,
+        "balance": debt - credit,
+        "debt_display": _persian_number(debt),
+        "credit_display": _persian_number(credit),
+        "balance_display": _format_balance(debt - credit),
+    }
+
+
+def build_invoice_context(
+    request_obj: ApprovalRequest, service_key: str, rows: list[dict], letter_number: str
+) -> dict:
+    company = CompanySettings.load()
+    invoice_rows = [_invoice_row(row, service_key) for row in rows]
+
+    chunk_size = 8
+    pages = []
+    for index in range(0, len(invoice_rows), chunk_size):
+        chunk = invoice_rows[index : index + chunk_size]
+        total_debt = sum(row["debt"] for row in chunk)
+        total_credit = sum(row["credit"] for row in chunk)
+        total_balance = sum(row["balance"] for row in chunk)
+        pages.append(
+            {
+                "page_num": len(pages) + 1,
+                "rows": chunk,
+                "total_debt": total_debt,
+                "total_credit": total_credit,
+                "total_balance": total_balance,
+                "total_debt_display": _persian_number(total_debt),
+                "total_credit_display": _persian_number(total_credit),
+                "total_balance_display": _format_balance(total_balance),
+                "is_last": index + chunk_size >= len(invoice_rows),
+            }
+        )
+
+    grand_debt = sum(row["debt"] for row in invoice_rows)
+    grand_credit = sum(row["credit"] for row in invoice_rows)
+    grand_balance = sum(row["balance"] for row in invoice_rows)
+    label = dict((key, title) for key, _attr, title in SERVICE_KEYS).get(service_key, service_key)
+    if service_key == "service" and (request_obj.service_category or "").strip():
+        label = request_obj.service_category.strip()
+
+    return {
+        "css": INVOICE_CSS,
+        "pages": pages,
+        "seller": {
+            "logo": _data_uri(company.logo_path),
+            "signature": _data_uri(company.signature_path),
+            "stamp": _data_uri(company.stamp_path),
+            "manager_name": company.manager_name,
+            "manager_position": company.manager_position,
+        },
+        "buyer_name": request_obj.payer_name,
+        "service_type": label,
+        "invoice_number": letter_number,
+        "invoice_date": request_obj.letter_date,
+        "grand_total_debt_display": _persian_number(grand_debt),
+        "grand_total_credit_display": _persian_number(grand_credit),
+        "grand_total_balance_display": _format_balance(grand_balance),
+    }
+
+
+def html_to_pdf(html: str) -> bytes:
+    """Render HTML to PDF with a headless Chromium/Edge, WeasyPrint as fallback."""
+    import os
+    import subprocess
+    import tempfile
+
+    candidates = [
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        "/usr/bin/microsoft-edge",
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium",
+    ]
+    browser = next((path for path in candidates if os.path.exists(path)), None)
+    if browser:
+        with tempfile.TemporaryDirectory() as folder:
+            html_path = os.path.join(folder, "invoice.html")
+            pdf_path = os.path.join(folder, "invoice.pdf")
+            with open(html_path, "w", encoding="utf-8") as handle:
+                handle.write(html)
+            try:
+                subprocess.run(
+                    [
+                        browser,
+                        "--headless",
+                        "--disable-gpu",
+                        f"--print-to-pdf={pdf_path}",
+                        "--no-pdf-header-footer",
+                        "--virtual-time-budget=2000",
+                        html_path,
+                    ],
+                    check=True,
+                    timeout=90,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+                if os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 0:
+                    with open(pdf_path, "rb") as handle:
+                        return handle.read()
+            except Exception:  # noqa: BLE001 - fall through to WeasyPrint
+                pass
+
+    try:
+        from weasyprint import HTML
+    except Exception as exc:  # noqa: BLE001
+        raise GenerationError(
+            "برای تولید PDF نه مرورگر headless پیدا شد و نه WeasyPrint در دسترس است."
+        ) from exc
+    return HTML(string=html).write_pdf()
+
+
+def render_invoice_pdf(request_obj: ApprovalRequest, service_key: str, rows: list[dict], letter_number: str) -> bytes:
+    if Environment is None:  # pragma: no cover
+        raise GenerationError("Jinja2 در دسترس نیست؛ بازسازی محیط لازم است.")
+    context = build_invoice_context(request_obj, service_key, rows, letter_number)
+    html = Environment(autoescape=select_autoescape(["html", "xml"])).from_string(INVOICE_HTML).render(**context)
+    return html_to_pdf(html)
+
+
 def _template_path_for(variant: str) -> Path | None:
     """Uploaded .docx for this letter kind (falls back to the main debt one)."""
     company = CompanySettings.load()
@@ -396,7 +643,11 @@ def regenerate_file(final_file) -> bytes:
     """
     context = _context_for(final_file.request, final_file.service_type)
     if final_file.file_name.lower().endswith(".pdf"):
-        return render_pdf(render_html(context, active_template()))
+        # PDF is the invoice table; the letter itself is always the Word file.
+        attr, _label = SERVICE_ATTRS[final_file.service_type]
+        rows = list(getattr(final_file.request, attr) or [])
+        letter = final_file.letter_number or final_file.request.letter_number
+        return render_invoice_pdf(final_file.request, final_file.service_type, rows, letter)
     return render_docx(context)
 
 
@@ -443,7 +694,7 @@ def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
             errors.append(f"Word ({label}): {exc}")
 
         try:
-            pdf_bytes = render_pdf(render_html(context, template))
+            pdf_bytes = render_invoice_pdf(request_obj, service_key, rows, letter)
             produced.append(
                 save_final_file(
                     request_obj,

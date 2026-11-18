@@ -8,7 +8,7 @@ import {
   LayoutDashboard, FileText, CreditCard, Users, Gauge, Plus,
   Calendar, Target, TrendingUp,
   Settings, ChevronLeft, ChevronDown,
-  Shield, Search, Bell, Sun, Moon, Menu, Briefcase,
+  Shield, Search, Bell, Sun, Moon, Menu, Briefcase, Check, X,
 } from 'lucide-react'
 
 // ─── Navigation Structure ───────────────────────────────────────
@@ -91,10 +91,16 @@ export default function ERPLayout() {
     setExpandedSections((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }))
   }
 
-  // Close the mobile drawer whenever the route changes.
+  // Close the mobile sheet whenever the route changes.
   useEffect(() => {
     setMobileOpen(false)
   }, [location.pathname])
+
+  // Selecting from the sheet: let it slide back down, then show the page.
+  const goFromSheet = (to: string) => {
+    setMobileOpen(false)
+    window.setTimeout(() => navigate(to), 240)
+  }
 
   // Sync dark mode class to <html>
   useEffect(() => {
@@ -145,22 +151,21 @@ export default function ERPLayout() {
 
   return (
     <div className="min-h-screen bg-nx-navy flex" dir="rtl">
-      {/* Mobile backdrop */}
+      {/* Mobile backdrop for the bottom sheet */}
       {mobileOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300"
           onClick={() => setMobileOpen(false)}
         />
       )}
 
-      {/* ─── Sidebar ──────────────────────────────────── */}
+      {/* ─── Sidebar (desktop only; mobile uses the bottom sheet below) ─── */}
       <aside
         className={`
           ${collapsed ? 'w-16' : 'w-64'}
-          bg-nx-navy border-l border-nx-navy-border flex flex-col
-          transition-transform lg:transition-all duration-300 ease-in-out
+          bg-nx-navy border-l border-nx-navy-border hidden lg:flex flex-col
+          transition-all duration-300 ease-in-out
           fixed top-0 right-0 h-screen z-40
-          ${mobileOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
         `}
       >
         {/* Brand Header */}
@@ -267,16 +272,6 @@ export default function ERPLayout() {
         <header className="h-14 bg-nx-navy border-b border-nx-navy-border flex items-center justify-between px-6 sticky top-0 z-20">
           <div className="flex items-center gap-4">
             {/* Mobile menu button */}
-            <button
-              onClick={() => {
-                setCollapsed(false)
-                setMobileOpen(true)
-              }}
-              className="p-2 text-nx-mist hover:text-white lg:hidden rounded-nx-btn hover:bg-white/5 transition"
-              aria-label="منو"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
             {/* Breadcrumbs */}
             <nav className="hidden lg:flex items-center gap-2 text-sm">
               <span className="text-nx-mist">خانه</span>
@@ -349,10 +344,7 @@ export default function ERPLayout() {
             )
           })}
           <button
-            onClick={() => {
-              setCollapsed(false)
-              setMobileOpen(true)
-            }}
+            onClick={() => setMobileOpen(true)}
             className={`flex flex-col items-center gap-0.5 py-2 text-[10px] ${
               mobileOpen ? 'text-nx-blue' : 'text-nx-mist'
             }`}
@@ -362,6 +354,65 @@ export default function ERPLayout() {
           </button>
         </div>
       </nav>
+
+      {/* ─── Mobile menu: a card that slides up from the bottom ───────── */}
+      <div
+        className="fixed inset-x-0 bottom-0 z-50 lg:hidden will-change-transform"
+        style={{
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          transform: mobileOpen ? 'translateY(0)' : 'translateY(115%)',
+          transition: 'transform 300ms ease-out',
+        }}
+        aria-hidden={!mobileOpen}
+      >
+        <div className="mx-2 mb-2 rounded-3xl bg-nx-navy-elevated border border-nx-navy-border shadow-2xl overflow-hidden">
+          <div className="flex justify-center pt-2.5 pb-1">
+            <span className="h-1.5 w-10 rounded-full bg-nx-mist/40" />
+          </div>
+          <div className="flex items-center justify-between px-5 pb-2 pt-1">
+            <h2 className="text-base font-bold text-white">منو</h2>
+            <button
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-nx-mist hover:bg-white/5"
+            >
+              <X className="w-4 h-4" /> بستن
+            </button>
+          </div>
+          <div className="max-h-[66vh] overflow-y-auto px-3 pb-4 space-y-4">
+            {sections.map((section) => (
+              <div key={section.id}>
+                <p className="px-2 mb-1.5 text-[11px] font-semibold tracking-wide text-nx-mist">{section.label}</p>
+                <div className="space-y-1">
+                  {section.items.map((item) => {
+                    const active = item.end
+                      ? location.pathname === item.to
+                      : location.pathname.startsWith(item.to) && item.to !== '/erp'
+                    return (
+                      <button
+                        key={item.to}
+                        onClick={() => goFromSheet(item.to)}
+                        className={`w-full flex items-center gap-3 px-2.5 py-2.5 rounded-xl text-right transition ${
+                          active ? 'bg-nx-blue/15 text-white' : 'text-slate-200 hover:bg-white/5'
+                        }`}
+                      >
+                        <span
+                          className={`w-9 h-9 rounded-xl grid place-items-center flex-shrink-0 ${
+                            active ? 'bg-nx-blue text-white' : 'bg-white/5 text-nx-mist'
+                          }`}
+                        >
+                          <item.icon className="w-5 h-5" />
+                        </span>
+                        <span className="flex-1 text-[15px] font-medium">{item.label}</span>
+                        {active && <Check className="w-4 h-4 text-nx-blue" />}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

@@ -1,6 +1,7 @@
 import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
+import { useBrandLogo } from './store/brandingStore'
 
 // ── Eagerly loaded shell pages ─────────────────────────────────
 import LoginPage from './pages/LoginPage'
@@ -133,10 +134,12 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 function PageFallback() {
+  // Always the tenant's own logo, including while a sub-page lazy-loads.
+  const logo = useBrandLogo()
   return (
     <div className="flex h-96 items-center justify-center">
       <img
-        src="/brand/nexivo-mark.png"
+        src={logo}
         alt=""
         draggable={false}
         className="nx-splash-mark h-16 w-auto select-none opacity-80"

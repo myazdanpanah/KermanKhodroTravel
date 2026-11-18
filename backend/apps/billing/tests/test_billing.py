@@ -240,6 +240,49 @@ class BillingApiTests(TestCase):
         self.assertEqual(payment.payment_date, dt.date(2025, 4, 4))
         self.assertEqual(payment.payer_name, "شرکت آلفا")
 
+    def test_invoice_row_payment_lowers_balance_and_keeps_the_invoice(self):
+        """The ثبت پرداخت action on an invoice row must hit the same ledger."""
+        invoice = Invoice.objects.create(
+            letter_number="1404/2001/00009",
+            payer="شرکت آلفا",
+            payer_code="2001",
+            invoice_type="پرواز",
+            amount=2_000_000,
+            issue_date=dt.date(2025, 4, 1),
+        )
+        self.assertEqual(payer_balance("2001")["balance"], 2_000_000)
+
+        paid = self.client.post(
+            "/api/v1/billing/payments/",
+            {
+                "payer_code": "2001",
+                "payment_date": "1404/01/20",
+                "amount": 750_000,
+                "tracking_number": invoice.letter_number,
+                "description": "ثبت از ردیف صورت‌حساب",
+            },
+            format="json",
+        )
+        self.assertEqual(paid.status_code, status.HTTP_201_CREATED)
+
+        balance = payer_balance("2001")
+        self.assertEqual(balance["payments"], 750_000)
+        self.assertEqual(balance["balance"], 1_250_000)
+
+        # The same figure the performance/customer screens read.
+        payers = self.client.get("/api/v1/billing/payers/").data
+        row = next(item for item in payers if item["code"] == "2001")
+        self.assertEqual(row["balance"]["balance"], 1_250_000)
+        self.assertEqual(row["balance"]["payments"], 750_000)
+        self.assertEqual(
+            self.client.get("/api/v1/billing/payers/2001/balance/").data["balance"], 1_250_000
+        )
+
+        # A paid invoice is still part of the ledger/history.
+        invoices = self.client.get("/api/v1/billing/invoices/").data
+        self.assertTrue(any(item["letter_number"] == "1404/2001/00009" for item in invoices))
+        self.assertEqual(self.client.get(f"/api/v1/billing/invoices/{invoice.id}/").status_code, 200)
+
     def test_negative_payment_rejected(self):
         response = self.client.post(
             "/api/v1/billing/payments/",
@@ -324,6 +367,11 @@ class BillingApiTests(TestCase):
         self.assertEqual(approval.letter_number.split("/")[1], "2001")
         self.assertTrue(approval.files.filter(file_name__endswith=".docx").exists())
         self.assertTrue(Invoice.objects.filter(payer_code="2001").exists())
+
+        # The letter is Word; the PDF is the invoice table rendered from HTML.
+        pdf_file = approval.files.filter(file_name__endswith=".pdf").first()
+        self.assertIsNotNone(pdf_file)
+        self.assertTrue(bytes(pdf_file.file_data)[:5] == b"%PDF-")
 
     def test_cannot_approve_twice(self):
         approval = ApprovalRequest.objects.create(
