@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from datetime import timedelta
 from pathlib import Path
 
 from django.conf import settings as django_settings
@@ -50,7 +51,7 @@ from .services.generation import (
     html_to_pdf,
     render_html,
 )
-from .services.normalize import gregorian_to_persian, persian_date_to_gregorian
+from .services.normalize import gregorian_to_persian, persian_date_to_gregorian, to_english_digits
 from .services.numbers import (
     full_letter_number,
     peek_letter,
@@ -62,6 +63,10 @@ from .tasks import generate_invoice_task
 
 
 # ── helpers ──────────────────────────────────────────────────────────────
+
+# Two identical payments this close together are one submission, not two.
+PAYMENT_REPEAT_WINDOW = timedelta(seconds=10)
+
 
 def _error(message: str, code=status.HTTP_400_BAD_REQUEST):
     return Response({"error": message}, status=code)
@@ -241,9 +246,37 @@ def payment_list(request):
     code = str(payload.get("payer_code") or "")
     payload["payer_code"] = code
     payload.setdefault("payer_name", _payer_name(code))
+    # Persian digits and stray spaces must not slip past the duplicate check.
+    tracking = to_english_digits(str(payload.get("tracking_number") or "")).strip()
+    payload["tracking_number"] = tracking
     serializer = PaymentSerializer(data=payload)
     serializer.is_valid(raise_exception=True)
-    serializer.save()
+    data = serializer.validated_data
+
+    if tracking and Payment.objects.filter(payer_code=code, tracking_number=tracking).exists():
+        return _error(
+            "پرداختی با همین شمارهٔ پیگیری برای این شرکت قبلاً ثبت شده است.",
+            status.HTTP_409_CONFLICT,
+        )
+
+    # A double click or a retried request books the same payment twice and
+    # silently lowers the payer's debt, so an identical row from the last few
+    # seconds is treated as the same submission. Reading the stored rows keeps
+    # this guard working across every worker, unlike a per-process cache.
+    recent = Payment.objects.filter(
+        payer_code=code,
+        amount=data["amount"],
+        payment_date=data["payment_date"],
+        tracking_number=tracking,
+        created_at__gte=timezone.now() - PAYMENT_REPEAT_WINDOW,
+    ).exists()
+    if recent:
+        return _error(
+            "همین پرداخت چند لحظه پیش ثبت شد؛ برای جلوگیری از ثبت تکراری یک بار دیگر بررسی کنید.",
+            status.HTTP_429_TOO_MANY_REQUESTS,
+        )
+
+    serializer.save(created_by=request.user)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 

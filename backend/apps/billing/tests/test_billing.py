@@ -261,6 +261,70 @@ class BillingApiTests(TestCase):
         self.assertEqual(payment.payment_date, dt.date(2025, 4, 4))
         self.assertEqual(payment.payer_name, "شرکت آلفا")
 
+    def test_duplicate_tracking_number_is_rejected(self):
+        payload = {
+            "payer_code": "2001", "payment_date": "1404/01/15",
+            "amount": 900_000, "tracking_number": "TRK-77",
+        }
+        first = self.client.post("/api/v1/billing/payments/", payload, format="json")
+        self.assertEqual(first.status_code, status.HTTP_201_CREATED)
+
+        second = self.client.post("/api/v1/billing/payments/", payload, format="json")
+        self.assertEqual(second.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn("پیگیری", second.data["error"])
+
+        # The balance must reflect one payment, not two.
+        self.assertEqual(Payment.objects.count(), 1)
+        self.assertEqual(payer_balance("2001")["payments"], 900_000)
+
+    def test_persian_digits_in_the_tracking_number_still_match(self):
+        self.client.post(
+            "/api/v1/billing/payments/",
+            {"payer_code": "2001", "payment_date": "1404/01/15", "amount": 5_000,
+             "tracking_number": "12345"},
+            format="json",
+        )
+        response = self.client.post(
+            "/api/v1/billing/payments/",
+            {"payer_code": "2001", "payment_date": "1404/01/15", "amount": 5_000,
+             "tracking_number": " ۱۲۳۴۵ "},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(Payment.objects.count(), 1)
+
+    def test_same_tracking_number_for_another_payer_is_allowed(self):
+        Payer.objects.create(code="2002", name="شرکت بتا")
+        for code in ("2001", "2002"):
+            response = self.client.post(
+                "/api/v1/billing/payments/",
+                {"payer_code": code, "payment_date": "1404/01/15", "amount": 7_000,
+                 "tracking_number": "SHARED-1"},
+                format="json",
+            )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED, code)
+        self.assertEqual(Payment.objects.count(), 2)
+
+    def test_identical_submission_within_seconds_is_throttled(self):
+        payload = {"payer_code": "2001", "payment_date": "1404/01/16", "amount": 4_321_000}
+        first = self.client.post("/api/v1/billing/payments/", payload, format="json")
+        self.assertEqual(first.status_code, status.HTTP_201_CREATED)
+
+        second = self.client.post("/api/v1/billing/payments/", payload, format="json")
+        self.assertEqual(second.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+        self.assertEqual(Payment.objects.count(), 1)
+
+    def test_payment_records_who_registered_it(self):
+        response = self.client.post(
+            "/api/v1/billing/payments/",
+            {"payer_code": "2001", "payment_date": "1404/01/17", "amount": 1_500},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        payment = Payment.objects.get()
+        self.assertEqual(payment.created_by, self.admin)
+        self.assertEqual(response.data["created_by_name"], "kkt_admin")
+
     def test_invoice_row_payment_lowers_balance_and_keeps_the_invoice(self):
         """The ثبت پرداخت action on an invoice row must hit the same ledger."""
         invoice = Invoice.objects.create(

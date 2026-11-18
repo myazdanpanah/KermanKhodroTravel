@@ -73,13 +73,18 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
 
 class PaymentSerializer(serializers.ModelSerializer):
+    created_by_name = serializers.SerializerMethodField()
+
     class Meta:
         model = Payment
         fields = [
             "id", "payment_code", "payer_code", "payer_name", "payment_date",
-            "amount", "tracking_number", "description", "created_at",
+            "amount", "tracking_number", "description", "created_at", "created_by_name",
         ]
-        read_only_fields = ["id", "created_at"]
+        read_only_fields = ["id", "created_at", "created_by_name"]
+
+    def get_created_by_name(self, obj: Payment) -> str:
+        return obj.created_by.username if obj.created_by_id else ""
         extra_kwargs = {"payer_code": {"required": False}, "payer_name": {"required": False}}
 
     def validate_amount(self, value: int) -> int:

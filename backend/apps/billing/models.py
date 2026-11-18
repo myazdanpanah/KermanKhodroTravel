@@ -114,6 +114,14 @@ class Payment(models.Model):
     )
     description = models.CharField(max_length=500, blank=True, default="", verbose_name="توضیحات")
     created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="registered_payments",
+        verbose_name="ثبت‌کننده",
+    )
 
     class Meta:
         verbose_name = "پرداخت"
