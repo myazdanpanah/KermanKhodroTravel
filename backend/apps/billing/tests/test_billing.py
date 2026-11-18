@@ -24,6 +24,27 @@ from apps.billing.models import (
 )
 from apps.billing.services import excel as excel_service
 from apps.billing.services.balance import payer_balance
+
+
+class BrokenBrowser:
+    """A Chromium that is installed but refuses to print (the failure paths)."""
+
+    found = True
+    launch_error = None
+
+    def __init__(self, *args, **kwargs):
+        pass
+
+    def start(self):
+        return self
+
+    def render(self, html):
+        from apps.billing.services import generation
+
+        raise generation.GenerationError(generation.BROWSER_LAUNCH_ERROR)
+
+    def close(self):
+        pass
 from apps.billing.services.generation import render_docx
 from apps.billing.services.normalize import (
     gregorian_to_persian,
@@ -510,7 +531,7 @@ class InvoicePdfContentTests(TestCase):
         finally:
             document.close()
 
-    def assertWords(self, text: str, phrase: str) -> None:
+    def assert_words(self, text: str, phrase: str) -> None:
         """Exact phrases don't survive extraction: RTL runs come back in visual
         order and a wrapped cell inserts line breaks, so every word is asserted
         on its own against the text with ZWNJ removed."""
@@ -533,15 +554,15 @@ class InvoicePdfContentTests(TestCase):
         first, last = pages[0], pages[-1]
 
         # Title: "صورت حساب پرواز شرکت نمونه" plus the invoice number.
-        self.assertWords(first, "صورت حساب پرواز شرکت نمونه")
+        self.assert_words(first, "صورت حساب پرواز شرکت نمونه")
         self.assertIn("1404/9999/00123", first)
         # Grand totals live on the last page: 55,000,000 for rows 1..10.
         self.assertIn(to_persian_digits(f"{55_000_000:,}"), last)
-        self.assertWords(last, "جمع کل نهایی بدهکار")
+        self.assert_words(last, "جمع کل نهایی بدهکار")
         # The long passenger name is present (it wraps, but stays in the text).
-        self.assertWords(first, self.LONG_NAME)
+        self.assert_words(first, self.LONG_NAME)
         # The last row of the second page proves the page break kept its rows.
-        self.assertWords(last, f"مسافر شماره {self.ROW_COUNT}")
+        self.assert_words(last, f"مسافر شماره {self.ROW_COUNT}")
 
 
 class PdfBrowserTests(TestCase):
@@ -619,22 +640,6 @@ class PdfBrowserTests(TestCase):
 
         from apps.billing.services import generation
 
-        class BrokenBrowser:
-            found = True
-            launch_error = None
-
-            def __init__(self, *args, **kwargs):
-                pass
-
-            def start(self):
-                return self
-
-            def render(self, html):
-                raise generation.GenerationError(generation.BROWSER_LAUNCH_ERROR)
-
-            def close(self):
-                pass
-
         with mock.patch.object(generation, "PdfBrowser", BrokenBrowser), mock.patch.object(
             generation, "_weasyprint_pdf"
         ) as weasyprint_fallback:
@@ -648,22 +653,6 @@ class PdfBrowserTests(TestCase):
         from unittest import mock
 
         from apps.billing.services import generation
-
-        class BrokenBrowser:
-            found = True
-            launch_error = None
-
-            def __init__(self, *args, **kwargs):
-                pass
-
-            def start(self):
-                return self
-
-            def render(self, html):
-                raise generation.GenerationError(generation.BROWSER_LAUNCH_ERROR)
-
-            def close(self):
-                pass
 
         approval = ApprovalRequest.objects.create(
             requester=self.admin, requester_name="admin", payer_code="2001", payer_name="آلفا",

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useThemeStore, syncThemeClass } from '../store/themeStore'
@@ -67,12 +67,16 @@ const NAV_SECTIONS: NavSection[] = [
   },
 ]
 
+// Sheet slide animation; a selection waits for it before navigating.
+const SHEET_TRANSITION_MS = 300
+
 // ─── Component ───────────────────────────────────────────────────
 
 export default function ERPLayout() {
   const [collapsed, setCollapsed] = useState(false)
-  // Mobile: off-canvas drawer plus the bottom tab bar (PWA-style navigation).
+  // Mobile: bottom tab bar plus the menu sheet that slides up over it.
   const [mobileOpen, setMobileOpen] = useState(false)
+  const sheetRef = useRef<HTMLDivElement>(null)
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     finance: true,
   })
@@ -99,8 +103,14 @@ export default function ERPLayout() {
   // Selecting from the sheet: let it slide back down, then show the page.
   const goFromSheet = (to: string) => {
     setMobileOpen(false)
-    window.setTimeout(() => navigate(to), 240)
+    window.setTimeout(() => navigate(to), SHEET_TRANSITION_MS)
   }
+
+  // A closed sheet is off-screen but still mounted: keep its rows out of
+  // the tab order so focus cannot land in a menu nobody can see.
+  useEffect(() => {
+    sheetRef.current?.toggleAttribute('inert', !mobileOpen)
+  }, [mobileOpen])
 
   // Sync dark mode class to <html>
   useEffect(() => {
@@ -271,7 +281,6 @@ export default function ERPLayout() {
         {/* Top Navigation Bar */}
         <header className="h-14 bg-nx-navy border-b border-nx-navy-border flex items-center justify-between px-6 sticky top-0 z-20">
           <div className="flex items-center gap-4">
-            {/* Mobile menu button */}
             {/* Breadcrumbs */}
             <nav className="hidden lg:flex items-center gap-2 text-sm">
               <span className="text-nx-mist">خانه</span>
@@ -357,11 +366,14 @@ export default function ERPLayout() {
 
       {/* ─── Mobile menu: a card that slides up from the bottom ───────── */}
       <div
-        className="fixed inset-x-0 bottom-0 z-50 lg:hidden will-change-transform"
+        ref={sheetRef}
+        className={`fixed inset-x-0 bottom-0 z-50 lg:hidden will-change-transform ${
+          mobileOpen ? '' : 'pointer-events-none'
+        }`}
         style={{
           paddingBottom: 'env(safe-area-inset-bottom)',
           transform: mobileOpen ? 'translateY(0)' : 'translateY(115%)',
-          transition: 'transform 300ms ease-out',
+          transition: `transform ${SHEET_TRANSITION_MS}ms ease-out`,
         }}
         aria-hidden={!mobileOpen}
       >

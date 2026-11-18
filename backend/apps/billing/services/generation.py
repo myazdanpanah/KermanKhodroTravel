@@ -349,15 +349,14 @@ INVOICE_HTML = """
 """
 
 
-def _persian_number(value: int | float) -> str:
+def _amount(value: int | float) -> str:
+    """Grouped Persian digits for a debit/credit amount."""
     return to_persian_digits(f"{int(value):,}")
 
 
-def _format_balance(value: int | float) -> str:
-    value = int(value)
-    if value < 0:
-        return f"({to_persian_digits(f'{abs(value):,}')})"
-    return to_persian_digits(f"{value:,}")
+def _signed_amount(value: int | float) -> str:
+    """Running balance: a negative figure prints in accounting parentheses."""
+    return f"({_amount(abs(value))})" if int(value) < 0 else _amount(value)
 
 
 def _invoice_row(row: dict, service_key: str) -> dict:
@@ -388,9 +387,9 @@ def _invoice_row(row: dict, service_key: str) -> dict:
         "debt": debt,
         "credit": credit,
         "balance": debt - credit,
-        "debt_display": _persian_number(debt),
-        "credit_display": _persian_number(credit),
-        "balance_display": _format_balance(debt - credit),
+        "debt_display": _amount(debt),
+        "credit_display": _amount(credit),
+        "balance_display": _signed_amount(debt - credit),
     }
 
 
@@ -404,19 +403,16 @@ def build_invoice_context(
     pages = []
     for index in range(0, len(invoice_rows), chunk_size):
         chunk = invoice_rows[index : index + chunk_size]
-        total_debt = sum(row["debt"] for row in chunk)
-        total_credit = sum(row["credit"] for row in chunk)
-        total_balance = sum(row["balance"] for row in chunk)
+        page_debt = sum(row["debt"] for row in chunk)
+        page_credit = sum(row["credit"] for row in chunk)
+        page_balance = sum(row["balance"] for row in chunk)
         pages.append(
             {
                 "page_num": len(pages) + 1,
                 "rows": chunk,
-                "total_debt": total_debt,
-                "total_credit": total_credit,
-                "total_balance": total_balance,
-                "total_debt_display": _persian_number(total_debt),
-                "total_credit_display": _persian_number(total_credit),
-                "total_balance_display": _format_balance(total_balance),
+                "total_debt_display": _amount(page_debt),
+                "total_credit_display": _amount(page_credit),
+                "total_balance_display": _signed_amount(page_balance),
                 "is_last": index + chunk_size >= len(invoice_rows),
             }
         )
@@ -442,9 +438,9 @@ def build_invoice_context(
         "service_type": label,
         "invoice_number": letter_number,
         "invoice_date": request_obj.letter_date,
-        "grand_total_debt_display": _persian_number(grand_debt),
-        "grand_total_credit_display": _persian_number(grand_credit),
-        "grand_total_balance_display": _format_balance(grand_balance),
+        "grand_total_debt_display": _amount(grand_debt),
+        "grand_total_credit_display": _amount(grand_credit),
+        "grand_total_balance_display": _signed_amount(grand_balance),
     }
 
 
@@ -926,13 +922,10 @@ def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
             rows = list(getattr(request_obj, attr) or [])
             if not rows:
                 continue
-            columns = _columns_for(service_key)
-            context = build_context(request_obj, rows, columns)
-            context["service_type"] = f"{request_obj.service_type} — {label}"
             # Each service carries its own letter number; a batch of flight + hotel +
             # services therefore yields separate letters instead of one shared one.
-            letter = (request_obj.service_letters or {}).get(service_key) or request_obj.letter_number
-            context["letter_number"] = letter
+            context = _context_for(request_obj, service_key)
+            letter = context["letter_number"]
             # Letter numbers contain slashes (YYYY/CODE/NNNNN); file names must not.
             letter_slug = (letter or "letter").replace("/", "-")
 
