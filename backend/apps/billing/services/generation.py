@@ -18,6 +18,7 @@ import io
 import json
 import os
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -486,6 +487,53 @@ def _launch_flags() -> list[str]:
     return []
 
 
+def _shutdown_tree(process: subprocess.Popen, timeout: float = 10.0) -> None:
+    """Terminate the browser and every helper process it spawned.
+
+    Chromium forks renderer and zygote helpers, so terminating only the parent
+    leaves them behind and every approval leaks another set of headless
+    processes. On Windows the tree is taken down with ``taskkill /T``; elsewhere
+    the browser runs in its own process group (``start_new_session``) and the
+    whole group is signalled, TERM first and KILL if it does not exit.
+    """
+    pid = process.pid
+    if sys.platform.startswith("win"):
+        try:
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(pid)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+                timeout=timeout,
+                check=False,
+            )
+        except (OSError, subprocess.SubprocessError):  # pragma: no cover - no taskkill
+            process.kill()
+    else:
+        try:
+            pgid = os.getpgid(pid)
+        except ProcessLookupError:
+            pgid = None
+        if pgid is not None:
+            try:
+                os.killpg(pgid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                process.wait(timeout=timeout)
+            except subprocess.TimeoutExpired:  # pragma: no cover - stubborn process
+                pass
+            # SIGKILL is POSIX-only, and the attribute is absent when this
+            # branch is exercised on Windows; 9 is its value on every POSIX.
+            try:
+                os.killpg(pgid, getattr(signal, "SIGKILL", 9))
+            except ProcessLookupError:
+                pass
+    try:
+        process.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:  # pragma: no cover - already killed above
+        pass
+
+
 class PdfBrowser:
     """
     One headless Chromium/Edge process shared by every PDF of a request.
@@ -534,6 +582,8 @@ class PdfBrowser:
                 self._command(),
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
+                # Own process group so the whole Chromium tree can be signalled.
+                start_new_session=not sys.platform.startswith("win"),
             )
             self._port = self._wait_for_port()
         except Exception as exc:  # noqa: BLE001 - surfaced to the caller below
@@ -661,12 +711,8 @@ class PdfBrowser:
         return base64.b64decode(result.get("data") or "")
 
     def close(self) -> None:
-        if self._process is not None and self._process.poll() is None:
-            self._process.terminate()
-            try:
-                self._process.wait(timeout=10)
-            except subprocess.TimeoutExpired:  # pragma: no cover - stubborn process
-                self._process.kill()
+        if self._process is not None:
+            _shutdown_tree(self._process)
         self._process = None
         if self._profile:
             shutil.rmtree(self._profile, ignore_errors=True)

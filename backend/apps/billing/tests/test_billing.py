@@ -694,6 +694,62 @@ class PdfBrowserTests(TestCase):
         self.assertTrue(approval.files.filter(file_name__endswith=".docx").exists())
 
 
+class BrowserShutdownTests(TestCase):
+    """The browser is shut down as a tree, not just by terminating the parent."""
+
+    def test_windows_shutdown_kills_the_whole_tree(self):
+        from unittest import mock
+
+        from apps.billing.services import generation
+
+        process = mock.Mock()
+        process.pid = 4321
+
+        with mock.patch("sys.platform", "win32"), mock.patch.object(
+            generation.subprocess, "run"
+        ) as run:
+            generation._shutdown_tree(process)
+
+        self.assertEqual(
+            run.call_args.args[0], ["taskkill", "/F", "/T", "/PID", "4321"]
+        )
+        process.wait.assert_called()
+
+    def test_posix_shutdown_signals_the_process_group(self):
+        from unittest import mock
+
+        from apps.billing.services import generation
+
+        process = mock.Mock()
+        process.pid = 987
+
+        # getpgid/killpg only exist on POSIX, so they are created for the patch.
+        with mock.patch("sys.platform", "linux"), mock.patch.object(
+            generation.os, "getpgid", return_value=555, create=True
+        ), mock.patch.object(generation.os, "killpg", create=True) as killpg:
+            generation._shutdown_tree(process)
+
+        self.assertEqual([call.args[0] for call in killpg.call_args_list], [555, 555])
+        self.assertEqual(killpg.call_args_list[0].args[1], generation.signal.SIGTERM)
+        # SIGKILL is POSIX-only as well; 9 is its value everywhere it exists.
+        self.assertEqual(killpg.call_args_list[1].args[1], getattr(generation.signal, "SIGKILL", 9))
+        process.wait.assert_called()
+
+    def test_close_shuts_the_tree_down_even_if_the_parent_already_exited(self):
+        from unittest import mock
+
+        from apps.billing.services import generation
+
+        browser = generation.PdfBrowser()
+        process = mock.Mock()
+        browser._process = process
+        with mock.patch.object(generation, "_shutdown_tree") as shutdown:
+            browser.close()
+
+        shutdown.assert_called_once_with(process)
+        self.assertIsNone(browser._process)
+
+
 class TemplatePreviewTests(TestCase):
     """POST /templates/active/preview/ renders the active template as a PDF."""
 
