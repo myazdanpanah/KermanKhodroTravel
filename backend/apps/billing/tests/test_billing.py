@@ -694,6 +694,77 @@ class PdfBrowserTests(TestCase):
         self.assertTrue(approval.files.filter(file_name__endswith=".docx").exists())
 
 
+class TemplatePreviewTests(TestCase):
+    """POST /templates/active/preview/ renders the active template as a PDF."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.admin = User.objects.create_user(
+            username="kkt_preview_admin", password="pass12345", role="admin",
+            is_staff=True, is_superuser=True,
+        )
+        self.viewer = User.objects.create_user(
+            username="kkt_preview_viewer", password="pass12345", role="sales",
+        )
+        self.client.force_authenticate(user=self.admin)
+        Payer.objects.create(code="3001", name="شرکت بتا")
+
+    def test_preview_renders_the_active_template_through_the_pdf_path(self):
+        from unittest import mock
+
+        from apps.billing import views
+
+        InvoiceTemplate.objects.create(
+            name="قالب سفارشی",
+            html_content="<div class=\"custom-preview\">{{ payer }}</div>",
+            css_content=".custom-preview { color: #123456; }",
+            is_active=True,
+        )
+        captured = {}
+
+        def fake_pdf(html, browser=None):
+            captured["html"] = html
+            return b"%PDF-1.4 preview"
+
+        with mock.patch.object(views, "html_to_pdf", fake_pdf):
+            response = self.client.post(
+                "/api/v1/billing/templates/active/preview/", {}, format="json"
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertIn("inline", response["Content-Disposition"])
+        self.assertEqual(response.content, b"%PDF-1.4 preview")
+        # The rendered body comes from the active template, not DEFAULT_HTML.
+        self.assertIn("custom-preview", captured["html"])
+        self.assertIn("#123456", captured["html"])
+        self.assertIn("شرکت بتا", captured["html"])
+
+    def test_preview_reports_a_pdf_failure_as_503(self):
+        from unittest import mock
+
+        from apps.billing import views
+        from apps.billing.services import generation
+
+        def boom(html, browser=None):
+            raise generation.GenerationError(generation.BROWSER_LAUNCH_ERROR)
+
+        with mock.patch.object(views, "html_to_pdf", boom):
+            response = self.client.post(
+                "/api/v1/billing/templates/active/preview/", {}, format="json"
+            )
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertIn("مرورگر", response.json()["error"])
+
+    def test_preview_requires_the_template_permission(self):
+        self.client.force_authenticate(user=self.viewer)
+        response = self.client.post(
+            "/api/v1/billing/templates/active/preview/", {}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
 @override_settings(MEDIA_ROOT=tempfile.mkdtemp(prefix="kkt-word-test-"))
 class WordTemplateTests(TestCase):
     """The uploaded official .docx template is rendered with the letter context."""
