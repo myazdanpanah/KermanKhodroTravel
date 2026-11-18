@@ -1,837 +1,428 @@
 <div align="center">
 
-# Nexivo
+# کرمان خودرو — Kerman Khodro Travel
 
-### نکسیوو — Organization Operating System
+### سیستم مالی، بی‌آی و CRM آژانس مسافرتی
 
-**A comprehensive, modular Organization OS that covers every aspect of a company, organization, NGO, or government workflow. Fully customizable and tailored to your organization's needs.**
-
-[![CI](https://github.com/myazdanpanah/nexivo/actions/workflows/tests.yml/badge.svg)](https://github.com/myazdanpanah/nexivo/actions/workflows/tests.yml)
-[![License: Pro](https://img.shields.io/badge/License-Nexivo%20Pro-purple.svg)](LICENSE)
+فورک اختصاصی «کرمان خودرو» از پلتفرم Nexivo — سه ماژول تحویل‌شده: داشبورد مدیریتی (BI)، مالی/صورت‌حساب و CRM.
 
 </div>
 
 ---
 
-## Table of Contents
+## فهرست
 
-- [What is Nexivo?](#what-is-nexivo)
-- [Why Organization OS?](#why-organization-os)
-- [Features](#features)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Prerequisites](#prerequisites)
-- [Getting Started](#getting-started)
-  - [Option 1 — Local Development](#option-1--local-development)
-  - [Option 2 — Docker Compose (Full Stack)](#option-2--docker-compose-full-stack)
-- [Default Login Credentials](#default-login-credentials)
-- [API Reference](#api-reference)
-- [Module System](#module-system)
-- [Organization Hierarchy](#organization-hierarchy)
-- [BI Dashboard](#bi-dashboard)
-- [Finance Module](#finance-module)
-- [Database Manager](#database-manager)
-- [LLM Gateway](#llm-gateway)
-- [Filter System](#filter-system)
-- [Design System](#design-system)
-- [Branding & White-labelling](#branding--white-labelling)
-- [User Management](#user-management)
-- [Developer Workflows](#developer-workflows)
-- [Running Tests](#running-tests)
-- [Environment Variables](#environment-variables)
-- [CI/CD](#cicd)
-- [License](#license)
+- [این پروژه چیست](#این-پروژه-چیست)
+- [ماژول‌های تحویل‌شده](#ماژولهای-تحویلشده)
+- [پشتهٔ فنی](#پشتهٔ-فنی)
+- [ساختار پروژه](#ساختار-پروژه)
+- [راه‌اندازی توسعهٔ محلی](#راهاندازی-توسعهٔ-محلی)
+- [متغیرهای محیطی](#متغیرهای-محیطی)
+- [دادهٔ اولیه و seed](#دادهٔ-اولیه-و-seed)
+- [احراز هویت و مجوزها](#احراز-هویت-و-مجوزها)
+- [دامنهٔ مالی (billing)](#دامنهٔ-مالی-billing)
+- [شماره‌گذاری نامه و گردش تأیید](#شمارهگذاری-نامه-و-گردش-تأیید)
+- [تولید فایل: Word و PDF](#تولید-فایل-word-و-pdf)
+- [API مالی](#api-مالی)
+- [فرانت‌اند](#فرانتاند)
+- [تست و بررسی](#تست-و-بررسی)
+- [استقرار و عملیات](#استقرار-و-عملیات)
+- [قواعد و نکات توسعه](#قواعد-و-نکات-توسعه)
+- [کارهای باقی‌مانده / محدودیت‌ها](#کارهای-باقیمانده--محدودیتها)
+- [تاریخچه و منابع](#تاریخچه-و-منابع)
 
 ---
 
-## What is Nexivo?
+## این پروژه چیست
 
-Nexivo is a **modular, self-hosted Organization Operating System** designed to be the single platform your organization needs. Whether you're a startup, an enterprise, an NGO, or a government agency — Nexivo adapts to your workflows, not the other way around.
+نکس‌یوو یک «سیستم‌عامل سازمانی» ماژولار است (Django REST + React) که برای نیازهای مختلف کسب‌وکار ماژول دارد. این مخزن **فورک مشتری «کرمان خودرو»** است و فقط بخشی از ماژول‌ها برای این مشتری فعال و کامل شده‌اند؛ بقیهٔ ماژول‌های Nexivo در کد هستن اما در لانچر نمایش داده نمی‌شوند و برای این مشتری پشتیبانی نمی‌شوند.
 
-Unlike traditional BI tools that only handle dashboards, or accounting software that only handle finances, Nexivo is an **integrated platform** that covers:
+جریان کاری اصلی مشتری:
 
-| Domain | What Nexivo Handles |
-|---|---|
-| **Business Intelligence** | Drag-and-drop dashboards, KPIs, charts, data visualization, cross-chart filtering, drill-down |
-| **Finance & Accounting** | Iranian accounting standards (Kol → Moin → Tafzili), invoices, receipts, payments, cheques, journal vouchers |
-| **Database Management** | Browse, edit, query, and sync external databases with a built-in SQL editor |
-| **CRM & Customer Management** | Customer and supplier records with finance module integration |
-| **AI Integration** | Unified LLM gateway supporting multiple AI providers with encryption, rate limiting, and chat history |
-| **Data Import & Processing** | Excel/CSV upload with automatic parsing, cleaning, and PostgreSQL table creation |
-| **Organization Management** | Company → Division → Team hierarchy, org chart visualization, role-based access |
-| **Module System** | Enable/disable modules per organization — only activate what you need |
+1. کارشناس، درخواست صدور صورت‌حساب (پرواز / هتل / ویزا / اتوبوس / قطار / گشت / تور / CIP …) ثبت می‌کند، چند فایل اکسل/همراه بار می‌کند و ردیف‌ها را در یک ادیتور جدولی نهایی می‌کند.
+2. نامه با شمارهٔ `YYYY/COMPANYCODE/NNNNN` ساخته می‌شود و وارد گردش تأیید (مدیر / مدیرعامل) می‌شود.
+3. پس از تأیید، **نامهٔ رسمی Word** و **صورت‌حساب PDF** تولید و در مسیر «فایل‌های تأییدشده» ذخیره می‌شوند.
+4. پرداخت‌ها ثبت می‌شوند (از صفحهٔ پرداخت‌ها یا مستقیماً از ردیف صورت‌حساب) و ماندهٔ هر مشتری در «عملکرد» و «مشتریان» به‌صورت مشتق‌شده نمایش داده می‌شود.
 
 ---
 
-## Why Organization OS?
+## ماژول‌های تحویل‌شده
 
-Traditional software forces organizations to adopt rigid workflows. Nexivo takes a fundamentally different approach:
+| کلید | عنوان | وضعیت |
+|---|---|---|
+| `bi_dashboard` | داشبورد مدیریتی | تحویل‌شده |
+| `finance` | مالی — صورت‌حساب، پرداخت، مشتریان، عملکرد، خدمات | تحویل‌شده |
+| `crm` | CRM — سرنخ‌ها، فرصت‌ها، فعالیت‌ها | تحویل‌شده |
+| `settings` | تنظیمات شرکت، کاربران و مجوزها | تحویل‌شده |
 
-1. **Modular Architecture** — Enable only the modules your organization needs. A small business might use Finance + BI, while a larger organization might use all available modules.
-
-2. **Fully Customizable** — Every organization is unique. Nexivo's module system, role-based access, and customizable dashboards let you tailor the platform to your exact needs.
-
-3. **Single Source of Truth** — All your data, processes, and analytics in one place. No more juggling between disconnected tools.
-
-4. **Self-Hosted** — Keep your data under your control. Deploy on-premise or in your own cloud infrastructure.
-
-5. **Persian/Farsi First** — Full RTL support, Iranian accounting standards, and Persian UI — built for the Iranian market from day one.
-
-6. **AI-Powered** — Built-in LLM gateway lets you integrate AI capabilities across all modules — from data analysis to document generation.
+لیست بالا در `frontend/src/pages/LauncherPage.tsx` با ثابت `DELIVERED_MODULES` کنترل می‌شود؛ هر ماژول جدید که بخواهد در لانچر دیده شود باید به همین مجموعه اضافه شود. ناوبری داخل ERP در `frontend/src/pages/ERPLayout.tsx` تعریف شده است (سه گروه: مالی، CRM، تنظیمات).
 
 ---
 
-## Features
+## پشتهٔ فنی
 
-### Core Platform
+**بک‌اند**
 
-| Feature | Details |
-|---|---|
-| **Module System** | Pluggable architecture — organizations enable/disable modules (BI Dashboard, Finance, CRM, DB Manager, Data Upload, LLM, Settings) |
-| **Organization Hierarchy** | Company → Division → Team structure with org chart visualization |
-| **Role-Based Access** | Four roles — Admin, CEO, Finance, Sales — with per-dataset, per-dashboard, per-page, and per-filter access control |
-| **JWT Authentication** | Stateless JWT authentication with automatic token refresh |
-| **Dark Theme** | System-wide dark/light mode toggle, persisted in localStorage |
-| **RTL Support** | Full right-to-left layout for Persian/Farsi, including the Vazirmatn font |
+- Python 3.11+ / Django 4.2 LTS / Django REST Framework 3.14
+- PostgreSQL 15 (پیش‌فرض `psycopg2`)
+- JWT دستی (`PyJWT`، `apps/accounts/authentication.py`)، بدون SimpleJWT
+- Celery + Redis (تعریف‌شده؛ برای این مشتری کار زمان‌بندی‌شدهٔ اجباری وجود ندارد)
+- Channels/Daphne برای هشدارهای realtime (اختیاری)
+- تولید فایل: `python-docx` + `docxtpl` (Word)، `Jinja2` (HTML صورت‌حساب)، `WeasyPrint` و مرورگر headless (PDF)
+- `jdatetime` برای تاریخ شمسی، `openpyxl`/`pandas` برای اکسل، `drf-spectacular` برای OpenAPI
 
-### BI Dashboard
+**فرانت‌اند**
 
-| Feature | Details |
-|---|---|
-| **Drag-and-Drop Grid** | Responsive grid layout using `react-grid-layout` — resize, reorder, configure widgets |
-| **Multi-Page Dashboards** | Create multiple pages within a single dashboard with tab navigation, duplication, and per-page filters |
-| **Charts** | Bar, Horizontal Bar, Line, Pie, Area, Scatter, Data Table, KPI Card, Gauge, Heatmap, Tree Map, Sankey, Funnel, Radar, Graph, Map — powered by Apache ECharts |
-| **Dashboard-Level Filters** | Looker Studio-style filter bar with dropdown, date range, text search, checkbox, and slider controls |
-| **Widget-Level Filters** | Per-widget filter configuration with operators (eq, neq, contains, gt, lt, between, in, starts_with, ends_with) |
-| **Cross-Chart Filtering** | Click on a chart element to filter other charts in the dashboard |
-| **Drill-Down** | Table widgets support click-to-drill-down with breadcrumb navigation |
-| **Data Aggregation** | Automatic GROUP BY with SUM/COUNT/COUNT_DISTINCT/AVG/MIN/MAX; date grouping by year/quarter/month/week/day/hour |
-| **Row-Level Security** | PostgreSQL RLS policies combined with role-based filters |
-| **Superset Integration** | Embedded Apache Superset for advanced charting with guest token generation and RLS forwarding |
-| **Dashboard Templates** | Pre-built templates for Sales, Finance, Marketing, HR, Retail |
-| **Bulk Assignment** | Assign dashboards to entire teams, divisions, or companies at once |
-| **Notifications** | Real-time bell icon with unread count, assignment alerts |
-
-### Finance Module
-
-| Feature | Details |
-|---|---|
-| **Iranian Accounting** | Kol → Moin → Tafzili hierarchy compliant with Iranian accounting standards |
-| **Invoices** | Create, manage, and track invoices with automatic numbering |
-| **Receipts** | Record and manage receipts |
-| **Payments** | Track payments with dates, amounts, and descriptions |
-| **Cheques** | Full cheque lifecycle management |
-| **Journal Vouchers** | Create balanced journal entries with debit/credit validation |
-| **Customers & Suppliers** | Manage customer and supplier records |
-
-### Database Manager
-
-| Feature | Details |
-|---|---|
-| **External DB Connections** | Browse, edit, and query external databases with encryption |
-| **SQL Editor** | Write and execute SQL queries (admin/CEO only) |
-| **Cell Editing** | Edit database cells directly with permissions |
-| **File Import** | Import Excel/CSV files to new database tables |
-| **Google Sheets Sync** | Sync data from Google Sheets |
-
-### LLM Gateway
-
-| Feature | Details |
-|---|---|
-| **Multi-Provider Support** | Unified interface for Ollama, OpenAI, Gemini, and Anthropic |
-| **Encrypted API Keys** | Fernet symmetric encryption for stored API keys |
-| **Rate Limiting** | Configurable rate limits per provider |
-| **Chat History** | Session-based chat with message history |
-| **Usage Tracking** | Track token usage and costs per provider |
-
-### Data Processing
-
-| Feature | Details |
-|---|---|
-| **Data Upload** | Drag-and-drop Excel (.xlsx/.xls) and CSV file upload with automatic parsing and PostgreSQL table creation |
-| **REST API** | Full REST API with OpenAPI/Swagger documentation via `drf-spectacular` |
-| **Background Tasks** | Celery + Redis for asynchronous processing (dataset imports, scheduled refreshes) |
-| **Superset Integration** | Embedded Apache Superset for advanced analytics |
+- React 18 + TypeScript + Vite 5
+- Tailwind CSS 3 (توکن‌های برند در `tailwind.config.js` و `src/index.css`)
+- Ant Design 6 برای فرم/جدول/مودال، ECharts برای نمودار، AG Grid برای جداول سنگین
+- Zustand برای state، React Router 6، axios
+- PWA سبک (`manifest.webmanifest`) و i18n فارسی/تقویم شمسی
 
 ---
 
-## Architecture
+## ساختار پروژه
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           Nexivo Organization OS                            │
-│                                                                             │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │                         Frontend (React + Vite)                        │  │
-│  │  ┌─────────┬──────────┬──────────┬──────────┬──────────┬──────────┐  │  │
-│  │  │Launcher │Dashboard │ Finance  │ DB Mgr   │ LLM      │ Settings │  │  │
-│  │  │  Page   │ Builder  │ Module   │ Module   │ Gateway  │  Page    │  │  │
-│  │  └────┬────┴────┬─────┴────┬─────┴────┬─────┴────┬─────┴────┬─────┘  │  │
-│  │       └─────────┴──────────┴──────────┴──────────┴──────────┘        │  │
-│  └───────────────────────────────────┬───────────────────────────────────┘  │
-│                                      │ REST API                             │
-│  ┌───────────────────────────────────┴───────────────────────────────────┐  │
-│  │                      Backend (Django + DRF)                            │  │
-│  │  ┌─────────┬──────────┬──────────┬──────────┬──────────┬──────────┐  │  │
-│  │  │Accounts │Dashboards│Datasets  │Finance   │DB Manager│   LLM    │  │  │
-│  │  │  Auth   │  BI      │  Upload  │Accounting│   SQL    │ Gateway  │  │  │
-│  │  │  RBAC   │  Charts  │  Parse   │Invoices  │  Browse  │  AI      │  │  │
-│  │  │ Modules │  Filter  │  RLS     │Payments  │  Edit    │  Chat    │  │  │
-│  │  └────┬────┴────┬─────┴────┬─────┴────┬─────┴────┬─────┴────┬─────┘  │  │
-│  │       │         │          │          │          │          │         │  │
-│  │  ┌────┴─────────┴──────────┴──────────┴──────────┴──────────┴─────┐  │  │
-│  │  │              Module Management System                           │  │  │
-│  │  │        Company.enabled_modules → RequireModule RBAC             │  │  │
-│  │  └────────────────────────────────────────────────────────────────┘  │  │
-│  └───────────────────────────────────┬───────────────────────────────────┘  │
-│                                      │                                      │
-│  ┌───────────────────────────────────┴───────────────────────────────────┐  │
-│  │                        Infrastructure                                 │  │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────┐  │  │
-│  │  │  PostgreSQL   │  │    Redis     │  │   Superset   │  │  Celery  │  │  │
-│  │  │   Primary DB  │  │   Cache +    │  │   Embedded   │  │  Background│  │
-│  │  │   + RLS       │  │   Broker     │  │   Analytics  │  │  Tasks   │  │  │
-│  │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────┘  │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-**Request flow:**
-1. The React frontend sends API requests to the Django backend (proxied via Vite in dev, Nginx in production).
-2. Django authenticates via JWT, checks `RequireModule` permission (module gate), applies role-based permissions, and queries PostgreSQL.
-3. Uploaded data files are parsed by pandas, and a PostgreSQL table is created automatically.
-4. Charts fetch data from the `/query/` endpoint, which applies RLS filters, widget-level filters, dashboard-level filters, and cross-chart filters before returning results.
-5. Finance module supports Iranian accounting (Kol → Moin → Tafzili) with automatic invoice numbering, journal voucher balancing, and balance tracking.
-6. LLM Gateway routes AI requests to Ollama/OpenAI/Gemini/Anthropic with encrypted API keys, rate limiting, and usage tracking.
-7. Apache Superset can be used for advanced embedded analytics with guest tokens.
-
----
-
-## Tech Stack
-
-### Backend
-
-| Technology | Purpose |
-|---|---|
-| **Python 3.11** | Runtime |
-| **Django 4.2** | Web framework |
-| **Django REST Framework** | REST API toolkit |
-| **drf-spectacular** | OpenAPI / Swagger documentation |
-| **PyJWT** | Stateless JWT authentication |
-| **pandas** | Excel/CSV parsing and data processing |
-| **openpyxl** | Excel file support |
-| **PostgreSQL 15** | Primary database with Row-Level Security |
-| **Redis 7** | Celery broker and caching |
-| **Celery 5** | Background task queue |
-| **Gunicorn** | WSGI HTTP server |
-| **python-decouple** | Environment variable management |
-| **Pillow** | Image processing (user avatars) |
-| **cryptography** | API key encryption (Fernet symmetric) |
-
-### Frontend
-
-| Technology | Purpose |
-|---|---|
-| **React 18** | UI framework |
-| **TypeScript 5.5** | Type safety |
-| **Vite 5** | Build tool and dev server |
-| **React Router 6** | Client-side routing |
-| **Apache ECharts** | Interactive charting |
-| **react-grid-layout** | Drag-and-drop dashboard grid |
-| **Zustand** | Lightweight state management |
-| **Axios** | HTTP client with JWT interceptor |
-| **Tailwind CSS 3** | Utility-first styling |
-| **Vazirmatn** | Persian/Farsi web font |
-| **Lucide React** | Icon library |
-| **react-dropzone** | File upload with drag-and-drop |
-
-### Infrastructure
-
-| Technology | Purpose |
-|---|---|
-| **Docker** | Containerization |
-| **Docker Compose** | Multi-service orchestration |
-| **Nginx** | Frontend reverse proxy (production) |
-| **Apache Superset 3.1** | Embedded BI analytics |
-| **GitHub Actions** | CI/CD pipeline |
-
----
-
-## Project Structure
-
-```
-nexivo/
-├── backend/                      # Django REST API
+KermanKhodroTravel/
+├── backend/
+│   ├── manage.py
+│   ├── requirements.txt
+│   ├── nexivo/                 # settings, urls, asgi/wsgi
 │   ├── apps/
-│   │   ├── accounts/             # Auth, users, org hierarchy, module management
-│   │   │   ├── models.py         # Company, Division, Team, User, CustomRole
-│   │   │   ├── permissions.py    # RequireModule DRF permission class
-│   │   │   ├── tests_helpers.py  # Shared test fixtures
-│   │   │   └── tests.py          # Auth, register, JWT tests
-│   │   ├── dashboards/           # BI Dashboard module
-│   │   ├── datasets/             # Data upload & querying
-│   │   ├── db_manager/           # Database management & SQL editor
-│   │   ├── finance/              # Iranian accounting (Kol/Moin/Tafzili)
-│   │   │   ├── models.py         # 15 models (Kol, Moin, Tafzili, Invoice, etc.)
-│   │   │   └── tests.py          # CRUD, module gates, business logic tests
-│   │   └── llm/                  # LLM Gateway (Ollama/OpenAI/Gemini/Anthropic)
-│   │       ├── service.py        # Unified provider interface
-│   │       └── tests.py          # Providers, chat, encryption tests
-│   └── nexivo/                   # Django project config
-├── frontend/                     # React SPA
+│   │   ├── accounts/           # User, Company, JWT, roles, seed users
+│   │   ├── billing/            # ★ ماژول اصلی این مشتری
+│   │   │   ├── models.py       # Payer, Invoice, Payment, ApprovalRequest, …
+│   │   │   ├── views.py        # endpointهای مالی
+│   │   │   ├── permissions.py  # PERMISSION_FLAGS + perm_required
+│   │   │   ├── urls.py
+│   │   │   ├── services/
+│   │   │   │   ├── balance.py      # فرمول مشتق مانده
+│   │   │   │   ├── numbering.py    # شماره نامه
+│   │   │   │   ├── generation.py   # Word نامه + PDF صورت‌حساب
+│   │   │   │   ├── files.py        # ذخیره/بازیابی/انقضای فایل‌ها
+│   │   │   │   ├── excel.py        # خواندن فایل‌های ورودی
+│   │   │   │   └── templates/      # قالب داخلی Word
+│   │   │   ├── management/commands/
+│   │   │   │   ├── seed_kkt.py             # seed اولیهٔ KKT
+│   │   │   │   └── purge_billing_files.py  # آزادسازی فایل‌های قدیمی
+│   │   │   └── tests/test_billing.py
+│   │   ├── crm/                # سرنخ/فرصت/فعالیت
+│   │   ├── dashboards/, datasets/, reporting/   # BI
+│   │   ├── core/               # ماژول‌ها، تنظیمات پایه
+│   │   └── … (finance, inventory, purchasing, sales, …)  # Nexivo، غیرفعال برای این مشتری
+│   └── media/                  # لوگو/امضا/مهر، فایل‌های تولیدشده، approved/
+├── frontend/
+│   ├── index.html, vite.config.ts
+│   ├── public/                 # آیکن‌ها، manifest، لوگوی پیش‌فرض
 │   └── src/
-│       ├── api/                  # API clients (finance.ts, llm.ts, dbManager.ts)
+│       ├── App.tsx             # routing + Suspense fallback (لوگوی برند)
 │       ├── pages/
-│       │   ├── finance/          # Finance module pages (10 pages)
-│       │   ├── LLMSettingsPage.tsx
-│       │   ├── LauncherPage.tsx  # Module tile launcher
-│       │   └── SettingsPage.tsx  # Module toggle + org structure
-│       └── store/                # Zustand state stores
-├── docker-compose.yml
-├── Makefile
-└── README.md
+│       │   ├── LauncherPage.tsx
+│       │   ├── ERPLayout.tsx   # سایدبار دسکتاپ + نوار پایین و شیت منوی موبایل
+│       │   ├── LoginPage.tsx
+│       │   ├── billing/        # Issue, Invoices, Payments, Performance, Payers, Services
+│       │   ├── crm/, dashboard/, settings/
+│       ├── components/, hooks/, store/, lib/
+├── docs/                       # اسناد طراحی Nexivo + اسناد مالی
+├── docker-compose.yml          # postgres/redis/superset/backend/frontend (dev-ish)
+├── docker-compose.prod.yml
+├── Makefile / dev.bat          # دستورهای توسعه (لینوکس/ویندوز)
+├── .env.example                # نمونهٔ متغیرهای محیطی (در ریشه)
+└── PROGRESS.md / CHANGELOG.md
 ```
 
 ---
 
-## Prerequisites
+## راه‌اندازی توسعهٔ محلی
 
-| Requirement | Version | Notes |
-|---|---|---|
-| **Python** | 3.11+ | Backend runtime |
-| **Node.js** | 20+ | Frontend runtime |
-| **PostgreSQL** | 15+ | Primary database |
-| **Redis** | 7+ | Celery broker |
-| **Docker** (optional) | 24+ | For containerized deployment |
+### پیش‌نیازها
 
----
+- Python 3.11+، Node.js 20+، npm، Git Bash (روی ویندوز)
+- PostgreSQL 15 — در این نصب به‌صورت کانتینر `nexivo_db` روی پورت **۵۵۴۴** بالا می‌آید
+- (اختیاری) Redis برای Celery/Channels
+- (لازم برای PDF) Microsoft Edge یا Google Chrome نصب‌شده. در نبود آن‌ها `WeasyPrint` استفاده می‌شود.
 
-## Getting Started
-
-### Option 1 — Local Development
+### گام‌به‌گام (ویندوز)
 
 ```bash
-# 1. Start PostgreSQL and Redis via Docker
-make start-services
-
-# 2. Install dependencies and set up the project
-make setup
-
-# 3. Start the backend and frontend in separate terminals
-make backend   # http://localhost:8000
-make frontend  # http://localhost:3000
-```
-
-### Option 2 — Docker Compose (Full Stack)
-
-```bash
-# Create a .env file in the project root
-cat > .env << EOF
-POSTGRES_PASSWORD=nexivo_pass
-DJANGO_SECRET_KEY=your-secret-key-here
-SUPERSET_SECRET_KEY=your-superset-secret-key-here
-EOF
-
-# Start everything
-docker-compose up --build
-```
-
-| Service | URL |
-|---|---|
-| Frontend | http://localhost:3000 |
-| Backend API | http://localhost:8000 |
-| Django Admin | http://localhost:8000/admin |
-| Superset | http://localhost:8088 |
-| API Docs (Swagger) | http://localhost:8000/api/docs/ |
-
----
-
-## Default Login Credentials
-
-| Username | Password | Role |
-|---|---|---|
-| `admin` | `admin12345` | Admin (superuser) |
-| `ceo` | `ceo123456` | CEO |
-| `finance` | `finance123` | Finance |
-| `sales` | `sales12345` | Sales |
-
-> **⚠️ These are development credentials only.**
-
----
-
-## API Reference
-
-All endpoints are prefixed with `/api/v1/`.
-
-### Authentication
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/v1/auth/login/` | Login and receive JWT token |
-| `POST` | `/api/v1/auth/register/` | Register a new user |
-| `GET` | `/api/v1/auth/profile/` | Get current user profile |
-
-### Module Management
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/v1/auth/user-modules/` | Get enabled modules for current user |
-| `PUT` | `/api/v1/auth/company/modules/` | Update company enabled modules (CEO only) |
-
-### Datasets
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/v1/datasets/` | List accessible datasets |
-| `POST` | `/api/v1/datasets/upload/` | Upload Excel/CSV |
-| `POST` | `/api/v1/datasets/:id/query/` | Query data with filters & aggregation |
-
-### Dashboards
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/v1/dashboards/` | List dashboards |
-| `POST` | `/api/v1/dashboards/` | Create a new dashboard |
-| `GET` | `/api/v1/dashboards/:id/` | Get dashboard with pages & widgets |
-| `PUT` | `/api/v1/dashboards/:id/` | Update dashboard settings |
-| `DELETE` | `/api/v1/dashboards/:id/` | Delete a dashboard |
-| `PUT` | `/api/v1/dashboards/:id/layout/` | Update grid layout (page-aware) |
-| `PUT` | `/api/v1/dashboards/:id/filter-controls/` | Persist dashboard-level filters |
-
-### Pages
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/v1/dashboards/:id/pages/` | Add a page |
-| `PUT` | `/api/v1/dashboards/:id/pages/:pid/` | Update page (name, filters) |
-| `DELETE` | `/api/v1/dashboards/:id/pages/:pid/` | Delete a page |
-| `POST` | `/api/v1/dashboards/:id/pages/:pid/duplicate/` | Duplicate page with all widgets |
-| `PUT` | `/api/v1/dashboards/:id/pages/reorder/` | Reorder pages |
-
-### Widgets
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/v1/dashboards/:id/widgets/` | Add a widget (to a page) |
-| `PUT` | `/api/v1/dashboards/:id/widgets/:wid/` | Update a widget |
-| `DELETE` | `/api/v1/dashboards/:id/widgets/:wid/` | Delete a widget |
-
-### Finance
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/v1/finance/dashboard/` | Summary KPIs |
-| `GET/POST` | `/api/v1/finance/kols/` | Chart of Accounts (Kol) |
-| `GET/POST` | `/api/v1/finance/moins/` | Sub-accounts (Moin) |
-| `GET/POST` | `/api/v1/finance/tafzilis/` | Detail accounts (Tafzili) |
-| `GET/POST` | `/api/v1/finance/bank-accounts/` | Bank accounts |
-| `GET/POST` | `/api/v1/finance/fiscal-years/` | Fiscal years |
-| `GET/POST` | `/api/v1/finance/vouchers/` | Journal vouchers |
-| `GET/POST` | `/api/v1/finance/invoices/` | Invoices |
-| `GET/POST` | `/api/v1/finance/receipts/` | Receipts |
-| `GET/POST` | `/api/v1/finance/payments/` | Payments |
-| `GET/POST` | `/api/v1/finance/cheques/` | Cheques |
-| `GET/POST` | `/api/v1/finance/customers/` | Customers |
-| `GET/POST` | `/api/v1/finance/suppliers/` | Suppliers |
-
-### Database Manager
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET/POST` | `/api/v1/db-manager/databases/` | List/create database connections |
-| `GET` | `/api/v1/db-manager/tables/:source/` | List tables |
-| `GET` | `/api/v1/db-manager/tables/:source/:table/data/` | Browse table data |
-| `POST` | `/api/v1/db-manager/sql/` | Execute SQL (admin/CEO only) |
-| `POST` | `/api/v1/db-manager/import/` | Import file to new table |
-
-### LLM Gateway
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET/POST` | `/api/v1/llm/providers/` | List/create LLM providers |
-| `POST` | `/api/v1/llm/providers/:id/activate/` | Set active provider |
-| `POST` | `/api/v1/llm/providers/test/` | Test provider connection |
-| `POST` | `/api/v1/llm/chat/` | Send chat message |
-| `GET` | `/api/v1/llm/sessions/` | List chat sessions |
-| `GET` | `/api/v1/llm/sessions/:id/messages/` | Get session messages |
-| `GET` | `/api/v1/llm/usage/` | Usage statistics |
-
----
-
-## Module System
-
-Nexivo uses a **pluggable module architecture**. Each organization enables/disables modules via `Company.enabled_modules`, and the backend enforces access via `RequireModule` permission gates. This means:
-
-- **Organizations choose what they need** — No bloat, no unused features
-- **Modules can be toggled live** — Enable a new module without downtime
-- **Access is granular** — Each module has its own API endpoints and permissions
-
-### Implemented Modules
-
-| Module | Endpoint Prefix | Description |
-|---|---|---|
-| `bi_dashboard` | `/api/v1/dashboards/` | Drag-and-drop BI dashboards with ECharts |
-| `finance` | `/api/v1/finance/` | Iranian accounting (Kol/Moin/Tafzili), invoices, receipts, payments |
-| `db_manager` | `/api/v1/db-manager/` | External database browsing, SQL editor, cell editing |
-| `datasets` | `/api/v1/datasets/` | Excel/CSV upload and PostgreSQL table creation |
-| `llm` | `/api/v1/llm/` | Unified AI gateway (Ollama/OpenAI/Gemini/Anthropic) |
-| `settings` | `/api/v1/auth/company/` | Module toggle + organization hierarchy management |
-
-### Roadmap — Planned Modules
-
-| Module | Description | Status |
-|---|---|---|
-| `crm` | Dedicated CRM with lead tracking, pipeline management, contact history | 🔜 Planned |
-| `workflows` | Customizable approval chains, document management, task automation | 🔜 Planned |
-| `hr` | Employee management, attendance, leave, payroll | 🔜 Planned |
-| `inventory` | Stock management, warehouses, purchase orders | 🔜 Planned |
-| `project` | Project management with tasks, milestones, Gantt charts | 🔜 Planned |
-| `reports` | Scheduled reports, email delivery, PDF generation | 🔜 Planned |
-| `audit` | Audit logging, compliance tracking, change history | 🔜 Planned |
-| `notifications` | Email/SMS notifications, in-app alerts, webhook integrations | 🔜 Planned |
-
----
-
-## Organization Hierarchy
-
-Nexivo supports a multi-level organizational structure:
-
-```
-Company
-├── Division (e.g., "Sales", "Marketing", "Engineering")
-│   ├── Team (e.g., "Frontend", "Backend", "DevOps")
-│   │   └── User
-│   └── Team
-│       └── User
-└── Division
-    └── Team
-        └── User
-```
-
-- **Org Chart Visualization** — Interactive org chart page showing the full hierarchy
-- **Bulk Assignment** — Assign dashboards to entire teams, divisions, or companies at once
-- **Role-Based Access** — Users inherit permissions based on their role (Admin, CEO, Finance, Sales)
-- **Custom Roles** — Create custom roles with fine-grained permission sets
-
----
-
-## BI Dashboard
-
-Nexivo provides a powerful, drag-and-drop BI dashboard builder:
-
-### Multi-Page Dashboards
-
-- **Tab Navigation** — Pages appear as tabs at the top of the dashboard builder
-- **Drag-and-Drop Reordering** — Drag page tabs to rearrange them (persisted to backend)
-- **Page Duplication** — Duplicate a page with all its widgets and layout via the context menu
-- **Rename & Delete** — Right-click a page tab to rename or delete it
-- **Per-Page Filters** — Each page maintains its own independent set of filter controls
-- **Per-Page Layout** — Each page has its own grid layout and widgets
-
-### Charts
-
-Bar, Horizontal Bar, Line, Pie, Area, Scatter, Data Table, KPI Card, Gauge, Heatmap, Tree Map, Sankey, Funnel, Radar, Graph, Map — all powered by Apache ECharts with full RTL support.
-
-### Filter System
-
-Nexivo implements a comprehensive 4-layer filter pipeline (inspired by Google Looker Studio):
-
-| Layer | Description |
-|---|---|
-| **Dashboard-Level Filters** | Looker Studio-style filter bar with dropdown, date range, text search, checkbox, and slider controls |
-| **Widget-Level Filters** | Per-widget filter configuration with operators (eq, neq, contains, gt, lt, between, in) |
-| **Cross-Chart Filtering** | Click on a chart element to filter other charts in the dashboard |
-| **Drill-Down** | Table widgets support click-to-drill-down with breadcrumb navigation |
-
----
-
-## Finance Module
-
-The Finance module implements **Iranian accounting standards** with a complete chart of accounts:
-
-### Chart of Accounts Hierarchy
-
-```
-Account Group (e.g., "Assets", "Liabilities", "Equity", "Revenue", "Expenses")
-├── Kol Account (Main account — e.g., "Cash", "Bank")
-│   ├── Moin Account (Sub-account — e.g., "Bank Mellat", "Bank Saman")
-│   │   ├── Tafzili Account (Detail account — e.g., specific bank account number)
-```
-
-### Features
-
-- **Automatic Invoice Numbering** — Sequential letter numbers per customer per year
-- **Journal Voucher Balancing** — Debit/credit validation ensures balanced entries
-- **Balance Tracking** — Real-time balance calculation for all accounts
-- **Fiscal Year Management** — Create and manage fiscal years with opening balances
-- **Cheque Lifecycle** — Full cheque management from issue to clearance
-
----
-
-## Database Manager
-
-Connect to and manage external databases:
-
-- **Multiple Database Support** — Connect to PostgreSQL, MySQL, SQL Server, and more
-- **Encrypted Credentials** — Database passwords are encrypted at rest
-- **SQL Editor** — Write and execute SQL queries with syntax highlighting (admin/CEO only)
-- **Cell Editing** — Edit database cells directly with permission checks
-- **File Import** — Import Excel/CSV files to create new tables
-- **Google Sheets Sync** — Sync data from Google Sheets to your database
-
----
-
-## LLM Gateway
-
-Integrate AI capabilities across your organization:
-
-- **Multi-Provider Support** — Switch between Ollama (local), OpenAI, Gemini, and Anthropic
-- **Encrypted API Keys** — All API keys are encrypted with Fernet symmetric encryption
-- **Rate Limiting** — Configurable rate limits per provider to control costs
-- **Chat History** — Session-based chat with full message history
-- **Usage Tracking** — Monitor token usage and costs per provider
-- **Test Connection** — Verify provider connectivity before activation
-
-
----
-
-## Design System
-
-Nexivo is styled through a token layer — components never hard-code hex values.
-Tokens live in `frontend/src/design/tokens/` and are exposed to Tailwind as
-`nx-*` utilities (`frontend/tailwind.config.js`). Full details:
-[docs/NEXIVO-COMPLETE-GUIDE.md](docs/NEXIVO-COMPLETE-GUIDE.md#10-nexivo-design-system).
-
-### Brand palette
-
-| Token | Name | Hex | Usage |
-|---|---|---|---|
-| `nx-navy` | Deep Navy | `#101D35` | OS canvas, primary text |
-| `nx-blue` | Intelligence Blue | `#3678F6` | action signal (runtime-themable) |
-| `nx-teal` | Digital Teal | `#24C6B2` | success signal (runtime-themable) |
-| `nx-mist` | Silver Mist | `#A5B4CC` | disabled text, separators |
-| `nx-border` | — | `#E5E7EB` | default border |
-| `nx-muted` | — | `#6B7280` | disabled text |
-
-### Status palette
-
-| Token | Name | Base | Role |
-|---|---|---|---|
-| `nx-danger` | Signal Red | `#EF4444` | error, destructive, failed |
-| `nx-warning` | Caution Amber | `#F59E0B` | warning, pending, needs attention |
-
-Both ship a full `50…950` scale. Success deliberately reuses `nx-teal` — do not
-introduce a second green. Every former `red`/`rose`/`amber`/`yellow`/`orange`
-Tailwind utility has been migrated to these tokens (245 lines across 71 files,
-zero legacy utilities left), so status colouring is now semantic and re-themable
-from a single place.
-
-### Typography & shape
-
-- **Vazirmatn**, self-hosted via `@fontsource/vazirmatn` (15 woff2 files in the
-  build, no CDN references).
-- Radius: `rounded-nx-card` (12px), `rounded-nx-btn` (4px).
-- Shadows: `shadow-nx-card`, `shadow-nx-elevated`.
-
-### Rules
-
-- Use `nx-*` tokens only — no `gray-*`, `indigo-*`, `emerald-*`, or raw
-  `red/amber` utilities.
-- The ERP content canvas is **Deep Navy**; cards inside it are elevated surfaces.
-- Body copy on dark is `text-nx-mist`; headings are white.
-- Runtime colours (`nx-blue`, `nx-teal`) are CSS variables — a company colour
-  change applies without a rebuild, only a reload.
-
----
-
-## Branding & White-labelling
-
-Each company can carry its own logo and colours, applied system-wide: splash,
-login, sidebar, launcher, buttons, charts and focus rings.
-
-- **Settings → برندینگ** (admin/CEO): upload a logo with live preview, set primary
-  (`nx-blue`) and accent (`nx-teal`) colours, reset to NEXIVO defaults.
-- Uploaded logos are served from `/media/companies/…`; Vite and nginx proxy
-  `/media`.
-- Branding is fetched before first paint from
-  `GET /api/v1/auth/branding/public/` (anonymous, falls back to the first active
-  company, then to NEXIVO defaults) and cached in `localStorage` so there is no
-  colour flash.
-
-### Endpoints & security model
-
-| Method | Path | Auth | Behaviour |
-|---|---|---|---|
-| GET | `/api/v1/auth/company/branding/` | any user | caller's own company; **400** if the user has no company |
-| PUT/PATCH | `/api/v1/auth/company/branding/` | CEO/admin | caller's own company; **403** if the user has no company |
-| GET | `/api/v1/auth/branding/public/` | anonymous | first active company, or NEXIVO defaults |
-
-Writes are **strictly company-scoped**: there is no "fall back to the first
-active company" on the authenticated endpoint, so an admin without a company
-cannot modify another tenant's branding. The fallback exists only on the public
-read used by the login screen. This is covered by regression tests
-(`CompanyBrandingScopeTests`).
-
----
-
-## User Management
-
-`/erp/settings/users` (admin/CEO only) is the single place to create and modify
-people:
-
-- **Create** — username, email, first/last name, role, department, password
-  (≥8 chars), company, division, team and reports-to.
-- **Edit** — the same fields, plus an optional new password (a reset, only sent
-  when typed). Usernames are read-only after creation.
-- **Delete** — with a confirmation step; deleting yourself is blocked.
-- Plus **Roles** (custom role labels/colours) and **Audit** (change history) tabs.
-
-Server-side rules: role hierarchy is enforced (a non-staff caller cannot assign a
-role above their own), assigning a division/team replicates that unit's existing
-dashboard assignments, and `accessible_modules` is derived from the company's
-enabled modules. Covered by `UserManagementTests`.
-
-> **Dev note:** the seeded users start with **no company**, so branding and
-> modules are unavailable until you assign one here.
-
----
-
-## Developer Workflows
-
-Identical tasks exist for Windows (`dev.bat`) and macOS/Linux (`make`):
-
-| Task | Effect |
-|---|---|
-| `install` | install backend + frontend dependencies |
-| `setup` | install → migrate → seed |
-| `start-services` | start PostgreSQL and Redis containers |
-| `backend` / `frontend` | run one dev server (8000 / 3000) |
-| `dev` | migrate, seed, then both servers |
-| `stop` | **stop** containers only — data is preserved |
-| `clean` | remove containers **and volumes** (destroys the DB) |
-| `dump` | snapshot PostgreSQL into `backups/` |
-| `restore` | restore a snapshot (default: newest) |
-| `test-backend` / `test-frontend` | Django check / TypeScript typecheck |
-
-PostgreSQL is published on host port **5544** (`-p 5544:5432`) because 5432 is
-commonly occupied; `backend/.env` already points there. `make` is unavailable in
-Git Bash on Windows — use `dev.bat`.
-
----
-
-## Forking for a Customer
-
-Every customer deployment is a fork that should stay as close to upstream as
-possible, with the difference expressed as **configuration** rather than code:
-
-1. Clone, rename the remote to `upstream`, create a `customer/<name>` branch.
-2. `cp .env.example backend/.env` and set secrets, `DB_PORT=5544`, hosts, HTTPS.
-3. Assign `admin`/`ceo` to the customer's company, then brand it in
-   Settings → برندینگ (logo + primary/accent colours).
-4. Trim `Company.enabled_modules` to what the customer bought.
-5. Build the org tree (divisions → teams → users) and create a fiscal year before
-   entering finance data.
-6. Replace `frontend/public/brand/*` with the customer's real assets.
-7. `dump` the database after seeding, before go-live.
-
-The full checklist — including the white-label QA list and how to merge upstream
-changes later — is in
-[docs/NEXIVO-COMPLETE-GUIDE.md §19](docs/NEXIVO-COMPLETE-GUIDE.md#19-forking-nexivo-for-a-customer).
-
----
-
-## Documentation
-
-- **[docs/NEXIVO-COMPLETE-GUIDE.md](docs/NEXIVO-COMPLETE-GUIDE.md)** — the
-  complete engineering and operations guide: architecture, domain model, every
-  backend app, API surface, frontend structure, design system, branding, user
-  management, local workflows, backups, deployment, testing, known issues and the
-  fork checklist.
-
----
-
-## Testing
-
-Nexivo has **180+ backend tests** across all modules with shared test fixtures.
-
-### Test Architecture
-
-- **Shared Helper** (`backend/apps/accounts/tests_helpers.py`): Provides `create_test_company()` and `create_test_user()` — eliminates duplication across all test files
-- **Module Tests**: Each app has its own test file covering CRUD, permissions, module gates, and business logic
-- **CI Pipeline**: GitHub Actions runs all tests on every push/PR to `main`
-
-### Running Tests
-
-```bash
-# Backend (Django)
+# 1) دیتابیس
+docker start nexivo_db || docker run -d --name nexivo_db \
+  -e POSTGRES_DB=nexivo -e POSTGRES_USER=nexivo_user -e POSTGRES_PASSWORD=nexivo_pass \
+  -p 5544:5432 postgres:15
+
+# 2) محیط پایتون
+python -m venv .venv
+.venv/Scripts/python.exe -m pip install -r backend/requirements.txt
+
+# 3) متغیرهای محیطی
+cp .env.example backend/.env      # سپس مقادیر واقعی را وارد کنید
+
+# 4) مهاجرت‌ها و دادهٔ اولیه
 cd backend
-python manage.py check
-python manage.py test --verbosity=2
+../.venv/Scripts/python.exe manage.py migrate
+../.venv/Scripts/python.exe manage.py seed_kkt        # ادمین، دسته‌های خدمت، قالب پیش‌فرض
+../.venv/Scripts/python.exe manage.py create_dev_data # کاربران نمونه (اختیاری)
+cd ..
 
-# Frontend (TypeScript)
-cd frontend
-npx tsc --noEmit
-
-# Or use Make
-make test-backend
-make test-frontend
+# 5) اجرا (دو ترمینال جدا)
+cd backend && ../.venv/Scripts/python.exe manage.py runserver 127.0.0.1:8000
+cd frontend && npm install && npm run dev      # http://localhost:3000
 ```
 
+`npm run dev` روی پورت **۳۰۰۰** بالا می‌آید و `/api` و `/media` را به `http://localhost:8000` پروکسی می‌کند (`vite.config.ts`؛ با `VITE_PROXY_TARGET` قابل تغییر است).
+
+روی ویندوز می‌توانید از `dev.bat` استفاده کنید: `dev.bat setup|migrate|seed|backend|frontend|dump|restore|test-backend|test-frontend`. معادل لینوکس/مک: `make` با همان تارگت‌ها (`make help`).
+
+### ورود پیش‌فرض
+
+`admin` / `admin12345` (از `seed_kkt` و `create_dev_data`) — **در محیط واقعی حتماً عوض شود**.
+
 ---
 
-## Environment Variables
+## متغیرهای محیطی
 
-### Backend (`backend/.env`)
+فایل `backend/.env` (نمونه در `.env.example` ریشه):
 
-| Variable | Default | Description |
+| متغیر | پیش‌فرض | توضیح |
 |---|---|---|
-| `SECRET_KEY` | `django-insecure-change-me-in-production` | Django secret key |
-| `DEBUG` | `0` | Enable debug mode |
-| `POSTGRES_DB` | `nexivo` | PostgreSQL database name |
-| `POSTGRES_USER` | `nexivo_user` | PostgreSQL user |
-| `POSTGRES_PASSWORD` | `nexivo_pass` | PostgreSQL password |
-| `DB_HOST` | `localhost` | PostgreSQL host |
-| `DB_PORT` | `5432` | PostgreSQL port |
-| `REDIS_URL` | `redis://redis:6379/0` | Redis connection URL |
+| `SECRET_KEY` | — | کلید Django؛ در تولید الزامی و تصادفی |
+| `DEBUG` | `1` | در تولید `0` |
+| `POSTGRES_DB` | `nexivo` | نام دیتابیس (این نصب: `kermankhodro`) |
+| `POSTGRES_USER` / `POSTGRES_PASSWORD` | `nexivo_user` / `nexivo_pass` | کاربر DB |
+| `DB_HOST` / `DB_PORT` | `localhost` / `5432` | آدرس DB (برای کانتینر محلی: `127.0.0.1:5544`) |
+| `REDIS_URL` | `redis://localhost:6379/0` | بروکر Celery و لایهٔ Channels |
+| `SUPERSET_API_URL` و … | — | فقط برای BI/Superset؛ برای مشتری لازم نیست |
 
-### Frontend (via Vite)
+- `ALLOWED_HOSTS = ["*"]` است؛ برای تولید محدود شود.
+- CORS فقط `localhost:3000` و `localhost:5173` را مجاز می‌کند؛ دامنهٔ تولید باید در `settings.py` اضافه شود.
+- JWT با `JWT_SECRET` (پیش‌فرض `SECRET_KEY`) و انقضای ۲۴ ساعت (`JWT_EXPIRATION_HOURS`) امضا می‌شود.
 
-| Variable | Default | Description |
+---
+
+## دادهٔ اولیه و seed
+
+- `manage.py seed_kkt` — ایدمپوتنت: کاربر `admin` با نقش `admin`، شرکت پیش‌فرض، شش دستهٔ خدمت (ویزا، اتوبوس، قطار، گشت، تور، CIP) و قالب پیش‌فرض صورت‌حساب/نامه. **روی نصب تازه اول این را بزنید.**
+- `manage.py create_dev_data` — کاربران نمونه برای توسعه (نقش‌های مختلف برای تست مجوزها).
+- `manage.py seed_default_modules` — ماژول‌های لانچر را همگام می‌کند.
+- `manage.py purge_billing_files [--hours N]` — محتوای فایل‌های تولیدشدهٔ قدیمی‌تر از پنجرهٔ نگه‌داری (پیش‌فرض ۲۴ ساعت، `services/files.py::RETENTION_HOURS`) را پاک می‌کند. متادیتای فایل و امکان بازسازی باقی می‌ماند.
+
+---
+
+## احراز هویت و مجوزها
+
+- ورود: `POST /api/v1/auth/login/` با `username`/`password` → `{ token }`؛ همهٔ درخواست‌ها با هدر `Authorization: Bearer <token>`.
+- کلاس احراز هویت پیش‌فرض `apps.accounts.authentication.JWTAuthentication` و اجازهٔ پیش‌فرض `IsAuthenticated`.
+- نقش‌ها در `accounts.User.role`؛ نقش‌های `ceo` و `admin` همیشه از ماتریس مجوز عبور می‌کنند. بقیهٔ کاربران تابع فلگ هستند.
+
+فلگ‌های مجوز (`apps/billing/permissions.py::PERMISSION_FLAGS`):
+
+```
+can_view, can_pay, can_issue, can_manage_users, can_manage_settings,
+can_delete_history, can_delete_payment, can_export, can_manage_companies,
+can_submit, can_approve, can_edit_template
+```
+
+- محافظت مسیرها با دکوریتور `@perm_required("can_x")`؛ پاسخ ۴۰۱ برای کاربر ناشناس و ۴۰۳ برای نداشتن مجوز (پیام فارسی).
+- فرانت مجوزهای کاربر را از `GET /api/v1/billing/me/` می‌گیرد و آیتم‌های ناوبری/دکمه‌ها را بر همان اساس نشان می‌دهد (مثلاً «صدور» فقط با `can_issue`). **در سمت سرور همیشه دوباره بررسی شود؛ هرگز به UI اعتماد نکنید.**
+
+---
+
+## دامنهٔ مالی (billing)
+
+`apps/billing/models.py`:
+
+| مدل | نقش |
+|---|---|
+| `Payer` | طرف حساب (کد یکتا، نام، نوع: حقیقی/حقوقی/زیرمجموعه، تلفن، شرکت) |
+| `Invoice` | ردیف صورت‌حساب: payer، نوع خدمت، شماره نامه، ردیف‌های JSON، مبلغ، تاریخ‌ها |
+| `Payment` | پرداخت: payer، مبلغ، تاریخ، شماره پیگیری، توضیح، سازنده |
+| `ManualDebt` | بدهی دستی (بدون صورت‌حساب) |
+| `Credit` | بستانکاری/اعتبار |
+| `LetterSequence` / `AvailableLetterNumber` | شماره‌گذاری نامه و شماره‌های آزادشده |
+| `ApprovalRequest` | درخواست صدور + وضعیت گردش تأیید + payload ردیف‌ها |
+| `FinalFile` | فایل تولیدشده (نوع، مسیر، letter_number، نسخه) |
+| `ServiceCategory` | دستهٔ خدمت (نام فارسی، کد، ترتیب) |
+| `InvoiceTemplate` | قالب قابل ویرایش صورت‌حساب/نامه (HTML/Word) |
+| `CompanySettings` | تک‌رکورد: نام/شناسه/آدرس/تلفن، دو حساب بانکی + شبا، لوگو، امضا، مهر، نام و سمت مدیر، سه قالب Word (اصلی/زیرمجموعه/بستانکاری)، پانویس قانونی، مسیر ذخیرهٔ فایل تأییدشده |
+
+### مانده: همیشه مشتق‌شده
+
+هیچ فیلد ذخیره‌شده‌ای برای مانده وجود ندارد. `services/balance.py` مانده را از دفتر کل محاسبه می‌کند:
+
+```
+مانده = مبلغ صورت‌حساب‌ها + بدهی‌های دستی − پرداخت‌ها − بستانکاری‌ها
+```
+
+نتیجه در سه جا یکسان است: `Payer` در فهرست، اندپوینت `payers/<code>/balance/` و صفحهٔ عملکرد. **قاعده:** هیچ‌وقت مانده را در مدل ذخیره/کش نکنید؛ هر تغییر در فرمول باید در `balance.py` باشد و تست `test_invoice_row_payment_lowers_balance_and_keeps_the_invoice` را به‌روز کند.
+
+### پرداخت از ردیف صورت‌حساب
+
+دکمهٔ پرداخت روی هر ردیف صورت‌حساب همان `POST /api/v1/billing/payments/` را صدا می‌زند (با شمارهٔ نامه به‌عنوان مرجع). فقط یک دفتر کل وجود دارد؛ بنابراین پرداخت فوراً در مانده و در فهرست پرداخت‌ها دیده می‌شود و صورت‌حساب هم حذف/پنهان نمی‌شود (صورت‌حساب پرداخت‌شده در فهرست می‌ماند و با فیلتر خدمت/وضعیت قابل جداسازی است).
+
+---
+
+## شماره‌گذاری نامه و گردش تأیید
+
+- شمارهٔ نامه: `YYYY/COMPANYCODE/NNNNN` (مثال `1404/8200/00001`)، تولید در `services/numbering.py` و ارسال از `GET /billing/next-letter/`.
+- گردش: `pending` → `approve` (فایل‌ها ساخته می‌شوند) یا `reject` (شماره آزاد می‌شود). `approval_approve` فایل‌ها را در `FinalFile` ثبت و در مسیر «فایل‌های تأییدشده» (`CompanySettings.approved_output_path` یا `MEDIA_ROOT/approved`) ذخیره می‌کند.
+- دسترسی: ثبت `can_submit`، تأیید `can_approve`. صف‌ها: `GET /billing/approvals/pending/` و `GET /billing/approvals/mine/`.
+- دانلود نامه: `GET /billing/files/<id>/download/` یا `GET /billing/files/by-letter/<letter_number>/` (برای ردیف‌هایی که فایل با شناسه ندارند). بازسازی: `POST /billing/files/<id>/regenerate/`.
+
+---
+
+## تولید فایل: Word و PDF
+
+`apps/billing/services/generation.py`
+
+1. **نامه = Word (`.docx`)** — قالب Word آپلودی شرکت (سه قالب: اصلی، زیرمجموعه، بستانکاری) با placeholderهای `{{ }}` و `docxtpl`؛ اگر قالبی آپلود نشده باشد، قالب داخلی `services/templates/` استفاده می‌شود. لوگو/امضا/مهر و اطلاعات شرکت تزریق می‌شوند.
+2. **صورت‌حساب = PDF** — از HTML ساخته می‌شود (`INVOICE_HTML` + `INVOICE_CSS` با Jinja)، نه از Word:
+   - A4 افقی، فونت `'B Nazanin', 'Vazirmatn', Tahoma, Arial`، جهت RTL، اعداد فارسی
+   - هدر: لوگو، تاریخ، شمارهٔ صورت‌حساب؛ عنوان «صورت حساب {نوع خدمت} {شرکت}»
+   - جدول ۹ ستونی، **۸ ردیف در هر صفحه**، **جمع هر صفحه** و **جمع کل** در پایان
+   - فوتر: محل امضا، مهر و نام/سمت مدیر؛ لوگو/امضا/مهر به‌صورت data-URI تزریق می‌شوند
+   - موتور PDF: Edge سپس Chrome به‌صورت headless (`--print-to-pdf`)، و در نبودشان `WeasyPrint`. روی سرور لینوکسی بدون مرورگر، WeasyPrint باید نصب و فونت‌ها موجود باشد.
+3. ستون‌ها بر اساس نوع خدمت نگاشت می‌شوند: پرواز (مسیر/تاریخ پرواز/`بلیط: …`)، هتل (هتل + نوع اتاق، بازهٔ ورود و خروج، نفرات)، سایر خدمات (شرح خدمات/تاریخ/توضیحات).
+4. پس از پنجرهٔ نگه‌داری، فقط payload فایل پاک می‌شود؛ `regenerate_file` همان ورودی ذخیره‌شده را دوباره می‌سازد (Word و PDF هر دو).
+
+> نکته: قالب صورت‌حساب قابل ویرایش (`InvoiceTemplate`) روی HTML نامه/صورت‌حساب اعمال می‌شود؛ پیش‌نمایش: `GET /billing/templates/active/preview/`.
+
+---
+
+## API مالی
+
+پیشوند: `/api/v1/billing/`
+
+| متد و مسیر | کار | مجوز |
 |---|---|---|
-| `VITE_API_URL` | `http://localhost:8000/api` | Backend API URL |
+| `GET/POST /payers/` | فهرست/ایجاد طرف حساب (با مانده) | `can_view` / `can_issue` |
+| `GET/PUT/DELETE /payers/<code>/` | جزئیات/ویرایش/حذف | `can_view` / `can_manage_companies` |
+| `GET /payers/<code>/balance/` | ماندهٔ مشتق‌شده | `can_view` |
+| `GET /invoices/?type=&payer_code=` | فهرست صورت‌حساب‌ها با فیلتر خدمت | `can_view` |
+| `GET /invoices/<id>/` | جزئیات ردیف‌ها | `can_view` |
+| `GET /invoices/types/` | انواع خدمت موجود در داده | `can_view` |
+| `GET/POST /payments/` | فهرست/ثبت پرداخت | `can_view` / `can_pay` |
+| `DELETE /payments/<id>/` | حذف پرداخت | `can_delete_payment` |
+| `GET/POST /debts/`, `/credits/` | بدهی دستی و بستانکاری | `can_view`/`can_pay` |
+| `POST /upload/excel/`, `/process/excel/` | آپلود و پردازش فایل‌های ورودی | `can_issue` |
+| `GET/POST /approvals/` | درخواست‌ها | `can_submit`/`can_approve` |
+| `GET /approvals/pending/`, `/approvals/mine/` | صف تأیید | `can_approve` |
+| `POST /approvals/<id>/approve/`, `/reject/` | تأیید/رد | `can_approve` |
+| `GET /approvals/<id>/files/` | فایل‌های درخواست | `can_view` |
+| `GET /files/<id>/download/` | دانلود Word/PDF | `can_view` |
+| `GET /files/by-letter/<letter_number>/` | دانلود با شمارهٔ نامه | `can_view` |
+| `POST /files/<id>/regenerate/` | بازسازی فایل | `can_issue` |
+| `GET /templates/active/`, `…/preview/` | قالب فعال و پیش‌نمایش | `can_view` |
+| `GET/POST /service-categories/`, `…/<id>/` | دسته‌های خدمت | `can_view` / `can_manage_settings` |
+| `GET/PUT /settings/` | تنظیمات شرکت (تک‌رکورد) | `can_view` / `can_manage_settings` |
+| `POST /settings/upload-asset/` | آپلود لوگو/امضا/مهر | `can_manage_settings` |
+| `POST /settings/upload-template/` | آپلود قالب Word | `can_edit_template` |
+| `POST /admin/backup/`, `/admin/restore/` | پشتیبان‌گیری/بازیابی | `can_manage_settings` |
+| `GET /me/` | مجوزهای کاربر جاری | ورود |
+| `GET /next-letter/` | شمارهٔ نامهٔ بعدی | `can_issue` |
+| `GET /passengers/?q=` | پیشنهاد مسافران از تاریخچه | `can_issue` |
+| `GET /dashboard/summary/` | خلاصهٔ داشبورد | `can_view` |
+
+OpenAPI: با `drf-spectacular` تولید می‌شود و همیشه روی `/api/schema/` (YAML) و `/api/docs/` (Swagger UI) در دسترس است؛ در استقرار تولید پشت احراز هویت/شبکه قرار دهید.
 
 ---
 
-## CI/CD
+## فرانت‌اند
 
-The GitHub Actions workflow runs on every push and PR to `main`:
+### مسیرها (`src/App.tsx`)
 
-1. **Backend Tests** — PostgreSQL 15 service container → `check` → `migrate` → `test` (180+ tests)
-2. **Frontend Typecheck** — Node.js 20 → `tsc --noEmit`
+| مسیر | صفحه |
+|---|---|
+| `/login` | ورود |
+| `/` و `/launcher` | لانچر ماژول‌ها |
+| `/erp` | داشبورد مدیریتی |
+| `/erp/billing/issue` | صدور صورت‌حساب (آپلود چندفایلی + ادیتور جدولی) |
+| `/erp/billing/invoices` | فهرست صورت‌حساب‌ها (فیلتر خدمت، دانلود، پرداخت از ردیف) |
+| `/erp/billing/payments` | پرداخت‌ها |
+| `/erp/billing/performance` | عملکرد (مانده‌ها، جمع‌ها، نمودار) |
+| `/erp/billing/payers` | مشتریان/طرف‌حساب‌ها |
+| `/erp/billing/services` | مدیریت دسته‌های خدمت |
+| `/erp/crm`, `/erp/crm/leads`, `…/opportunities`, `…/activities` | CRM |
+| `/erp/settings`, `/erp/settings/users` | تنظیمات شرکت و کاربران/مجوزها |
+
+بقیهٔ مسیرهای ERP (finance/inventory/sales/…) از Nexivo باقی مانده‌اند و برای این مشتری در ناوبری نیستند؛ در صورت نیاز به فعال‌سازی، ابتدا مالکیت داده و مجوزها را مشخص کنید.
+
+### چیدمان و تجربهٔ کاربری
+
+- `ERPLayout.tsx` سایدبار دسکتاپ را فقط از `lg` به بالا نشان می‌دهد.
+- **موبایل:** نوار پایین با ۴ مقصد پرکاربرد + دکمهٔ «منو». دکمهٔ همبرگری در هدر وجود ندارد. «منو» یک **کارت** از پایین باز می‌کند (ترنسفورم inline، `translateY(115%) → 0`، ۳۰۰ms) با دستگیره، عنوان، دکمهٔ بستن و ردیف‌های بزرگ (متن ۱۵–۱۶px، آیکون ۳۶px، هایلایت آیتم فعال). با انتخاب آیتم، کارت پایین می‌رود و بعد از ۲۴۰ms صفحه باز می‌شود.
+- تم روشن/تیره با کلاس `dark` روی `html`. برای کارت‌های همیشه‌تیره (پوستهٔ نفتی) از کلاس `dark-surface` استفاده کنید تا متن سفید داخلشان با قاعدهٔ سراسری `html:not(.dark) .text-slate-600` دچار کنتراست پایین نشود.
+- لودینگ زیرمنوها (Suspense در `App.tsx`) لوگوی **برند** را نشان می‌دهد (`useBrandLogo`)؛ لوگوی Nexivo فقط fallback پیش‌فرض است.
+- `CARD` مشترک صفحات مالی در `src/pages/billing/shared.ts` است؛ ظاهر کارت‌ها را از آنجا تغییر دهید، نه تک‌تک صفحات.
+- PWA: `manifest.webmanifest` + آیکن‌ها؛ نصب روی موبایل پشتیبانی می‌شود.
 
 ---
 
-## Screenshots
+## تست و بررسی
 
-Captured UI evidence lives in [`screenshots/`](screenshots): login (with logo),
-splash glow and flash frames, the module launcher, the ERP finance and employees
-screens, and the Branding settings tab (`branding-settings-final.png`).
+```bash
+# بک‌اند (کل مالی)
+cd backend && ../.venv/Scripts/python.exe manage.py test apps.billing --noinput
+
+# فقط یک تست
+cd backend && ../.venv/Scripts/python.exe manage.py test apps.billing.tests.test_billing.BillingAPITest.test_invoice_row_payment_lowers_balance_and_keeps_the_invoice
+
+# فرانت
+cd frontend && npx tsc --noEmit && npm run build
+```
+
+وضعیت فعلی: **۳۹ تست بیلینگ سبز**، `tsc` بدون خطا، بیلد production موفق.
+
+تست‌های مهم که نباید بی‌دلیل تغییر کنند:
+
+- `test_invoice_row_payment_lowers_balance_and_keeps_the_invoice` — پرداخت از ردیف: افت مانده در سه سطح و باقی‌ماندن صورت‌حساب.
+- تست‌های گردش تأیید — تأیید درخواست، تولید PDF با امضای `%PDF-` و وجود فایل Word.
+- تست‌های شماره‌گذاری، مجوزها (۴۰۱/۴۰۳)، آپلود اکسل و تنظیمات شرکت.
 
 ---
 
-## License
+## استقرار و عملیات
 
-This project is licensed under the **Nexivo Pro License** — see the [LICENSE](LICENSE) file for details.
-
-Commercial use requires a separate license.
+- `docker-compose.yml`: postgres، redis، superset، backend، frontend برای محیط توسعه/نمایش.
+- `docker-compose.prod.yml`: نسخهٔ تولید (Gunicorn + Nginx/Vite build). پیش از استقرار: `DEBUG=0`، `SECRET_KEY` تصادفی، دامنه در `ALLOWED_HOSTS` و `CORS_ALLOWED_ORIGINS`، سرو `media/` و بکاپ دیتابیس.
+- **بکاپ/بازیابی:** `make dump` / `make restore FILE=backups/x.sql` (ویندوز: `dev.bat dump|restore`). قبل از هر مهاجرت سنگین یک dump بگیرید.
+- **فایل‌های تولیدی:** در `MEDIA_ROOT/approved` (یا مسیر تنظیمات). حجم را کنترل کنید؛ `purge_billing_files` را روزانه در cron بگذارید: `0 3 * * * python manage.py purge_billing_files --hours 24`.
+- **فونت:** برای PDF درست، `B Nazanin` باید روی ماشینی که PDF می‌سازد نصب باشد؛ وگرنه Tahoma جایگزین می‌شود (شکل ظاهری تغییر می‌کند). روی لینوکس فونت را در `~/.fonts` نصب و `fc-cache -f` بزنید.
+- **مرورگر headless:** مسیرهای پیش‌فرض Edge/Chrome در `generation.py` جست‌وجو می‌شوند؛ در Docker باید Chromium نصب باشد یا به WeasyPrint تکیه کنید (اختلاف جزئی در شکست صفحات).
 
 ---
 
-<div align="center">
+## قواعد و نکات توسعه
 
-**Built with care for the Persian-speaking business community.**
+1. **مانده را ذخیره نکنید.** هر تغییر مالی باید در `services/balance.py` منعکس شود و تست داشته باشد.
+2. **یک دفتر کل.** پرداخت از هر مسیری باید `POST /billing/payments/` را بزند؛ اندپوینت موازی نسازید.
+3. **فایل‌ها قابل بازسازی‌اند.** تولید در `generation.py`؛ منطق ذخیره/انقضا در `files.py`. مسیر فایل را در مدل ذخیره نکنید مگر از طریق `FinalFile`.
+4. **سرور توسعه با `--noreload`** بالا می‌آید؛ بعد از هر تغییر بک‌اند باید دستی ری‌استارت شود. اگر تغییرات را نمی‌بینید، اول همین را چک کنید.
+5. **فرانت:** `npx tsc --noEmit` قبل از کامیت؛ بیلد production حدود ۵۰ ثانیه است. نوع‌ها را با `any` دور نزنید.
+6. **متن‌ها فارسی و RTL** هستند؛ اعداد نمایشی با `to_persian_digits` و تاریخ‌ها با تقویم شمسی. در PDF/Word هم همین قواعد رعایت می‌شود.
+7. **مجوز در سرور.** افزودن endpoint جدید بدون `@perm_required` ممنوع.
+8. **کنتراست:** روی سطوح همیشه‌تیره `dark-surface` بگذارید؛ متن زیر ۳:۱ قابل قبول نیست (تست دستی با DevTools).
+9. **مهاجرت‌ها:** پس از تغییر مدل `makemigrations` + `migrate` و کامیت فایل مهاجرت. هیچ‌وقت مهاجرت را دستکاری نکنید که روی دیتابیس مشتری اجرا شده باشد.
+10. **Git:** ریموت `origin` = `github.com/myazdanpanah/KermanKhodroTravel` (شاخهٔ `main`)، ریموت `upstream` = Nexivo. شاخهٔ جاری توسعه `customer/kermankhodro` است و تغییرات با `git push origin HEAD:main` منتشر می‌شوند. ادغام آپ‌استریم باید با احتیاط و همراه با تست‌های مالی انجام شود (فایل‌های `generation.py`، `ERPLayout.tsx` و مدل‌های billing بیش از همه تعارض می‌گیرند).
+11. **CRLF/LF:** مخزن روی ویندوز با `core.autocrlf` کار می‌کند؛ هنگام کامیت هشدار CRLF طبیعی است و نباید فایل‌ها را بازنویسی خطی کنید.
 
-[Report Bug](https://github.com/myazdanpanah/nexivo/issues) · [Request Feature](https://github.com/myazdanpanah/nexivo/issues)
+---
 
-</div>
+## کارهای باقی‌مانده / محدودیت‌ها
+
+- ماژول‌های Nexivo (انبار، خرید، فروش، تولید، ترابر) برای این مشتری پیاده/آزمایش نشده‌اند؛ در لانچر پنهان‌اند.
+- PDF روی سرور بدون مرورگر به WeasyPrint وابسته است؛ تفاوت کوچک در شکست صفحات ممکن است.
+- Superset برای BI پیکربندی نشده و داشبورد مدیریتی از داده‌های خود سیستم تغذیه می‌شود.
+- حذف تاریخچه (`can_delete_history`) و بازیابی/پشتیبان‌گیری درون‌برنامه‌ای باید قبل از استفاده روی دادهٔ واقعی آزمایش شود.
+- تست‌های frontend وجود ندارند؛ بررسی‌ها با `tsc`، بیلد و آزمون دستی انجام می‌شود.
+
+---
+
+## تاریخچه و منابع
+
+- `docs/Financial/` — مشخصات مالی اصلی Nexivo: `ACCOUNTING_MODULE.md`، `API_SPECIFICATION.md`، `DATABASE_SCHEMA.md`، `DJANGO_BACKEND.md`، `IMPLEMENTATION_ROADMAP.md`.
+- `docs/NEXIVO-COMPLETE-GUIDE.md` — راهنمای جامع پلتفرم.
+- `PROGRESS.md` و `CHANGELOG.md` — تاریخچهٔ تغییرات و وضعیت کارها.
+- `CONTRIBUTING.md` — قواعد مشارکت؛ `LICENSE` — مجوز.
+
+> این README برای توسعهٔ آیندهٔ همین فورک نوشته شده است؛ اگر رفتاری در کد با این سند نمی‌خواند، کد مرجع است و این سند باید به‌روز شود.
