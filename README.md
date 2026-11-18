@@ -401,7 +401,7 @@ cd frontend && npx tsc --noEmit && npm run build
 - **فایل‌های تولیدی:** در `MEDIA_ROOT/approved` (یا مسیر تنظیمات). حجم را کنترل کنید؛ `purge_billing_files` را روزانه در cron بگذارید: `0 3 * * * python manage.py purge_billing_files --hours 24`.
 - **فونت:** لازم نیست هیچ فونتی روی سرور نصب باشد؛ Vazirmatn (OFL) در `services/assets/` همراه کد است و به‌صورت base64 داخل CSS صورت‌حساب جاسازی می‌شود. فقط برای نامهٔ Word، نصب B Nazanin روی سیستم کاربر نهایی لازم است (در Docker فونت لازم نیست).
 - **مرورگر headless:** `_find_pdf_browser` اول `PDF_BROWSER_PATH` و سپس مسیرهای ویندوز/لینوکس Edge و Chrome را می‌گردد؛ روی مک مسیر bundle (`/Applications/…`) در فهرست نیست، پس باید `PDF_BROWSER_PATH` را ست کرد. `--headless=new` نیاز به Chrome/Edge نسخهٔ ۱۱۲ به بالا دارد. کتابخانهٔ `websocket-client` کلاینت CDP است و در `requirements.txt` آمده است.
-- **تصویر Docker پیش‌فرض نه مرورگر دارد نه کتابخانه‌های WeasyPrint:** `backend/Dockerfile` از `python:3.11-slim` استفاده می‌کند و نه Chromium نصب می‌کند نه pango/cairo (وابستگی‌های سیستمی WeasyPrint). یعنی در آن تصویر تولید PDF صورت‌حساب شکست می‌خورد؛ برای استقرار Docker باید Chromium (یا بستهٔ سیستمی WeasyPrint) به تصویر اضافه شود.
+- **تصویر Docker پیش‌فرض نه مرورگر دارد نه کتابخانه‌های WeasyPrint:** `backend/Dockerfile` از `python:3.11-slim` استفاده می‌کند و نه Chromium نصب می‌کند نه pango/cairo (وابستگی‌های سیستمی WeasyPrint). یعنی در آن تصویر تولید PDF صورت‌حساب شکست می‌خورد؛ برای استقرار Docker باید Chromium (یا بستهٔ سیستمی WeasyPrint) به تصویر اضافه شود. اگر کانتینر با کاربر root اجرا شود، `PdfBrowser` خودش `--no-sandbox` را اضافه می‌کند (Chromium به‌عنوان root سندباکس را راه نمی‌اندازد)؛ روی کاربر عادی و روی ویندوز این فلگ اضافه نمی‌شود.
 
 ---
 

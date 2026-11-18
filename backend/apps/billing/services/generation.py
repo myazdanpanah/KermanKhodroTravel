@@ -19,6 +19,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 import time
 from contextlib import contextmanager
@@ -473,6 +474,18 @@ def _find_pdf_browser() -> str | None:
     return None
 
 
+def _launch_flags() -> list[str]:
+    """Extra Chromium flags for this host.
+
+    Chromium refuses to enable its sandbox as root, which is exactly how the
+    Docker image runs, so a root process would fail to launch the browser and
+    lose the PDF path entirely. Only root on Linux needs this.
+    """
+    if sys.platform.startswith("linux") and hasattr(os, "geteuid") and os.geteuid() == 0:
+        return ["--no-sandbox"]
+    return []
+
+
 class PdfBrowser:
     """
     One headless Chromium/Edge process shared by every PDF of a request.
@@ -494,6 +507,21 @@ class PdfBrowser:
     def found(self) -> bool:
         return self.path is not None
 
+    def _command(self) -> list[str]:
+        """The Chromium command line used to start the shared browser."""
+        return [
+            self.path,
+            "--headless=new",
+            "--disable-gpu",
+            "--disable-extensions",
+            "--no-first-run",
+            "--no-default-browser-check",
+            f"--user-data-dir={self._profile}",
+            "--remote-debugging-port=0",
+            *_launch_flags(),
+            "about:blank",
+        ]
+
     def start(self) -> "PdfBrowser":
         if self.path is None:
             self.launch_error = (
@@ -503,17 +531,7 @@ class PdfBrowser:
         self._profile = tempfile.mkdtemp(prefix="kkt-pdf-")
         try:
             self._process = subprocess.Popen(
-                [
-                    self.path,
-                    "--headless=new",
-                    "--disable-gpu",
-                    "--disable-extensions",
-                    "--no-first-run",
-                    "--no-default-browser-check",
-                    f"--user-data-dir={self._profile}",
-                    "--remote-debugging-port=0",
-                    "about:blank",
-                ],
+                self._command(),
                 stdout=subprocess.DEVNULL,
                 stderr=subprocess.DEVNULL,
             )

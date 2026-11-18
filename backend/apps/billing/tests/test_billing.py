@@ -649,6 +649,28 @@ class PdfBrowserTests(TestCase):
         self.assertIn("مرورگر", str(raised.exception))
         weasyprint_fallback.assert_not_called()
 
+    def test_root_on_linux_disables_the_chromium_sandbox(self):
+        from unittest import mock
+
+        from apps.billing.services import generation
+
+        browser = generation.PdfBrowser()
+        browser.path = "/usr/bin/chromium"
+        browser._profile = "/tmp/kkt-pdf-test"
+
+        with mock.patch("sys.platform", "linux"), mock.patch.object(
+            generation.os, "geteuid", return_value=0, create=True
+        ):
+            self.assertIn("--no-sandbox", browser._command())
+
+        with mock.patch("sys.platform", "linux"), mock.patch.object(
+            generation.os, "geteuid", return_value=1000, create=True
+        ):
+            self.assertNotIn("--no-sandbox", browser._command())
+
+        with mock.patch("sys.platform", "win32"):
+            self.assertNotIn("--no-sandbox", browser._command())
+
     def test_approval_records_the_pdf_failure_in_persian(self):
         from unittest import mock
 
