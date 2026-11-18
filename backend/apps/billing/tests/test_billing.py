@@ -469,6 +469,81 @@ class InvoicePdfLayoutTests(TestCase):
         self.assertIn('<col class="c-passenger">', html)
 
 
+class InvoicePdfContentTests(TestCase):
+    """Read the rendered PDF back: an empty-but-valid file must fail the suite."""
+
+    ROW_COUNT = 10  # more than one page (the table breaks every eight rows)
+    LONG_NAME = "محمدرضا نوروزی‌پور تهرانی‌اصل"
+
+    def setUp(self):
+        from apps.billing.services.generation import _find_pdf_browser
+
+        if _find_pdf_browser() is None:
+            self.skipTest("no Chromium-family browser is installed to render the PDF")
+
+        self.request = ApprovalRequest(
+            payer_code="9999", payer_name="شرکت نمونه", service_type="پرواز",
+            letter_number="1404/9999/00123", letter_date="1404/03/10",
+            period_range="خرداد ۱۴۰۴", service_category="پرواز",
+        )
+        self.rows = [
+            {
+                "ردیف": index, "قرارداد": str(1000 + index),
+                "نام مسافر": self.LONG_NAME if index == 2 else f"مسافر شماره {index}",
+                "مسیر": "KER-MHD", "شماره بلیط": str(90000 + index),
+                "تاریخ پرواز": "1404/03/12",
+                "بدهکار": 1_000_000 * index, "بستانکار": 0, "مانده": 1_000_000 * index,
+            }
+            for index in range(1, self.ROW_COUNT + 1)
+        ]
+
+    def _pages(self) -> list[str]:
+        import pymupdf
+
+        from apps.billing.services.generation import render_invoice_pdf
+
+        data = render_invoice_pdf(self.request, "flight", self.rows, self.request.letter_number)
+        self.assertTrue(data.startswith(b"%PDF-"))
+        document = pymupdf.open(stream=data, filetype="pdf")
+        try:
+            return [page.get_text() for page in document]
+        finally:
+            document.close()
+
+    def assertWords(self, text: str, phrase: str) -> None:
+        """Exact phrases don't survive extraction: RTL runs come back in visual
+        order and a wrapped cell inserts line breaks, so every word is asserted
+        on its own against the text with ZWNJ removed."""
+        flat = text.replace("\u200c", "")
+        for word in phrase.replace("\u200c", " ").split():
+            if len(word) > 1:
+                self.assertIn(word, flat, f"{word!r} is missing from the PDF text")
+
+    def test_more_than_eight_rows_renders_second_page(self):
+        pages = self._pages()
+        self.assertEqual(len(pages), 2)
+        self.assertTrue(all(page.strip() for page in pages), "a page rendered blank")
+        # Text exists, so a template that renders empty-but-valid PDFs fails here.
+        self.assertGreater(len("".join(pages)), 200)
+
+    def test_pdf_contains_title_totals_and_passenger(self):
+        from apps.billing.services.normalize import to_persian_digits
+
+        pages = self._pages()
+        first, last = pages[0], pages[-1]
+
+        # Title: "صورت حساب پرواز شرکت نمونه" plus the invoice number.
+        self.assertWords(first, "صورت حساب پرواز شرکت نمونه")
+        self.assertIn("1404/9999/00123", first)
+        # Grand totals live on the last page: 55,000,000 for rows 1..10.
+        self.assertIn(to_persian_digits(f"{55_000_000:,}"), last)
+        self.assertWords(last, "جمع کل نهایی بدهکار")
+        # The long passenger name is present (it wraps, but stays in the text).
+        self.assertWords(first, self.LONG_NAME)
+        # The last row of the second page proves the page break kept its rows.
+        self.assertWords(last, f"مسافر شماره {self.ROW_COUNT}")
+
+
 class PdfBrowserTests(TestCase):
     """One browser launch per request, and browser failures are not hidden."""
 

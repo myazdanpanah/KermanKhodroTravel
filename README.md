@@ -374,9 +374,13 @@ cd backend && ../.venv/Scripts/python.exe manage.py test apps.billing.tests.test
 cd frontend && npx tsc --noEmit && npm run build
 ```
 
-وضعیت فعلی: **۴۵ تست بیلینگ سبز**، `tsc` بدون خطا، بیلد production موفق.
+وضعیت فعلی: **۴۷ تست بیلینگ سبز**، `tsc` بدون خطا، بیلد production موفق.
 
 تست‌های موتور PDF: `test_one_browser_launch_serves_every_pdf_of_a_request` (یک `PdfBrowser` برای سه صورت‌حساب)، `test_browser_failure_is_reported_instead_of_falling_back` (بدون فراخوانی WeasyPrint) و `test_approval_records_the_pdf_failure_in_persian` (پیام فارسی در `generation_error`، Word ساخته می‌شود، PDF نه).
+
+تست‌های محتوای PDF (`InvoicePdfContentTests`): PDF واقعی ساخته می‌شود و با **PyMuPDF** متن صفحات برگردانده می‌شود؛ با ۱۰ ردیف باید ۲ صفحه باشد، عنوان «صورت حساب پرواز شرکت نمونه»، جمع کل ۵۵,۰۰۰,۰۰۰ و نام مسافر طولانی هر کدام در متن صفحه پیدا شوند. یک صورت‌حساب معتبر اما خالی/خراب (یا قالب Jinja شکسته) همین‌جا شکست می‌خورد. اگر روی ماشین مرورگر headless نصب نباشد، تست به‌جای سبز شدنِ کاذب `skip` می‌شود.
+
+> استخراج متن فارسی از PDF، ترتیب دیداری است و ZWNJ/شکستن سطر را ندارد؛ در نتیجه تست روی **واژه‌ها** assert می‌کند نه عبارت کامل. `pymupdf` فقط برای همین تست‌ها در `requirements.txt` است.
 
 تست‌های مهم که نباید بی‌دلیل تغییر کنند:
 
