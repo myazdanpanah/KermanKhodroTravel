@@ -303,6 +303,7 @@ can_submit, can_approve, can_edit_template
 | `GET/POST /payers/` | فهرست/ایجاد طرف حساب (با مانده) | `can_view` / `can_manage_companies` |
 | `GET/PUT/DELETE /payers/<code>/` | جزئیات/ویرایش/حذف | `can_view` / `can_manage_companies` |
 | `GET /payers/<code>/balance/` | ماندهٔ مشتق‌شده | `can_view` |
+| `GET /aging/` | سابقهٔ مطالبات: مبلغ باز هر شرکت در بازه‌های ۰-۳۰، ۳۱-۶۰، ۶۱-۹۰ و بیش از ۹۰ روز؛ پرداخت‌ها و اعتبارها FIFO از قدیمی‌ترین صورت‌حساب کسر می‌شوند | `can_view` |
 | `GET /invoices/?type=&payer_code=` | فهرست صورت‌حساب‌ها با فیلتر خدمت | `can_view` |
 | `DELETE /invoices/` | **ابطال گروهی** همهٔ صورت‌حساب‌های فعال (ردیفی حذف نمی‌شود؛ شماره‌ها آزاد نمی‌شوند) | `can_delete_history` |
 | `GET /invoices/<id>/` | جزئیات ردیف | `can_view` |

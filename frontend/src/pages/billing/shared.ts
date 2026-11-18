@@ -26,6 +26,27 @@ export interface Payer {
   balance?: Balance
 }
 
+export type AgingBucketKey = 'd0_30' | 'd31_60' | 'd61_90' | 'd90_plus'
+
+export interface AgingBuckets {
+  d0_30: number
+  d31_60: number
+  d61_90: number
+  d90_plus: number
+}
+
+export interface AgingRow extends AgingBuckets {
+  payer_code: string
+  payer_name: string
+  total_open: number
+}
+
+export interface AgingReport {
+  as_of: string
+  rows: AgingRow[]
+  totals: AgingBuckets & { total_open: number }
+}
+
 export interface Invoice {
   id: number
   letter_number: string

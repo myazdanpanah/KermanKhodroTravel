@@ -8,6 +8,7 @@ urlpatterns = [
     # Payers / companies (spec 6.3)
     path("payers/", views.payer_list_create, name="payer-list"),
     path("payers/<str:code>/balance/", views.payer_balance_view, name="payer-balance"),
+    path("aging/", views.aging_report_view, name="aging-report"),
     path("payers/<str:code>/", views.payer_detail, name="payer-detail"),
     # Invoices (spec 6.4)
     path("invoices/", views.invoice_list, name="invoice-list"),

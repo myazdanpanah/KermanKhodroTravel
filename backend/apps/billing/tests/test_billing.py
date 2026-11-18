@@ -9,6 +9,7 @@ from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -1229,3 +1230,112 @@ class FileRetentionTests(TestCase):
         final_file.refresh_from_db()
         self.assertIsNone(final_file.file_data)
         self.assertIsNotNone(final_file.purged_at)
+
+
+class AgingReportTests(TestCase):
+    """Receivables aging: FIFO over open invoices, then age buckets."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="aging_admin", password="pass12345", role="admin",
+            is_staff=True, is_superuser=True,
+        )
+        Payer.objects.create(code="8001", name="شرکت سنّی")
+        Payer.objects.create(code="8002", name="شرکت بی‌صورتحساب")
+        self.today = timezone.localdate()
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.admin)
+
+    def _invoice(self, days_ago: int, amount: int, code: str = "8001") -> Invoice:
+        return Invoice.objects.create(
+            letter_number=f"1404/8001/{days_ago:05d}",
+            payer="شرکت سنّی",
+            payer_code=code,
+            invoice_type="پرواز",
+            amount=amount,
+            issue_date=self.today - dt.timedelta(days=days_ago),
+        )
+
+    def test_payments_are_applied_fifo_before_bucketing(self):
+        from apps.billing.services.aging import aging_report
+
+        self._invoice(100, 1_000_000)
+        self._invoice(75, 2_000_000)
+        self._invoice(45, 3_000_000)
+        self._invoice(10, 4_000_000)
+        Invoice.objects.create(
+            letter_number="1404/8001/reversed",
+            payer="شرکت سنّی",
+            payer_code="8001",
+            invoice_type="پرواز",
+            amount=9_000_000,
+            issue_date=self.today - dt.timedelta(days=200),
+            reversed_at=timezone.now(),
+        )
+        Payment.objects.create(
+            payer_code="8001", payer_name="شرکت سنّی",
+            payment_date=self.today, amount=1_500_000,
+        )
+        Credit.objects.create(
+            payer_code="8001", credit_date=self.today, amount=500_000
+        )
+
+        report = aging_report(as_of=self.today)
+
+        self.assertEqual(report["as_of"], self.today.isoformat())
+        # Only the payer with an outstanding invoice is listed.
+        self.assertEqual([row["payer_code"] for row in report["rows"]], ["8001"])
+        row = report["rows"][0]
+        self.assertEqual(row["payer_name"], "شرکت سنّی")
+        self.assertEqual(row["d0_30"], 4_000_000)
+        self.assertEqual(row["d31_60"], 3_000_000)
+        # 2M settled FIFO: the 100-day invoice is cleared, 1M is left on the 75-day one.
+        self.assertEqual(row["d61_90"], 1_000_000)
+        self.assertEqual(row["d90_plus"], 0)
+        self.assertEqual(row["total_open"], 8_000_000)
+        self.assertEqual(report["totals"]["total_open"], 8_000_000)
+        self.assertEqual(report["totals"]["d90_plus"], 0)
+
+    def test_bucket_boundaries_and_a_fully_paid_payer(self):
+        from apps.billing.services.aging import aging_report, bucket_key
+
+        self.assertEqual(bucket_key(0), "d0_30")
+        self.assertEqual(bucket_key(30), "d0_30")
+        self.assertEqual(bucket_key(31), "d31_60")
+        self.assertEqual(bucket_key(60), "d31_60")
+        self.assertEqual(bucket_key(61), "d61_90")
+        self.assertEqual(bucket_key(90), "d61_90")
+        self.assertEqual(bucket_key(91), "d90_plus")
+
+        Invoice.objects.create(
+            letter_number="1404/8002/00001",
+            payer="شرکت بی‌صورتحساب",
+            payer_code="8002",
+            invoice_type="پرواز",
+            amount=2_000_000,
+            issue_date=dt.date(2026, 1, 1),
+        )
+        Payment.objects.create(
+            payer_code="8002", payer_name="شرکت بی‌صورتحساب",
+            payment_date=dt.date(2026, 1, 5), amount=2_000_000,
+        )
+
+        report = aging_report(as_of=dt.date(2026, 2, 15))
+        self.assertEqual(report["rows"], [])
+        self.assertEqual(report["totals"]["total_open"], 0)
+
+    def test_endpoint_returns_the_buckets_and_requires_can_view(self):
+        self._invoice(120, 7_500_000)
+
+        response = self.client.get("/api/v1/billing/aging/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["rows"][0]["d90_plus"], 7_500_000)
+        self.assertEqual(response.data["totals"]["total_open"], 7_500_000)
+
+        viewer = User.objects.create_user(
+            username="aging_viewer", password="pass12345", role="sales", can_view=False
+        )
+        denied = APIClient()
+        denied.force_authenticate(user=viewer)
+        self.assertEqual(denied.get("/api/v1/billing/aging/").status_code, 403)
+        self.assertEqual(APIClient().get("/api/v1/billing/aging/").status_code, 403)

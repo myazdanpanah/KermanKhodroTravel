@@ -42,6 +42,7 @@ from .serializers import (
     ServiceCategorySerializer,
 )
 from .services import excel as excel_service
+from .services.aging import aging_report
 from .services.audit import record_deletion, reverse_invoice
 from .services.balance import balances_for, payer_balance, total_outstanding
 from .services.files import purge_expired_files, read_bytes, save_final_file
@@ -170,6 +171,13 @@ def payer_balance_view(request, code: str):
     if not Payer.objects.filter(code=code).exists():
         return _error("شرکت یافت نشد.", status.HTTP_404_NOT_FOUND)
     return Response(payer_balance(code))
+
+
+@api_view(["GET"])
+@perm_required("can_view")
+def aging_report_view(request):
+    """Receivables aging: open invoice amounts per payer, by age bucket."""
+    return Response(aging_report())
 
 
 # ── invoices ─────────────────────────────────────────────────────────────
