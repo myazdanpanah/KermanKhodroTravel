@@ -66,7 +66,7 @@
 - Python 3.11+ / Django 4.2 LTS / Django REST Framework 3.14
 - PostgreSQL 15 (پیش‌فرض `psycopg2`)
 - JWT دستی (`PyJWT`، `apps/accounts/authentication.py`)، بدون SimpleJWT
-- Celery + Redis (تعریف‌شده؛ برای این مشتری کار زمان‌بندی‌شدهٔ اجباری وجود ندارد)
+- Celery + Redis (تعریف‌شده؛ `CELERY_BEAT_SCHEDULE` خالی است، پس پاک‌سازی دوره‌ای فایل‌ها با cron سرور اجرا می‌شود — بخش «استقرار و عملیات»)
 - Channels/Daphne برای هشدارهای realtime (اختیاری)
 - تولید فایل: `python-docx` + `docxtpl` (Word)، `Jinja2` (HTML صورت‌حساب)، `WeasyPrint` و مرورگر headless (PDF)
 - `jdatetime` برای تاریخ شمسی، `openpyxl`/`pandas` برای اکسل، `drf-spectacular` برای OpenAPI
@@ -98,11 +98,12 @@ KermanKhodroTravel/
 │   │   │   ├── urls.py
 │   │   │   ├── services/
 │   │   │   │   ├── balance.py      # فرمول مشتق مانده
-│   │   │   │   ├── numbering.py    # شماره نامه
+│   │   │   │   ├── numbers.py      # شماره نامه: رزرو/آزادسازی/پیش‌نمایش
+│   │   │   │   ├── normalize.py    # ارقام فارسی و تاریخ شمسی
 │   │   │   │   ├── generation.py   # Word نامه + PDF صورت‌حساب
 │   │   │   │   ├── files.py        # ذخیره/بازیابی/انقضای فایل‌ها
 │   │   │   │   ├── excel.py        # خواندن فایل‌های ورودی
-│   │   │   │   └── templates/      # قالب داخلی Word
+│   │   │   │   └── assets/         # Vazirmatn (woff2) + OFL.txt
 │   │   │   ├── management/commands/
 │   │   │   │   ├── seed_kkt.py             # seed اولیهٔ KKT
 │   │   │   │   └── purge_billing_files.py  # آزادسازی فایل‌های قدیمی
@@ -125,7 +126,7 @@ KermanKhodroTravel/
 │       │   ├── crm/, dashboard/, settings/
 │       ├── components/, hooks/, store/, lib/
 ├── docs/                       # اسناد طراحی Nexivo + اسناد مالی
-├── docker-compose.yml          # postgres/redis/superset/backend/frontend (dev-ish)
+├── docker-compose.yml          # postgres/redis/superset/backend/celery/frontend (dev-ish)
 ├── docker-compose.prod.yml
 ├── Makefile / dev.bat          # دستورهای توسعه (لینوکس/ویندوز)
 ├── .env.example                # نمونهٔ متغیرهای محیطی (در ریشه)
@@ -187,16 +188,16 @@ cd frontend && npm install && npm run dev      # http://localhost:3000
 | متغیر | پیش‌فرض | توضیح |
 |---|---|---|
 | `SECRET_KEY` | — | کلید Django؛ در تولید الزامی و تصادفی |
-| `DEBUG` | `1` | در تولید `0` |
+| `DEBUG` | `0` | پیش‌فرض در `settings.py`؛ `.env.example` مقدار `1` می‌گذارد |
 | `POSTGRES_DB` | `nexivo` | نام دیتابیس (این نصب: `kermankhodro`) |
 | `POSTGRES_USER` / `POSTGRES_PASSWORD` | `nexivo_user` / `nexivo_pass` | کاربر DB |
 | `DB_HOST` / `DB_PORT` | `localhost` / `5432` | آدرس DB (برای کانتینر محلی: `127.0.0.1:5544`) |
-| `REDIS_URL` | `redis://localhost:6379/0` | بروکر Celery و لایهٔ Channels |
+| `REDIS_URL` | `redis://redis:6379/0` | بروکر Celery و لایهٔ Channels؛ `.env.example` برای اجرای محلی `localhost:6379` می‌دهد |
 | `SUPERSET_API_URL` و … | — | فقط برای BI/Superset؛ برای مشتری لازم نیست |
 | `PDF_BROWSER_PATH` | — | مسیر دستی Edge/Chrome برای تولید PDF (وقتی مرورگر در مسیرهای پیش‌فرض نیست) |
 
 - `ALLOWED_HOSTS = ["*"]` است؛ برای تولید محدود شود.
-- CORS فقط `localhost:3000` و `localhost:5173` را مجاز می‌کند؛ دامنهٔ تولید باید در `settings.py` اضافه شود.
+- CORS سه مبدأ `http://localhost:3000`، `http://127.0.0.1:3000` و `http://localhost:5173` را مجاز می‌کند؛ دامنهٔ تولید باید در `CORS_ALLOWED_ORIGINS` افزوده شود.
 - JWT با `JWT_SECRET` (پیش‌فرض `SECRET_KEY`) و انقضای ۲۴ ساعت (`JWT_EXPIRATION_HOURS`) امضا می‌شود.
 
 ---
@@ -235,14 +236,14 @@ can_submit, can_approve, can_edit_template
 
 | مدل | نقش |
 |---|---|
-| `Payer` | طرف حساب (کد یکتا، نام، نوع: حقیقی/حقوقی/زیرمجموعه، تلفن، شرکت) |
-| `Invoice` | ردیف صورت‌حساب: payer، نوع خدمت، شماره نامه، ردیف‌های JSON، مبلغ، تاریخ‌ها |
-| `Payment` | پرداخت: payer، مبلغ، تاریخ، شماره پیگیری، توضیح، سازنده |
+| `Payer` | طرف حساب (کد یکتا، نام، نوع `legal`/`person`، `parent` برای شرکت زیرمجموعه، شناسه/کد اقتصادی، تلفن، آدرس) |
+| `Invoice` | یک ردیف دفتر کل به‌ازای هر فایل تولیدشده: payer_code، نوع خدمت، شماره نامه، مبلغ، تاریخ صدور، مسیر فایل (ردیف‌های JSON روی `ApprovalRequest` است، نه اینجا) |
+| `Payment` | پرداخت: payer، مبلغ، تاریخ، شماره پیگیری، توضیح، `created_at` (فیلد «سازنده» وجود ندارد) |
 | `ManualDebt` | بدهی دستی (بدون صورت‌حساب) |
 | `Credit` | بستانکاری/اعتبار |
 | `LetterSequence` / `AvailableLetterNumber` | شماره‌گذاری نامه و شماره‌های آزادشده |
 | `ApprovalRequest` | درخواست صدور + وضعیت گردش تأیید + payload ردیف‌ها |
-| `FinalFile` | فایل تولیدشده (نوع، مسیر، letter_number، نسخه) |
+| `FinalFile` | فایل تولیدشده: دو نسخه (BLOB در `file_data` + مسیر روی دیسک)، `purged_at` پس از پنجرهٔ نگه‌داری |
 | `ServiceCategory` | دستهٔ خدمت (نام فارسی، کد، ترتیب) |
 | `InvoiceTemplate` | قالب قابل ویرایش صورت‌حساب/نامه (HTML/Word) |
 | `CompanySettings` | تک‌رکورد: نام/شناسه/آدرس/تلفن، دو حساب بانکی + شبا، لوگو، امضا، مهر، نام و سمت مدیر، سه قالب Word (اصلی/زیرمجموعه/بستانکاری)، پانویس قانونی، مسیر ذخیرهٔ فایل تأییدشده |
@@ -265,9 +266,9 @@ can_submit, can_approve, can_edit_template
 
 ## شماره‌گذاری نامه و گردش تأیید
 
-- شمارهٔ نامه: `YYYY/COMPANYCODE/NNNNN` (مثال `1404/8200/00001`)، تولید در `services/numbering.py` و ارسال از `GET /billing/next-letter/`.
+- شمارهٔ نامه: `YYYY/COMPANYCODE/NNNNN` (مثال `1404/8200/00001`)، تولید در `services/numbers.py` و ارسال از `GET /billing/next-letter/`.
 - گردش: `pending` → `approve` (فایل‌ها ساخته می‌شوند) یا `reject` (شماره آزاد می‌شود). `approval_approve` فایل‌ها را در `FinalFile` ثبت و در مسیر «فایل‌های تأییدشده» (`CompanySettings.approved_output_path` یا `MEDIA_ROOT/approved`) ذخیره می‌کند.
-- دسترسی: ثبت `can_submit`، تأیید `can_approve`. صف‌ها: `GET /billing/approvals/pending/` و `GET /billing/approvals/mine/`.
+- دسترسی: خواندن `can_view`، ثبت `can_submit`، تأیید `can_approve`. صف‌ها: `GET /billing/approvals/pending/` (با `can_view`) و `GET /billing/approvals/mine/` (با `can_submit`).
 - دانلود نامه: `GET /billing/files/<id>/download/` یا `GET /billing/files/by-letter/<letter_number>/` (برای ردیف‌هایی که فایل با شناسه ندارند). بازسازی: `POST /billing/files/<id>/regenerate/`.
 
 ---
@@ -276,7 +277,7 @@ can_submit, can_approve, can_edit_template
 
 `apps/billing/services/generation.py`
 
-1. **نامه = Word (`.docx`)** — قالب Word آپلودی شرکت (سه قالب: اصلی، زیرمجموعه، بستانکاری) با placeholderهای `{{ }}` و `docxtpl`؛ اگر قالبی آپلود نشده باشد، قالب داخلی `services/templates/` استفاده می‌شود. لوگو/امضا/مهر و اطلاعات شرکت تزریق می‌شوند.
+1. **نامه = Word (`.docx`)** — قالب Word آپلودی شرکت (سه قالب: اصلی، زیرمجموعه، بستانکاری) با placeholderهای `{{ }}` و `docxtpl`؛ اگر قالبی آپلود نشده باشد، همان نامه به‌صورت برنامه‌ای با `_render_programmatic_docx` ساخته می‌شود (پوشهٔ `services/templates/` وجود ندارد). لوگو/امضا/مهر و اطلاعات شرکت تزریق می‌شوند.
 2. **صورت‌حساب = PDF** — از HTML ساخته می‌شود (`INVOICE_HTML` + `INVOICE_CSS` با Jinja)، نه از Word:
    - A4 افقی، جهت RTL، اعداد فارسی. فونت **Vazirmatn داخل خود PDF جاسازی می‌شود** (دو زیرمجموعهٔ arabic و latin با وزن ۴۰۰/۷۰۰ از `services/assets/`، مجوز SIL OFL)؛ بنابراین خروجی روی هر ماشینی یکسان است و به نصب B Nazanin یا Tahoma وابسته نیست. B Nazanin همچنان در نامهٔ Word استفاده می‌شود، چون آن را Word روی سیستم کاربر رندر می‌کند.
    - عرض ستون‌ها با `<colgroup>` ثابت است (ردیف ۵٪، قرارداد ۹٪، مسافر ۱۶٪، شرح خدمات ۲۰٪، تاریخ ۱۰٪، توضیحات ۱۲٪، بدهکار ۱۰٪، بستانکار ۸٪، مانده ۱۰٪) و `overflow-wrap: anywhere` باعث می‌شود نام‌های طولانی در همان سلول بشکنند و جدول از حاشیهٔ صفحه بیرون نزند.
@@ -288,7 +289,7 @@ can_submit, can_approve, can_edit_template
 3. ستون‌ها بر اساس نوع خدمت نگاشت می‌شوند: پرواز (مسیر/تاریخ پرواز/`بلیط: …`)، هتل (هتل + نوع اتاق، بازهٔ ورود و خروج، نفرات)، سایر خدمات (شرح خدمات/تاریخ/توضیحات).
 4. پس از پنجرهٔ نگه‌داری، فقط payload فایل پاک می‌شود؛ `regenerate_file` همان ورودی ذخیره‌شده را دوباره می‌سازد (Word و PDF هر دو).
 
-> نکته: قالب صورت‌حساب قابل ویرایش (`InvoiceTemplate`) روی HTML نامه/صورت‌حساب اعمال می‌شود؛ پیش‌نمایش: `GET /billing/templates/active/preview/`.
+> نکته: قالب قابل ویرایش (`InvoiceTemplate`) فقط در پیش‌نمایش **نامه** (`render_html`) اعمال می‌شود؛ صورت‌حساب PDF همیشه از `INVOICE_HTML`/`INVOICE_CSS` ثابت ساخته می‌شود. پیش‌نمایش `POST /billing/templates/active/preview/` است و مجوز `can_edit_template` می‌خواهد.
 
 ---
 
@@ -298,32 +299,34 @@ can_submit, can_approve, can_edit_template
 
 | متد و مسیر | کار | مجوز |
 |---|---|---|
-| `GET/POST /payers/` | فهرست/ایجاد طرف حساب (با مانده) | `can_view` / `can_issue` |
+| `GET/POST /payers/` | فهرست/ایجاد طرف حساب (با مانده) | `can_view` / `can_manage_companies` |
 | `GET/PUT/DELETE /payers/<code>/` | جزئیات/ویرایش/حذف | `can_view` / `can_manage_companies` |
 | `GET /payers/<code>/balance/` | ماندهٔ مشتق‌شده | `can_view` |
 | `GET /invoices/?type=&payer_code=` | فهرست صورت‌حساب‌ها با فیلتر خدمت | `can_view` |
+| `DELETE /invoices/` | **حذف کل دفتر کل** و آزادسازی همهٔ شماره‌ها | `can_delete_history` |
 | `GET /invoices/<id>/` | جزئیات ردیف‌ها | `can_view` |
 | `GET /invoices/types/` | انواع خدمت موجود در داده | `can_view` |
 | `GET/POST /payments/` | فهرست/ثبت پرداخت | `can_view` / `can_pay` |
 | `DELETE /payments/<id>/` | حذف پرداخت | `can_delete_payment` |
-| `GET/POST /debts/`, `/credits/` | بدهی دستی و بستانکاری | `can_view`/`can_pay` |
+| `GET/POST /debts/`, `/credits/` | بدهی دستی و بستانکاری | `can_view` / `can_issue` |
+| `DELETE /debts/<id>/`, `/credits/<id>/` | حذف ردیف | `can_delete_history` |
 | `POST /upload/excel/`, `/process/excel/` | آپلود و پردازش فایل‌های ورودی | `can_issue` |
-| `GET/POST /approvals/` | درخواست‌ها | `can_submit`/`can_approve` |
-| `GET /approvals/pending/`, `/approvals/mine/` | صف تأیید | `can_approve` |
+| `GET/POST /approvals/` | درخواست‌ها | `can_view` / ثبت با `can_submit` |
+| `GET /approvals/pending/`, `/approvals/mine/` | صف تأیید | `can_view` / `can_submit` |
 | `POST /approvals/<id>/approve/`, `/reject/` | تأیید/رد | `can_approve` |
 | `GET /approvals/<id>/files/` | فایل‌های درخواست | `can_view` |
 | `GET /files/<id>/download/` | دانلود Word/PDF | `can_view` |
 | `GET /files/by-letter/<letter_number>/` | دانلود با شمارهٔ نامه | `can_view` |
-| `POST /files/<id>/regenerate/` | بازسازی فایل | `can_issue` |
-| `GET /templates/active/`, `…/preview/` | قالب فعال و پیش‌نمایش | `can_view` |
+| `POST /files/<id>/regenerate/` | بازسازی فایل | `can_approve` |
+| `GET /templates/active/`, `POST …/preview/` | قالب فعال و پیش‌نمایش | `can_view` / `can_edit_template` |
 | `GET/POST /service-categories/`, `…/<id>/` | دسته‌های خدمت | `can_view` / `can_manage_settings` |
 | `GET/PUT /settings/` | تنظیمات شرکت (تک‌رکورد) | `can_view` / `can_manage_settings` |
 | `POST /settings/upload-asset/` | آپلود لوگو/امضا/مهر | `can_manage_settings` |
-| `POST /settings/upload-template/` | آپلود قالب Word | `can_edit_template` |
+| `POST /settings/upload-template/` | آپلود قالب Word | `can_manage_settings` |
 | `POST /admin/backup/`, `/admin/restore/` | پشتیبان‌گیری/بازیابی | `can_manage_settings` |
-| `GET /me/` | مجوزهای کاربر جاری | ورود |
+| `GET /me/` | مجوزهای کاربر جاری | `can_view` (کاربر بدون این فلگ ۴۰۳ می‌گیرد) |
 | `GET /next-letter/` | شمارهٔ نامهٔ بعدی | `can_issue` |
-| `GET /passengers/?q=` | پیشنهاد مسافران از تاریخچه | `can_issue` |
+| `GET /passengers/?q=` | پیشنهاد مسافران از تاریخچه | `can_view` |
 | `GET /dashboard/summary/` | خلاصهٔ داشبورد | `can_view` |
 
 OpenAPI: با `drf-spectacular` تولید می‌شود و همیشه روی `/api/schema/` (YAML) و `/api/docs/` (Swagger UI) در دسترس است؛ در استقرار تولید پشت احراز هویت/شبکه قرار دهید.
@@ -353,7 +356,7 @@ OpenAPI: با `drf-spectacular` تولید می‌شود و همیشه روی `/
 ### چیدمان و تجربهٔ کاربری
 
 - `ERPLayout.tsx` سایدبار دسکتاپ را فقط از `lg` به بالا نشان می‌دهد.
-- **موبایل:** نوار پایین با ۴ مقصد پرکاربرد + دکمهٔ «منو». دکمهٔ همبرگری در هدر وجود ندارد. «منو» یک **کارت** از پایین باز می‌کند (ترنسفورم inline، `translateY(115%) → 0`، ۳۰۰ms) با دستگیره، عنوان، دکمهٔ بستن و ردیف‌های بزرگ (متن ۱۵–۱۶px، آیکون ۳۶px، هایلایت آیتم فعال). با انتخاب آیتم، کارت پایین می‌رود و بعد از ۲۴۰ms صفحه باز می‌شود.
+- **موبایل:** نوار پایین با ۴ مقصد پرکاربرد + دکمهٔ «منو». دکمهٔ همبرگری در هدر وجود ندارد. «منو» یک **کارت** از پایین باز می‌کند (ترنسفورم inline، `translateY(115%) → 0`، ۳۰۰ms) با دستگیره، عنوان، دکمهٔ بستن و ردیف‌های بزرگ (متن ۱۵–۱۶px، آیکون ۳۶px، هایلایت آیتم فعال). با انتخاب آیتم، کارت پایین می‌رود و بعد از همان ۳۰۰ms صفحه باز می‌شود (`SHEET_TRANSITION_MS`). وقتی کارت بسته است `inert` می‌شود تا فوکوس روی ردیف‌های نامرئی نرود.
 - تم روشن/تیره با کلاس `dark` روی `html`. برای کارت‌های همیشه‌تیره (پوستهٔ نفتی) از کلاس `dark-surface` استفاده کنید تا متن سفید داخلشان با قاعدهٔ سراسری `html:not(.dark) .text-slate-600` دچار کنتراست پایین نشود.
 - لودینگ زیرمنوها (Suspense در `App.tsx`) لوگوی **برند** را نشان می‌دهد (`useBrandLogo`)؛ لوگوی Nexivo فقط fallback پیش‌فرض است.
 - `CARD` مشترک صفحات مالی در `src/pages/billing/shared.ts` است؛ ظاهر کارت‌ها را از آنجا تغییر دهید، نه تک‌تک صفحات.
@@ -397,7 +400,8 @@ cd frontend && npx tsc --noEmit && npm run build
 - **بکاپ/بازیابی:** `make dump` / `make restore FILE=backups/x.sql` (ویندوز: `dev.bat dump|restore`). قبل از هر مهاجرت سنگین یک dump بگیرید.
 - **فایل‌های تولیدی:** در `MEDIA_ROOT/approved` (یا مسیر تنظیمات). حجم را کنترل کنید؛ `purge_billing_files` را روزانه در cron بگذارید: `0 3 * * * python manage.py purge_billing_files --hours 24`.
 - **فونت:** لازم نیست هیچ فونتی روی سرور نصب باشد؛ Vazirmatn (OFL) در `services/assets/` همراه کد است و به‌صورت base64 داخل CSS صورت‌حساب جاسازی می‌شود. فقط برای نامهٔ Word، نصب B Nazanin روی سیستم کاربر نهایی لازم است (در Docker فونت لازم نیست).
-- **مرورگر headless:** مسیرهای پیش‌فرض Edge/Chrome در `generation.py` جست‌وجو می‌شوند (یا `PDF_BROWSER_PATH`). در Docker باید Chromium نصب باشد؛ در نبود آن WeasyPrint استفاده می‌شود (اختلاف جزئی در شکست صفحات). کتابخانهٔ `websocket-client` کلاینت CDP است و در `requirements.txt` آمده است.
+- **مرورگر headless:** `_find_pdf_browser` اول `PDF_BROWSER_PATH` و سپس مسیرهای ویندوز/لینوکس Edge و Chrome را می‌گردد؛ روی مک مسیر bundle (`/Applications/…`) در فهرست نیست، پس باید `PDF_BROWSER_PATH` را ست کرد. `--headless=new` نیاز به Chrome/Edge نسخهٔ ۱۱۲ به بالا دارد. کتابخانهٔ `websocket-client` کلاینت CDP است و در `requirements.txt` آمده است.
+- **تصویر Docker پیش‌فرض نه مرورگر دارد نه کتابخانه‌های WeasyPrint:** `backend/Dockerfile` از `python:3.11-slim` استفاده می‌کند و نه Chromium نصب می‌کند نه pango/cairo (وابستگی‌های سیستمی WeasyPrint). یعنی در آن تصویر تولید PDF صورت‌حساب شکست می‌خورد؛ برای استقرار Docker باید Chromium (یا بستهٔ سیستمی WeasyPrint) به تصویر اضافه شود.
 
 ---
 
@@ -420,7 +424,8 @@ cd frontend && npx tsc --noEmit && npm run build
 ## کارهای باقی‌مانده / محدودیت‌ها
 
 - ماژول‌های Nexivo (انبار، خرید، فروش، تولید، ترابر) برای این مشتری پیاده/آزمایش نشده‌اند؛ در لانچر پنهان‌اند.
-- PDF روی سرور بدون مرورگر به WeasyPrint وابسته است؛ تفاوت کوچک در شکست صفحات ممکن است.
+- PDF بدون مرورگر به WeasyPrint برمی‌گردد، اما این مسیر فقط وقتی کار می‌کند که pango/cairo نصب باشند؛ در تصویر Docker فعلی هیچ‌کدام نیست (بالا را ببینید). اگر مرورگر موجود باشد ولی خطا بدهد، `GenerationError` فارسی ثبت می‌شود و PDF ساخته نمی‌شود — عمداً به WeasyPrint برنمی‌گردد.
+- مسیر مرورگر روی مک در فهرست پیش‌فرض نیست؛ آنجا `PDF_BROWSER_PATH` لازم است.
 - Superset برای BI پیکربندی نشده و داشبورد مدیریتی از داده‌های خود سیستم تغذیه می‌شود.
 - حذف تاریخچه (`can_delete_history`) و بازیابی/پشتیبان‌گیری درون‌برنامه‌ای باید قبل از استفاده روی دادهٔ واقعی آزمایش شود.
 - تست‌های frontend وجود ندارند؛ بررسی‌ها با `tsc`، بیلد و آزمون دستی انجام می‌شود.
