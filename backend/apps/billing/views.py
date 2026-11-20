@@ -949,6 +949,10 @@ def admin_restore(request):
             company.save()
     except RestoreError as exc:
         return _error(str(exc))
+    except IntegrityError:
+        # A row that cannot fit this installation (stale foreign key, duplicate
+        # key) must leave the ledger untouched instead of returning a 500.
+        return _error("فایل پشتیبان با داده‌های این نصب سازگار نیست؛ هیچ تغییری اعمال نشد.")
 
     return Response({"ok": True, "restored": restored})
 

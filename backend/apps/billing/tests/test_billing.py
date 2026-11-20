@@ -1441,6 +1441,55 @@ class BackupRestoreTests(TestCase):
 
         self.assertEqual(base64.b64decode(file_row["file_data_b64"]), b"PK-backup")
 
+    def test_restore_keeps_payments_whose_creator_is_missing_here(self):
+        # A snapshot from another installation points at user ids that do not
+        # exist in this one; the payment must still come back, just unsigned.
+        payload = self._snapshot()
+        base = {
+            "payment_code": "", "payer_code": "7001", "payer_name": "شرکت پشتیبان",
+            "payment_date": "2025-07-01", "description": "",
+            "created_at": "2025-07-01T10:00:00Z", "idempotency_key": None,
+        }
+        payload["tables"]["payments"] = [
+            {**base, "id": 4242, "amount": 900_000, "tracking_number": "TRK-OLD",
+             "created_by_id": 987_654},
+            {**base, "id": 4243, "amount": 100_000, "tracking_number": "TRK-NEW",
+             "created_by_id": self.admin.pk},
+        ]
+
+        response = self._restore(payload)
+
+        self.assertEqual(response.status_code, 200, response.content)
+        # The unknown creator is dropped instead of failing the whole restore.
+        old_payment = Payment.objects.get(tracking_number="TRK-OLD")
+        self.assertEqual(old_payment.amount, 900_000)
+        self.assertIsNone(old_payment.created_by_id)
+        # A creator that does exist in this installation keeps the attribution.
+        new_payment = Payment.objects.get(tracking_number="TRK-NEW")
+        self.assertEqual(new_payment.created_by_id, self.admin.pk)
+
+    def test_restore_rolls_back_and_reports_a_conflicting_snapshot(self):
+        payload = self._snapshot()
+        row = {
+            "id": 5151, "payment_code": "", "payer_code": "7001",
+            "payer_name": "شرکت پشتیبان", "payment_date": "2025-07-01",
+            "amount": 1_000, "tracking_number": "TRK-DUP", "description": "",
+            "created_at": "2025-07-01T10:00:00Z", "created_by_id": None,
+            "idempotency_key": None,
+        }
+        payload["tables"]["payments"] = [row, dict(row)]
+        live = Payment.objects.create(
+            payer_code="7001", payer_name="شرکت پشتیبان",
+            payment_date=dt.date(2025, 8, 1), amount=555_000, tracking_number="TRK-LIVE",
+        )
+
+        response = self._restore(payload)
+
+        self.assertEqual(response.status_code, 400, response.content)
+        # The transaction rolled back, so the ledger still holds what it had.
+        self.assertEqual(list(Payment.objects.values_list("tracking_number", flat=True)), ["TRK-LIVE"])
+        self.assertEqual(Payment.objects.get().pk, live.pk)
+
     def test_restore_repairs_a_stale_sequence_so_numbers_are_not_reissued(self):
         from apps.billing.services.files import save_final_file
         from apps.billing.services.numbers import peek, reserve_numbers
