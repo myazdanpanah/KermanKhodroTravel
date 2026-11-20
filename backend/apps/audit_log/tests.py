@@ -162,3 +162,69 @@ class AuditLogAPITest(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertIn("total_entries", resp.data)
         self.assertIn("entries_by_action", resp.data)
+
+
+class BillingAuditVisibilityTest(TestCase):
+    """Billing audit rows have no company; they must still reach billing users."""
+
+    def setUp(self):
+        import datetime as dt
+
+        from rest_framework.test import APIClient
+
+        from apps.billing.models import Payment
+
+        self.company_a = Company.objects.create(name="شرکت الف", enabled_modules=["finance"])
+        self.company_b = Company.objects.create(name="شرکت ب", enabled_modules=["finance"])
+        self.user_a = User.objects.create_user(
+            "audit_a", password="pass", email="a@example.com", company=self.company_a,
+        )
+        self.user_b = User.objects.create_user(
+            "audit_b", password="pass", email="b@example.com", company=self.company_b,
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user_a)
+
+        self.payment = Payment.objects.create(
+            payer_code="3001", payer_name="شرکت نمونه",
+            payment_date=dt.date(2025, 7, 1), amount=1_000,
+        )
+        self.company_a_log = AuditLog.objects.create(
+            action="update", company=self.company_a, description="A company entry",
+        )
+        self.company_b_log = AuditLog.objects.create(
+            action="update", company=self.company_b, description="B company entry",
+        )
+
+    def _entries(self):
+        response = self.client.get("/api/v1/audit/entries/")
+        self.assertEqual(response.status_code, 200)
+        data = response.data
+        return data["results"] if isinstance(data, dict) and "results" in data else data
+
+    def _descriptions(self, entries):
+        return {row["description"] for row in entries}
+
+    def test_billing_entries_are_visible_alongside_own_company_rows(self):
+        descriptions = self._descriptions(self._entries())
+        self.assertIn("A company entry", descriptions)
+        self.assertTrue(any("billing.payment" in text for text in descriptions))
+        # Another company's row never leaks through the same response.
+        self.assertNotIn("B company entry", descriptions)
+
+    def test_other_company_does_not_see_these_rows(self):
+        self.client.force_authenticate(user=self.user_b)
+
+        descriptions = self._descriptions(self._entries())
+
+        self.assertIn("B company entry", descriptions)
+        self.assertNotIn("A company entry", descriptions)
+
+    def test_billing_entries_need_the_billing_view_permission(self):
+        self.user_a.can_view = False
+        self.user_a.save(update_fields=["can_view"])
+
+        descriptions = self._descriptions(self._entries())
+
+        self.assertIn("A company entry", descriptions)
+        self.assertFalse(any("billing.payment" in text for text in descriptions))

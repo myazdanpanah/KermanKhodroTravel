@@ -239,7 +239,7 @@ can_submit, can_approve, can_edit_template
 | `Payer` | طرف حساب (کد یکتا، نام، نوع `legal`/`person`، `parent` برای شرکت زیرمجموعه، شناسه/کد اقتصادی، تلفن، آدرس) |
 | `Invoice` | یک ردیف دفتر کل به‌ازای هر فایل تولیدشده: payer_code، نوع خدمت، شماره نامه، مبلغ، تاریخ صدور، مسیر فایل و فیلدهای ابطال (`reversed_at`/`reversed_by`/`reversal_reason`). ردیف ابطال‌شده باقی می‌ماند و در مانده حساب نمی‌شود |
 | `BillingAuditEntry` | ردپای ابطال و حذف ردیف‌های مالی: موجودیت، شناسه، عملیات، دلیل، تصویر کامل رکورد و کاربر |
-| `AuditLog` (apps.audit_log) | ایجاد/ویرایش/حذف `Invoice`، `Payment`، `ManualDebt`، `Credit` و `ApprovalRequest` با کاربر انجام‌دهنده (پس از احراز هویت JWT) |
+| `AuditLog` (apps.audit_log) | ایجاد/ویرایش/حذف `Invoice`، `Payment`، `ManualDebt`، `Credit` و `ApprovalRequest` با کاربر انجام‌دهنده (پس از احراز هویت JWT)؛ چون این ردیف‌ها شرکت ندارند، `GET /audit/entries/` آن‌ها را برای کاربران دارای مجوز `can_view` صورت‌حساب در کنار ردیف‌های شرکت خودشان نشان می‌دهد و ردیف شرکت‌های دیگر را لو نمی‌دهد |
 | `Payment` | پرداخت: payer، مبلغ، تاریخ، شماره پیگیری، توضیح، `created_at` (فیلد «سازنده» وجود ندارد) |
 | `ManualDebt` | بدهی دستی (بدون صورت‌حساب) |
 | `Credit` | بستانکاری/اعتبار |

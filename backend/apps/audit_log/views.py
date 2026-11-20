@@ -26,7 +26,16 @@ class AuditLogViewSet(viewsets.ReadOnlyModelViewSet):
         if not company:
             return AuditLog.objects.none()
 
-        qs = AuditLog.objects.filter(company=company)
+        # Billing rows are installation-wide (they carry no company), so their
+        # audit entries are recorded with company=NULL. Show them to anyone who
+        # may read billing, alongside the user's own company's entries; the
+        # company filter is never relaxed for other apps.
+        from apps.billing.permissions import has_perm as billing_perm
+
+        scope = Q(company=company)
+        if billing_perm(self.request.user, "can_view"):
+            scope |= Q(company__isnull=True, content_type__app_label="billing")
+        qs = AuditLog.objects.filter(scope)
 
         # Filter by action
         action_filter = self.request.query_params.get("action")
