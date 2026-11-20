@@ -7,7 +7,7 @@ import UserMenu from '../components/UserMenu'
 import NotificationBell from '../components/NotificationBell'
 import {
   LayoutDashboard, FileText, CreditCard, Users, Gauge, Plus,
-  Calendar, Target, TrendingUp,
+  Calendar, Target, TrendingUp, Inbox, Mail,
   Settings, ChevronLeft, ChevronDown,
   Shield, Search, Sun, Moon, Menu, Briefcase, Check, X,
 } from 'lucide-react'
@@ -56,6 +56,14 @@ const NAV_SECTIONS: NavSection[] = [
       { to: '/erp/crm/leads', icon: Target, label: 'سرنخ‌ها' },
       { to: '/erp/crm/opportunities', icon: TrendingUp, label: 'فرصت‌ها' },
       { to: '/erp/crm/activities', icon: Calendar, label: 'فعالیت‌ها' },
+    ],
+  },
+  {
+    id: 'office',
+    label: 'اداری',
+    items: [
+      { to: '/erp/office', icon: Inbox, label: 'میزکار اداری', end: true },
+      { to: '/erp/office/correspondence', icon: Mail, label: 'نامه‌ها' },
     ],
   },
   {
@@ -135,7 +143,7 @@ export default function ERPLayout() {
   // Breadcrumb data (computed once per render)
   // Only the three licensed modules (plus settings for admins) are reachable.
   const isAdmin = user?.role === 'admin' || user?.role === 'ceo'
-  const allowedPrefixes = isAdmin ? ['/erp/billing', '/erp/crm', '/erp/settings'] : ['/erp/billing', '/erp/crm']
+  const allowedPrefixes = isAdmin ? ['/erp/billing', '/erp/crm', '/erp/office', '/erp/settings'] : ['/erp/billing', '/erp/crm', '/erp/office']
   const canIssue = isAdmin || Boolean(user?.permissions?.issue)
   const sections = (isAdmin ? NAV_SECTIONS : NAV_SECTIONS.filter((section) => section.id !== 'settings'))
     .map((section) =>

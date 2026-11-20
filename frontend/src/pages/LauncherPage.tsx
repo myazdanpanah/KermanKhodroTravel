@@ -11,7 +11,7 @@ import {
   Settings, ArrowLeft, LogOut, Map,
   Package, ShoppingCart, Factory, Ship, Headphones,
   Briefcase, LineChart, Brain, Workflow, TrendingUp,
-  Tag
+  Tag, Inbox
 } from 'lucide-react'
 
 interface ModuleInfo {
@@ -23,6 +23,7 @@ const MODULE_ICONS: Record<string, React.ElementType> = {
   bi_dashboard: BarChart3,
   finance: DollarSign,
   crm: Users,
+  office: Inbox,
   db_manager: Database,
   datasets: Upload,
   llm: Brain,
@@ -63,12 +64,13 @@ const MODULE_ROUTES: Record<string, string> = {
 
 // This installation is licensed for three modules only: BI, finance and CRM.
 // Everything else in the upstream navigation stays hidden.
-const DELIVERED_MODULES = new Set(['bi_dashboard', 'finance', 'crm'])
+const DELIVERED_MODULES = new Set(['bi_dashboard', 'finance', 'crm', 'office'])
 
 const MODULE_DESCRIPTIONS: Record<string, string> = {
   bi_dashboard: 'داشبوردها و نمودارهای هوشمند',
   finance: 'صورتحساب، پرداخت‌ها و مدیریت مالی',
   crm: 'مدیریت ارتباط با مشتریان',
+  office: 'اتوماسیون اداری، نامه‌ها و کارتابل',
   db_manager: 'مدیریت پایگاه داده و جداول',
   datasets: 'آپلود و مدیریت داده‌ها',
   llm: 'درگاه هوش مصنوعی و تنظیمات مدل',

@@ -2,6 +2,16 @@
 
 All notable changes to the Nexivo platform are documented here.
 
+## [Unreleased] — November 20, 2026
+
+### 🏢 Office Automation (Phase 1–2)
+- **New `office` module** — `apps/office` owns correspondence, secretariats, recipients, routing, comments and business-record links. No foreign key crosses into finance/CRM; records are linked by `(entity_type, source_record_id)`.
+- **Atomic letter registration** — per secretariat/type/year `SecretariatNumberSequence` locked with `select_for_update`; registered numbers are immutable and archiving never releases them (`1405/OUT/000001`).
+- **Personal workbench** — inbox, action-required, sent, cc, overdue, drafts and archived buckets with counts, backed by real access filtering (company, participants, confidentiality).
+- **Business context panel** — live read-only resolution of customer, invoice, receipt, payment and CRM opportunity; amounts are stripped server-side for non-financial roles; unavailable records show a controlled state.
+- **Notifications** — registration, referral and reply create in-app notifications; new Office nav section and routes in the ERP layout and launcher.
+- **Tests** — 20 new `apps.office` tests (numbering, tenant isolation, confidentiality, routing, API, financial gating); `tsc -b` clean.
+
 ## [Unreleased] — November 16, 2026
 
 ### 🚀 Build & Performance

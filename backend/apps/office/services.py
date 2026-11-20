@@ -1,0 +1,368 @@
+"""
+Office correspondence services — registration, routing, replies and access.
+
+Registration is the one place a letter gets an official number: it locks the
+per-secretariat sequence row inside a transaction, so two secretaries clicking
+"register" at the same time can never receive the same number.
+"""
+
+from django.db import transaction
+from django.db.models import Q
+from django.utils import timezone
+
+from apps.accounts.models import User
+
+from .models import (
+    Correspondence,
+    CorrespondenceAction,
+    CorrespondenceComment,
+    CorrespondenceRecipient,
+    CorrespondenceRoute,
+    Secretariat,
+    SecretariatNumberSequence,
+)
+
+PRIVILEGED_ROLES = ("admin", "ceo")
+
+
+class OfficeError(Exception):
+    """A business-rule failure that the view turns into a 4xx response."""
+
+    def __init__(self, message, status=400):
+        super().__init__(message)
+        self.message = message
+        self.status = status
+
+
+def is_privileged(user):
+    """Admins and CEOs see every letter in their company."""
+    return bool(user.is_staff or getattr(user, "role", None) in PRIVILEGED_ROLES)
+
+
+def visible_correspondence(user):
+    """Letters the user may open, scoped to the user's company."""
+    qs = Correspondence.objects.filter(company=user.company)
+    if is_privileged(user):
+        return qs
+    return qs.filter(
+        Q(created_by=user)
+        | Q(owner=user)
+        | Q(sender_user=user)
+        | Q(recipients__recipient_user=user)
+        | Q(recipients__recipient_team=user.team)
+        | Q(recipients__recipient_division=user.division)
+        | Q(routes__to_user=user)
+        | Q(routes__to_team=user.team)
+        | Q(routes__to_division=user.division)
+    ).filter(
+        Q(confidentiality__in=["normal", "confidential"])
+        | Q(created_by=user)
+        | Q(owner=user)
+        | Q(sender_user=user)
+        | Q(recipients__recipient_user=user)
+        | Q(routes__to_user=user)
+    ).distinct()
+
+
+def can_open(user, letter):
+    if letter.company_id != getattr(user.company, "id", None):
+        return False
+    if is_privileged(user):
+        return True
+    if letter.confidentiality in ("highly_confidential", "restricted"):
+        # Confidential letters are limited to people explicitly attached to them.
+        return (
+            letter.created_by_id == user.id
+            or letter.owner_id == user.id
+            or letter.sender_user_id == user.id
+            or letter.recipients.filter(recipient_user=user).exists()
+            or letter.routes.filter(to_user=user).exists()
+        )
+    return visible_correspondence(user).filter(pk=letter.pk).exists()
+
+
+def log_action(letter, user, action, note="", metadata=None):
+    return CorrespondenceAction.objects.create(
+        correspondence=letter,
+        actor=user,
+        action=action,
+        note=note or "",
+        metadata=metadata or {},
+    )
+
+
+def notify(user, title, message, letter):
+    """Reuse the platform notification feed for office events."""
+    from apps.dashboards.models import Notification
+
+    if user is None or user.company_id != letter.company_id:
+        return None
+    return Notification.objects.create(
+        recipient=user,
+        notification_type="system",
+        title=title,
+        message=message,
+        target_type="office_correspondence",
+        target_id=str(letter.id),
+    )
+
+
+def _company_user(company, user_id):
+    user = User.objects.filter(pk=user_id, company=company, is_active=True).first()
+    if user is None:
+        raise OfficeError("کاربر انتخاب‌شده در این شرکت فعال نیست", 400)
+    return user
+
+
+def _validate_recipient(company, data):
+    """Exactly one target must be set, and it must belong to the company."""
+    recipient_type = data.get("recipient_type", "user")
+    if recipient_type == "user":
+        user = _company_user(company, data.get("recipient_user_id"))
+        return {"recipient_type": "user", "recipient_user": user}
+    if recipient_type == "team":
+        from apps.accounts.models import Team
+
+        team = Team.objects.filter(pk=data.get("recipient_team_id"), division__company=company).first()
+        if team is None:
+            raise OfficeError("تیم انتخاب‌شده معتبر نیست", 400)
+        return {"recipient_type": "team", "recipient_team": team}
+    if recipient_type == "division":
+        from apps.accounts.models import Division
+
+        division = Division.objects.filter(pk=data.get("recipient_division_id"), company=company).first()
+        if division is None:
+            raise OfficeError("بخش انتخاب‌شده معتبر نیست", 400)
+        return {"recipient_type": "division", "recipient_division": division}
+    if recipient_type == "external":
+        name = (data.get("external_name") or "").strip()
+        if not name:
+            raise OfficeError("نام گیرنده بیرونی الزامی است", 400)
+        return {"recipient_type": "external", "external_name": name, "external_email": data.get("external_email", "")}
+    raise OfficeError("نوع گیرنده نامعتبر است", 400)
+
+
+@transaction.atomic
+def create_correspondence(user, data, recipients=None):
+    company = user.company
+    secretariat = None
+    if data.get("secretariat_id"):
+        secretariat = Secretariat.objects.filter(pk=data["secretariat_id"], company=company, is_active=True).first()
+        if secretariat is None:
+            raise OfficeError("دبیرخانه انتخاب‌شده معتبر نیست", 400)
+
+    letter = Correspondence.objects.create(
+        company=company,
+        secretariat=secretariat,
+        correspondence_type=data.get("correspondence_type", "internal"),
+        subject=data["subject"].strip(),
+        body=data.get("body", ""),
+        sender_type=data.get("sender_type", "internal"),
+        sender_user=user if data.get("sender_type", "internal") == "internal" else None,
+        sender_name=data.get("sender_name", ""),
+        sender_organization=data.get("sender_organization", ""),
+        sender_email=data.get("sender_email", ""),
+        letter_date=data.get("letter_date"),
+        letter_date_jalali=data.get("letter_date_jalali", ""),
+        received_at=data.get("received_at"),
+        priority=data.get("priority", "normal"),
+        confidentiality=data.get("confidentiality", "normal"),
+        due_at=data.get("due_at"),
+        owner=_company_user(company, data["owner_id"]) if data.get("owner_id") else user,
+        created_by=user,
+        updated_by=user,
+    )
+
+    for item in recipients or []:
+        CorrespondenceRecipient.objects.create(
+            correspondence=letter,
+            delivery_type=item.get("delivery_type", "primary"),
+            **_validate_recipient(company, item),
+        )
+
+    log_action(letter, user, "created")
+    return letter
+
+
+def _jalali_year(letter, fallback=None):
+    raw = (letter.letter_date_jalali or "").strip()
+    if len(raw) >= 4 and raw[:4].isdigit():
+        return int(raw[:4])
+    if fallback:
+        return int(fallback)
+    return timezone.localdate().year
+
+
+def registration_label(letter):
+    return f"{letter.registration_year}/{letter.secretariat.code}/{letter.registration_sequence:06d}"
+
+
+@transaction.atomic
+def register_correspondence(letter, user, year=None):
+    """Allocate the next number for the letter's secretariat, type and year."""
+    letter = Correspondence.objects.select_for_update().get(pk=letter.pk)
+    if letter.registration_status == "registered":
+        raise OfficeError("این نامه قبلاً ثبت شده است", 409)
+    if letter.archived_at:
+        raise OfficeError("نامه بایگانی‌شده قابل ثبت نیست", 409)
+    if letter.secretariat_id is None:
+        raise OfficeError("برای ثبت، دبیرخانه را انتخاب کنید", 400)
+    if not (letter.subject or "").strip():
+        raise OfficeError("موضوع نامه الزامی است", 400)
+
+    reg_year = _jalali_year(letter, year)
+    sequence, _ = SecretariatNumberSequence.objects.select_for_update().get_or_create(
+        secretariat=letter.secretariat,
+        correspondence_type=letter.correspondence_type,
+        year=reg_year,
+        defaults={"company": letter.company, "last_number": 0},
+    )
+    # get_or_create may have raced; lock the row explicitly.
+    sequence = SecretariatNumberSequence.objects.select_for_update().get(pk=sequence.pk)
+    sequence.last_number += 1
+    sequence.save(update_fields=["last_number"])
+
+    letter.registration_status = "registered"
+    letter.registration_year = reg_year
+    letter.registration_sequence = sequence.last_number
+    letter.registration_number = f"{reg_year}/{letter.secretariat.code}/{sequence.last_number:06d}"
+    letter.registered_at = timezone.now()
+    letter.registered_by = user
+    letter.current_status = "open"
+    letter.save(update_fields=[
+        "registration_status", "registration_year", "registration_sequence",
+        "registration_number", "registered_at", "registered_by", "current_status",
+    ])
+
+    for recipient in letter.recipients.select_related("recipient_user"):
+        if recipient.recipient_user_id:
+            recipient.delivery_status = "delivered"
+            recipient.delivered_at = timezone.now()
+            recipient.save(update_fields=["delivery_status", "delivered_at"])
+            notify(recipient.recipient_user, "نامه ثبت‌شده", f"نامه «{letter.subject}» ثبت شد.", letter)
+
+    log_action(letter, user, "registered", metadata={"number": letter.registration_number})
+    return letter
+
+
+@transaction.atomic
+def refer_correspondence(letter, user, data):
+    """Route a letter to one user, team or division."""
+    company = letter.company
+    target = data.get("target_type", "user")
+    kwargs = {}
+    recipients = []
+    if target == "user":
+        target_user = _company_user(company, data.get("user_id"))
+        kwargs["to_user"] = target_user
+        recipients.append({"recipient_type": "user", "recipient_user": target_user,
+                           "delivery_type": "action_required"})
+    elif target == "team":
+        from apps.accounts.models import Team
+
+        team = Team.objects.filter(pk=data.get("team_id"), division__company=company).first()
+        if team is None:
+            raise OfficeError("تیم انتخاب‌شده معتبر نیست", 400)
+        kwargs["to_team"] = team
+        recipients.append({"recipient_type": "team", "recipient_team": team,
+                           "delivery_type": "action_required"})
+    elif target == "division":
+        from apps.accounts.models import Division
+
+        division = Division.objects.filter(pk=data.get("division_id"), company=company).first()
+        if division is None:
+            raise OfficeError("بخش انتخاب‌شده معتبر نیست", 400)
+        kwargs["to_division"] = division
+        recipients.append({"recipient_type": "division", "recipient_division": division,
+                           "delivery_type": "action_required"})
+    else:
+        raise OfficeError("مقصد ارجاع نامعتبر است", 400)
+
+    route = CorrespondenceRoute.objects.create(
+        correspondence=letter,
+        from_user=user,
+        route_type=data.get("route_type", "action"),
+        instruction=data.get("instruction", ""),
+        due_at=data.get("due_at"),
+        **kwargs,
+    )
+    for item in recipients:
+        CorrespondenceRecipient.objects.get_or_create(
+            correspondence=letter,
+            recipient_user=item.get("recipient_user"),
+            recipient_team=item.get("recipient_team"),
+            recipient_division=item.get("recipient_division"),
+            defaults={"recipient_type": item["recipient_type"], "delivery_type": item["delivery_type"]},
+        )
+
+    if letter.current_status in ("open", "answered"):
+        letter.current_status = "in_progress"
+        letter.save(update_fields=["current_status"])
+
+    if route.to_user_id:
+        notify(route.to_user, "ارجاع نامه", f"نامه «{letter.subject}» برای شما ارجاع شد.", letter)
+    log_action(letter, user, "referred", note=data.get("instruction", ""),
+               metadata={"route_id": route.id, "target_type": target})
+    return route
+
+
+@transaction.atomic
+def reply_to_correspondence(letter, user, body, subject=""):
+    """Create a reply letter linked to the original and mark the thread answered."""
+    if not (body or "").strip():
+        raise OfficeError("متن پاسخ الزامی است", 400)
+    child = Correspondence.objects.create(
+        company=letter.company,
+        secretariat=letter.secretariat,
+        correspondence_type="internal" if letter.correspondence_type == "internal" else "outgoing",
+        subject=(subject or f"پاسخ: {letter.subject}")[:300],
+        body=body,
+        sender_type="internal",
+        sender_user=user,
+        priority=letter.priority,
+        confidentiality=letter.confidentiality,
+        parent_correspondence=letter,
+        owner=user,
+        created_by=user,
+        updated_by=user,
+    )
+    if letter.sender_user_id and letter.sender_user_id != user.id:
+        CorrespondenceRecipient.objects.create(
+            correspondence=child,
+            recipient_type="user",
+            recipient_user=letter.sender_user,
+            delivery_type="primary",
+        )
+        notify(letter.sender_user, "پاسخ نامه", f"پاسخی برای «{letter.subject}» ثبت شد.", child)
+
+    letter.current_status = "answered"
+    letter.save(update_fields=["current_status"])
+    log_action(letter, user, "replied", metadata={"reply_id": child.id})
+    return child
+
+
+@transaction.atomic
+def archive_correspondence(letter, user, note=""):
+    if letter.archived_at:
+        raise OfficeError("این نامه قبلاً بایگانی شده است", 409)
+    letter.current_status = "closed"
+    letter.archived_at = timezone.now()
+    letter.save(update_fields=["current_status", "archived_at"])
+    log_action(letter, user, "archived", note=note)
+    return letter
+
+
+def add_comment(letter, user, body, is_internal=True):
+    if not (body or "").strip():
+        raise OfficeError("متن یادداشت الزامی است", 400)
+    return CorrespondenceComment.objects.create(
+        correspondence=letter, author=user, body=body, is_internal=is_internal,
+    )
+
+
+def mark_read(letter, user):
+    """Reading is tracked separately from acting on a letter."""
+    updated = letter.recipients.filter(recipient_user=user).update(
+        delivery_status="read", read_at=timezone.now(),
+    )
+    return updated > 0

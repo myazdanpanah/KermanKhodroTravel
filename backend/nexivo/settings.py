@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "apps.service_sales.apps.ServiceSalesConfig",
     "apps.service_management.apps.ServiceManagementConfig",
     "apps.crm.apps.CRMConfig",
+    "apps.office.apps.OfficeConfig",
     "apps.hr.apps.HRConfig",
     "apps.reporting.apps.ReportingConfig",
     "apps.ai_insights.apps.AiInsightsConfig",

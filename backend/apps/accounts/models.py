@@ -10,6 +10,7 @@ MODULE_CHOICES = [
     ("bi_dashboard", "BI Dashboard"),
     ("finance",       "Finance"),
     ("crm",           "CRM"),
+    ("office",        "Office Automation"),
     ("db_manager",    "Database Manager"),
     ("datasets",      "Data Upload"),
     ("llm",           "LLM Gateway"),

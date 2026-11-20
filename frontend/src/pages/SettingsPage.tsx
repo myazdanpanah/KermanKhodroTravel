@@ -8,7 +8,7 @@ import {
   Puzzle, Users, Building2, FolderTree, Settings,
   ChevronDown, ChevronRight, Plus, Pencil, Trash2, X, Check,
   ToggleLeft, ToggleRight, Zap, Save,
-  Palette, Upload, RotateCcw, FileText
+  Palette, Upload, RotateCcw, FileText, Inbox
 } from 'lucide-react'
 import BillingLetterheadTab from './BillingLetterheadTab'
 
@@ -29,6 +29,7 @@ const MODULE_ICONS: Record<string, React.ElementType> = {
   bi_dashboard: Zap,
   finance: Puzzle,
   crm: Users,
+  office: Inbox,
   db_manager: Building2,
   datasets: FolderTree,
   settings: Settings,
@@ -38,6 +39,7 @@ const MODULE_DESCRIPTIONS: Record<string, string> = {
   bi_dashboard: 'داشبوردها و نمودارهای هوشمند',
   finance: 'صورتحساب، پرداخت‌ها و مدیریت مالی',
   crm: 'مدیریت ارتباط با مشتریان',
+  office: 'اتوماسیون اداری، نامه‌ها و کارتابل',
   db_manager: 'مدیریت پایگاه داده و جداول',
   datasets: 'آپلود و مدیریت داده‌ها',
   settings: 'تنظیمات سازمان و ماژول‌ها',
