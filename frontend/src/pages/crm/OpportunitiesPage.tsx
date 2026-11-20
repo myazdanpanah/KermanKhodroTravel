@@ -2,7 +2,7 @@
  * Opportunities Page
  */
 
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { LayoutGrid, List, Plus, Search, TrendingUp } from 'lucide-react';
 import { crmApi, Opportunity } from '../../api/crm';
 import OpportunityRecordPanel from './OpportunityRecordPanel';
@@ -44,6 +44,7 @@ export default function OpportunitiesPage() {
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<number | null>(null);
   const [selected, setSelected] = useState<Opportunity | null>(null);
+  const draggedRef = useRef(false);
 
   useEffect(() => {
     crmApi.getOpportunities().then(r => setOpps(r.data.data)).catch(() => toast('خطا در دریافت فرصت‌ها', 'error')).finally(() => setLoading(false));
@@ -199,13 +200,24 @@ export default function OpportunitiesPage() {
                       <div
                         key={opp.id}
                         draggable
+                        onMouseDown={() => { draggedRef.current = false; }}
                         onDragStart={e => {
+                          draggedRef.current = true;
                           setDraggingId(opp.id);
                           e.dataTransfer.setData('text/plain', String(opp.id));
                           e.dataTransfer.effectAllowed = 'move';
                         }}
                         onDragEnd={() => setDraggingId(null)}
-                        className={`rounded-lg border border-nx-border dark:border-nx-navy-border bg-nx-mist/20 dark:bg-nx-navy-border/40 p-3 cursor-grab active:cursor-grabbing ${
+                        onClick={() => {
+                          // A drop can end with a click in some browsers; it must
+                          // not also open the record panel.
+                          if (draggedRef.current) {
+                            draggedRef.current = false;
+                            return;
+                          }
+                          setSelected(opp);
+                        }}
+                        className={`rounded-lg border border-nx-border dark:border-nx-navy-border bg-nx-mist/20 dark:bg-nx-navy-border/40 p-3 cursor-pointer active:cursor-grabbing hover:border-nx-blue/60 ${
                           draggingId === opp.id ? 'opacity-50' : ''
                         }`}
                       >
@@ -266,7 +278,9 @@ export default function OpportunitiesPage() {
               <tbody>
                 {filtered.map(opp => (
                   <tr key={opp.id} className="border-b border-nx-border dark:border-nx-navy-border hover:bg-white dark:hover:bg-nx-navy">
-                    <td className="px-4 py-3 font-medium">{opp.name}</td>
+                    <td className="px-4 py-3 font-medium">
+                      <button onClick={() => setSelected(opp)} className="hover:text-nx-blue">{opp.name}</button>
+                    </td>
                     <td className="px-4 py-3 text-nx-mist">{opp.customer_name || '—'}</td>
                     <td className="px-4 py-3 text-xs">{STAGE_LABELS[opp.stage] || opp.stage}</td>
                     <td className="px-4 py-3">

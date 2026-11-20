@@ -132,81 +132,81 @@ export interface CRMSummary {
 
 export const crmApi = {
   getSummary: () =>
-    apiClient.get<{ data: CRMSummary }>('/api/v1/crm/summary/'),
+    apiClient.get<{ data: CRMSummary }>('/crm/summary/'),
 
   // Leads
   getLeads: (params?: Record<string, string>) =>
-    apiClient.get<{ data: Lead[] }>('/api/v1/crm/leads/', { params }),
+    apiClient.get<{ data: Lead[] }>('/crm/leads/', { params }),
   getLead: (id: number) =>
-    apiClient.get<{ data: Lead }>(`/api/v1/crm/leads/${id}/`),
+    apiClient.get<{ data: Lead }>(`/crm/leads/${id}/`),
   createLead: (data: Partial<Lead>) =>
-    apiClient.post<{ data: Lead }>('/api/v1/crm/leads/', data),
+    apiClient.post<{ data: Lead }>('/crm/leads/', data),
   updateLead: (id: number, data: Partial<Lead>) =>
-    apiClient.put<{ data: Lead }>(`/api/v1/crm/leads/${id}/`, data),
+    apiClient.put<{ data: Lead }>(`/crm/leads/${id}/`, data),
   deleteLead: (id: number) =>
-    apiClient.delete(`/api/v1/crm/leads/${id}/`),
+    apiClient.delete(`/crm/leads/${id}/`),
   convertLead: (id: number) =>
-    apiClient.post(`/api/v1/crm/leads/${id}/convert/`),
+    apiClient.post(`/crm/leads/${id}/convert/`),
 
   // Opportunities
   getOpportunities: (params?: Record<string, string>) =>
-    apiClient.get<{ data: Opportunity[] }>('/api/v1/crm/opportunities/', { params }),
+    apiClient.get<{ data: Opportunity[] }>('/crm/opportunities/', { params }),
   getOpportunity: (id: number) =>
-    apiClient.get<{ data: Opportunity }>(`/api/v1/crm/opportunities/${id}/`),
+    apiClient.get<{ data: Opportunity }>(`/crm/opportunities/${id}/`),
   createOpportunity: (data: Partial<Opportunity>) =>
-    apiClient.post<{ data: Opportunity }>('/api/v1/crm/opportunities/', data),
+    apiClient.post<{ data: Opportunity }>('/crm/opportunities/', data),
   updateOpportunity: (id: number, data: Partial<Opportunity>) =>
-    apiClient.put<{ data: Opportunity }>(`/api/v1/crm/opportunities/${id}/`, data),
+    apiClient.put<{ data: Opportunity }>(`/crm/opportunities/${id}/`, data),
   deleteOpportunity: (id: number) =>
-    apiClient.delete(`/api/v1/crm/opportunities/${id}/`),
+    apiClient.delete(`/crm/opportunities/${id}/`),
   moveOpportunity: (id: number, status: string) =>
-    apiClient.post<{ data: Opportunity }>(`/api/v1/crm/opportunities/${id}/move/`, { status }),
+    apiClient.post<{ data: Opportunity }>(`/crm/opportunities/${id}/move/`, { status }),
   closeWon: (id: number) =>
-    apiClient.post(`/api/v1/crm/opportunities/${id}/close-won/`),
+    apiClient.post(`/crm/opportunities/${id}/close-won/`),
   closeLost: (id: number, reason?: string) =>
-    apiClient.post(`/api/v1/crm/opportunities/${id}/close-lost/`, { reason }),
+    apiClient.post(`/crm/opportunities/${id}/close-lost/`, { reason }),
 
   // Activities
   getActivities: (params?: Record<string, string>) =>
-    apiClient.get<{ data: Activity[] }>('/api/v1/crm/activities/', { params }),
+    apiClient.get<{ data: Activity[] }>('/crm/activities/', { params }),
   getActivity: (id: number) =>
-    apiClient.get<{ data: Activity }>(`/api/v1/crm/activities/${id}/`),
+    apiClient.get<{ data: Activity }>(`/crm/activities/${id}/`),
   createActivity: (data: Partial<Activity> & { opportunity_id?: number }) =>
-    apiClient.post<{ data: Activity }>('/api/v1/crm/activities/', data),
+    apiClient.post<{ data: Activity }>('/crm/activities/', data),
   updateActivity: (id: number, data: Partial<Activity>) =>
-    apiClient.put<{ data: Activity }>(`/api/v1/crm/activities/${id}/`, data),
+    apiClient.put<{ data: Activity }>(`/crm/activities/${id}/`, data),
   deleteActivity: (id: number) =>
-    apiClient.delete(`/api/v1/crm/activities/${id}/`),
+    apiClient.delete(`/crm/activities/${id}/`),
   completeActivity: (id: number, outcome?: string) =>
-    apiClient.post(`/api/v1/crm/activities/${id}/complete/`, { outcome }),
+    apiClient.post(`/crm/activities/${id}/complete/`, { outcome }),
 
   // Campaigns
   getCampaigns: () =>
-    apiClient.get<{ data: Campaign[] }>('/api/v1/crm/campaigns/'),
+    apiClient.get<{ data: Campaign[] }>('/crm/campaigns/'),
   getCampaign: (id: number) =>
-    apiClient.get<{ data: Campaign }>(`/api/v1/crm/campaigns/${id}/`),
+    apiClient.get<{ data: Campaign }>(`/crm/campaigns/${id}/`),
   createCampaign: (data: Partial<Campaign>) =>
-    apiClient.post<{ data: Campaign }>('/api/v1/crm/campaigns/', data),
+    apiClient.post<{ data: Campaign }>('/crm/campaigns/', data),
   updateCampaign: (id: number, data: Partial<Campaign>) =>
-    apiClient.put<{ data: Campaign }>(`/api/v1/crm/campaigns/${id}/`, data),
+    apiClient.put<{ data: Campaign }>(`/crm/campaigns/${id}/`, data),
   deleteCampaign: (id: number) =>
-    apiClient.delete(`/api/v1/crm/campaigns/${id}/`),
+    apiClient.delete(`/crm/campaigns/${id}/`),
 
   // Tasks
   getTasks: (params?: Record<string, string>) =>
-    apiClient.get<{ data: CRMTask[] }>('/api/v1/crm/tasks/', { params }),
+    apiClient.get<{ data: CRMTask[] }>('/crm/tasks/', { params }),
   getTask: (id: number) =>
-    apiClient.get<{ data: CRMTask }>(`/api/v1/crm/tasks/${id}/`),
+    apiClient.get<{ data: CRMTask }>(`/crm/tasks/${id}/`),
   createTask: (data: Partial<CRMTask> & { opportunity_id?: number }) =>
-    apiClient.post<{ data: CRMTask }>('/api/v1/crm/tasks/', data),
+    apiClient.post<{ data: CRMTask }>('/crm/tasks/', data),
   updateTask: (id: number, data: Partial<CRMTask>) =>
-    apiClient.put<{ data: CRMTask }>(`/api/v1/crm/tasks/${id}/`, data),
+    apiClient.put<{ data: CRMTask }>(`/crm/tasks/${id}/`, data),
   deleteTask: (id: number) =>
-    apiClient.delete(`/api/v1/crm/tasks/${id}/`),
+    apiClient.delete(`/crm/tasks/${id}/`),
   completeTask: (id: number) =>
-    apiClient.post(`/api/v1/crm/tasks/${id}/complete/`),
+    apiClient.post(`/crm/tasks/${id}/complete/`),
 
   // Timeline
   getTimeline: (customerId: number) =>
-    apiClient.get(`/api/v1/crm/timeline/${customerId}/`),
+    apiClient.get(`/crm/timeline/${customerId}/`),
 };

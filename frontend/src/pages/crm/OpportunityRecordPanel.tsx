@@ -4,6 +4,7 @@
  */
 
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Calendar, CheckCircle, X } from 'lucide-react';
 import { crmApi, Activity, CRMTask, Opportunity } from '../../api/crm';
 import { useToast } from '../../components/Toast';
@@ -84,7 +85,9 @@ export default function OpportunityRecordPanel({ opportunity, onClose }: { oppor
     } catch { toast('خطا در تکمیل وظیفه', 'error'); }
   };
 
-  return (
+  // Portal to <body>: the ERP layout's transforms would otherwise become the
+  // containing block and leave the overlay offset instead of covering the viewport.
+  return createPortal(
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <aside className="absolute inset-y-0 left-0 w-full max-w-md overflow-y-auto bg-white dark:bg-nx-navy border-r border-nx-border dark:border-nx-navy-border shadow-xl">
@@ -156,7 +159,7 @@ export default function OpportunityRecordPanel({ opportunity, onClose }: { oppor
                 <option value="meeting">جلسه</option>
                 <option value="note">یادداشت</option>
               </select>
-              <input value={activityForm.subject} onChange={e => setActivityForm({ ...activityForm, subject: e.target.value })} placeholder="موضوع فعالیت" className={`flex-1 ${INPUT}`} />
+              <input value={activityForm.subject} onChange={e => setActivityForm({ ...activityForm, subject: e.target.value })} placeholder="موضوع فعالیت" className={`flex-1 min-w-0 ${INPUT}`} />
               <button onClick={() => void addActivity()} className="px-3 py-1.5 bg-nx-blue text-white rounded-lg text-xs">ثبت</button>
             </div>
           </section>
@@ -183,13 +186,14 @@ export default function OpportunityRecordPanel({ opportunity, onClose }: { oppor
               {tasks.length === 0 && <li className="text-xs text-slate-400 py-1">وظیفه‌ای ثبت نشده است</li>}
             </ul>
             <div className="mt-2 flex gap-2">
-              <input value={taskForm.title} onChange={e => setTaskForm({ ...taskForm, title: e.target.value })} placeholder="عنوان وظیفه" className={`flex-1 ${INPUT}`} />
-              <input type="date" value={taskForm.due_date} onChange={e => setTaskForm({ ...taskForm, due_date: e.target.value })} className={INPUT} />
+              <input value={taskForm.title} onChange={e => setTaskForm({ ...taskForm, title: e.target.value })} placeholder="عنوان وظیفه" className={`flex-1 min-w-0 ${INPUT}`} />
+              <input type="date" value={taskForm.due_date} onChange={e => setTaskForm({ ...taskForm, due_date: e.target.value })} className={`${INPUT} min-w-0`} />
               <button onClick={() => void addTask()} className="px-3 py-1.5 bg-nx-blue text-white rounded-lg text-xs">افزودن</button>
             </div>
           </section>
         </div>
       </aside>
-    </div>
+    </div>,
+    document.body,
   );
 }
