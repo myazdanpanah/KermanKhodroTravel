@@ -9,6 +9,7 @@ per-secretariat sequence row inside a transaction, so two secretaries clicking
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
+import jdatetime
 
 from apps.accounts.models import User
 
@@ -19,6 +20,7 @@ from .models import (
     CorrespondenceRecipient,
     CorrespondenceRoute,
     Secretariat,
+    SecretariatMember,
     SecretariatNumberSequence,
 )
 
@@ -185,16 +187,45 @@ def create_correspondence(user, data, recipients=None):
 
 
 def _jalali_year(letter, fallback=None):
+    """Registration year follows the letter date, always in the Jalali calendar."""
     raw = (letter.letter_date_jalali or "").strip()
     if len(raw) >= 4 and raw[:4].isdigit():
         return int(raw[:4])
     if fallback:
         return int(fallback)
-    return timezone.localdate().year
+    gregorian = letter.letter_date or timezone.localdate()
+    return jdatetime.date.fromgregorian(date=gregorian).year
+
+
+TYPE_CODE = {"incoming": "I", "outgoing": "O", "internal": "N"}
+
+
+def registration_number(year, secretariat_code, correspondence_type, sequence):
+    """Official number: year/secretariat/type-book/sequence."""
+    return f"{year}/{secretariat_code}/{TYPE_CODE.get(correspondence_type, 'X')}/{sequence:06d}"
+
+
+def is_secretariat_member(user, secretariat_id, require_register=False):
+    if not secretariat_id:
+        return False
+    members = SecretariatMember.objects.filter(secretariat_id=secretariat_id, user=user)
+    if require_register:
+        members = members.filter(can_register=True)
+    return members.exists()
+
+
+def can_register_letter(user, letter):
+    """Registration needs secretariat authority, not just ownership of the draft."""
+    if is_privileged(user):
+        return True
+    return is_secretariat_member(user, letter.secretariat_id, require_register=True)
 
 
 def registration_label(letter):
-    return f"{letter.registration_year}/{letter.secretariat.code}/{letter.registration_sequence:06d}"
+    return registration_number(
+        letter.registration_year, letter.secretariat.code,
+        letter.correspondence_type, letter.registration_sequence,
+    )
 
 
 @transaction.atomic
@@ -209,6 +240,8 @@ def register_correspondence(letter, user, year=None):
         raise OfficeError("برای ثبت، دبیرخانه را انتخاب کنید", 400)
     if not (letter.subject or "").strip():
         raise OfficeError("موضوع نامه الزامی است", 400)
+    if not can_register_letter(user, letter):
+        raise OfficeError("ثبت نامه فقط برای اعضای مجاز دبیرخانه است", 403)
 
     reg_year = _jalali_year(letter, year)
     sequence, _ = SecretariatNumberSequence.objects.select_for_update().get_or_create(
@@ -225,7 +258,9 @@ def register_correspondence(letter, user, year=None):
     letter.registration_status = "registered"
     letter.registration_year = reg_year
     letter.registration_sequence = sequence.last_number
-    letter.registration_number = f"{reg_year}/{letter.secretariat.code}/{sequence.last_number:06d}"
+    letter.registration_number = registration_number(
+        reg_year, letter.secretariat.code, letter.correspondence_type, sequence.last_number,
+    )
     letter.registered_at = timezone.now()
     letter.registered_by = user
     letter.current_status = "open"

@@ -30,6 +30,25 @@ class Secretariat(BaseModel):
         return f"{self.name} ({self.code})"
 
 
+class SecretariatMember(models.Model):
+    """Who may act for a secretariat, and whether they may register letters."""
+
+    secretariat = models.ForeignKey(Secretariat, on_delete=models.CASCADE, related_name="members")
+    user = models.ForeignKey(
+        "accounts.User", on_delete=models.CASCADE, related_name="office_secretariats",
+    )
+    can_register = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["secretariat", "user"], name="uniq_secretariat_member"),
+        ]
+
+    def __str__(self):
+        return f"{self.user} @ {self.secretariat}"
+
+
 class SecretariatNumberSequence(models.Model):
     """Per company/secretariat/type/year counter, locked during allocation."""
 

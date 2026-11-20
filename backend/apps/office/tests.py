@@ -76,8 +76,8 @@ class CorrespondenceTests(OfficeTestBase):
         register_correspondence(second, self.ceo)
         first.refresh_from_db()
         second.refresh_from_db()
-        self.assertEqual(first.registration_number, "1404/OUT/000001")
-        self.assertEqual(second.registration_number, "1404/OUT/000002")
+        self.assertEqual(first.registration_number, "1404/OUT/O/000001")
+        self.assertEqual(second.registration_number, "1404/OUT/O/000002")
         self.assertEqual(first.registered_by, self.ceo)
 
         with self.assertRaises(OfficeError):
@@ -123,7 +123,7 @@ class CorrespondenceTests(OfficeTestBase):
         letter.refresh_from_db()
         self.assertEqual(letter.current_status, "closed")
         self.assertIsNotNone(letter.archived_at)
-        self.assertEqual(letter.registration_number, "1404/OUT/000001")
+        self.assertEqual(letter.registration_number, "1404/OUT/O/000001")
 
     def test_tenant_and_participant_access(self):
         letter = self.draft()
@@ -173,7 +173,7 @@ class WorkbenchAPITests(OfficeTestBase):
         letter_id = response.data["data"]["id"]
         response = self.client.post(f"/api/v1/office/correspondence/{letter_id}/register/", {}, format="json")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.data["data"]["registration_number"], "1404/OUT/000001")
+        self.assertEqual(response.data["data"]["registration_number"], "1404/OUT/O/000001")
 
     def test_api_hides_other_company_letter(self):
         letter = self.draft()

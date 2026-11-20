@@ -15,7 +15,7 @@ from apps.core.responses import (
 )
 
 from . import business
-from .models import Correspondence, Secretariat
+from .models import Correspondence, Secretariat, SecretariatMember
 from .serializers import (
     CommentSerializer,
     CorrespondenceCreateSerializer,
@@ -26,6 +26,7 @@ from .serializers import (
 from .services import (
     OfficeError,
     add_comment,
+    can_register_letter,
     archive_correspondence,
     can_open,
     create_correspondence,
@@ -202,8 +203,8 @@ def correspondence_register(request, pk):
     letter, error = _letter(request, pk)
     if error:
         return error
-    if not (is_privileged(request.user) or letter.owner_id == request.user.id):
-        return forbidden_response("ثبت نامه فقط توسط دبیرخانه یا مسئول نامه مجاز است")
+    if not can_register_letter(request.user, letter):
+        return forbidden_response("ثبت نامه فقط برای اعضای مجاز دبیرخانه است")
     try:
         letter = register_correspondence(letter, request.user, year=request.data.get("year"))
     except OfficeError as exc:
@@ -254,6 +255,9 @@ def correspondence_archive(request, pk):
     letter, error = _letter(request, pk)
     if error:
         return error
+    if not (is_privileged(request.user) or letter.owner_id == request.user.id
+            or letter.created_by_id == request.user.id):
+        return forbidden_response("بایگانی نامه فقط توسط مسئول یا سازنده آن مجاز است")
     try:
         archive_correspondence(letter, request.user, request.data.get("note", ""))
     except OfficeError as exc:
@@ -290,6 +294,9 @@ def correspondence_timeline(request, pk):
         return error
     events = []
     for action in letter.actions.select_related("actor"):
+        # A referral is already represented by its route; do not show it twice.
+        if action.action == "referred":
+            continue
         events.append({
             "kind": "action", "action": action.action,
             "actor": action.actor.get_full_name() if action.actor_id else "",
@@ -397,6 +404,10 @@ def office_meta(request):
         "capabilities": {
             "privileged": is_privileged(request.user),
             "view_financials": business.can_see_financials(request.user),
+            "register_secretariat_ids": list(
+                SecretariatMember.objects.filter(user=request.user, can_register=True)
+                .values_list("secretariat_id", flat=True)
+            ),
         },
     })
 
@@ -447,3 +458,74 @@ def integration_record(request, entity_type, record_id):
     except OfficeError as exc:
         return _fail(exc)
     return success_response(data=dto)
+
+
+@api_view(["GET", "POST"])
+def secretariat_list(request):
+    gate = _gate(request)
+    if gate:
+        return gate
+    company = request.user.company
+    if request.method == "GET":
+        rows = Secretariat.objects.filter(company=company).prefetch_related("members__user")
+        return success_response(data=[{
+            "id": row.id,
+            "name": row.name,
+            "code": row.code,
+            "is_active": row.is_active,
+            "members": [
+                {"id": member.id, "user": member.user_id,
+                 "user_name": member.user.get_full_name() or member.user.username,
+                 "can_register": member.can_register}
+                for member in row.members.all()
+            ],
+        } for row in rows])
+
+    if not is_privileged(request.user):
+        return forbidden_response("ایجاد دبیرخانه فقط برای مدیران مجاز است")
+    name = (request.data.get("name") or "").strip()
+    code = (request.data.get("code") or "").strip().upper()
+    if not name or not code:
+        return business_rule_error("نام و کد دبیرخانه الزامی است")
+    secretariat, created = Secretariat.objects.get_or_create(
+        company=company, code=code, defaults={"name": name, "created_by": request.user},
+    )
+    if not created:
+        return business_rule_error("دبیرخانه‌ای با این کد وجود دارد")
+    return success_response(data=SecretariatSerializer(secretariat).data, message="دبیرخانه ایجاد شد",
+                            http_status_code=201)
+
+
+@api_view(["POST", "DELETE"])
+def secretariat_member(request, pk):
+    gate = _gate(request)
+    if gate:
+        return gate
+    secretariat = Secretariat.objects.filter(pk=pk, company=request.user.company).first()
+    if secretariat is None:
+        return not_found_response("دبیرخانه یافت نشد")
+    if not is_privileged(request.user):
+        return forbidden_response("مدیریت اعضای دبیرخانه فقط برای مدیران مجاز است")
+
+    if request.method == "POST":
+        user = User.objects.filter(pk=request.data.get("user_id"), company=secretariat.company,
+                                   is_active=True).first()
+        if user is None:
+            return business_rule_error("کاربر انتخاب‌شده در این شرکت فعال نیست")
+        member, _ = SecretariatMember.objects.get_or_create(
+            secretariat=secretariat, user=user,
+            defaults={"can_register": bool(request.data.get("can_register", True))},
+        )
+        if "can_register" in request.data:
+            member.can_register = bool(request.data["can_register"])
+            member.save(update_fields=["can_register"])
+        return success_response(data={"id": member.id, "can_register": member.can_register},
+                                message="عضو دبیرخانه ثبت شد", http_status_code=201)
+
+    member = SecretariatMember.objects.filter(
+        pk=request.data.get("member_id"), secretariat=secretariat,
+    ).first()
+    if member is None:
+        return not_found_response("عضو یافت نشد")
+    member.delete()
+    return success_response(message="عضو حذف شد")

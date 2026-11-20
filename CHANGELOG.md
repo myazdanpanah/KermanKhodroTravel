@@ -10,7 +10,11 @@ All notable changes to the Nexivo platform are documented here.
 - **Personal workbench** — inbox, action-required, sent, cc, overdue, drafts and archived buckets with counts, backed by real access filtering (company, participants, confidentiality).
 - **Business context panel** — live read-only resolution of customer, invoice, receipt, payment and CRM opportunity; amounts are stripped server-side for non-financial roles; unavailable records show a controlled state.
 - **Notifications** — registration, referral and reply create in-app notifications; new Office nav section and routes in the ERP layout and launcher.
-- **Tests** — 20 new `apps.office` tests (numbering, tenant isolation, confidentiality, routing, API, financial gating); `tsc -b` clean.
+- **Secretariat authority** — `SecretariatMember.can_register` gates registration (CEO/admin bypass); members are managed from the workbench «دبیرخانه‌ها» panel and Django admin.
+- **Type-aware numbering** — official numbers now include the type book (`1405/CEN/O/000001`, `1405/CEN/I/000001`), so incoming and outgoing registers cannot collide; registration year is always Jalali, even when only a Gregorian `letter_date` is supplied.
+- **E2E suite** — `apps/office/tests_e2e.py` drives the full secretariat journey through the API across three roles, plus a 4-thread parallel-registration test that proves numbers are never reused.
+- **Timeline and archive hardening** — a referral is no longer duplicated in the timeline (route + action), and only the owner, creator or a manager may archive a letter.
+- **Tests** — 27 `apps.office` tests (numbering, tenant isolation, confidentiality, routing, API, financial gating, E2E, concurrency); `tsc -b` clean.
 
 ## [Unreleased] — November 16, 2026
 

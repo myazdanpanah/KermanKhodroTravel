@@ -4,10 +4,11 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, X, Inbox, Clock, Send, Eye, FileEdit, AlertTriangle, Archive } from 'lucide-react';
+import { Plus, Search, X, Inbox, Clock, Send, Eye, FileEdit, AlertTriangle, Archive, Settings } from 'lucide-react';
 import { officeApi, Letter, OfficeMeta } from '../../api/office';
 import { useToast } from '../../components/Toast';
 import { formatJalali } from '../../lib/jalali';
+import SecretariatPanel from './SecretariatPanel';
 
 const BUCKETS: { key: string; label: string; icon: typeof Inbox }[] = [
   { key: 'inbox', label: 'صندوق ورودی', icon: Inbox },
@@ -44,6 +45,7 @@ export default function WorkbenchPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [showSecretariats, setShowSecretariats] = useState(false);
 
   const load = async (nextBucket = bucket) => {
     setLoading(true);
@@ -117,12 +119,20 @@ export default function WorkbenchPage() {
           <h1 className="text-xl font-bold text-nx-navy dark:text-white">میزکار اداری</h1>
           <p className="mt-1 text-sm text-nx-mist">کارتابل شخصی، نامه‌های در جریان و اقدام‌های باز</p>
         </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 rounded-lg bg-nx-blue px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
-          <Plus className="h-4 w-4" /> نامه جدید
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {meta?.capabilities.privileged && (
+            <button onClick={() => setShowSecretariats(true)}
+              className="flex items-center gap-2 rounded-lg border border-nx-border px-4 py-2 text-sm text-nx-navy dark:border-nx-navy-border dark:text-white">
+              <Settings className="h-4 w-4" /> دبیرخانه‌ها
+            </button>
+          )}
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 rounded-lg bg-nx-blue px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          >
+            <Plus className="h-4 w-4" /> نامه جدید
+          </button>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -183,6 +193,10 @@ export default function WorkbenchPage() {
           </ul>
         )}
       </div>
+
+      {showSecretariats && meta && (
+        <SecretariatPanel meta={meta} onClose={() => setShowSecretariats(false)} />
+      )}
 
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>

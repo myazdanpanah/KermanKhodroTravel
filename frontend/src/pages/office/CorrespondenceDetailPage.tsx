@@ -102,7 +102,10 @@ export default function CorrespondenceDetailPage() {
 
   if (!letter) return <p className="text-sm text-nx-mist">در حال بارگذاری…</p>;
 
-  const canRegister = letter.registration_status === 'draft';
+  const canRegister = letter.registration_status === 'draft' && Boolean(
+    meta?.capabilities.privileged ||
+    (letter.secretariat && meta?.capabilities.register_secretariat_ids.includes(letter.secretariat)),
+  );
 
   return (
     <div className="space-y-5">

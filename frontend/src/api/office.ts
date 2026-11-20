@@ -18,7 +18,11 @@ export interface OfficeMeta {
   statuses: OfficeOption[];
   priorities: OfficeOption[];
   confidentialities: OfficeOption[];
-  capabilities: { privileged: boolean; view_financials: boolean };
+  capabilities: {
+    privileged: boolean;
+    view_financials: boolean;
+    register_secretariat_ids: number[];
+  };
 }
 
 export interface BusinessRecordDto {
@@ -86,6 +90,14 @@ export interface Letter {
   business_links?: BusinessLink[];
 }
 
+export interface SecretariatInfo {
+  id: number;
+  name: string;
+  code: string;
+  is_active: boolean;
+  members: { id: number; user: number; user_name: string; can_register: boolean }[];
+}
+
 export interface WorkbenchSummary {
   buckets: Record<string, number>;
   generated_at: string;
@@ -134,4 +146,11 @@ export const officeApi = {
       { params: { entity_type: entityType, q } },
     ),
   getIntegrationHealth: () => apiClient.get('/office/integrations/business/health/'),
+  getSecretariats: () => apiClient.get<{ data: SecretariatInfo[] }>('/office/secretariats/'),
+  createSecretariat: (payload: { name: string; code: string }) =>
+    apiClient.post<{ data: SecretariatInfo }>('/office/secretariats/', payload),
+  addSecretariatMember: (id: number, payload: { user_id: number; can_register: boolean }) =>
+    apiClient.post(`/office/secretariats/${id}/members/`, payload),
+  removeSecretariatMember: (id: number, memberId: number) =>
+    apiClient.delete(`/office/secretariats/${id}/members/`, { data: { member_id: memberId } }),
 };

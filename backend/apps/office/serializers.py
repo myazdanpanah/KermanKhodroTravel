@@ -9,6 +9,7 @@ from .models import (
     CorrespondenceRecipient,
     CorrespondenceRoute,
     Secretariat,
+    SecretariatMember,
 )
 
 
@@ -16,6 +17,17 @@ class SecretariatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Secretariat
         fields = ["id", "name", "code", "is_active"]
+
+
+class SecretariatMemberSerializer(serializers.ModelSerializer):
+    user_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SecretariatMember
+        fields = ["id", "user", "user_name", "can_register", "created_at"]
+
+    def get_user_name(self, obj):
+        return obj.user.get_full_name() or obj.user.username
 
 
 class RecipientSerializer(serializers.ModelSerializer):
