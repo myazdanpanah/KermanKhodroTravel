@@ -139,6 +139,27 @@ def opportunity_detail(request, pk):
 
 
 @api_view(["POST"])
+def opportunity_move(request, pk):
+    """Move a card between pipeline stages (open statuses only)."""
+    gate = _check_crm(request)
+    if gate:
+        return gate
+    from apps.finance.exceptions import ValidationError as BusinessRuleError
+    from .services import OpportunityService
+
+    status_value = str(request.data.get("status") or "").strip()
+    try:
+        opp = OpportunityService.move_status(
+            request.user.company, pk, status_value, user=request.user
+        )
+    except Opportunity.DoesNotExist:
+        return not_found_response("Opportunity not found")
+    except BusinessRuleError as exc:
+        return business_rule_error(str(exc))
+    return success_response(data=OpportunitySerializer(opp).data, message="Opportunity moved")
+
+
+@api_view(["POST"])
 def opportunity_close_won(request, pk):
     gate = _check_crm(request)
     if gate:

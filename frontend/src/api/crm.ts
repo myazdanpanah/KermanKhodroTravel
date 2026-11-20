@@ -159,6 +159,8 @@ export const crmApi = {
     apiClient.put<{ data: Opportunity }>(`/api/v1/crm/opportunities/${id}/`, data),
   deleteOpportunity: (id: number) =>
     apiClient.delete(`/api/v1/crm/opportunities/${id}/`),
+  moveOpportunity: (id: number, status: string) =>
+    apiClient.post<{ data: Opportunity }>(`/api/v1/crm/opportunities/${id}/move/`, { status }),
   closeWon: (id: number, revenue?: number) =>
     apiClient.post(`/api/v1/crm/opportunities/${id}/close-won/`, { revenue }),
   closeLost: (id: number, reason?: string) =>

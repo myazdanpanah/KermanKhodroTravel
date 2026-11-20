@@ -9,6 +9,7 @@ urlpatterns = [
 
     path("opportunities/", views.opportunity_list, name="crm-opportunity-list"),
     path("opportunities/<int:pk>/", views.opportunity_detail, name="crm-opportunity-detail"),
+    path("opportunities/<int:pk>/move/", views.opportunity_move, name="crm-opportunity-move"),
     path("opportunities/<int:pk>/close-won/", views.opportunity_close_won, name="crm-opportunity-close-won"),
     path("opportunities/<int:pk>/close-lost/", views.opportunity_close_lost, name="crm-opportunity-close-lost"),
 

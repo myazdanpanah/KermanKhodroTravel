@@ -353,6 +353,8 @@ OpenAPI: با `drf-spectacular` تولید می‌شود و همیشه روی `/
 | `/erp/billing/payers` | مشتریان/طرف‌حساب‌ها |
 | `/erp/billing/services` | مدیریت دسته‌های خدمت |
 | `/erp/crm`, `/erp/crm/leads`, `…/opportunities`, `…/activities` | CRM |
+
+**برد فرصت‌ها (CRM):** صفحهٔ `/erp/crm/opportunities` دو نما دارد: «برد» (پیش‌فرض) و «فهرست». برد، فرصت‌های باز را در چهار ستون `prospecting / qualification / proposal / negotiation` نشان می‌دهد و هر ستون تعداد و جمع ارزش تخمینی را دارد. جابه‌جایی کارت با کشیدن و رها کردن، `POST /api/v1/crm/opportunities/<id>/move/` را صدا می‌زند؛ این endpoint فقط وضعیت‌های باز را می‌پذیرد، فرصت بسته را جابه‌جا نمی‌کند و بستن معامله را به `close-won`/`close-lost` می‌سپارد تا تاریخ بستن و احتمال درست ثبت شود. هر جابه‌جایی برای مشتریِ متصل، یک رویداد `status_changed` در `CustomerTimeline` می‌سازد. فرصت‌های برده/باخته در دو کارت خلاصه زیر برد دیده می‌شوند.
 | `/erp/settings`, `/erp/settings/users` | تنظیمات شرکت و کاربران/مجوزها |
 
 بقیهٔ مسیرهای ERP (finance/inventory/sales/…) از Nexivo باقی مانده‌اند و برای این مشتری در ناوبری نیستند؛ در صورت نیاز به فعال‌سازی، ابتدا مالکیت داده و مجوزها را مشخص کنید.

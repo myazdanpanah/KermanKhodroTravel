@@ -245,3 +245,73 @@ class CRMTaskTests(CRMTestBase):
         task = CRMTaskService.complete_task(self.company, task.id)
         self.assertEqual(task.status, "completed")
         self.assertIsNotNone(task.completed_at)
+
+
+class OpportunityPipelineMoveTests(CRMTestBase):
+    """The pipeline board moves open cards, never closes them."""
+
+    def setUp(self):
+        super().setUp()
+        from rest_framework.test import APIClient
+
+        self.opp = OpportunityService.create_opportunity(
+            company=self.company,
+            name="Board Deal",
+            customer_id=self.customer.id,
+            estimated_value=Decimal("1000000"),
+            probability=40,
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def _move(self, status_value, opp=None):
+        target = opp or self.opp
+        return self.client.post(
+            f"/api/v1/crm/opportunities/{target.id}/move/",
+            {"status": status_value},
+            format="json",
+        )
+
+    def test_moving_an_open_card_updates_status_and_timeline(self):
+        response = self._move("proposal")
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.opp.refresh_from_db()
+        self.assertEqual(self.opp.status, "proposal")
+        event = CustomerTimeline.objects.get(
+            company=self.company, entity_type="opportunity", entity_id=self.opp.id
+        )
+        self.assertEqual(event.event_type, "status_changed")
+        self.assertIn("proposal", event.description)
+
+    def test_closing_through_move_is_rejected(self):
+        response = self._move("closed_won")
+
+        self.assertEqual(response.status_code, 422)
+        self.opp.refresh_from_db()
+        self.assertEqual(self.opp.status, "prospecting")
+
+    def test_closed_opportunity_cannot_be_moved(self):
+        OpportunityService.close_won(self.company, self.opp.id, user=self.user)
+
+        response = self._move("qualification")
+
+        self.assertEqual(response.status_code, 422)
+
+    def test_unknown_status_is_rejected(self):
+        response = self._move("teleported")
+
+        self.assertEqual(response.status_code, 422)
+        self.opp.refresh_from_db()
+        self.assertEqual(self.opp.status, "prospecting")
+
+    def test_other_company_opportunity_is_not_found(self):
+        other_company = create_test_company(name="Other Co")
+        other_company.enable_module("crm")
+        other = OpportunityService.create_opportunity(
+            company=other_company, name="Theirs", estimated_value=Decimal("5"),
+        )
+
+        response = self._move("qualification", opp=other)
+
+        self.assertEqual(response.status_code, 404)

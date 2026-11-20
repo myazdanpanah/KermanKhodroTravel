@@ -170,6 +170,42 @@ class OpportunityService:
         opp.save()
         return opp
 
+    # Statuses a pipeline board may move a card between. Closing a deal is a
+    # different operation (close_won/close_lost) because it stamps dates and
+    # revenue, so a plain move must never reach those two states.
+    OPEN_STATUSES = ("prospecting", "qualification", "proposal", "negotiation")
+
+    @staticmethod
+    def move_status(company, opp_id: int, status_value: str, user=None) -> Opportunity:
+        """Move an open opportunity to another open funnel stage."""
+        opp = Opportunity.objects.get(pk=opp_id, company=company)
+        if opp.status in ("closed_won", "closed_lost"):
+            raise ValidationError("Opportunity is already closed")
+        if status_value in ("closed_won", "closed_lost"):
+            raise ValidationError("Use close-won or close-lost to close an opportunity")
+        if status_value not in OpportunityService.OPEN_STATUSES:
+            raise ValidationError(f"Unknown opportunity status: {status_value}")
+        if status_value == opp.status:
+            return opp
+
+        previous = opp.status
+        opp.status = status_value
+        opp.save(update_fields=["status", "weighted_value", "updated_at"])
+
+        # The customer's history keeps the move, like lead conversion does.
+        if opp.customer_id:
+            CustomerTimeline.objects.create(
+                company=company,
+                customer_id=opp.customer_id,
+                entity_type="opportunity",
+                entity_id=opp.id,
+                entity_label=opp.name,
+                event_type="status_changed",
+                description=f"Opportunity moved from {previous} to {status_value}",
+                performed_by=user,
+            )
+        return opp
+
     @staticmethod
     def get_pipeline(company) -> Dict:
         opps = Opportunity.objects.filter(company=company).exclude(
