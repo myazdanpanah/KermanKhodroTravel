@@ -17,6 +17,7 @@ All notable changes to the Nexivo platform are documented here.
 - **Draft editing** — the letter page now edits subject, body, priority, due date and recipients while the letter is still a draft; the PATCH endpoint validates choices and dates, replaces recipients atomically, and refuses registered or archived letters and non-owners.
 - **Private attachments** — letters accept PDF/JPG/PNG/DOCX/XLSX/ZIP up to 10 MB (10 files per letter), stored outside `MEDIA_ROOT` under `private_media/office` with random names and SHA-256 checksums; downloads stream through a permission-checked endpoint with `attachment`, `nosniff` and `no-store` headers.
 - **Access-control fix** — a user without a team/division no longer matches letters whose recipients have a NULL team/division; secretariat members can now see letters assigned to their secretariat.
+- **Browser E2E** — Playwright (`npm run test:e2e`) starts Django/Vite, seeds an isolated company and drives the non-manager secretary path: create, register, refer, reply; it also proves a non-member sees no register button and receives 403 from the API.
 - **Tests** — 45 `apps.office` tests (numbering, tenant isolation, confidentiality, routing, API, financial gating, E2E, concurrency, attachments, draft editing); `tsc -b` clean.
 
 ## [Unreleased] — November 16, 2026

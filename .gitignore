@@ -66,3 +66,6 @@ celerybeat.pid
 
 # Office private attachments (never public media)
 backend/private_media/
+frontend/test-results/
+frontend/playwright-report/
+frontend/.playwright/
