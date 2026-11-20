@@ -418,6 +418,7 @@ def approval_list(request):
     serializer = ApprovalRequestSerializer(data=payload)
     serializer.is_valid(raise_exception=True)
     approval = serializer.save(requester=request.user)
+    _notify_approvers(approval)
     return Response(ApprovalRequestSerializer(approval).data, status=status.HTTP_201_CREATED)
 
 
@@ -448,6 +449,36 @@ def approval_detail(request, pk: int):
     approval.delete()
     return Response(status=status.HTTP_204_NO_CONTENT)
 
+
+
+def _notify_approvers(approval) -> None:
+    """Put a freshly submitted request in every approver's bell."""
+    from apps.accounts.models import User
+    from apps.dashboards.models import Notification
+
+    recipients = [
+        user.pk
+        for user in User.objects.filter(is_active=True).exclude(pk=approval.requester_id)
+        if has_perm(user, "can_approve")
+    ]
+    if not recipients:
+        return
+    Notification.objects.bulk_create(
+        [
+            Notification(
+                recipient_id=recipient,
+                notification_type="system",
+                title=f"درخواست جدید {approval.service_type}",
+                message=(
+                    f"درخواست {approval.service_type} برای {approval.payer_name} "
+                    "در انتظار تأیید است."
+                ),
+                target_type="billing_request",
+                target_id=str(approval.pk),
+            )
+            for recipient in recipients
+        ]
+    )
 
 
 def _notify_approval_outcome(approval, *, approved: bool, reason: str = "") -> None:

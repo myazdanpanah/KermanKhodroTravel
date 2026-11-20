@@ -315,7 +315,7 @@ can_submit, can_approve, can_edit_template
 | `GET/POST /debts/`, `/credits/` | بدهی دستی و بستانکاری | `can_view` / `can_issue` |
 | `DELETE /debts/<id>/`, `/credits/<id>/` | حذف ردیف + ثبت در `BillingAuditEntry` | `can_delete_history` |
 | `POST /upload/excel/`, `/process/excel/` | آپلود و پردازش فایل‌های ورودی | `can_issue` |
-| `GET/POST /approvals/` | درخواست‌ها | `can_view` / ثبت با `can_submit` |
+| `GET/POST /approvals/` | درخواست‌ها؛ ثبت هر درخواست برای همهٔ کاربران فعال با `can_approve` (به‌جز خود درخواست‌دهنده) اعلان «در انتظار تأیید» در زنگ اعلان می‌سازد | `can_view` / ثبت با `can_submit` |
 | `GET /approvals/pending/`, `/approvals/mine/` | صف تأیید | `can_view` / `can_submit` |
 | `POST /approvals/<id>/approve/`, `/reject/` | تأیید/رد | `can_approve` |
 | `GET /approvals/<id>/files/` | فایل‌های درخواست | `can_view` |

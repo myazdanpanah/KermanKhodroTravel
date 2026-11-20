@@ -1791,3 +1791,73 @@ class PaymentDeletionAuditTests(TestCase):
         self.assertEqual(entry.old_values["amount"], 850_000)
         self.assertEqual(entry.old_values["tracking_number"], "TRK-AUD")
         self.assertEqual(BillingAuditEntry.objects.get(entity="payment").actor, self.admin)
+
+
+class ApprovalSubmissionNotificationTests(TestCase):
+    """A new request must land in the bell of everyone who can approve it."""
+
+    def setUp(self):
+        self.submitter = User.objects.create_user(
+            username="submit_notify", password="pass12345", role="sales", can_submit=True,
+        )
+        self.flagged_approver = User.objects.create_user(
+            username="flagged_approver", password="pass12345", role="finance",
+            can_approve=True,
+        )
+        self.ceo = User.objects.create_user(
+            username="ceo_notify", password="pass12345", role="ceo",
+        )
+        self.bystander = User.objects.create_user(
+            username="finance_bystander", password="pass12345", role="finance",
+        )
+        Payer.objects.create(code="9101", name="شرکت اعلان تأیید")
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.submitter)
+
+    def _submit(self):
+        payload = {
+            "payer_code": "9101",
+            "payer_name": "شرکت اعلان تأیید",
+            "service_type": "پرواز",
+            "letter_number": "1404/9101/00001",
+            "letter_date": "1404/04/01",
+            "start_day": 1,
+            "end_day": 31,
+            "month": "4",
+            "year": 1404,
+            "period_range": "از 1404/04/01 تا 1404/04/31",
+            "flight_data": [{"ردیف": 1, "نام مسافر": "مسافر", "بدهکار": 500_000}],
+        }
+        response = self.client.post("/api/v1/billing/approvals/", payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.content)
+        return ApprovalRequest.objects.get(pk=response.data["id"])
+
+    def test_every_approver_is_notified_once(self):
+        from apps.dashboards.models import Notification
+
+        approval = self._submit()
+
+        for approver in (self.flagged_approver, self.ceo):
+            notes = Notification.objects.filter(recipient=approver)
+            self.assertEqual(notes.count(), 1, approver.username)
+            note = notes.get()
+            self.assertIn("در انتظار تأیید", note.message)
+            self.assertEqual(note.target_type, "billing_request")
+            self.assertEqual(note.target_id, str(approval.pk))
+            self.assertFalse(note.is_read)
+
+        # The submitter knows they submitted, and a user without the flag is
+        # not an approver.
+        self.assertFalse(Notification.objects.filter(recipient=self.submitter).exists())
+        self.assertFalse(Notification.objects.filter(recipient=self.bystander).exists())
+
+    def test_inactive_approver_is_skipped(self):
+        from apps.dashboards.models import Notification
+
+        self.flagged_approver.is_active = False
+        self.flagged_approver.save(update_fields=["is_active"])
+
+        self._submit()
+
+        self.assertFalse(Notification.objects.filter(recipient=self.flagged_approver).exists())
+        self.assertEqual(Notification.objects.filter(recipient=self.ceo).count(), 1)
