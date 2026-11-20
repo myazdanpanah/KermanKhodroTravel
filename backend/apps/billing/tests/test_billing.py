@@ -1356,6 +1356,14 @@ class DockerImageTests(TestCase):
         self.assertIn("chromium", dockerfile)
         self.assertIn("libpango-1.0-0", dockerfile)
         self.assertIn("libpangoft2-1.0-0", dockerfile)
+        self.assertIn("fonts-vazirmatn", dockerfile)
+        # The compiler toolchain is only needed to build wheels, so it must not
+        # leak into the shipped runtime stage.
+        self.assertIn("AS builder", dockerfile)
+        runtime = dockerfile.rsplit("FROM python:3.11-slim", 1)[1]
+        self.assertNotIn("gcc", runtime)
+        self.assertNotIn("libpq-dev", runtime)
+        self.assertIn("chromium", runtime)
 
 
 @override_settings(MEDIA_ROOT=tempfile.mkdtemp(prefix="kkt-backup-"))
