@@ -2,12 +2,13 @@
  * Correspondence detail — letter, routing, timeline and related business records.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  ArrowRight, Archive, BadgeCheck, Building2, FileText, Link2, MessageSquare, Send, Trash2, Users,
+  ArrowRight, Archive, BadgeCheck, Building2, Download, FileText, Link2, MessageSquare,
+  Paperclip, Pencil, Send, Trash2, Upload, Users, X,
 } from 'lucide-react';
-import { officeApi, Letter, OfficeMeta, BusinessLink, TimelineEvent } from '../../api/office';
+import { officeApi, Attachment, Letter, OfficeMeta, BusinessLink, TimelineEvent } from '../../api/office';
 import { useToast } from '../../components/Toast';
 import { formatJalali } from '../../lib/jalali';
 
@@ -25,7 +26,8 @@ const ENTITY_LABEL: Record<string, string> = {
 };
 const ACTION_LABEL: Record<string, string> = {
   created: 'ایجاد پیش‌نویس', registered: 'ثبت در دبیرخانه', referred: 'ارجاع',
-  replied: 'پاسخ', archived: 'بایگانی', read: 'خوانده‌شده',
+  replied: 'پاسخ', archived: 'بایگانی', read: 'خوانده‌شده', updated: 'ویرایش پیش‌نویس',
+  attachment_added: 'افزودن پیوست', attachment_deleted: 'حذف پیوست',
 };
 const RELATION_LABEL: Record<string, string> = {
   about: 'درباره', concerns: 'مربوط به', invoice_for: 'صورت‌حساب مربوط', payment_for: 'پرداخت مربوط',
@@ -34,6 +36,31 @@ const RELATION_LABEL: Record<string, string> = {
 };
 
 const CARD = 'rounded-xl border border-nx-border bg-white p-4 dark:border-nx-navy-border dark:bg-nx-navy';
+const DELIVERY_LABEL: Record<string, string> = {
+  primary: 'گیرنده اصلی', action_required: 'نیازمند اقدام', cc: 'رونوشت', bcc: 'رونوشت مخفی',
+  information: 'جهت اطلاع',
+};
+
+type RecipientDraft = {
+  label: string;
+  recipient_type: string;
+  delivery_type: string;
+  recipient_user_id?: number;
+  recipient_team_id?: number;
+  recipient_division_id?: number;
+  external_name?: string;
+};
+
+function errorMessage(error: unknown, fallback: string) {
+  const err = error as { response?: { data?: { message?: string } } };
+  return err.response?.data?.message || fallback;
+}
+
+function formatBytes(bytes: number) {
+  if (bytes < 1024) return `${bytes.toLocaleString('fa-IR')} بایت`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toLocaleString('fa-IR', { maximumFractionDigits: 1 })} کیلوبایت`;
+  return `${(bytes / (1024 * 1024)).toLocaleString('fa-IR', { maximumFractionDigits: 1 })} مگابایت`;
+}
 
 function money(value: unknown) {
   if (typeof value !== 'number') return '—';
@@ -56,6 +83,12 @@ export default function CorrespondenceDetailPage() {
   const [linkForm, setLinkForm] = useState({ entity_type: 'customer', q: '', relationship_type: 'concerns' });
   const [searchResults, setSearchResults] = useState<{ id: string; label: string; sublabel: string }[]>([]);
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editForm, setEditForm] = useState({
+    subject: '', body: '', priority: 'normal', due_at: '', recipients: [] as RecipientDraft[],
+  });
+  const [newRecipient, setNewRecipient] = useState({ user_id: '', delivery_type: 'primary' });
+  const fileInput = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     try {
@@ -100,6 +133,104 @@ export default function CorrespondenceDetailPage() {
     }
   };
 
+  const startEdit = () => {
+    if (!letter) return;
+    setEditForm({
+      subject: letter.subject,
+      body: letter.body || '',
+      priority: letter.priority,
+      due_at: letter.due_at ? new Date(letter.due_at).toISOString().slice(0, 16) : '',
+      recipients: (letter.recipients || []).map((recipient) => ({
+        label: recipient.user_name || recipient.team_name || recipient.division_name || recipient.external_name,
+        recipient_type: recipient.recipient_type,
+        delivery_type: recipient.delivery_type,
+        recipient_user_id: recipient.recipient_user ?? undefined,
+        recipient_team_id: recipient.recipient_team ?? undefined,
+        recipient_division_id: recipient.recipient_division ?? undefined,
+        external_name: recipient.external_name || undefined,
+      })),
+    });
+    setEditing(true);
+  };
+
+  const saveDraft = async () => {
+    if (!letter) return;
+    setBusy(true);
+    try {
+      await officeApi.updateLetter(letter.id, {
+        subject: editForm.subject,
+        body: editForm.body,
+        priority: editForm.priority,
+        due_at: editForm.due_at ? new Date(editForm.due_at).toISOString() : null,
+        recipients: editForm.recipients.map((recipient) => ({
+          recipient_type: recipient.recipient_type,
+          delivery_type: recipient.delivery_type,
+          ...(recipient.recipient_user_id ? { recipient_user_id: recipient.recipient_user_id } : {}),
+          ...(recipient.recipient_team_id ? { recipient_team_id: recipient.recipient_team_id } : {}),
+          ...(recipient.recipient_division_id ? { recipient_division_id: recipient.recipient_division_id } : {}),
+          ...(recipient.external_name ? { external_name: recipient.external_name } : {}),
+        })),
+      });
+      toast('پیش‌نویس به‌روزرسانی شد', 'success');
+      setEditing(false);
+      await load();
+    } catch (err) {
+      toast(errorMessage(err, 'ذخیره تغییرات انجام نشد'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const addRecipient = () => {
+    const user = meta?.users.find((item) => String(item.id) === newRecipient.user_id);
+    if (!user) return;
+    if (editForm.recipients.some((recipient) => recipient.recipient_user_id === user.id)) {
+      toast('این گیرنده قبلاً اضافه شده است', 'error');
+      return;
+    }
+    setEditForm({
+      ...editForm,
+      recipients: [...editForm.recipients, {
+        label: user.name, recipient_type: 'user', delivery_type: newRecipient.delivery_type,
+        recipient_user_id: user.id,
+      }],
+    });
+    setNewRecipient({ user_id: '', delivery_type: newRecipient.delivery_type });
+  };
+
+  const uploadAttachment = async (file: File) => {
+    if (!letter) return;
+    const form = new FormData();
+    form.append('file', file);
+    setBusy(true);
+    try {
+      await officeApi.uploadAttachment(letter.id, form);
+      toast('پیوست افزوده شد', 'success');
+      await load();
+    } catch (err) {
+      toast(errorMessage(err, 'بارگذاری پیوست انجام نشد'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const downloadAttachment = async (attachment: Attachment) => {
+    if (!letter) return;
+    try {
+      const response = await officeApi.downloadAttachment(letter.id, attachment.id);
+      const url = URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = attachment.original_name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast('دانلود پیوست انجام نشد', 'error');
+    }
+  };
+
   if (!letter) return <p className="text-sm text-nx-mist">در حال بارگذاری…</p>;
 
   const canRegister = letter.registration_status === 'draft' && Boolean(
@@ -139,6 +270,12 @@ export default function CorrespondenceDetailPage() {
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
+          {letter.can_edit && !editing && (
+            <button onClick={startEdit}
+              className="flex items-center gap-1.5 rounded-lg border border-nx-border px-3 py-2 text-xs text-nx-navy dark:border-nx-navy-border dark:text-white">
+              <Pencil className="h-4 w-4" /> ویرایش پیش‌نویس
+            </button>
+          )}
           {canRegister && (
             <button disabled={busy}
               onClick={() => act(() => officeApi.registerLetter(letter.id), 'نامه ثبت شد')}
@@ -159,6 +296,99 @@ export default function CorrespondenceDetailPage() {
           )}
         </div>
       </div>
+
+      {editing && (
+        <div className={CARD}>
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-nx-navy dark:text-white">
+            <Pencil className="h-4 w-4 text-nx-blue" /> ویرایش پیش‌نویس
+          </h2>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <input value={editForm.subject}
+              onChange={(e) => setEditForm({ ...editForm, subject: e.target.value })}
+              placeholder="موضوع نامه"
+              className="rounded-lg border border-nx-border bg-transparent px-3 py-2 text-sm sm:col-span-2 dark:border-nx-navy-border dark:text-white" />
+            <select value={editForm.priority}
+              onChange={(e) => setEditForm({ ...editForm, priority: e.target.value })}
+              className="rounded-lg border border-nx-border bg-transparent px-3 py-2 text-sm dark:border-nx-navy-border dark:text-white">
+              {Object.entries(PRIORITY_LABEL).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </div>
+          <label className="mt-2 block text-xs text-nx-mist">
+            مهلت اقدام
+            <input type="datetime-local" value={editForm.due_at}
+              onChange={(e) => setEditForm({ ...editForm, due_at: e.target.value })}
+              className="mt-1 w-full rounded-lg border border-nx-border bg-transparent px-3 py-2 text-sm dark:border-nx-navy-border dark:text-white" />
+          </label>
+          <textarea rows={5} value={editForm.body}
+            onChange={(e) => setEditForm({ ...editForm, body: e.target.value })}
+            placeholder="متن نامه…"
+            className="mt-2 w-full rounded-lg border border-nx-border bg-transparent px-3 py-2 text-sm dark:border-nx-navy-border dark:text-white" />
+
+          <div className="mt-3 border-t border-nx-border pt-3 dark:border-nx-navy-border">
+            <p className="text-xs font-medium text-nx-navy dark:text-white">گیرندگان</p>
+            {editForm.recipients.length === 0 ? (
+              <p className="mt-1 text-xs text-nx-mist">گیرنده‌ای ثبت نشده است.</p>
+            ) : (
+              <ul className="mt-2 space-y-1">
+                {editForm.recipients.map((recipient, index) => (
+                  <li key={`${recipient.recipient_type}-${recipient.label}-${index}`}
+                    className="flex items-center gap-2 text-xs">
+                    <span className="flex-1 text-nx-navy dark:text-white">{recipient.label}</span>
+                    <select value={recipient.delivery_type}
+                      onChange={(e) => {
+                        const recipients = [...editForm.recipients];
+                        recipients[index] = { ...recipient, delivery_type: e.target.value };
+                        setEditForm({ ...editForm, recipients });
+                      }}
+                      className="rounded border border-nx-border bg-transparent px-1.5 py-1 text-[11px] dark:border-nx-navy-border dark:text-white">
+                      {Object.entries(DELIVERY_LABEL).map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                    <button onClick={() => setEditForm({
+                      ...editForm, recipients: editForm.recipients.filter((_, i) => i !== index),
+                    })} className="text-nx-mist hover:text-nx-danger" title="حذف گیرنده">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="mt-2 flex flex-wrap gap-2">
+              <select value={newRecipient.user_id}
+                onChange={(e) => setNewRecipient({ ...newRecipient, user_id: e.target.value })}
+                className="min-w-0 flex-1 rounded-lg border border-nx-border bg-transparent px-2 py-1.5 text-xs dark:border-nx-navy-border dark:text-white">
+                <option value="">افزودن گیرنده…</option>
+                {meta?.users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
+              </select>
+              <select value={newRecipient.delivery_type}
+                onChange={(e) => setNewRecipient({ ...newRecipient, delivery_type: e.target.value })}
+                className="rounded-lg border border-nx-border bg-transparent px-2 py-1.5 text-xs dark:border-nx-navy-border dark:text-white">
+                {Object.entries(DELIVERY_LABEL).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+              <button disabled={!newRecipient.user_id} onClick={addRecipient}
+                className="rounded-lg border border-nx-border px-2 py-1.5 text-xs text-nx-navy disabled:opacity-50 dark:border-nx-navy-border dark:text-white">
+                افزودن
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-3 flex gap-2">
+            <button disabled={busy || !editForm.subject.trim()} onClick={saveDraft}
+              className="rounded-lg bg-nx-blue px-4 py-2 text-sm text-white disabled:opacity-50">
+              ذخیره تغییرات
+            </button>
+            <button onClick={() => setEditing(false)}
+              className="rounded-lg border border-nx-border px-4 py-2 text-sm text-nx-mist dark:border-nx-navy-border">
+              انصراف
+            </button>
+          </div>
+        </div>
+      )}
 
       {referOpen && (
         <div className={CARD}>
@@ -209,6 +439,62 @@ export default function CorrespondenceDetailPage() {
             <p className="whitespace-pre-wrap text-sm leading-7 text-nx-navy dark:text-white/90">
               {letter.body || 'بدون متن'}
             </p>
+          </div>
+
+          <div className={CARD}>
+            <h2 className="mb-3 flex items-center gap-2 text-sm font-semibold text-nx-navy dark:text-white">
+              <Paperclip className="h-4 w-4 text-nx-blue" /> پیوست‌ها ({(letter.attachments || []).length})
+            </h2>
+            {(letter.attachments || []).length === 0 ? (
+              <p className="text-xs text-nx-mist">پیوستی ثبت نشده است.</p>
+            ) : (
+              <ul className="space-y-2">
+                {(letter.attachments || []).map((attachment) => (
+                  <li key={attachment.id}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-nx-border p-2 text-xs dark:border-nx-navy-border">
+                    <div className="min-w-0">
+                      <p className="truncate font-medium text-nx-navy dark:text-white" title={attachment.original_name}>
+                        {attachment.original_name}
+                      </p>
+                      <p className="text-[10px] text-nx-mist">
+                        {formatBytes(attachment.size_bytes)} · {attachment.uploaded_by_name}
+                      </p>
+                    </div>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      <button onClick={() => downloadAttachment(attachment)}
+                        className="text-nx-blue hover:opacity-70" title="دانلود">
+                        <Download className="h-4 w-4" />
+                      </button>
+                      {!letter.archived_at && (
+                        <button onClick={() => act(
+                          () => officeApi.deleteAttachment(letter.id, attachment.id), 'پیوست حذف شد',
+                        )} className="text-nx-mist hover:text-nx-danger" title="حذف پیوست">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {!letter.archived_at && (
+              <div className="mt-3 border-t border-nx-border pt-3 dark:border-nx-navy-border">
+                <input ref={fileInput} type="file" className="hidden"
+                  accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.zip"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (file) void uploadAttachment(file);
+                  }} />
+                <button disabled={busy} onClick={() => fileInput.current?.click()}
+                  className="flex items-center gap-1.5 rounded-lg border border-nx-border px-3 py-1.5 text-xs text-nx-navy disabled:opacity-50 dark:border-nx-navy-border dark:text-white">
+                  <Upload className="h-3.5 w-3.5" /> افزودن پیوست
+                </button>
+                <p className="mt-1 text-[10px] text-nx-mist">
+                  حداکثر ۱۰ مگابایت؛ PDF، JPG/PNG، DOCX، XLSX یا ZIP
+                </p>
+              </div>
+            )}
           </div>
 
           <div className={CARD}>

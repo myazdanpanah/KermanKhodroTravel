@@ -5,6 +5,7 @@ from rest_framework import serializers
 from .models import (
     Correspondence,
     CorrespondenceAction,
+    CorrespondenceAttachment,
     CorrespondenceComment,
     CorrespondenceRecipient,
     CorrespondenceRoute,
@@ -85,6 +86,22 @@ class ActionSerializer(serializers.ModelSerializer):
         return obj.actor.get_full_name() or obj.actor.username if obj.actor_id else ""
 
 
+class AttachmentSerializer(serializers.ModelSerializer):
+    uploaded_by_name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CorrespondenceAttachment
+        fields = [
+            "id", "original_name", "content_type", "size_bytes", "checksum",
+            "uploaded_by", "uploaded_by_name", "created_at",
+        ]
+
+    def get_uploaded_by_name(self, obj):
+        if not obj.uploaded_by_id:
+            return ""
+        return obj.uploaded_by.get_full_name() or obj.uploaded_by.username
+
+
 class CorrespondenceListSerializer(serializers.ModelSerializer):
     secretariat_name = serializers.CharField(source="secretariat.name", read_only=True, default="")
     owner_name = serializers.SerializerMethodField()
@@ -113,6 +130,7 @@ class CorrespondenceDetailSerializer(CorrespondenceListSerializer):
     routes = RouteSerializer(many=True, read_only=True)
     comments = CommentSerializer(many=True, read_only=True)
     actions = ActionSerializer(many=True, read_only=True)
+    attachments = AttachmentSerializer(many=True, read_only=True)
     registered_by_name = serializers.SerializerMethodField()
     parent_subject = serializers.CharField(source="parent_correspondence.subject", read_only=True, default="")
 
@@ -121,11 +139,46 @@ class CorrespondenceDetailSerializer(CorrespondenceListSerializer):
             "body", "sender_type", "sender_user", "sender_name", "sender_organization", "sender_email",
             "letter_date", "received_at", "registered_at", "registered_by", "registered_by_name",
             "registration_year", "registration_sequence", "parent_correspondence", "parent_subject",
-            "recipients", "routes", "comments", "actions",
+            "recipients", "routes", "comments", "actions", "attachments",
         ]
 
     def get_registered_by_name(self, obj):
         return obj.registered_by.get_full_name() if obj.registered_by_id else ""
+
+
+class DraftUpdateSerializer(serializers.Serializer):
+    """Validated fields a draft may change through PATCH."""
+
+    subject = serializers.CharField(max_length=300, required=False)
+    body = serializers.CharField(required=False, allow_blank=True)
+    priority = serializers.ChoiceField(choices=Correspondence.PRIORITY_CHOICES, required=False)
+    confidentiality = serializers.ChoiceField(
+        choices=Correspondence.CONFIDENTIALITY_CHOICES, required=False,
+    )
+    due_at = serializers.DateTimeField(required=False, allow_null=True)
+    letter_date = serializers.DateField(required=False, allow_null=True)
+    letter_date_jalali = serializers.CharField(
+        max_length=10, allow_blank=True, required=False,
+    )
+    sender_name = serializers.CharField(max_length=200, allow_blank=True, required=False)
+    sender_organization = serializers.CharField(max_length=200, allow_blank=True, required=False)
+    sender_email = serializers.EmailField(allow_blank=True, required=False)
+    recipients = serializers.ListField(child=serializers.DictField(), required=False)
+
+    def validate_subject(self, value):
+        if not value.strip():
+            raise serializers.ValidationError("موضوع نامه نمی‌تواند خالی باشد")
+        return value.strip()
+
+    def validate_recipients(self, value):
+        allowed_types = {"user", "team", "division", "external"}
+        allowed_delivery = {"primary", "cc", "bcc", "action_required", "information"}
+        for item in value:
+            if item.get("recipient_type", "user") not in allowed_types:
+                raise serializers.ValidationError("نوع گیرنده نامعتبر است")
+            if item.get("delivery_type", "primary") not in allowed_delivery:
+                raise serializers.ValidationError("نحوه ارسال به گیرنده نامعتبر است")
+        return value
 
 
 class CorrespondenceCreateSerializer(serializers.Serializer):

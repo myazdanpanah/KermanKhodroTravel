@@ -133,6 +133,10 @@ STATIC_ROOT = BASE_DIR / "static"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Office attachments are private: stored outside MEDIA_ROOT and streamed only
+# through an authenticated, permission-checked endpoint.
+OFFICE_ATTACHMENT_ROOT = BASE_DIR / "private_media" / "office"
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # REST Framework

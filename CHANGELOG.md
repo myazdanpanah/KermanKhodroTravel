@@ -14,7 +14,10 @@ All notable changes to the Nexivo platform are documented here.
 - **Type-aware numbering** — official numbers now include the type book (`1405/CEN/O/000001`, `1405/CEN/I/000001`), so incoming and outgoing registers cannot collide; registration year is always Jalali, even when only a Gregorian `letter_date` is supplied.
 - **E2E suite** — `apps/office/tests_e2e.py` drives the full secretariat journey through the API across three roles, plus a 4-thread parallel-registration test that proves numbers are never reused.
 - **Timeline and archive hardening** — a referral is no longer duplicated in the timeline (route + action), and only the owner, creator or a manager may archive a letter.
-- **Tests** — 27 `apps.office` tests (numbering, tenant isolation, confidentiality, routing, API, financial gating, E2E, concurrency); `tsc -b` clean.
+- **Draft editing** — the letter page now edits subject, body, priority, due date and recipients while the letter is still a draft; the PATCH endpoint validates choices and dates, replaces recipients atomically, and refuses registered or archived letters and non-owners.
+- **Private attachments** — letters accept PDF/JPG/PNG/DOCX/XLSX/ZIP up to 10 MB (10 files per letter), stored outside `MEDIA_ROOT` under `private_media/office` with random names and SHA-256 checksums; downloads stream through a permission-checked endpoint with `attachment`, `nosniff` and `no-store` headers.
+- **Access-control fix** — a user without a team/division no longer matches letters whose recipients have a NULL team/division; secretariat members can now see letters assigned to their secretariat.
+- **Tests** — 45 `apps.office` tests (numbering, tenant isolation, confidentiality, routing, API, financial gating, E2E, concurrency, attachments, draft editing); `tsc -b` clean.
 
 ## [Unreleased] — November 16, 2026
 

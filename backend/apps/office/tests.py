@@ -126,7 +126,7 @@ class CorrespondenceTests(OfficeTestBase):
         self.assertEqual(letter.registration_number, "1404/OUT/O/000001")
 
     def test_tenant_and_participant_access(self):
-        letter = self.draft()
+        letter = self.draft(user=self.sales)
         self.assertTrue(can_open(self.ceo, letter))
         self.assertTrue(can_open(self.sales, letter))  # sender + owner
         self.assertFalse(can_open(self.other_user, letter))
@@ -214,7 +214,9 @@ class BusinessLinkTests(OfficeTestBase):
             resolve(self.other_company, "invoice", self.invoice.id, self.other_user)
 
     def test_letter_links_customer_and_invoice(self):
-        letter = self.draft()
+        letter = self.draft(recipients=[{
+            "recipient_type": "user", "recipient_user_id": self.finance.id,
+        }])
         client = APIClient()
         client.force_authenticate(user=self.finance)
         for entity_type, record_id in (("customer", self.customer.id), ("invoice", self.invoice.id)):

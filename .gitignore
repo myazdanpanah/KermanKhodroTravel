@@ -63,3 +63,6 @@ htmlcov/
 # Celery
 celerybeat-schedule
 celerybeat.pid
+
+# Office private attachments (never public media)
+backend/private_media/

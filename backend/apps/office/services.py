@@ -6,6 +6,9 @@ per-secretariat sequence row inside a transaction, so two secretaries clicking
 "register" at the same time can never receive the same number.
 """
 
+import hashlib
+from pathlib import Path
+
 from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
@@ -16,6 +19,7 @@ from apps.accounts.models import User
 from .models import (
     Correspondence,
     CorrespondenceAction,
+    CorrespondenceAttachment,
     CorrespondenceComment,
     CorrespondenceRecipient,
     CorrespondenceRoute,
@@ -46,17 +50,24 @@ def visible_correspondence(user):
     qs = Correspondence.objects.filter(company=user.company)
     if is_privileged(user):
         return qs
-    return qs.filter(
+    participation = (
         Q(created_by=user)
         | Q(owner=user)
         | Q(sender_user=user)
         | Q(recipients__recipient_user=user)
-        | Q(recipients__recipient_team=user.team)
-        | Q(recipients__recipient_division=user.division)
         | Q(routes__to_user=user)
-        | Q(routes__to_team=user.team)
-        | Q(routes__to_division=user.division)
-    ).filter(
+        | Q(secretariat__members__user=user)
+    )
+    # Only add team/division clauses when the user belongs to one: a NULL
+    # team would otherwise match every letter whose recipient has no team.
+    if user.team_id:
+        participation |= Q(recipients__recipient_team_id=user.team_id) | Q(routes__to_team_id=user.team_id)
+    if user.division_id:
+        participation |= (
+            Q(recipients__recipient_division_id=user.division_id)
+            | Q(routes__to_division_id=user.division_id)
+        )
+    return qs.filter(participation).filter(
         Q(confidentiality__in=["normal", "confidential"])
         | Q(created_by=user)
         | Q(owner=user)
@@ -401,3 +412,146 @@ def mark_read(letter, user):
         delivery_status="read", read_at=timezone.now(),
     )
     return updated > 0
+
+
+# Attachment policy: a closed allowlist, a hard size cap and a per-letter cap.
+ATTACHMENT_MAX_BYTES = 10 * 1024 * 1024
+ATTACHMENT_MAX_PER_LETTER = 10
+ALLOWED_ATTACHMENT_TYPES = {
+    ".pdf": {"application/pdf"},
+    ".jpg": {"image/jpeg"},
+    ".jpeg": {"image/jpeg"},
+    ".png": {"image/png"},
+    ".docx": {"application/vnd.openxmlformats-officedocument.wordprocessingml.document"},
+    ".xlsx": {"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
+    ".zip": {"application/zip", "application/x-zip-compressed"},
+}
+_GENERIC_CONTENT_TYPES = {"", "application/octet-stream"}
+ATTACHMENT_HINT = "فقط PDF، تصویر (JPG/PNG)، Word (DOCX)، Excel (XLSX) و ZIP مجاز است"
+
+
+def _attachment_checksum(upload):
+    digest = hashlib.sha256()
+    for chunk in upload.chunks():
+        digest.update(chunk)
+    upload.seek(0)
+    return digest.hexdigest()
+
+
+def validate_attachment(upload):
+    """Validate name, extension, declared type and size before saving bytes."""
+    original_name = Path(upload.name or "").name.strip()
+    if not original_name:
+        raise OfficeError("نام فایل نامعتبر است", 400)
+    suffix = Path(original_name).suffix.lower()
+    allowed_types = ALLOWED_ATTACHMENT_TYPES.get(suffix)
+    if allowed_types is None:
+        raise OfficeError(f"نوع فایل مجاز نیست؛ {ATTACHMENT_HINT}", 400)
+    declared = (getattr(upload, "content_type", "") or "").split(";")[0].strip().lower()
+    if declared not in _GENERIC_CONTENT_TYPES and declared not in allowed_types:
+        raise OfficeError(f"نوع محتوای فایل با پسوند آن هم‌خوانی ندارد؛ {ATTACHMENT_HINT}", 400)
+    size = getattr(upload, "size", 0) or 0
+    if size <= 0:
+        raise OfficeError("فایل انتخاب‌شده خالی است", 400)
+    if size > ATTACHMENT_MAX_BYTES:
+        limit_mb = ATTACHMENT_MAX_BYTES // (1024 * 1024)
+        raise OfficeError(f"حجم فایل بیش از حد مجاز ({limit_mb} مگابایت) است", 400)
+    return original_name, suffix, declared, size
+
+
+def add_attachment(letter, user, upload):
+    """Store one private attachment and record it in the letter's audit trail."""
+    if letter.archived_at:
+        raise OfficeError("نامه بایگانی‌شده قابل تغییر نیست", 400)
+    if letter.attachments.count() >= ATTACHMENT_MAX_PER_LETTER:
+        raise OfficeError(
+            f"حداکثر {ATTACHMENT_MAX_PER_LETTER} پیوست برای هر نامه مجاز است", 400,
+        )
+    original_name, _suffix, declared, size = validate_attachment(upload)
+    checksum = _attachment_checksum(upload)
+    attachment = CorrespondenceAttachment.objects.create(
+        correspondence=letter,
+        company_id=letter.company_id,
+        file=upload,
+        original_name=original_name[:255],
+        content_type=declared or "application/octet-stream",
+        size_bytes=size,
+        checksum=checksum,
+        uploaded_by=user,
+    )
+    log_action(
+        letter, user, "attachment_added", note=attachment.original_name,
+        metadata={"attachment_id": attachment.id, "size_bytes": size},
+    )
+    return attachment
+
+
+def can_manage_attachment(user, attachment):
+    """Uploader, letter creator/owner or a manager may delete an attachment."""
+    letter = attachment.correspondence
+    return bool(
+        is_privileged(user)
+        or attachment.uploaded_by_id == user.id
+        or letter.created_by_id == user.id
+        or letter.owner_id == user.id
+    )
+
+
+def delete_attachment(attachment, user):
+    if not can_manage_attachment(user, attachment):
+        raise OfficeError("حذف پیوست فقط توسط بارگذار، سازنده یا مسئول نامه مجاز است", 403)
+    letter = attachment.correspondence
+    attachment_id = attachment.id
+    attachment.file.delete(save=False)
+    attachment.delete()
+    log_action(letter, user, "attachment_deleted", metadata={"attachment_id": attachment_id})
+
+
+DRAFT_EDITABLE_FIELDS = (
+    "subject", "body", "priority", "confidentiality", "due_at",
+    "letter_date", "letter_date_jalali", "sender_name", "sender_organization", "sender_email",
+)
+
+
+def can_edit_draft(letter, user):
+    return bool(
+        letter.registration_status == "draft"
+        and letter.archived_at is None
+        and (is_privileged(user) or letter.created_by_id == user.id)
+    )
+
+
+@transaction.atomic
+def update_draft(letter, user, data):
+    """Update a draft's fields and optionally replace its recipients."""
+    if letter.registration_status != "draft":
+        raise OfficeError("نامه ثبت‌شده قابل ویرایش نیست", 400)
+    if letter.archived_at:
+        raise OfficeError("نامه بایگانی‌شده قابل ویرایش نیست", 400)
+    if not (is_privileged(user) or letter.created_by_id == user.id):
+        raise OfficeError("فقط سازنده پیش‌نویس یا مدیر می‌تواند آن را ویرایش کند", 403)
+
+    recipients = data.pop("recipients", None)
+    changed = [field for field in DRAFT_EDITABLE_FIELDS if field in data]
+    for field in changed:
+        setattr(letter, field, data[field])
+    letter.updated_by = user
+    letter.save()
+
+    if recipients is not None:
+        rows = []
+        for item in recipients:
+            rows.append({
+                "delivery_type": item.get("delivery_type", "primary"),
+                **_validate_recipient(letter.company, item),
+            })
+        letter.recipients.all().delete()
+        CorrespondenceRecipient.objects.bulk_create([
+            CorrespondenceRecipient(correspondence=letter, **row) for row in rows
+        ])
+
+    log_action(
+        letter, user, "updated",
+        metadata={"fields": changed, "recipients_changed": recipients is not None},
+    )
+    return letter

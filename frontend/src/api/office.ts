@@ -44,6 +44,16 @@ export interface BusinessLink {
   record?: BusinessRecordDto;
 }
 
+export interface Attachment {
+  id: number;
+  original_name: string;
+  content_type: string;
+  size_bytes: number;
+  uploaded_by: number | null;
+  uploaded_by_name: string;
+  created_at: string;
+}
+
 export interface Letter {
   id: number;
   registration_number: string | null;
@@ -88,6 +98,8 @@ export interface Letter {
   comments?: { id: number; author_name: string; body: string; created_at: string }[];
   actions?: { id: number; actor_name: string; action: string; note: string; created_at: string }[];
   business_links?: BusinessLink[];
+  attachments?: Attachment[];
+  can_edit?: boolean;
 }
 
 export interface SecretariatInfo {
@@ -132,6 +144,14 @@ export const officeApi = {
     apiClient.post<{ data: Letter }>(`/office/correspondence/${id}/reply/`, payload),
   archiveLetter: (id: number) =>
     apiClient.post<{ data: Letter }>(`/office/correspondence/${id}/archive/`, {}),
+  uploadAttachment: (id: number, form: FormData) =>
+    apiClient.post<{ data: Attachment }>(`/office/correspondence/${id}/attachments/`, form),
+  deleteAttachment: (id: number, attachmentId: number) =>
+    apiClient.delete(`/office/correspondence/${id}/attachments/${attachmentId}/`),
+  downloadAttachment: (id: number, attachmentId: number) =>
+    apiClient.get<Blob>(`/office/correspondence/${id}/attachments/${attachmentId}/download/`, {
+      responseType: 'blob',
+    }),
   addComment: (id: number, body: string) =>
     apiClient.post(`/office/correspondence/${id}/comments/`, { body }),
   getTimeline: (id: number) =>

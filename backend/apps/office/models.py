@@ -7,10 +7,15 @@ No foreign key crosses into finance or CRM, so the Office domain can later
 move to its own database without a schema rewrite.
 """
 
+from pathlib import Path
+from uuid import uuid4
+
 from django.conf import settings
 from django.db import models
 
 from apps.core.models import BaseModel
+
+from .storage import attachment_storage
 
 
 class Secretariat(BaseModel):
@@ -170,6 +175,42 @@ class Correspondence(BaseModel):
     def __str__(self):
         label = self.registration_number or "پیش‌نویس"
         return f"{label} — {self.subject}"
+
+
+def attachment_upload_to(instance, filename):
+    """Random storage name: the user-supplied name never becomes a path."""
+    suffix = Path(filename).suffix.lower()
+    return f"company_{instance.company_id}/{instance.correspondence_id}/{uuid4().hex}{suffix}"
+
+
+class CorrespondenceAttachment(models.Model):
+    """A private file attached to a letter, reachable only through the API."""
+
+    correspondence = models.ForeignKey(
+        Correspondence, on_delete=models.CASCADE, related_name="attachments",
+    )
+    company = models.ForeignKey(
+        "accounts.Company", on_delete=models.CASCADE, related_name="office_attachments",
+    )
+    file = models.FileField(storage=attachment_storage, upload_to=attachment_upload_to, max_length=255)
+    original_name = models.CharField(max_length=255)
+    content_type = models.CharField(max_length=100, blank=True, default="")
+    size_bytes = models.PositiveBigIntegerField(default=0)
+    checksum = models.CharField(max_length=64, blank=True, default="")
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name="office_attachments",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+        indexes = [
+            models.Index(fields=["company", "correspondence"]),
+        ]
+
+    def __str__(self):
+        return f"{self.original_name} ({self.correspondence_id})"
 
 
 class CorrespondenceRecipient(models.Model):

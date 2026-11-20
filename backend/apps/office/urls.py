@@ -16,6 +16,9 @@ urlpatterns = [
     path("correspondence/<int:pk>/archive/", views.correspondence_archive, name="office-correspondence-archive"),
     path("correspondence/<int:pk>/comments/", views.correspondence_comments, name="office-correspondence-comments"),
     path("correspondence/<int:pk>/timeline/", views.correspondence_timeline, name="office-correspondence-timeline"),
+    path("correspondence/<int:pk>/attachments/", views.correspondence_attachments, name="office-correspondence-attachments"),
+    path("correspondence/<int:pk>/attachments/<int:attachment_id>/", views.correspondence_attachment_delete, name="office-correspondence-attachment-delete"),
+    path("correspondence/<int:pk>/attachments/<int:attachment_id>/download/", views.correspondence_attachment_download, name="office-correspondence-attachment-download"),
     path("correspondence/<int:pk>/business-links/", views.correspondence_business_links),
     path("correspondence/<int:pk>/business-links/<int:link_id>/", views.correspondence_business_link_delete),
 

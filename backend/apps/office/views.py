@@ -1,6 +1,7 @@
 """Nexivo Office — correspondence, workbench and business-link APIs."""
 
 from django.db.models import Q
+from django.http import FileResponse
 from django.utils import timezone
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -10,6 +11,7 @@ from apps.accounts.permissions import RequireModule
 from apps.core.responses import (
     business_rule_error,
     forbidden_response,
+    validation_error_response,
     not_found_response,
     success_response,
 )
@@ -17,24 +19,30 @@ from apps.core.responses import (
 from . import business
 from .models import Correspondence, Secretariat, SecretariatMember
 from .serializers import (
+    AttachmentSerializer,
     CommentSerializer,
     CorrespondenceCreateSerializer,
     CorrespondenceDetailSerializer,
     CorrespondenceListSerializer,
+    DraftUpdateSerializer,
     SecretariatSerializer,
 )
 from .services import (
     OfficeError,
+    add_attachment,
+    can_edit_draft,
     add_comment,
     can_register_letter,
     archive_correspondence,
     can_open,
     create_correspondence,
+    delete_attachment,
     is_privileged,
     mark_read,
     refer_correspondence,
     register_correspondence,
     reply_to_correspondence,
+    update_draft,
     visible_correspondence,
 )
 
@@ -179,19 +187,17 @@ def correspondence_detail(request, pk):
         mark_read(letter, request.user)
         payload = CorrespondenceDetailSerializer(letter).data
         payload["business_links"] = business.links_for(letter.company, "correspondence", letter.id, request.user)
+        payload["can_edit"] = can_edit_draft(letter, request.user)
         return success_response(data=payload)
 
-    if letter.registration_status == "registered":
-        return business_rule_error("نامه ثبت‌شده قابل ویرایش نیست")
-    if not (is_privileged(request.user) or letter.created_by_id == request.user.id):
-        return forbidden_response("فقط پیش‌نویس خودتان را می‌توانید ویرایش کنید")
-    allowed = {"subject", "body", "priority", "confidentiality", "due_at", "letter_date",
-               "letter_date_jalali", "sender_name", "sender_organization", "sender_email"}
-    for field, value in request.data.items():
-        if field in allowed:
-            setattr(letter, field, value)
-    letter.updated_by = request.user
-    letter.save()
+    serializer = DraftUpdateSerializer(data=request.data, partial=True)
+    if not serializer.is_valid():
+        field_errors = {field: errors[0] for field, errors in serializer.errors.items()}
+        return validation_error_response("اطلاعات نامه معتبر نیست", field_errors)
+    try:
+        letter = update_draft(letter, request.user, dict(serializer.validated_data))
+    except OfficeError as exc:
+        return _fail(exc)
     return success_response(data=CorrespondenceDetailSerializer(letter).data, message="پیش‌نویس به‌روزرسانی شد")
 
 
@@ -529,3 +535,74 @@ def secretariat_member(request, pk):
         return not_found_response("عضو یافت نشد")
     member.delete()
     return success_response(message="عضو حذف شد")
+
+
+@api_view(["GET", "POST"])
+def correspondence_attachments(request, pk):
+    """List or upload private attachments for a letter."""
+    gate = _gate(request)
+    if gate:
+        return gate
+    letter, error = _letter(request, pk)
+    if error:
+        return error
+    if request.method == "GET":
+        attachments = letter.attachments.select_related("uploaded_by")
+        return success_response(data=AttachmentSerializer(attachments, many=True).data)
+    upload = request.FILES.get("file")
+    if upload is None:
+        return business_rule_error("فایلی انتخاب نشده است")
+    try:
+        attachment = add_attachment(letter, request.user, upload)
+    except OfficeError as exc:
+        return _fail(exc)
+    return success_response(
+        data=AttachmentSerializer(attachment).data,
+        message="پیوست افزوده شد",
+        http_status_code=201,
+    )
+
+
+@api_view(["DELETE"])
+def correspondence_attachment_delete(request, pk, attachment_id):
+    gate = _gate(request)
+    if gate:
+        return gate
+    letter, error = _letter(request, pk)
+    if error:
+        return error
+    attachment = letter.attachments.filter(pk=attachment_id).first()
+    if attachment is None:
+        return not_found_response("پیوست یافت نشد")
+    try:
+        delete_attachment(attachment, request.user)
+    except OfficeError as exc:
+        return _fail(exc)
+    return success_response(data=None, message="پیوست حذف شد")
+
+
+@api_view(["GET"])
+def correspondence_attachment_download(request, pk, attachment_id):
+    """Stream one private file after the same access checks as the letter."""
+    gate = _gate(request)
+    if gate:
+        return gate
+    letter, error = _letter(request, pk)
+    if error:
+        return error
+    attachment = letter.attachments.filter(pk=attachment_id).first()
+    if attachment is None:
+        return not_found_response("پیوست یافت نشد")
+    try:
+        handle = attachment.file.open("rb")
+    except (FileNotFoundError, OSError):
+        return not_found_response("فایل پیوست در دسترس نیست")
+    response = FileResponse(
+        handle,
+        as_attachment=True,
+        filename=attachment.original_name,
+        content_type=attachment.content_type or "application/octet-stream",
+    )
+    response["X-Content-Type-Options"] = "nosniff"
+    response["Cache-Control"] = "private, no-store"
+    return response
