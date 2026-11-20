@@ -71,6 +71,7 @@ export interface Payment {
   tracking_number: string
   description: string
   created_at: string
+  created_by_name: string
 }
 
 export const num = (value: number | undefined | null) =>

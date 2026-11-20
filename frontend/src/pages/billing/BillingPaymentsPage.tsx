@@ -152,14 +152,15 @@ export default function BillingPaymentsPage() {
               <th className="text-right font-medium px-4 py-3">شرکت</th>
               <th className="text-right font-medium px-4 py-3">شماره پیگیری</th>
               <th className="text-right font-medium px-4 py-3">توضیحات</th>
+              <th className="text-right font-medium px-4 py-3">ثبت‌کننده</th>
               <th className="text-left font-medium px-4 py-3">مبلغ</th>
               <th className="px-4 py-3" />
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={6} className="py-8 text-center text-xs text-nx-mist">در حال بارگذاری…</td></tr>}
+            {loading && <tr><td colSpan={7} className="py-8 text-center text-xs text-nx-mist">در حال بارگذاری…</td></tr>}
             {!loading && rows.length === 0 && (
-              <tr><td colSpan={6} className="py-8 text-center text-xs text-nx-mist">پرداختی ثبت نشده است.</td></tr>
+              <tr><td colSpan={7} className="py-8 text-center text-xs text-nx-mist">پرداختی ثبت نشده است.</td></tr>
             )}
             {rows.map((row) => (
               <tr key={row.id} className="border-t border-nx-navy-border hover:bg-nx-navy/40">
@@ -167,6 +168,7 @@ export default function BillingPaymentsPage() {
                 <td className="px-4 py-3 text-white">{row.payer_name}</td>
                 <td className="px-4 py-3 text-nx-mist">{row.tracking_number || '—'}</td>
                 <td className="px-4 py-3 text-nx-mist">{row.description || '—'}</td>
+                <td className="px-4 py-3 text-nx-mist">{row.created_by_name || '—'}</td>
                 <td className="px-4 py-3 text-left text-white">{rial(row.amount)}</td>
                 <td className="px-4 py-3">
                   {canDelete && (
@@ -180,7 +182,7 @@ export default function BillingPaymentsPage() {
           </tbody>
           <tfoot className="bg-nx-navy">
             <tr>
-              <td colSpan={4} className="px-4 py-3 text-xs text-nx-mist">جمع ({rows.length} پرداخت)</td>
+              <td colSpan={5} className="px-4 py-3 text-xs text-nx-mist">جمع ({rows.length} پرداخت)</td>
               <td className="px-4 py-3 text-left font-bold text-white">{rial(total)}</td>
               <td />
             </tr>
