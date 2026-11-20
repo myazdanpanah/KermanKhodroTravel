@@ -33,6 +33,23 @@ def _check_crm(request):
     return None
 
 
+def _linked_opportunity(data, company):
+    """Take `opportunity_id` out of the payload and scope it to the company.
+
+    Raw FK fields are dropped: a client must not be able to attach a record to
+    another company's lead, customer or opportunity.
+    """
+    for field in ("lead", "opportunity", "customer", "assigned_to", "campaign"):
+        data.pop(field, None)
+    opportunity_id = data.pop("opportunity_id", None)
+    if opportunity_id in (None, ""):
+        return None, None
+    opportunity = Opportunity.objects.filter(pk=opportunity_id, company=company).first()
+    if opportunity is None:
+        return None, not_found_response("Opportunity not found")
+    return opportunity, None
+
+
 # ─── Leads ────────────────────────────────────────────────────
 
 @api_view(["GET", "POST"])
@@ -128,7 +145,14 @@ def opportunity_detail(request, pk):
     if request.method == "GET":
         return success_response(data=OpportunitySerializer(opp).data)
     elif request.method == "PUT":
-        for field in ["name", "status", "stage", "priority", "estimated_value", "probability", "description"]:
+        # Lifecycle fields have their own endpoints (move/close-won/close-lost);
+        # editing them here would skip the close date and probability rules.
+        for field in ("status", "stage"):
+            if field in request.data:
+                return business_rule_error(
+                    "Use the move or close endpoints to change an opportunity's status"
+                )
+        for field in ["name", "priority", "estimated_value", "probability", "description"]:
             if field in request.data:
                 setattr(opp, field, request.data[field])
         opp.save()
@@ -165,10 +189,8 @@ def opportunity_close_won(request, pk):
     if gate:
         return gate
     from .services import OpportunityService
-    from decimal import Decimal
-    revenue = Decimal(str(request.data.get("revenue", 0)))
     try:
-        opp = OpportunityService.close_won(request.user.company, pk, revenue=revenue, user=request.user)
+        opp = OpportunityService.close_won(request.user.company, pk, user=request.user)
         return success_response(data=OpportunitySerializer(opp).data, message="Opportunity closed won")
     except Exception as e:
         return business_rule_error(str(e))
@@ -201,12 +223,23 @@ def activity_list(request):
         activity_type = request.query_params.get("type")
         if activity_type:
             qs = qs.filter(activity_type=activity_type)
+        opportunity_id = request.query_params.get("opportunity")
+        if opportunity_id:
+            qs = qs.filter(opportunity_id=opportunity_id)
         return success_response(data=ActivitySerializer(qs, many=True).data)
     elif request.method == "POST":
-        serializer = ActivitySerializer(data=request.data)
+        data = request.data.copy()
+        opportunity, error = _linked_opportunity(data, company)
+        if error:
+            return error
+        serializer = ActivitySerializer(data=data)
         serializer.is_valid(raise_exception=True)
         from .services import ActivityService
-        activity = ActivityService.create_activity(company=company, user=request.user, **serializer.validated_data)
+        activity = ActivityService.create_activity(
+            company=company, user=request.user,
+            opportunity_id=opportunity.id if opportunity else None,
+            **serializer.validated_data,
+        )
         return success_response(data=ActivitySerializer(activity).data, message="Activity created", http_status_code=status.HTTP_201_CREATED)
 
 
@@ -297,12 +330,23 @@ def task_list(request):
         task_status = request.query_params.get("status")
         if task_status:
             qs = qs.filter(status=task_status)
+        opportunity_id = request.query_params.get("opportunity")
+        if opportunity_id:
+            qs = qs.filter(opportunity_id=opportunity_id)
         return success_response(data=CRMTaskSerializer(qs, many=True).data)
     elif request.method == "POST":
-        serializer = CRMTaskSerializer(data=request.data)
+        data = request.data.copy()
+        opportunity, error = _linked_opportunity(data, company)
+        if error:
+            return error
+        serializer = CRMTaskSerializer(data=data)
         serializer.is_valid(raise_exception=True)
         from .services import CRMTaskService
-        task = CRMTaskService.create_task(company=company, user=request.user, **serializer.validated_data)
+        task = CRMTaskService.create_task(
+            company=company, user=request.user,
+            opportunity_id=opportunity.id if opportunity else None,
+            **serializer.validated_data,
+        )
         return success_response(data=CRMTaskSerializer(task).data, message="Task created", http_status_code=status.HTTP_201_CREATED)
 
 

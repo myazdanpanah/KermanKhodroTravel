@@ -5,7 +5,9 @@
 import { useState, useEffect } from 'react';
 import { LayoutGrid, List, Plus, Search, TrendingUp } from 'lucide-react';
 import { crmApi, Opportunity } from '../../api/crm';
+import OpportunityRecordPanel from './OpportunityRecordPanel';
 import { useToast } from '../../components/Toast';
+import { useAuthStore } from '../../store/authStore';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   prospecting: { label: 'جستجو', color: 'bg-nx-blue/10 text-nx-blue' },
@@ -34,17 +36,22 @@ export default function OpportunitiesPage() {
   const [opps, setOpps] = useState<Opportunity[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [onlyMine, setOnlyMine] = useState(false);
+  const userId = useAuthStore(state => state.user?.id);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', estimated_value: 0, probability: 0, description: '' });
   const [view, setView] = useState<'board' | 'list'>('board');
   const [dragOver, setDragOver] = useState<string | null>(null);
   const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [selected, setSelected] = useState<Opportunity | null>(null);
 
   useEffect(() => {
     crmApi.getOpportunities().then(r => setOpps(r.data.data)).catch(() => toast('خطا در دریافت فرصت‌ها', 'error')).finally(() => setLoading(false));
   }, []);
 
-  const filtered = opps.filter(o => !search || o.name.includes(search));
+  const filtered = opps.filter(o =>
+    (!search || o.name.includes(search)) && (!onlyMine || o.assigned_to === userId),
+  );
 
   const handleCreate = async () => {
     if (!form.name) return;
@@ -141,6 +148,17 @@ export default function OpportunitiesPage() {
         <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="جستجو..."
           className="w-full pr-10 pl-4 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm" />
       </div>
+
+      <button
+        onClick={() => setOnlyMine(value => !value)}
+        className={`px-3 py-2 rounded-lg text-sm border ${
+          onlyMine
+            ? 'bg-nx-blue text-white border-nx-blue'
+            : 'bg-white dark:bg-nx-navy text-nx-navy dark:text-white border-nx-mist dark:border-nx-muted'
+        }`}
+      >
+        فقط فرصت‌های من
+      </button>
 
       {view === 'board' && (
         <div className="space-y-4">
@@ -273,6 +291,10 @@ export default function OpportunitiesPage() {
           </div>
         )}
       </div>
+      )}
+
+      {selected && (
+        <OpportunityRecordPanel opportunity={selected} onClose={() => setSelected(null)} />
       )}
     </div>
   );

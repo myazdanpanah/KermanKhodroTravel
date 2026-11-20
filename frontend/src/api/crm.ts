@@ -161,8 +161,8 @@ export const crmApi = {
     apiClient.delete(`/api/v1/crm/opportunities/${id}/`),
   moveOpportunity: (id: number, status: string) =>
     apiClient.post<{ data: Opportunity }>(`/api/v1/crm/opportunities/${id}/move/`, { status }),
-  closeWon: (id: number, revenue?: number) =>
-    apiClient.post(`/api/v1/crm/opportunities/${id}/close-won/`, { revenue }),
+  closeWon: (id: number) =>
+    apiClient.post(`/api/v1/crm/opportunities/${id}/close-won/`),
   closeLost: (id: number, reason?: string) =>
     apiClient.post(`/api/v1/crm/opportunities/${id}/close-lost/`, { reason }),
 
@@ -171,7 +171,7 @@ export const crmApi = {
     apiClient.get<{ data: Activity[] }>('/api/v1/crm/activities/', { params }),
   getActivity: (id: number) =>
     apiClient.get<{ data: Activity }>(`/api/v1/crm/activities/${id}/`),
-  createActivity: (data: Partial<Activity>) =>
+  createActivity: (data: Partial<Activity> & { opportunity_id?: number }) =>
     apiClient.post<{ data: Activity }>('/api/v1/crm/activities/', data),
   updateActivity: (id: number, data: Partial<Activity>) =>
     apiClient.put<{ data: Activity }>(`/api/v1/crm/activities/${id}/`, data),
@@ -197,7 +197,7 @@ export const crmApi = {
     apiClient.get<{ data: CRMTask[] }>('/api/v1/crm/tasks/', { params }),
   getTask: (id: number) =>
     apiClient.get<{ data: CRMTask }>(`/api/v1/crm/tasks/${id}/`),
-  createTask: (data: Partial<CRMTask>) =>
+  createTask: (data: Partial<CRMTask> & { opportunity_id?: number }) =>
     apiClient.post<{ data: CRMTask }>('/api/v1/crm/tasks/', data),
   updateTask: (id: number, data: Partial<CRMTask>) =>
     apiClient.put<{ data: CRMTask }>(`/api/v1/crm/tasks/${id}/`, data),

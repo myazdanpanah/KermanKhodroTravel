@@ -114,6 +114,19 @@ class LeadService:
 
 # ─── Opportunity Service ──────────────────────────────────────
 
+# `status` is the funnel the pipeline board moves cards through; `stage` is
+# the legacy reporting funnel. Keep them derived from one another so the board
+# and the CRM dashboard cannot disagree.
+STATUS_TO_STAGE = {
+    "prospecting": "lead",
+    "qualification": "qualified",
+    "proposal": "proposal_sent",
+    "negotiation": "verbal_agreement",
+    "closed_won": "closed",
+    "closed_lost": "closed",
+}
+
+
 class OpportunityService:
     """Manage opportunity lifecycle."""
 
@@ -145,16 +158,18 @@ class OpportunityService:
         return opp
 
     @staticmethod
-    def close_won(company, opp_id: int, revenue: Decimal = Decimal("0"), user=None) -> Opportunity:
+    def close_won(company, opp_id: int, user=None) -> Opportunity:
         opp = Opportunity.objects.get(pk=opp_id, company=company)
         if opp.status in ("closed_won", "closed_lost"):
             raise ValidationError("Opportunity is already closed")
         opp.status = "closed_won"
-        opp.stage = "closed"
+        opp.stage = STATUS_TO_STAGE["closed_won"]
         opp.actual_close_date = timezone.now().date()
-        opp.actual_revenue = revenue
         opp.probability = 100
         opp.save()
+        OpportunityService._log_status_event(
+            company, opp, "closed_won", "Opportunity closed won", user
+        )
         return opp
 
     @staticmethod
@@ -163,11 +178,14 @@ class OpportunityService:
         if opp.status in ("closed_won", "closed_lost"):
             raise ValidationError("Opportunity is already closed")
         opp.status = "closed_lost"
-        opp.stage = "closed"
+        opp.stage = STATUS_TO_STAGE["closed_lost"]
         opp.actual_close_date = timezone.now().date()
         opp.loss_reason = reason
         opp.probability = 0
         opp.save()
+        OpportunityService._log_status_event(
+            company, opp, "closed_lost", "Opportunity closed lost", user
+        )
         return opp
 
     # Statuses a pipeline board may move a card between. Closing a deal is a
@@ -190,21 +208,29 @@ class OpportunityService:
 
         previous = opp.status
         opp.status = status_value
-        opp.save(update_fields=["status", "weighted_value", "updated_at"])
-
-        # The customer's history keeps the move, like lead conversion does.
-        if opp.customer_id:
-            CustomerTimeline.objects.create(
-                company=company,
-                customer_id=opp.customer_id,
-                entity_type="opportunity",
-                entity_id=opp.id,
-                entity_label=opp.name,
-                event_type="status_changed",
-                description=f"Opportunity moved from {previous} to {status_value}",
-                performed_by=user,
-            )
+        opp.stage = STATUS_TO_STAGE[status_value]
+        opp.save(update_fields=["status", "stage", "weighted_value", "updated_at"])
+        OpportunityService._log_status_event(
+            company, opp, "status_changed",
+            f"Opportunity moved from {previous} to {status_value}", user,
+        )
         return opp
+
+    @staticmethod
+    def _log_status_event(company, opp: Opportunity, event_type: str, description: str, user=None):
+        """The customer's history keeps lifecycle changes, like lead conversion."""
+        if not opp.customer_id:
+            return
+        CustomerTimeline.objects.create(
+            company=company,
+            customer_id=opp.customer_id,
+            entity_type="opportunity",
+            entity_id=opp.id,
+            entity_label=opp.name,
+            event_type=event_type,
+            description=description,
+            performed_by=user,
+        )
 
     @staticmethod
     def get_pipeline(company) -> Dict:
@@ -235,7 +261,7 @@ class ActivityService:
     @staticmethod
     def create_activity(
         company, activity_type: str, subject: str, user=None,
-        description: str = "", status: str = "planned",
+        description: str = "", status: str = "planned", priority: str = "medium",
         lead_id: int = None, opportunity_id: int = None,
         customer_id: int = None, due_date=None,
         assigned_to_id: int = None,
@@ -246,6 +272,7 @@ class ActivityService:
             subject=subject,
             description=description,
             status=status,
+            priority=priority,
             lead_id=lead_id,
             opportunity_id=opportunity_id,
             customer_id=customer_id,
@@ -314,7 +341,7 @@ class CRMTaskService:
     @staticmethod
     def create_task(
         company, title: str, user=None,
-        description: str = "", priority: str = "medium",
+        description: str = "", priority: str = "medium", status: str = "todo",
         lead_id: int = None, opportunity_id: int = None,
         customer_id: int = None, due_date=None,
         assigned_to_id: int = None,
@@ -324,6 +351,7 @@ class CRMTaskService:
             title=title,
             description=description,
             priority=priority,
+            status=status,
             lead_id=lead_id,
             opportunity_id=opportunity_id,
             customer_id=customer_id,

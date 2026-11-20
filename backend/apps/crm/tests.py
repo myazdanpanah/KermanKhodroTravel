@@ -112,13 +112,18 @@ class OpportunityTests(CRMTestBase):
         opp = OpportunityService.create_opportunity(
             company=self.company,
             name="Won Deal",
+            customer_id=self.customer.id,
             estimated_value=Decimal("5000000"),
             probability=80,
         )
-        opp = OpportunityService.close_won(self.company, opp.id, revenue=Decimal("5000000"))
+        opp = OpportunityService.close_won(self.company, opp.id)
         self.assertEqual(opp.status, "closed_won")
         self.assertEqual(opp.stage, "closed")
         self.assertIsNotNone(opp.actual_close_date)
+        event = CustomerTimeline.objects.get(
+            company=self.company, entity_type="opportunity", entity_id=opp.id
+        )
+        self.assertEqual(event.event_type, "closed_won")
 
     def test_close_lost(self):
         opp = OpportunityService.create_opportunity(
@@ -284,6 +289,25 @@ class OpportunityPipelineMoveTests(CRMTestBase):
         self.assertEqual(event.event_type, "status_changed")
         self.assertIn("proposal", event.description)
 
+    def test_moving_keeps_stage_in_sync(self):
+        response = self._move("negotiation")
+
+        self.assertEqual(response.status_code, 200, response.content)
+        self.opp.refresh_from_db()
+        self.assertEqual(self.opp.stage, "verbal_agreement")
+
+    def test_editing_puts_cannot_change_lifecycle_fields(self):
+        response = self.client.put(
+            f"/api/v1/crm/opportunities/{self.opp.id}/",
+            {"name": "Renamed", "status": "closed_won", "stage": "closed"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 422, response.content)
+        self.opp.refresh_from_db()
+        self.assertEqual(self.opp.name, "Board Deal")
+        self.assertEqual(self.opp.status, "prospecting")
+
     def test_closing_through_move_is_rejected(self):
         response = self._move("closed_won")
 
@@ -315,3 +339,76 @@ class OpportunityPipelineMoveTests(CRMTestBase):
         response = self._move("qualification", opp=other)
 
         self.assertEqual(response.status_code, 404)
+
+
+class OpportunityRecordActivityTests(CRMTestBase):
+    """Activities and tasks attached to one opportunity from its record panel."""
+
+    def setUp(self):
+        super().setUp()
+        from rest_framework.test import APIClient
+
+        self.opp = OpportunityService.create_opportunity(
+            company=self.company, name="Record Deal", customer_id=self.customer.id,
+        )
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def test_activity_can_be_logged_against_an_opportunity(self):
+        response = self.client.post(
+            "/api/v1/crm/activities/",
+            {"activity_type": "call", "subject": "Kickoff call", "opportunity_id": self.opp.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertEqual(response.json()["data"]["opportunity"], self.opp.id)
+
+    def test_activities_can_be_filtered_by_opportunity(self):
+        other = OpportunityService.create_opportunity(company=self.company, name="Other Deal")
+        ActivityService.create_activity(
+            company=self.company, activity_type="note", subject="In deal",
+            opportunity_id=self.opp.id,
+        )
+        ActivityService.create_activity(
+            company=self.company, activity_type="note", subject="Elsewhere",
+            opportunity_id=other.id,
+        )
+
+        response = self.client.get(f"/api/v1/crm/activities/?opportunity={self.opp.id}")
+
+        subjects = [row["subject"] for row in response.json()["data"]]
+        self.assertEqual(subjects, ["In deal"])
+
+    def test_task_can_be_created_against_an_opportunity(self):
+        response = self.client.post(
+            "/api/v1/crm/tasks/",
+            {"title": "Send proposal", "opportunity_id": self.opp.id, "priority": "high"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertEqual(response.json()["data"]["opportunity"], self.opp.id)
+
+    def test_attaching_to_another_companys_opportunity_is_refused(self):
+        other_company = create_test_company(name="Other Co")
+        other_company.enable_module("crm")
+        foreign = OpportunityService.create_opportunity(company=other_company, name="Theirs")
+
+        response = self.client.post(
+            "/api/v1/crm/activities/",
+            {"activity_type": "call", "subject": "Sneaky", "opportunity_id": foreign.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 404)
+
+    def test_raw_foreign_keys_are_ignored(self):
+        response = self.client.post(
+            "/api/v1/crm/activities/",
+            {"activity_type": "call", "subject": "No link", "opportunity": self.opp.id},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, 201, response.content)
+        self.assertIsNone(response.json()["data"]["opportunity"])
