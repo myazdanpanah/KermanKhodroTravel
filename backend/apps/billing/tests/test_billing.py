@@ -1717,24 +1717,48 @@ class PaymentIdempotencyTests(TestCase):
         # The derived balance saw the transfer exactly once.
         self.assertEqual(payer_balance("2001")["payments"], 1_200_000)
 
-    def test_a_replay_returns_the_stored_row_even_with_a_different_payload(self):
+    def test_replay_with_a_different_payload_is_rejected(self):
         stored = Payment.objects.create(
             payer_code="2001", payer_name="شرکت ایدمپوتنت",
             payment_date=dt.date(2025, 7, 1), amount=750_000,
             created_by=self.admin, idempotency_key="race-1",
         )
 
+        # Same key, corrected amount/date: it must not look saved while the
+        # stored row still holds the old figures.
         response = self.client.post(
             "/api/v1/billing/payments/",
-            {"payer_code": "2001", "payment_date": "1404/05/02", "amount": 750_000},
+            {"payer_code": "2001", "payment_date": "1404/05/02", "amount": 800_000},
             format="json",
             HTTP_IDEMPOTENCY_KEY="race-1",
         )
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["id"], stored.pk)
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT, response.content)
+        self.assertIn("کلید یکتایی", response.data["error"])
+        stored.refresh_from_db()
+        self.assertEqual(stored.amount, 750_000)
         self.assertEqual(Payment.objects.count(), 1)
         self.assertEqual(payer_balance("2001")["payments"], 750_000)
+
+    def test_replay_of_the_same_payload_after_a_race_still_returns_it(self):
+        from apps.billing.services.normalize import persian_date_to_gregorian
+
+        stored = Payment.objects.create(
+            payer_code="2001", payer_name="شرکت ایدمپوتنت",
+            payment_date=persian_date_to_gregorian("1404/04/11"), amount=750_000,
+            created_by=self.admin, idempotency_key="race-2",
+        )
+
+        response = self.client.post(
+            "/api/v1/billing/payments/",
+            {"payer_code": "2001", "payment_date": "1404/04/11", "amount": 750_000},
+            format="json",
+            HTTP_IDEMPOTENCY_KEY="race-2",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.content)
+        self.assertEqual(response.data["id"], stored.pk)
+        self.assertEqual(Payment.objects.count(), 1)
 
     def test_body_key_is_honoured_too(self):
         payload = {

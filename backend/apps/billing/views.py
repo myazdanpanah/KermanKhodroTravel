@@ -243,6 +243,23 @@ def invoice_detail(request, pk: int):
 
 # ── payments / debts / credits ───────────────────────────────────────────
 
+IDEMPOTENCY_MISMATCH = (
+    "این کلید یکتایی قبلاً برای پرداختی با اطلاعات دیگر (شرکت، مبلغ، تاریخ یا شمارهٔ پیگیری) "
+    "ثبت شده است؛ درخواست جدید ذخیره نشد."
+)
+
+
+def _same_payment_payload(existing, data: dict, tracking: str) -> bool:
+    """Is this replay the same submission, or a corrected one with one key?"""
+    return (
+        existing.payer_code == str(data.get("payer_code") or "")
+        and existing.amount == data.get("amount")
+        and existing.payment_date == data.get("payment_date")
+        and existing.tracking_number == tracking
+        and (existing.description or "") == str(data.get("description") or "")
+    )
+
+
 @api_view(["GET", "POST"])
 @perm_required("can_view")
 def payment_list(request):
@@ -279,6 +296,8 @@ def payment_list(request):
             created_by=request.user, idempotency_key=idempotency_key
         ).first()
         if existing is not None:
+            if not _same_payment_payload(existing, data, tracking):
+                return _error(IDEMPOTENCY_MISMATCH, status.HTTP_409_CONFLICT)
             return Response(PaymentSerializer(existing).data)
 
     if tracking and Payment.objects.filter(payer_code=code, tracking_number=tracking).exists():
@@ -310,12 +329,15 @@ def payment_list(request):
                 created_by=request.user, idempotency_key=idempotency_key or None
             )
     except IntegrityError:
-        # Two parallel retries: the other one won, so answer with its row.
+        # Two parallel retries: the other one won, so answer with its row — but
+        # only if it is the same submission.
         existing = Payment.objects.filter(
             created_by=request.user, idempotency_key=idempotency_key
         ).first()
         if existing is None:
             raise
+        if not _same_payment_payload(existing, data, tracking):
+            return _error(IDEMPOTENCY_MISMATCH, status.HTTP_409_CONFLICT)
         return Response(PaymentSerializer(existing).data)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 

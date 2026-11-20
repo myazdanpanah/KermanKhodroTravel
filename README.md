@@ -310,7 +310,7 @@ can_submit, can_approve, can_edit_template
 | `GET /invoices/<id>/` | جزئیات ردیف | `can_view` |
 | `DELETE /invoices/<id>/` | **ابطال** صورت‌حساب (ردیف و شمارهٔ نامه باقی می‌مانند؛ دلیل اختیاری در `reason`) | `can_delete_history` |
 | `GET /invoices/types/` | انواع خدمت موجود در داده | `can_view` |
-| `GET/POST /payments/` | فهرست/ثبت پرداخت؛ شمارهٔ پیگیری تکراری ۴۰۹، همان مبلغ در ۱۰ ثانیه ۴۲۹، و هدر `Idempotency-Key` (یا فیلد `idempotency_key`) درخواست تکراری را به همان ردیف اول برمی‌گرداند (۲۰۰) | `can_view` / `can_pay` |
+| `GET/POST /payments/` | فهرست/ثبت پرداخت؛ شمارهٔ پیگیری تکراری ۴۰۹، همان مبلغ در ۱۰ ثانیه ۴۲۹، و هدر `Idempotency-Key` (یا فیلد `idempotency_key`) فقط وقتی همان ردیف اول را برمی‌گرداند (۲۰۰) که مبلغ/شرکت/تاریخ/شمارهٔ پیگیری/توضیحات یکی باشد؛ کلید تکراری با payload متفاوت ۴۰۹ می‌گیرد و چیزی ذخیره نمی‌شود | `can_view` / `can_pay` |
 | `DELETE /payments/<id>/` | حذف پرداخت + ثبت در `BillingAuditEntry` | `can_delete_payment` |
 | `GET/POST /debts/`, `/credits/` | بدهی دستی و بستانکاری | `can_view` / `can_issue` |
 | `DELETE /debts/<id>/`, `/credits/<id>/` | حذف ردیف + ثبت در `BillingAuditEntry` | `can_delete_history` |
