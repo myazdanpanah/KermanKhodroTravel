@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import api from '../../api/client'
 import { useToast } from '../../components/Toast'
 import { useAuthStore } from '../../store/authStore'
@@ -114,6 +115,17 @@ export default function BillingIssuePage() {
   const [passengers, setPassengers] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+
+  // Arriving from a notification: ?request=<id> points at the approval row.
+  const [searchParams] = useSearchParams()
+  const focusedRequest = searchParams.get('request')
+  const rowRefs = useRef<Record<number, HTMLTableRowElement | null>>({})
+
+  useEffect(() => {
+    if (!focusedRequest) return
+    const row = rowRefs.current[Number(focusedRequest)]
+    if (row) row.scrollIntoView({ block: 'center', behavior: 'smooth' })
+  }, [focusedRequest, approvals])
 
   const [payerCode, setPayerCode] = useState('')
   const [letterNumber, setLetterNumber] = useState('')
@@ -575,7 +587,15 @@ export default function BillingIssuePage() {
             {loading && <tr><td colSpan={7} className="py-8 text-center text-xs text-nx-mist">در حال بارگذاری…</td></tr>}
             {!loading && approvals.length === 0 && <tr><td colSpan={7} className="py-8 text-center text-xs text-nx-mist">درخواستی ثبت نشده است.</td></tr>}
             {approvals.map((approval) => (
-              <tr key={approval.id} className="border-t border-nx-navy-border hover:bg-nx-navy/40">
+              <tr
+                key={approval.id}
+                ref={(el) => {
+                  rowRefs.current[approval.id] = el
+                }}
+                className={`border-t border-nx-navy-border hover:bg-nx-navy/40 ${
+                  String(approval.id) === focusedRequest ? 'bg-nx-blue/10 ring-1 ring-inset ring-nx-blue/60' : ''
+                }`}
+              >
                 <td className="px-4 py-3 text-white" dir="ltr">
                   {approval.service_letters && Object.keys(approval.service_letters).length > 0
                     ? Object.entries(approval.service_letters).map(([key, letter]) => (

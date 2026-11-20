@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Bell, Check, CheckCheck, X } from 'lucide-react'
 import api from '../api/client'
 import { useToast } from './Toast'
@@ -20,6 +21,7 @@ export default function NotificationBell() {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()
+  const navigate = useNavigate()
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -59,6 +61,19 @@ export default function NotificationBell() {
       setUnreadCount((prev) => Math.max(0, prev - 1))
     } catch {
       toast('خطا در علامت‌گذاری', 'error')
+    }
+  }
+
+  // Marking read is a side effect of opening; navigation must happen even if
+  // the request fails, and only known target types get a destination.
+  const openNotification = (notification: Notification) => {
+    if (!notification.is_read) void markAsRead(notification.id)
+    setOpen(false)
+    if (notification.target_type === 'billing_request' && notification.target_id) {
+      navigate({
+        pathname: '/erp/billing/issue',
+        search: new URLSearchParams({ request: notification.target_id }).toString(),
+      })
     }
   }
 
@@ -148,9 +163,7 @@ export default function NotificationBell() {
                   className={`px-4 py-3 border-b border-nx-mist/70 dark:border-nx-navy-border hover:bg-white dark:hover:bg-nx-navy-elevated transition cursor-pointer ${
                     !n.is_read ? 'bg-nx-blue/10 dark:bg-nx-blue/20' : ''
                   }`}
-                  onClick={() => {
-                    if (!n.is_read) markAsRead(n.id)
-                  }}
+                  onClick={() => openNotification(n)}
                 >
                   <div className="flex items-start gap-3">
                     <span className="text-lg mt-0.5">{getTypeIcon(n.type)}</span>
