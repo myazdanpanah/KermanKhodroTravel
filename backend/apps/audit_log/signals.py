@@ -66,6 +66,17 @@ def _get_field_values(instance, fields):
     return values
 
 
+def _get_actor():
+    """Resolve who acted, dropping users that are not persisted yet."""
+    from .middleware import get_current_user, get_current_ip, get_current_ua
+
+    user = get_current_user()
+    if user is not None and getattr(user, "pk", None) is None:
+        # An unsaved user cannot be a foreign key; keep the log, lose the name.
+        user = None
+    return user, get_current_ip(), get_current_ua()
+
+
 # ── Signal Handlers ──
 
 import threading
@@ -124,12 +135,8 @@ def audit_post_save(sender, instance, created, **kwargs):
     if not created and not changed_fields:
         return
 
-    # Get user from thread-local if middleware set it
-    from .middleware import get_current_user, get_current_ip, get_current_ua
-
-    user = get_current_user()
-    ip = get_current_ip()
-    ua = get_current_ua()
+    # Get the actor resolved after authentication, not during the middleware.
+    user, ip, ua = _get_actor()
 
     # Determine company
     company = getattr(instance, "company", None)
@@ -169,11 +176,7 @@ def audit_pre_delete(sender, instance, **kwargs):
     track_fields = _get_track_fields(sender)
     old_values = _get_field_values(instance, track_fields)
 
-    from .middleware import get_current_user, get_current_ip, get_current_ua
-
-    user = get_current_user()
-    ip = get_current_ip()
-    ua = get_current_ua()
+    user, ip, ua = _get_actor()
     company = getattr(instance, "company", None)
 
     obj_str = str(instance)[:200]

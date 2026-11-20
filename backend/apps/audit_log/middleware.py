@@ -11,9 +11,33 @@ from django.utils.deprecation import MiddlewareMixin
 _thread_locals = threading.local()
 
 
+def _authenticated(user):
+    """Return the user only when it is a real, signed-in account."""
+    if user is None or not getattr(user, "is_authenticated", False):
+        return None
+    return user
+
+
+def set_current_user(user):
+    """Record the actor once authentication has actually run."""
+    _thread_locals.user = _authenticated(user)
+
+
 def get_current_user():
-    """Get the current user from thread-local storage."""
-    return getattr(_thread_locals, "user", None)
+    """
+    Resolve the current actor as late as possible.
+
+    The middleware runs before DRF authenticates a JWT, so the Django request
+    still carries AnonymousUser at that point. The authentication class calls
+    set_current_user() after a successful login, and session authentication
+    has already populated request.user; reading both here keeps audit rows
+    attributed to whoever really performed the change.
+    """
+    user = _authenticated(getattr(_thread_locals, "user", None))
+    if user is not None:
+        return user
+    request = getattr(_thread_locals, "request", None)
+    return _authenticated(getattr(request, "user", None)) if request is not None else None
 
 
 def get_current_ip():
@@ -33,7 +57,10 @@ class AuditLogMiddleware(MiddlewareMixin):
     """
 
     def process_request(self, request):
-        _thread_locals.user = getattr(request, "user", None)
+        # Do not snapshot request.user here: with token auth it is still the
+        # AnonymousUser until the view's authentication classes run.
+        _thread_locals.request = request
+        _thread_locals.user = None
         _thread_locals.ip = self._get_client_ip(request)
         _thread_locals.user_agent = request.META.get("HTTP_USER_AGENT", "")[:500]
         _thread_locals.path = request.path
@@ -41,6 +68,7 @@ class AuditLogMiddleware(MiddlewareMixin):
 
     def process_response(self, request, response):
         # Clean up thread-local after response
+        _thread_locals.request = None
         _thread_locals.user = None
         _thread_locals.ip = None
         _thread_locals.user_agent = ""

@@ -1615,3 +1615,44 @@ class PaymentIdempotencyTests(TestCase):
         self.assertEqual(second.status_code, status.HTTP_200_OK)
         self.assertEqual(Payment.objects.count(), 1)
         self.assertEqual(payer_balance("2001")["payments"], 400_000)
+
+
+class PaymentDeletionAuditTests(TestCase):
+    """A delete through the API must be attributed to the signed-in actor."""
+
+    def setUp(self):
+        self.admin = User.objects.create_user(
+            username="audit_admin", password="pass12345", role="admin",
+            is_staff=True, is_superuser=True,
+        )
+        Payer.objects.create(code="2001", name="شرکت حسابرسی")
+        self.payment = Payment.objects.create(
+            payer_code="2001", payer_name="شرکت حسابرسی",
+            payment_date=dt.date(2025, 7, 1), amount=850_000,
+            tracking_number="TRK-AUD", created_by=self.admin,
+        )
+        from apps.accounts.authentication import JWTAuthentication
+        self.client = APIClient()
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f"Bearer {JWTAuthentication.generate_token(self.admin)}"
+        )
+
+    def test_payment_delete_is_attributed_to_the_actor(self):
+        from django.contrib.contenttypes.models import ContentType
+        from apps.audit_log.models import AuditLog
+
+        pk = self.payment.pk
+        response = self.client.delete(
+            f"/api/v1/billing/payments/{pk}/", {"reason": "ثبت اشتباه"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
+
+        ct = ContentType.objects.get_for_model(Payment)
+        entry = AuditLog.objects.get(action="delete", content_type=ct, object_id=str(pk))
+        # The middleware stores its context before DRF verifies the JWT; the
+        # authentication class must hand the actor to the signal afterwards.
+        self.assertEqual(entry.user, self.admin)
+        self.assertEqual(entry.ip_address, "127.0.0.1")
+        self.assertEqual(entry.old_values["amount"], 850_000)
+        self.assertEqual(entry.old_values["tracking_number"], "TRK-AUD")
+        self.assertEqual(BillingAuditEntry.objects.get(entity="payment").actor, self.admin)
