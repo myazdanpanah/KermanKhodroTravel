@@ -22,6 +22,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 from contextlib import contextmanager
 from pathlib import Path
@@ -534,6 +535,15 @@ def _shutdown_tree(process: subprocess.Popen, timeout: float = 10.0) -> None:
         pass
 
 
+# A Gunicorn worker serves several requests on one process (threads, or simply
+# overlapping work), and a full Chromium tree per concurrent request is what
+# exhausts the box. Only one browser may run per process; a second request waits
+# for the first to close. Each worker process has its own lock, which is what
+# keeps four workers from sharing a browser across processes (they cannot and
+# should not).
+_browser_lock = threading.Lock()
+
+
 class PdfBrowser:
     """
     One headless Chromium/Edge process shared by every PDF of a request.
@@ -550,6 +560,7 @@ class PdfBrowser:
         self._process = None
         self._port: int | None = None
         self._profile: str | None = None
+        self._lock_held = False
 
     @property
     def found(self) -> bool:
@@ -576,6 +587,17 @@ class PdfBrowser:
                 "برای تولید PDF نه مرورگر headless (Edge/Chrome) پیدا شد و نه WeasyPrint در دسترس است."
             )
             return self
+        if self._process is not None:
+            return self
+        if not self._lock_held:
+            # Waiting is the point: starting a second tree while the first is
+            # printing is exactly what this guard prevents.
+            if not _browser_lock.acquire(timeout=self.timeout):
+                self.launch_error = (
+                    "مرورگر PDF دیگری در همین پروسه در حال کار است؛ تولید صورت‌حساب دیرتر دوباره تلاش می‌شود."
+                )
+                return self
+            self._lock_held = True
         self._profile = tempfile.mkdtemp(prefix="kkt-pdf-")
         try:
             self._process = subprocess.Popen(
@@ -711,12 +733,18 @@ class PdfBrowser:
         return base64.b64decode(result.get("data") or "")
 
     def close(self) -> None:
-        if self._process is not None:
-            _shutdown_tree(self._process)
-        self._process = None
-        if self._profile:
-            shutil.rmtree(self._profile, ignore_errors=True)
-            self._profile = None
+        try:
+            if self._process is not None:
+                _shutdown_tree(self._process)
+            self._process = None
+            if self._profile:
+                shutil.rmtree(self._profile, ignore_errors=True)
+                self._profile = None
+        finally:
+            # Always hand the slot to the next request, even if shutdown fails.
+            if self._lock_held:
+                self._lock_held = False
+                _browser_lock.release()
 
     def __enter__(self) -> "PdfBrowser":
         return self.start()

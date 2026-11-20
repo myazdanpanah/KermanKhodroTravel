@@ -842,6 +842,84 @@ class PdfBrowserTests(TestCase):
         with mock.patch("sys.platform", "win32"):
             self.assertNotIn("--no-sandbox", browser._command())
 
+    def test_second_browser_waits_for_the_first_to_close(self):
+        import threading
+        import time as _time
+        from unittest import mock
+
+        from apps.billing.services import generation
+
+        order: list[str] = []
+        release = threading.Event()
+
+        def run(label: str, gate):
+            browser = generation.PdfBrowser(timeout=5)
+            browser.path = "/usr/bin/chromium"
+            browser.start()
+            order.append(label)
+            gate.wait(10)
+            browser.close()
+
+        first = threading.Thread(target=run, args=("first", release))
+        second = threading.Thread(target=run, args=("second", threading.Event()))
+        try:
+            with mock.patch.object(
+                generation.subprocess, "Popen", return_value=mock.Mock(pid=1)
+            ), mock.patch.object(
+                generation.PdfBrowser, "_wait_for_port", return_value=1234
+            ), mock.patch.object(generation, "_shutdown_tree"):
+                first.start()
+                deadline = _time.monotonic() + 5
+                while not order and _time.monotonic() < deadline:
+                    _time.sleep(0.02)
+                self.assertEqual(order, ["first"])
+                second.start()
+                _time.sleep(0.3)
+                # The second start is still blocked while the first holds the slot.
+                self.assertEqual(order, ["first"])
+                self.assertTrue(generation._browser_lock.locked())
+                release.set()
+                first.join(10)
+                second.join(10)
+        finally:
+            release.set()
+            first.join(10)
+            second.join(10)
+            if generation._browser_lock.locked():
+                generation._browser_lock.release()
+
+        self.assertEqual(order, ["first", "second"])
+        self.assertFalse(generation._browser_lock.locked())
+
+    def test_start_gives_up_when_the_slot_stays_busy(self):
+        from apps.billing.services import generation
+
+        self.assertTrue(generation._browser_lock.acquire(timeout=0))
+        try:
+            browser = generation.PdfBrowser(timeout=0.2)
+            browser.path = "/usr/bin/chromium"
+            browser.start()
+            self.assertIsNone(browser._process)
+            self.assertIn("مرورگر", browser.launch_error or "")
+        finally:
+            generation._browser_lock.release()
+        self.assertFalse(generation._browser_lock.locked())
+
+    def test_lock_is_released_when_the_browser_cannot_start(self):
+        from unittest import mock
+
+        from apps.billing.services import generation
+
+        with mock.patch.object(
+            generation.subprocess, "Popen", side_effect=OSError("no chromium")
+        ):
+            browser = generation.PdfBrowser()
+            browser.path = "/usr/bin/chromium"
+            browser.start()
+
+        self.assertIn("مرورگر", browser.launch_error or "")
+        self.assertFalse(generation._browser_lock.locked())
+
     def test_approval_records_the_pdf_failure_in_persian(self):
         from unittest import mock
 
