@@ -144,22 +144,23 @@ export default function OpportunitiesPage() {
         </div>
       )}
 
-      <div className="relative max-w-sm">
-        <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-nx-mist" />
-        <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="جستجو..."
-          className="w-full pr-10 pl-4 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm" />
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-nx-mist" />
+          <input type="text" value={search} onChange={e => setSearch(e.target.value)} placeholder="جستجو..."
+            className="w-full pr-10 pl-4 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm" />
+        </div>
+        <button
+          onClick={() => setOnlyMine(value => !value)}
+          className={`flex-shrink-0 px-3 py-2 rounded-lg text-sm border ${
+            onlyMine
+              ? 'bg-nx-blue text-white border-nx-blue'
+              : 'bg-white dark:bg-nx-navy text-nx-navy dark:text-white border-nx-mist dark:border-nx-muted'
+          }`}
+        >
+          فقط فرصت‌های من
+        </button>
       </div>
-
-      <button
-        onClick={() => setOnlyMine(value => !value)}
-        className={`px-3 py-2 rounded-lg text-sm border ${
-          onlyMine
-            ? 'bg-nx-blue text-white border-nx-blue'
-            : 'bg-white dark:bg-nx-navy text-nx-navy dark:text-white border-nx-mist dark:border-nx-muted'
-        }`}
-      >
-        فقط فرصت‌های من
-      </button>
 
       {view === 'board' && (
         <div className="space-y-4">
