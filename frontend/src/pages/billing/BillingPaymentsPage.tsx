@@ -6,6 +6,13 @@ import JalaliDateInput from '../../components/JalaliDateInput'
 import { CARD, INPUT, rial, type Payer, type Payment } from './shared'
 import { CreditCard, Plus, X, Trash2 } from 'lucide-react'
 
+// One token per opened form: retries and double clicks reuse it, so the server
+// can tell a replay from a second payment.
+const newIdempotencyKey = () =>
+  typeof crypto !== 'undefined' && 'randomUUID' in crypto
+    ? crypto.randomUUID()
+    : `pay-${Date.now()}-${Math.random().toString(16).slice(2)}`
+
 const emptyForm = {
   payer_code: '',
   amount: '',
@@ -27,6 +34,7 @@ export default function BillingPaymentsPage() {
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState(emptyForm)
+  const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -51,6 +59,15 @@ export default function BillingPaymentsPage() {
 
   const total = useMemo(() => rows.reduce((sum, row) => sum + Number(row.amount || 0), 0), [rows])
 
+  const toggleForm = () => {
+    if (open) {
+      setOpen(false)
+      return
+    }
+    setIdempotencyKey(newIdempotencyKey())
+    setOpen(true)
+  }
+
   const submit = async () => {
     if (!form.payer_code || !form.amount) {
       toast('شرکت و مبلغ الزامی است', 'error')
@@ -58,16 +75,21 @@ export default function BillingPaymentsPage() {
     }
     setSaving(true)
     try {
-      await api.post('/billing/payments/', {
-        payer_code: form.payer_code,
-        amount: Number(form.amount),
-        payment_date: form.payment_date || undefined,
-        tracking_number: form.tracking_number,
-        description: form.description,
-      })
+      await api.post(
+        '/billing/payments/',
+        {
+          payer_code: form.payer_code,
+          amount: Number(form.amount),
+          payment_date: form.payment_date || undefined,
+          tracking_number: form.tracking_number,
+          description: form.description,
+        },
+        idempotencyKey ? { headers: { 'Idempotency-Key': idempotencyKey } } : undefined
+      )
       toast('پرداخت ثبت شد', 'success')
       setForm(emptyForm)
       setOpen(false)
+      setIdempotencyKey(null)
       void load()
     } catch (err: unknown) {
       const apiError = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
@@ -99,7 +121,7 @@ export default function BillingPaymentsPage() {
           </div>
         </div>
         {canPay && (
-          <button onClick={() => setOpen((v) => !v)} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-nx-blue text-white text-sm hover:brightness-110 transition">
+          <button onClick={toggleForm} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-nx-blue text-white text-sm hover:brightness-110 transition">
             {open ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             {open ? 'بستن' : 'ثبت پرداخت'}
           </button>
