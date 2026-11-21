@@ -17,10 +17,12 @@ from apps.core.responses import (
 )
 
 from . import business
-from .models import Correspondence, Secretariat, SecretariatMember
+from .models import Contract, Correspondence, Secretariat, SecretariatMember
 from .serializers import (
     AttachmentSerializer,
     CommentSerializer,
+    ContractCreateSerializer,
+    ContractSerializer,
     CorrespondenceCreateSerializer,
     CorrespondenceDetailSerializer,
     CorrespondenceListSerializer,
@@ -37,6 +39,7 @@ from .services import (
     archive_correspondence,
     can_manage_attachments,
     can_open,
+    create_contract,
     create_correspondence,
     delete_attachment,
     is_privileged,
@@ -678,3 +681,48 @@ def correspondence_attachment_download(request, pk, attachment_id):
         metadata={"attachment_id": attachment.id},
     )
     return response
+
+
+@api_view(["GET", "POST"])
+def contracts(request):
+    """Contract registry: each contract owns an automatically issued letter."""
+    gate = _gate(request)
+    if gate:
+        return gate
+    company = request.user.company
+    if request.method == "GET":
+        qs = Contract.objects.filter(company=company).select_related("secretariat", "correspondence")
+        term = (request.query_params.get("q") or "").strip()
+        if term:
+            qs = qs.filter(
+                Q(title__icontains=term) | Q(counterparty__icontains=term)
+                | Q(contract_number__icontains=term)
+            )
+        return success_response(data=ContractSerializer(qs[:200], many=True).data)
+
+    serializer = ContractCreateSerializer(data=request.data)
+    if not serializer.is_valid():
+        return validation_error_response(serializer.errors)
+    try:
+        contract, registered = create_contract(request.user, serializer.validated_data)
+    except OfficeError as exc:
+        return _fail(exc)
+    message = "قرارداد ثبت و نامهٔ آن صادر شد" if registered else "قرارداد ثبت شد؛ نامه به‌صورت پیش‌نویس ساخته شد"
+    return success_response(
+        data=ContractSerializer(contract).data, message=message, http_status_code=201,
+    )
+
+
+@api_view(["GET"])
+def contract_detail(request, pk):
+    gate = _gate(request)
+    if gate:
+        return gate
+    contract = (
+        Contract.objects.filter(pk=pk, company=request.user.company)
+        .select_related("secretariat", "correspondence")
+        .first()
+    )
+    if contract is None:
+        return not_found_response("قرارداد یافت نشد")
+    return success_response(data=ContractSerializer(contract).data)

@@ -94,6 +94,7 @@ class Correspondence(BaseModel):
         ("incoming", "وارده"),
         ("outgoing", "صادره"),
         ("internal", "داخلی"),
+        ("contract", "قرارداد"),
     ]
     REGISTRATION_CHOICES = [
         ("draft", "پیش‌نویس"),
@@ -411,3 +412,35 @@ class OfficeBusinessLink(models.Model):
 
     def __str__(self):
         return f"{self.office_object_type}:{self.office_object_id} → {self.reference}"
+
+
+class Contract(BaseModel):
+    """A registered contract; the office letter is created automatically."""
+
+    CURRENCY_CHOICES = [
+        ("IRR", "ریال"),
+        ("IRT", "تومان"),
+        ("USD", "دلار"),
+        ("EUR", "یورو"),
+    ]
+
+    secretariat = models.ForeignKey(
+        Secretariat, on_delete=models.SET_NULL, null=True, blank=True, related_name="contracts",
+    )
+    title = models.CharField(max_length=200)
+    contract_number = models.CharField(max_length=100, blank=True, default="")
+    counterparty = models.CharField(max_length=200)
+    amount = models.DecimalField(max_digits=20, decimal_places=0, null=True, blank=True)
+    currency = models.CharField(max_length=5, choices=CURRENCY_CHOICES, default="IRR")
+    start_date_jalali = models.CharField(max_length=10, blank=True, default="")
+    end_date_jalali = models.CharField(max_length=10, blank=True, default="")
+    description = models.TextField(blank=True, default="")
+    correspondence = models.OneToOneField(
+        Correspondence, on_delete=models.SET_NULL, null=True, blank=True, related_name="contract",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.title} — {self.counterparty}"

@@ -22,6 +22,9 @@ urlpatterns = [
     path("correspondence/<int:pk>/business-links/", views.correspondence_business_links),
     path("correspondence/<int:pk>/business-links/<int:link_id>/", views.correspondence_business_link_delete),
 
+    path("contracts/", views.contracts, name="office-contracts"),
+    path("contracts/<int:pk>/", views.contract_detail, name="office-contract-detail"),
+
     path("meta/", views.office_meta, name="office-meta"),
     path("secretariats/", views.secretariat_list, name="office-secretariat-list"),
     path("secretariats/<int:pk>/", views.secretariat_detail, name="office-secretariat-detail"),

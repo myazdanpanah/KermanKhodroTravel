@@ -29,7 +29,7 @@ const STATUS_LABEL: Record<string, string> = {
   answered: 'پاسخ داده‌شده', closed: 'بسته‌شده',
 };
 const PRIORITY_LABEL: Record<string, string> = { low: 'کم', normal: 'عادی', high: 'زیاد', urgent: 'فوری' };
-const TYPE_LABEL: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
+const TYPE_LABEL: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی', contract: 'قرارداد' };
 
 type RecipientDraft = { user_id: string; delivery_type: 'primary' | 'action_required' | 'cc' };
 

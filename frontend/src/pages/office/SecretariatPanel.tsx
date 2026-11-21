@@ -22,10 +22,10 @@ type NumberingForm = {
   pattern: string;
   padding: string;
   persian: boolean;
-  letters: { incoming: string; outgoing: string; internal: string };
+  letters: { incoming: string; outgoing: string; internal: string; contract: string };
 };
 
-const DEFAULT_LETTERS = { incoming: 'I', outgoing: 'O', internal: 'N' };
+const DEFAULT_LETTERS = { incoming: 'I', outgoing: 'O', internal: 'N', contract: 'C' };
 
 function renderPreview(code: string, form: NumberingForm) {
   const sample = (form.pattern || '{year}/{code}/{type}/{seq}')
@@ -51,6 +51,7 @@ function NumberingEditor({ row, onSaved }: { row: SecretariatInfo; onSaved: (row
       incoming: row.type_letters?.incoming || '',
       outgoing: row.type_letters?.outgoing || '',
       internal: row.type_letters?.internal || '',
+      contract: row.type_letters?.contract || '',
     },
   });
 
@@ -74,6 +75,7 @@ function NumberingEditor({ row, onSaved }: { row: SecretariatInfo; onSaved: (row
           incoming: form.letters.incoming.trim(),
           outgoing: form.letters.outgoing.trim(),
           internal: form.letters.internal.trim(),
+          contract: form.letters.contract.trim(),
         },
       });
       onSaved({ ...row, ...res.data.data });
@@ -112,7 +114,7 @@ function NumberingEditor({ row, onSaved }: { row: SecretariatInfo; onSaved: (row
                 className="mt-1 w-full rounded-lg border border-nx-border bg-transparent px-2 py-1.5 text-xs dark:border-nx-navy-border dark:text-white" />
             </label>
             <div className="grid grid-cols-3 gap-2">
-              {([['incoming', 'وارده'], ['outgoing', 'صادره'], ['internal', 'داخلی']] as const).map(([key, label]) => (
+              {([['incoming', 'وارده'], ['outgoing', 'صادره'], ['internal', 'داخلی'], ['contract', 'قرارداد']] as const).map(([key, label]) => (
                 <label key={key} className="block text-[11px] text-nx-mist">
                   حرف {label}
                   <input value={form.letters[key]} placeholder={DEFAULT_LETTERS[key]}

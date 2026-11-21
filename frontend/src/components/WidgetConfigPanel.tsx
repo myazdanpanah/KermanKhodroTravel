@@ -138,7 +138,8 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
   )
 
   // Font config
-  const [fontConfig, setFontConfig] = useState<FontConfig>(
+  // Read-only: typography is global now, but older widgets still carry the key.
+  const [fontConfig] = useState<FontConfig>(
     ((widget?.chartConfig as Record<string, unknown>)?.fontConfig as FontConfig) || {}
   )
 
@@ -824,39 +825,6 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                 </div>
               </div>
               <p className="text-[10px] text-slate-600 dark:text-slate-200">مثلاً: ۱۰ مورد برتر یا ۵ مورد آخر</p>
-            </div>
-          )}
-
-          {/* Font sizes */}
-          {chartType !== 'table' && (
-            <div className="border border-nx-border dark:border-nx-muted rounded-xl p-4 space-y-3">
-              <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist">اندازه فونت</label>
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">متن/برچسب (px)</label>
-                  <input
-                    type="number"
-                    min={8}
-                    max={32}
-                    value={fontConfig.labelSize ?? ''}
-                    onChange={(e) => setFontConfig({ ...fontConfig, labelSize: parseInt(e.target.value) || undefined })}
-                    className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
-                    placeholder="۱۱"
-                  />
-                </div>
-                <div className="flex-1">
-                  <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">اعداد/مقادیر (px)</label>
-                  <input
-                    type="number"
-                    min={8}
-                    max={48}
-                    value={fontConfig.valueSize ?? ''}
-                    onChange={(e) => setFontConfig({ ...fontConfig, valueSize: parseInt(e.target.value) || undefined })}
-                    className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
-                    placeholder="۱۴"
-                  />
-                </div>
-              </div>
             </div>
           )}
 

@@ -11,7 +11,7 @@ import { officeApi, Letter, WorkbenchSummary } from '../../api/office';
 import { useToast } from '../../components/Toast';
 import { formatJalali } from '../../lib/jalali';
 
-const TYPE_LABEL: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
+const TYPE_LABEL: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی', contract: 'قرارداد' };
 const PRIORITY_LABEL: Record<string, string> = { low: 'کم', normal: 'عادی', high: 'زیاد', urgent: 'فوری' };
 const STATUS_LABEL: Record<string, string> = {
   open: 'باز', in_progress: 'در جریان', awaiting_reply: 'در انتظار پاسخ',

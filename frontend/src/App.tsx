@@ -85,6 +85,7 @@ const CampaignsPage = lazy(() => import('./pages/crm/CampaignsPage'))
 const OfficeWorkbenchPage = lazy(() => import('./pages/office/WorkbenchPage'))
 const OfficeLettersPage = lazy(() => import('./pages/office/CorrespondenceListPage'))
 const OfficeCorrespondencePage = lazy(() => import('./pages/office/CorrespondenceDetailPage'))
+const OfficeContractsPage = lazy(() => import('./pages/office/ContractsPage'))
 // Reporting module
 const ReportsPage = lazy(() => import('./pages/reporting/ReportsPage'))
 const DashboardsPage = lazy(() => import('./pages/reporting/DashboardsPage'))
@@ -241,6 +242,7 @@ export default function App() {
           <Route path="office" element={<OfficeWorkbenchPage />} />
           <Route path="office/correspondence" element={<OfficeLettersPage />} />
           <Route path="office/correspondence/:id" element={<OfficeCorrespondencePage />} />
+          <Route path="office/contracts" element={<OfficeContractsPage />} />
           {/* HR */}
           <Route path="hr" element={<HRDashboard />} />
           <Route path="hr/employees" element={<EmployeesPage />} />

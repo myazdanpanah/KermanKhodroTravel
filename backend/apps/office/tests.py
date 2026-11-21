@@ -296,3 +296,56 @@ class SecretariatNumberingTests(OfficeTestBase):
         self.client.force_authenticate(self.ceo)
         response = self.client.patch(self.url, {"number_pattern": "{year}/{code}"}, format="json")
         self.assertEqual(response.status_code, 400)
+
+
+class ContractTests(OfficeTestBase):
+    """Contracts are registered with an automatically issued letter."""
+
+    def setUp(self):
+        super().setUp()
+        self.client = APIClient()
+        self.client.force_authenticate(self.ceo)
+        self.url = "/api/v1/office/contracts/"
+
+    def payload(self, **kwargs):
+        data = {
+            "title": "حمل بار",
+            "counterparty": "شرکت نمونه",
+            "contract_number": "CN-101",
+            "amount": "2500000",
+            "currency": "IRR",
+            "start_date_jalali": "1404/02/01",
+            "end_date_jalali": "1404/12/01",
+            "secretariat_id": self.secretariat.id,
+        }
+        data.update(kwargs)
+        return data
+
+    def test_contract_issues_registered_letter(self):
+        response = self.client.post(self.url, self.payload(), format="json")
+        self.assertEqual(response.status_code, 201, response.data)
+        data = response.data["data"]
+        self.assertEqual(data["registration_status"], "registered")
+        self.assertEqual(data["letter_number"], "1404/OUT/C/000001")
+
+        letter = Correspondence.objects.get(pk=data["letter_id"])
+        self.assertEqual(letter.correspondence_type, "contract")
+        self.assertEqual(letter.subject, "قرارداد حمل بار")
+        self.assertIn("شرکت نمونه", letter.body)
+        self.assertIn("2,500,000", letter.body)
+
+    def test_contract_requires_core_fields(self):
+        response = self.client.post(self.url, {"title": "", "counterparty": ""}, format="json")
+        self.assertEqual(response.status_code, 400)
+
+    def test_contracts_are_company_scoped(self):
+        self.client.post(self.url, self.payload(title="قرارداد من"), format="json")
+        self.client.force_authenticate(self.other_user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["data"], [])
+
+    def test_contracts_are_searchable(self):
+        self.client.post(self.url, self.payload(), format="json")
+        response = self.client.get(self.url, {"q": "نمونه"})
+        self.assertEqual(len(response.data["data"]), 1)

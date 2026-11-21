@@ -119,8 +119,26 @@ export interface SecretariatInfo {
   number_pattern?: string;
   sequence_padding?: number;
   persian_digits?: boolean;
-  type_letters?: Partial<Record<'incoming' | 'outgoing' | 'internal', string>>;
+  type_letters?: Partial<Record<'incoming' | 'outgoing' | 'internal' | 'contract', string>>;
   members: { id: number; user: number; user_name: string; can_register: boolean }[];
+}
+
+export interface ContractRecord {
+  id: number;
+  title: string;
+  contract_number: string;
+  counterparty: string;
+  amount: string | null;
+  currency: 'IRR' | 'IRT' | 'USD' | 'EUR';
+  start_date_jalali: string;
+  end_date_jalali: string;
+  description: string;
+  secretariat: number | null;
+  secretariat_name: string;
+  letter_id: number | null;
+  letter_number: string;
+  registration_status: string;
+  created_at: string;
 }
 
 export interface WorkbenchSummary {
@@ -143,6 +161,11 @@ export interface TimelineEvent {
 export const officeApi = {
   getMeta: () => apiClient.get<{ data: OfficeMeta }>('/office/meta/'),
   getWorkbench: () => apiClient.get<{ data: WorkbenchSummary }>('/office/workbench/'),
+  getContracts: (q?: string) =>
+    apiClient.get<{ data: ContractRecord[] }>('/office/contracts/', { params: q ? { q } : undefined }),
+  createContract: (payload: Record<string, unknown>) =>
+    apiClient.post<{ data: ContractRecord; message?: string }>('/office/contracts/', payload),
+  getContract: (id: number) => apiClient.get<{ data: ContractRecord }>(`/office/contracts/${id}/`),
   getWorkbenchList: (bucket: string) =>
     apiClient.get<{ data: Letter[] }>('/office/workbench/list/', { params: { bucket } }),
   getLetters: (params?: Record<string, string>) =>

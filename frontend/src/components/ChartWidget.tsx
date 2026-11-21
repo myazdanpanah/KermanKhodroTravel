@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import * as echarts from 'echarts'
 import { applyRTL } from '../utils/rtlConfig'
-import { getChartDefaults, readFontConfig } from '../utils/chartDefaults'
+import { getChartDefaults } from '../utils/chartDefaults'
 import { formatKpiValue, toPersianDigits, type KpiFormat } from '../utils/kpiFormat'
 import { type DashboardFilter } from '../store/dashboardStore'
 import { isMapRegistered, registerMap } from '../utils/mapRegistry'
@@ -259,9 +259,8 @@ function buildChartOption(
   const tooltipBg = ws?.tooltipStyle === 'dark' ? '#1a1a2e' : undefined
   const tooltipFg = ws?.tooltipStyle === 'dark' ? '#e2e8f0' : undefined
 
-  // Configurable font sizes
-  const fc = readFontConfig(customConfig)
-  const labelFontSize = fc.labelSize || 11
+  // One label size everywhere; dashboards must not drift apart.
+  const labelFontSize = 11
 
   // Axis label formatter with Persian digits for numeric axes
   const persianAxisFormatter = (val: unknown) => {
@@ -1159,8 +1158,7 @@ export default function ChartWidget({
     }
     if (leaderData) {
       const cfg = widget.chartConfig || {}
-      const fontConfig = readFontConfig(cfg)
-      const condColor = evalConditionalRules(readConditionalRules(cfg), leaderData.value)
+            const condColor = evalConditionalRules(readConditionalRules(cfg), leaderData.value)
       const leaderColor = condColor || (cfg.singleColor as string) || undefined
 
       return (
@@ -1168,7 +1166,7 @@ export default function ChartWidget({
           <span className="text-nx-warning-500 text-3xl">🏆</span>
           <span
             className="font-extrabold leading-none text-nx-blue dark:text-nx-blue"
-            style={{ fontSize: `${fontConfig.valueSize || 28}px`, color: leaderColor }}
+            style={{ fontSize: '28px', color: leaderColor }}
           >
             {leaderData.name}
           </span>
@@ -1195,8 +1193,7 @@ export default function ChartWidget({
     }
     if (kpiData) {
       const cfg = widget.chartConfig || {}
-      const fontConfig = readFontConfig(cfg)
-      // Color precedence: conditional rule → explicit singleColor → default
+            // Color precedence: conditional rule → explicit singleColor → default
       const kpiVal = kpiData.rawValue ?? 0
       const condColor = evalConditionalRules(readConditionalRules(cfg), kpiVal)
       const kpiColor =
@@ -1209,7 +1206,7 @@ export default function ChartWidget({
           <span
             className="font-extrabold leading-none text-nx-blue dark:text-nx-blue"
             style={{
-              fontSize: `${fontConfig.valueSize || 30}px`,
+              fontSize: '28px',
               color: kpiColor,
             }}
           >

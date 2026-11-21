@@ -3,6 +3,7 @@
 from rest_framework import serializers
 
 from .models import (
+    Contract,
     Correspondence,
     CorrespondenceAction,
     CorrespondenceAttachment,
@@ -48,7 +49,7 @@ class SecretariatNumberingSerializer(serializers.ModelSerializer):
     def validate_type_letters(self, value):
         if not isinstance(value, dict):
             raise serializers.ValidationError("حروف نوع نامه باید به صورت نگاشت ارسال شود")
-        allowed = {"incoming", "outgoing", "internal"}
+        allowed = {"incoming", "outgoing", "internal", "contract"}
         for key, letter in value.items():
             if key not in allowed:
                 raise serializers.ValidationError(f"نوع نامعتبر: {key}")
@@ -240,3 +241,37 @@ class CorrespondenceCreateSerializer(serializers.Serializer):
             if item.get("recipient_type") not in {"user", "team", "division", "external"}:
                 raise serializers.ValidationError("نوع گیرنده نامعتبر است")
         return value
+
+
+class ContractSerializer(serializers.ModelSerializer):
+    secretariat_name = serializers.CharField(source="secretariat.name", read_only=True, default="")
+    letter_id = serializers.IntegerField(source="correspondence_id", read_only=True)
+    letter_number = serializers.CharField(
+        source="correspondence.registration_number", read_only=True, default="",
+    )
+    registration_status = serializers.CharField(
+        source="correspondence.registration_status", read_only=True, default="",
+    )
+
+    class Meta:
+        model = Contract
+        fields = [
+            "id", "title", "contract_number", "counterparty", "amount", "currency",
+            "start_date_jalali", "end_date_jalali", "description", "secretariat",
+            "secretariat_name", "letter_id", "letter_number", "registration_status",
+            "created_at",
+        ]
+
+
+class ContractCreateSerializer(serializers.Serializer):
+    title = serializers.CharField(max_length=200)
+    counterparty = serializers.CharField(max_length=200)
+    contract_number = serializers.CharField(required=False, allow_blank=True, default="", max_length=100)
+    amount = serializers.DecimalField(
+        max_digits=20, decimal_places=0, required=False, allow_null=True, min_value=0,
+    )
+    currency = serializers.ChoiceField(choices=Contract.CURRENCY_CHOICES, default="IRR")
+    start_date_jalali = serializers.CharField(required=False, allow_blank=True, default="", max_length=10)
+    end_date_jalali = serializers.CharField(required=False, allow_blank=True, default="", max_length=10)
+    description = serializers.CharField(required=False, allow_blank=True, default="")
+    secretariat_id = serializers.IntegerField(required=False, allow_null=True)

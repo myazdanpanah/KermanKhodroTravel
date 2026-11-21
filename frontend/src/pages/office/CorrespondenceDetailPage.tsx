@@ -13,7 +13,7 @@ import { useToast } from '../../components/Toast';
 import JalaliDateInput from '../../components/JalaliDateInput';
 import { formatJalali } from '../../lib/jalali';
 
-const TYPE_LABEL: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
+const TYPE_LABEL: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی', contract: 'قرارداد' };
 const STATUS_LABEL: Record<string, string> = {
   open: 'باز', in_progress: 'در جریان', awaiting_reply: 'در انتظار پاسخ',
   answered: 'پاسخ داده‌شده', closed: 'بسته‌شده',

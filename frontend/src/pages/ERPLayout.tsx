@@ -9,7 +9,7 @@ import {
   LayoutDashboard, FileText, CreditCard, Users, Gauge, Plus,
   Calendar, Target, TrendingUp, Inbox, Mail,
   Settings, ChevronLeft, ChevronDown,
-  Shield, Search, Sun, Moon, Menu, Briefcase, Check, X,
+  Shield, Search, Sun, Moon, Menu, Briefcase, Check, X, FileSignature,
 } from 'lucide-react';
 import GlobalSearch from '../components/GlobalSearch';
 import QuickCreateButton from '../components/QuickCreateButton';
@@ -67,6 +67,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { to: '/erp/office', icon: Inbox, label: 'میزکار اداری', end: true },
       { to: '/erp/office/correspondence', icon: Mail, label: 'نامه‌ها' },
+      { to: '/erp/office/contracts', icon: FileSignature, label: 'قراردادها' },
     ],
   },
   {

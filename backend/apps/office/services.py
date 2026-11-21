@@ -17,6 +17,7 @@ import jdatetime
 from apps.accounts.models import User
 
 from .models import (
+    Contract,
     Correspondence,
     CorrespondenceAction,
     CorrespondenceAttachment,
@@ -208,7 +209,7 @@ def _jalali_year(letter, fallback=None):
     return jdatetime.date.fromgregorian(date=gregorian).year
 
 
-TYPE_CODE = {"incoming": "I", "outgoing": "O", "internal": "N"}
+TYPE_CODE = {"incoming": "I", "outgoing": "O", "internal": "N", "contract": "C"}
 
 
 PERSIAN_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
@@ -610,3 +611,73 @@ def update_draft(letter, user, data):
         metadata={"fields": changed, "recipients_changed": recipients is not None},
     )
     return letter
+
+
+CURRENCY_LABEL = {"IRR": "ریال", "IRT": "تومان", "USD": "دلار", "EUR": "یورو"}
+
+
+def _contract_body(contract):
+    """The auto letter summarises the contract so the archive is self-contained."""
+    parts = [f"طرف قرارداد: {contract.counterparty}"]
+    if contract.contract_number:
+        parts.append(f"شمارهٔ قرارداد: {contract.contract_number}")
+    if contract.amount is not None:
+        parts.append(f"مبلغ: {contract.amount:,} {CURRENCY_LABEL.get(contract.currency, contract.currency)}")
+    if contract.start_date_jalali:
+        parts.append(f"تاریخ شروع: {contract.start_date_jalali}")
+    if contract.end_date_jalali:
+        parts.append(f"تاریخ پایان: {contract.end_date_jalali}")
+    if contract.description:
+        parts.extend(["", contract.description])
+    return "\n".join(parts)
+
+
+@transaction.atomic
+def create_contract(user, data):
+    """Register a contract and let the secretariat issue its letter automatically."""
+    title = (data.get("title") or "").strip()
+    counterparty = (data.get("counterparty") or "").strip()
+    if not title or not counterparty:
+        raise OfficeError("عنوان قرارداد و طرف قرارداد الزامی است", 400)
+
+    secretariat = None
+    if data.get("secretariat_id"):
+        secretariat = Secretariat.objects.filter(
+            pk=data["secretariat_id"], company=user.company, is_active=True,
+        ).first()
+        if secretariat is None:
+            raise OfficeError("دبیرخانه انتخاب‌شده معتبر نیست", 400)
+
+    contract = Contract.objects.create(
+        company=user.company,
+        secretariat=secretariat,
+        title=title,
+        contract_number=(data.get("contract_number") or "").strip(),
+        counterparty=counterparty,
+        amount=data.get("amount"),
+        currency=data.get("currency") or "IRR",
+        start_date_jalali=(data.get("start_date_jalali") or "").strip(),
+        end_date_jalali=(data.get("end_date_jalali") or "").strip(),
+        description=(data.get("description") or "").strip(),
+        created_by=user,
+        updated_by=user,
+    )
+
+    subject = title if title.startswith("قرارداد") else f"قرارداد {title}"
+    letter = create_correspondence(user, {
+        "subject": subject,
+        "body": _contract_body(contract),
+        "correspondence_type": "contract",
+        "secretariat_id": secretariat.id if secretariat else None,
+        "letter_date_jalali": contract.start_date_jalali,
+    })
+    contract.correspondence = letter
+    contract.save(update_fields=["correspondence"])
+
+    registered = False
+    if secretariat and can_register_letter(user, letter):
+        register_correspondence(letter, user)
+        letter.refresh_from_db()
+        contract.correspondence = letter
+        registered = True
+    return contract, registered

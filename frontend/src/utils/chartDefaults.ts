@@ -16,21 +16,18 @@ export interface FontConfig {
 
 /** Read a FontConfig off a chartConfig object (defensive). */
 export function readFontConfig(cfg: Record<string, unknown> | undefined): FontConfig {
-  const f = (cfg?.fontConfig as Record<string, unknown> | undefined) || {}
-  return {
-    labelSize: typeof f.labelSize === 'number' ? f.labelSize : undefined,
-    valueSize: typeof f.valueSize === 'number' ? f.valueSize : undefined,
-    fontFamily: typeof f.fontFamily === 'string' && f.fontFamily.trim()
-      ? f.fontFamily
-      : undefined,
-  }
+  // Dashboards must look identical: per-widget typography overrides stored by
+  // older dashboards are intentionally ignored in favour of the global scale.
+  void cfg
+  return {}
 }
 
 const BASE_FONT_FAMILY = "'Vazirmatn', Tahoma, Arial, sans-serif"
 
 /** Resolve an effective font family for ECharts. */
 export function resolveFontFamily(cfg: Record<string, unknown> | undefined): string {
-  return readFontConfig(cfg).fontFamily || BASE_FONT_FAMILY
+  void cfg
+  return BASE_FONT_FAMILY
 }
 
 const baseTheme = {
