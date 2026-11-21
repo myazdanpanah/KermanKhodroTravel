@@ -389,16 +389,6 @@ export default function ERPLayout() {
             <FileText className="w-5 h-5" />
             <span>صورت‌حساب</span>
           </NavLink>
-          <div className="relative h-full">
-            <button
-              onClick={() => { setMobileOpen(false); setQuickOpen((value) => !value) }}
-              aria-label="ثبت جدید"
-              aria-expanded={quickOpen}
-              className="absolute -top-7 left-1/2 grid h-14 w-14 -translate-x-1/2 place-items-center rounded-full bg-nx-teal text-white shadow-lg ring-4 ring-white transition hover:opacity-90 dark:ring-nx-navy"
-            >
-              <Plus className={`h-7 w-7 transition-transform ${quickOpen ? 'rotate-45' : ''}`} />
-            </button>
-          </div>
           <NavLink
             to="/erp/office"
             className={({ isActive }) =>
@@ -417,6 +407,16 @@ export default function ERPLayout() {
             <Menu className="w-5 h-5" />
             <span>منو</span>
           </button>
+          <div className="relative h-full">
+            <button
+              onClick={() => { setMobileOpen(false); setQuickOpen((value) => !value) }}
+              aria-label="ثبت جدید"
+              aria-expanded={quickOpen}
+              className="absolute -top-7 left-3 grid h-14 w-14 place-items-center rounded-full bg-nx-teal text-white shadow-lg ring-4 ring-white transition hover:opacity-90 dark:ring-nx-navy"
+            >
+              <Plus className={`h-7 w-7 transition-transform ${quickOpen ? 'rotate-45' : ''}`} />
+            </button>
+          </div>
         </div>
       </nav>
 

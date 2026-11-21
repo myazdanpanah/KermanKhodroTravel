@@ -29,7 +29,7 @@ export default function QuickCreateButton() {
   return (
     <>
       {open && <div className="fixed inset-0 z-30 hidden lg:block" onClick={() => setOpen(false)} />}
-      <div className="fixed bottom-6 left-6 z-40 hidden flex-col items-start lg:flex">
+      <div className="fixed bottom-7 left-8 z-40 hidden flex-col items-start lg:flex">
         <div
           className={`mb-3 w-64 origin-bottom-left rounded-2xl border border-nx-navy-border bg-nx-navy-elevated p-2 shadow-2xl transition-all duration-300 ease-out ${
             open ? 'scale-100 opacity-100' : 'pointer-events-none scale-0 opacity-0'
