@@ -223,6 +223,21 @@ export default function CorrespondenceDetailPage() {
     }
   };
 
+  const removeLetter = async () => {
+    if (!letter) return;
+    if (!window.confirm('این نامه و پیوست‌هایش حذف می‌شود و شمارهٔ آن آزاد می‌شود. ادامه می‌دهید؟')) return;
+    setBusy(true);
+    try {
+      const res = await officeApi.deleteLetter(letter.id);
+      toast(res.data.message || 'نامه حذف شد', 'success');
+      navigate('/erp/office/correspondence');
+    } catch (err) {
+      toast(errorMessage(err, 'حذف نامه انجام نشد'), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const previewKind = (attachment: Attachment): 'pdf' | 'image' | null => {
     const type = (attachment.content_type || '').toLowerCase();
     const name = attachment.original_name.toLowerCase();
@@ -292,7 +307,7 @@ export default function CorrespondenceDetailPage() {
           </button>
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded bg-black/5 px-2 py-1 font-mono text-[11px] text-nx-mist dark:bg-white/10">
+              <span className="nx-number rounded bg-black/5 px-2 py-1 text-[11px] text-nx-mist dark:bg-white/10">
                 {letter.registration_number || 'پیش‌نویس'}
               </span>
               <span className="rounded-full bg-nx-blue/10 px-2 py-0.5 text-[11px] text-nx-blue">
@@ -337,6 +352,13 @@ export default function CorrespondenceDetailPage() {
               onClick={() => act(() => officeApi.archiveLetter(letter.id), 'نامه بایگانی شد')}
               className="flex items-center gap-1.5 rounded-lg border border-nx-border px-3 py-2 text-xs text-nx-mist dark:border-nx-navy-border">
               <Archive className="h-4 w-4" /> بایگانی
+            </button>
+          )}
+          {letter.can_delete && (
+            <button disabled={busy}
+              onClick={removeLetter}
+              className="flex items-center gap-1.5 rounded-lg border border-nx-danger/40 px-3 py-2 text-xs text-nx-danger disabled:opacity-50">
+              <Trash2 className="h-4 w-4" /> حذف نامه
             </button>
           )}
         </div>

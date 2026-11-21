@@ -349,3 +349,38 @@ class ContractTests(OfficeTestBase):
         self.client.post(self.url, self.payload(), format="json")
         response = self.client.get(self.url, {"q": "نمونه"})
         self.assertEqual(len(response.data["data"]), 1)
+
+
+class DeleteLetterTests(OfficeTestBase):
+    """Deleting a registered letter frees its number for the next letter."""
+
+    def setUp(self):
+        super().setUp()
+        self.client = APIClient()
+        from .models import SecretariatMember
+
+        self.member = create_test_user(username="office_deleter", company=self.company, role="sales")
+        SecretariatMember.objects.create(secretariat=self.secretariat, user=self.member)
+
+    def test_manager_deletes_and_number_is_reused(self):
+        letter = self.draft()
+        register_correspondence(letter, self.member)
+        letter.refresh_from_db()
+        number = letter.registration_number
+
+        self.client.force_authenticate(self.member)
+        response = self.client.delete(f"/api/v1/office/correspondence/{letter.id}/delete/")
+        self.assertEqual(response.status_code, 200, response.data)
+        self.assertFalse(Correspondence.objects.filter(pk=letter.id).exists())
+
+        follow_up = self.draft(subject="نامهٔ بعدی")
+        register_correspondence(follow_up, self.member)
+        follow_up.refresh_from_db()
+        self.assertEqual(follow_up.registration_number, number)
+
+    def test_non_member_cannot_delete(self):
+        letter = self.draft(user=self.sales)
+        self.client.force_authenticate(self.sales)
+        response = self.client.delete(f"/api/v1/office/correspondence/{letter.id}/delete/")
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Correspondence.objects.filter(pk=letter.id).exists())

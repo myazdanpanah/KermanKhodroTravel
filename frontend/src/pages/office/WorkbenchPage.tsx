@@ -125,7 +125,7 @@ export default function WorkbenchPage() {
               <li key={letter.id}>
                 <button onClick={() => navigate(`/erp/office/correspondence/${letter.id}`)}
                   className="flex w-full flex-wrap items-center gap-3 px-4 py-3 text-right hover:bg-nx-blue/5">
-                  <span className="rounded bg-black/5 px-2 py-1 font-mono text-[11px] text-nx-mist dark:bg-white/10">
+                  <span className="nx-number rounded bg-black/5 px-2 py-1 text-[11px] text-nx-mist dark:bg-white/10">
                     {letter.registration_number || 'پیش‌نویس'}
                   </span>
                   <span className="min-w-0 flex-1 truncate text-sm font-medium text-nx-navy dark:text-white">

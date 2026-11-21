@@ -42,6 +42,7 @@ from .services import (
     create_contract,
     create_correspondence,
     delete_attachment,
+    delete_correspondence,
     is_privileged,
     is_secretariat_member,
     log_action,
@@ -217,6 +218,10 @@ def correspondence_detail(request, pk):
         payload["business_links"] = business.links_for(letter.company, "correspondence", letter.id, request.user)
         payload["can_edit"] = can_edit_draft(letter, request.user)
         payload["can_manage_attachments"] = can_manage_attachments(request.user, letter)
+        payload["can_delete"] = bool(
+            is_privileged(request.user)
+            or is_secretariat_member(request.user, letter.secretariat_id, require_register=True)
+        )
         return success_response(data=payload)
 
     serializer = DraftUpdateSerializer(data=request.data, partial=True)
@@ -726,3 +731,19 @@ def contract_detail(request, pk):
     if contract is None:
         return not_found_response("قرارداد یافت نشد")
     return success_response(data=ContractSerializer(contract).data)
+
+
+@api_view(["DELETE"])
+def correspondence_delete(request, pk):
+    gate = _gate(request)
+    if gate:
+        return gate
+    letter, error = _letter(request, pk)
+    if error:
+        return error
+    try:
+        number = delete_correspondence(letter, request.user)
+    except OfficeError as exc:
+        return _fail(exc)
+    message = f"نامه حذف شد و شمارهٔ {number} آزاد شد" if number else "نامه حذف شد"
+    return success_response(data={"registration_number": number}, message=message)

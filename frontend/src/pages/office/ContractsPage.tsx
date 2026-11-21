@@ -212,7 +212,7 @@ export default function ContractsPage() {
                   <div><dt className="text-nx-mist">مبلغ</dt><dd className="text-nx-navy dark:text-white">{money(contract.amount, contract.currency)}</dd></div>
                   <div><dt className="text-nx-mist">شروع</dt><dd className="text-nx-navy dark:text-white">{contract.start_date_jalali ? formatJalali(contract.start_date_jalali) : '—'}</dd></div>
                   <div><dt className="text-nx-mist">پایان</dt><dd className="text-nx-navy dark:text-white">{contract.end_date_jalali ? formatJalali(contract.end_date_jalali) : '—'}</dd></div>
-                  <div><dt className="text-nx-mist">شمارهٔ نامه</dt><dd className="text-nx-navy dark:text-white">{contract.letter_number || '—'}</dd></div>
+                  <div><dt className="text-nx-mist">شمارهٔ نامه</dt><dd className="nx-number text-nx-navy dark:text-white">{contract.letter_number || '—'}</dd></div>
                 </dl>
 
                 <div className="mt-2 flex flex-wrap items-center gap-2">

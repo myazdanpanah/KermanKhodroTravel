@@ -278,7 +278,20 @@ def register_correspondence(letter, user, year=None):
     )
     # get_or_create may have raced; lock the row explicitly.
     sequence = SecretariatNumberSequence.objects.select_for_update().get(pk=sequence.pk)
-    sequence.last_number += 1
+    # Allocate the smallest free sequence. Deleting a letter therefore frees
+    # its number for reuse instead of leaving a permanent gap.
+    used = set(
+        Correspondence.objects.filter(
+            secretariat=letter.secretariat,
+            correspondence_type=letter.correspondence_type,
+            registration_year=reg_year,
+            registration_status="registered",
+        ).values_list("registration_sequence", flat=True)
+    )
+    candidate = 1
+    while candidate in used:
+        candidate += 1
+    sequence.last_number = candidate
     sequence.save(update_fields=["last_number"])
 
     letter.registration_status = "registered"
@@ -681,3 +694,28 @@ def create_contract(user, data):
         contract.correspondence = letter
         registered = True
     return contract, registered
+
+
+@transaction.atomic
+def delete_correspondence(letter, user):
+    """Delete a letter and free its registration number for reuse."""
+    letter = Correspondence.objects.select_for_update().get(pk=letter.pk)
+    if not (
+        is_privileged(user)
+        or is_secretariat_member(user, letter.secretariat_id, require_register=True)
+    ):
+        raise OfficeError("حذف نامه فقط برای مدیران و اعضای مجاز دبیرخانه است", 403)
+
+    number = letter.registration_number or ""
+    stored_files = [
+        (attachment.file.storage, attachment.file.name)
+        for attachment in letter.attachments.all()
+        if attachment.file
+    ]
+    letter.delete()
+    for storage, name in stored_files:
+        try:
+            storage.delete(name)
+        except OSError:
+            pass
+    return number

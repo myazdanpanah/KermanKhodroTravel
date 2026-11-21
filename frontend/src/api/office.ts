@@ -109,6 +109,7 @@ export interface Letter {
   business_links?: BusinessLink[];
   attachments?: Attachment[];
   can_edit?: boolean;
+  can_delete?: boolean;
 }
 
 export interface SecretariatInfo {
@@ -177,6 +178,10 @@ export const officeApi = {
     apiClient.patch<{ data: Letter }>(`/office/correspondence/${id}/`, payload),
   registerLetter: (id: number) =>
     apiClient.post<{ data: Letter }>(`/office/correspondence/${id}/register/`, {}),
+  deleteLetter: (id: number) =>
+    apiClient.delete<{ data: { registration_number: string }; message?: string }>(
+      `/office/correspondence/${id}/delete/`,
+    ),
   referLetter: (id: number, payload: Record<string, unknown>) =>
     apiClient.post<{ data: Letter }>(`/office/correspondence/${id}/refer/`, payload),
   replyLetter: (id: number, payload: { body: string; subject?: string }) =>

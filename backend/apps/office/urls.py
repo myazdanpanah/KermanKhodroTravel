@@ -10,6 +10,7 @@ urlpatterns = [
 
     path("correspondence/", views.correspondence_list, name="office-correspondence-list"),
     path("correspondence/<int:pk>/", views.correspondence_detail, name="office-correspondence-detail"),
+    path("correspondence/<int:pk>/delete/", views.correspondence_delete, name="office-correspondence-delete"),
     path("correspondence/<int:pk>/register/", views.correspondence_register, name="office-correspondence-register"),
     path("correspondence/<int:pk>/refer/", views.correspondence_refer, name="office-correspondence-refer"),
     path("correspondence/<int:pk>/reply/", views.correspondence_reply, name="office-correspondence-reply"),

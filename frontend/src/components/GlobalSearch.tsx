@@ -72,7 +72,7 @@ export default function GlobalSearch({ open, onClose }: { open: boolean; onClose
     const lettersResults = letters.map((letter) => ({
       key: `letter-${letter.id}`,
       label: letter.subject,
-      hint: `${letter.registration_number || 'پیش‌نویس'} · ${letter.sender_display || ''}`,
+      hint: `⁦${letter.registration_number || 'پیش‌نویس'}⁩ · ${letter.sender_display || ''}`,
       to: `/erp/office/correspondence/${letter.id}`,
     }));
     return [...pages, ...lettersResults];

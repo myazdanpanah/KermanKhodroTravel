@@ -52,8 +52,8 @@ export default function BillingDashboardPage() {
       <div className="flex items-center gap-2">
         <LayoutDashboard className="w-5 h-5 text-nx-blue" />
         <div>
-          <h1 className="text-lg font-bold text-white">داشبورد مدیریتی</h1>
-          <p className="text-xs text-nx-mist">خلاصهٔ عملکرد مالی شرکت‌های طرف حساب</p>
+          <h1 className="text-lg font-bold text-nx-navy dark:text-white">داشبورد مدیریتی</h1>
+          <p className="text-xs text-slate-500 dark:text-nx-mist">خلاصهٔ عملکرد مالی شرکت‌های طرف حساب</p>
         </div>
       </div>
 
@@ -64,14 +64,14 @@ export default function BillingDashboardPage() {
               <span className="text-xs text-nx-mist">{label}</span>
               <Icon className={`w-4 h-4 ${color}`} />
             </div>
-            <p className="text-xl font-bold text-white">{rial(value)}</p>
+            <p className="text-xl font-bold text-nx-navy dark:text-white">{rial(value)}</p>
           </div>
         ))}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <section className={`${CARD} p-5`}>
-          <h2 className="text-sm font-semibold text-white mb-3">صورت‌حساب به تفکیک خدمت</h2>
+          <h2 className="text-sm font-semibold text-nx-navy dark:text-white mb-3">صورت‌حساب به تفکیک خدمت</h2>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-nx-mist text-xs">
@@ -84,7 +84,7 @@ export default function BillingDashboardPage() {
                 <tr><td colSpan={2} className="py-4 text-center text-xs text-nx-mist">داده‌ای ثبت نشده است.</td></tr>
               )}
               {data.per_service.map((row) => (
-                <tr key={row.invoice_type} className="border-t border-nx-navy-border">
+                <tr key={row.invoice_type} className="border-t border-nx-border dark:border-nx-navy-border">
                   <td className="py-2 text-nx-mist">{row.invoice_type}</td>
                   <td className="py-2 text-left text-white">{rial(row.amount)}</td>
                 </tr>
@@ -94,7 +94,7 @@ export default function BillingDashboardPage() {
         </section>
 
         <section className={`${CARD} p-5`}>
-          <h2 className="text-sm font-semibold text-white mb-3">بیشترین بدهی شرکت‌ها</h2>
+          <h2 className="text-sm font-semibold text-nx-navy dark:text-white mb-3">بیشترین بدهی شرکت‌ها</h2>
           <table className="w-full text-sm">
             <thead>
               <tr className="text-nx-mist text-xs">
@@ -104,7 +104,7 @@ export default function BillingDashboardPage() {
             </thead>
             <tbody>
               {data.per_payer.map((row) => (
-                <tr key={row.payer_code} className="border-t border-nx-navy-border">
+                <tr key={row.payer_code} className="border-t border-nx-border dark:border-nx-navy-border">
                   <td className="py-2 text-nx-mist">{row.payer}</td>
                   <td className="py-2 text-left text-white">{rial(row.amount)}</td>
                 </tr>
@@ -114,7 +114,7 @@ export default function BillingDashboardPage() {
         </section>
 
         <section className={`${CARD} p-5`}>
-          <h2 className="text-sm font-semibold text-white mb-3">روند ماهانه</h2>
+          <h2 className="text-sm font-semibold text-nx-navy dark:text-white mb-3">روند ماهانه</h2>
           <div className="space-y-2">
             {data.monthly.length === 0 && <p className="text-xs text-nx-mist">هنوز صورت‌حسابی صادر نشده است.</p>}
             {data.monthly.map((row) => {
@@ -125,7 +125,7 @@ export default function BillingDashboardPage() {
                     <span>{row.issue_date_jalali}</span>
                     <span>{rial(row.amount)}</span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-nx-navy">
+                  <div className="h-1.5 rounded-full bg-black/10 dark:bg-nx-navy">
                     <div className="h-1.5 rounded-full bg-nx-blue" style={{ width: `${(row.amount / max) * 100}%` }} />
                   </div>
                 </div>
@@ -135,13 +135,13 @@ export default function BillingDashboardPage() {
         </section>
 
         <section className={`${CARD} p-5`}>
-          <h2 className="text-sm font-semibold text-white mb-3">وضعیت درخواست‌های صدور</h2>
+          <h2 className="text-sm font-semibold text-nx-navy dark:text-white mb-3">وضعیت درخواست‌های صدور</h2>
           <ul className="space-y-2 text-sm">
             {data.approvals.length === 0 && <li className="text-xs text-nx-mist">درخواستی ثبت نشده است.</li>}
             {data.approvals.map((row) => (
-              <li key={row.status} className="flex justify-between border-t border-nx-navy-border pt-2">
+              <li key={row.status} className="flex justify-between border-t border-nx-border pt-2 dark:border-nx-navy-border">
                 <span className="text-nx-mist">{STATUS_LABELS[row.status] || row.status}</span>
-                <span className="text-white font-medium">{num(row.count)}</span>
+                <span className="font-medium text-nx-navy dark:text-white">{num(row.count)}</span>
               </li>
             ))}
           </ul>

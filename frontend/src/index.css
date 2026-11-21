@@ -41,6 +41,44 @@ html.dark body {
   background: #101D35;
 }
 
+/* ─── Light-mode readability ───────────────────────────────────────
+   Legacy cards were authored as always-dark surfaces. In light mode they
+   become white, and any white / near-white text inside them is darkened so
+   contrast stays readable without touching every page. */
+html:not(.dark) .dark-surface {
+  background-color: #ffffff;
+  border-color: #e5e7eb;
+}
+
+html:not(.dark) :is(.bg-white, .dark-surface, .bg-nx-cream) :is(
+  .text-white,
+  .text-slate-50,
+  .text-slate-100,
+  .text-slate-200,
+  .text-slate-300
+) {
+  color: #0f172a;
+}
+
+/* Silver Mist is a muted colour; on the cream canvas it needs more weight. */
+html:not(.dark) .text-nx-mist {
+  color: #64748b;
+}
+
+html:not(.dark) .dark-surface .border-nx-navy-border,
+html:not(.dark) .dark-surface.border-nx-navy-border {
+  border-color: #e5e7eb;
+}
+
+/* Registration numbers mix Persian letters and digits; isolate them so bidi
+   never reorders the segments. */
+.nx-number {
+  direction: ltr;
+  unicode-bidi: isolate;
+  display: inline-block;
+  font-family: 'Vazirmatn', system-ui, sans-serif;
+}
+
 /* Muted copy keeps AA contrast on both canvases. */
 html:not(.dark) .text-slate-600 {
   color: #475569;

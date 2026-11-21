@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { officeApi, OfficeMeta, SecretariatInfo } from '../../api/office';
 import { useToast } from '../../components/Toast';
+import { apiErrorMessage } from '../../lib/apiError';
 
 const ROLE_LABEL: Record<string, string> = {
   admin: 'مدیر سیستم', ceo: 'مدیرعامل', finance: 'مالی', sales: 'فروش', hr: 'منابع انسانی',
@@ -60,6 +61,12 @@ function NumberingEditor({ row, onSaved }: { row: SecretariatInfo; onSaved: (row
       toast('الگوی شماره باید شامل {seq} باشد', 'error');
       return;
     }
+    const unknown = (form.pattern.match(/\{[^}]+\}/g) || [])
+      .filter((token) => !['{year}', '{code}', '{type}', '{seq}'].includes(token));
+    if (unknown.length > 0) {
+      toast(`جای‌نگهدار ناشناخته: ${unknown.join('، ')}`, 'error');
+      return;
+    }
     const padding = Number(form.padding);
     if (!Number.isFinite(padding) || padding < 3 || padding > 10) {
       toast('تعداد ارقام شماره باید بین ۳ و ۱۰ باشد', 'error');
@@ -81,8 +88,8 @@ function NumberingEditor({ row, onSaved }: { row: SecretariatInfo; onSaved: (row
       onSaved({ ...row, ...res.data.data });
       toast('تنظیمات شماره‌گذاری ذخیره شد', 'success');
       setOpen(false);
-    } catch {
-      toast('ذخیرهٔ تنظیمات شماره‌گذاری انجام نشد', 'error');
+    } catch (error) {
+      toast(apiErrorMessage(error, 'ذخیرهٔ تنظیمات شماره‌گذاری انجام نشد'), 'error');
     } finally {
       setSaving(false);
     }
