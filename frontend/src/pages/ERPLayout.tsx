@@ -300,7 +300,7 @@ export default function ERPLayout() {
 
       {/* ─── Main Content ─────────────────────────────── */}
       <main
-        className={`flex-1 min-w-0 w-full overflow-x-hidden mr-0 ${collapsed ? 'lg:mr-16' : 'lg:mr-64'} pb-[76px] lg:pb-0 transition-all duration-300`}
+        className={`flex-1 min-w-0 w-full overflow-x-hidden mr-0 ${collapsed ? 'lg:mr-16' : 'lg:mr-64'} pb-[calc(96px+env(safe-area-inset-bottom))] lg:pb-0 transition-all duration-300`}
       >
         {/* Top Navigation Bar */}
         <header className="h-14 bg-nx-navy border-b border-nx-navy-border flex items-center justify-between px-6 sticky top-0 z-20">
@@ -350,7 +350,7 @@ export default function ERPLayout() {
         className="fixed bottom-0 inset-x-0 z-30 lg:hidden bg-nx-navy/95 backdrop-blur border-t border-nx-navy-border"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="grid grid-cols-5 items-end" dir="ltr">
+        <div className="grid grid-cols-5 items-end">
           <NavLink
             to="/erp"
             end
@@ -370,12 +370,12 @@ export default function ERPLayout() {
             <FileText className="w-5 h-5" />
             <span>صورت‌حساب</span>
           </NavLink>
-          <div className="flex justify-center">
+          <div className="relative h-full">
             <button
               onClick={() => { setMobileOpen(false); setQuickOpen((value) => !value) }}
               aria-label="ثبت جدید"
               aria-expanded={quickOpen}
-              className="-mt-7 grid h-14 w-14 place-items-center rounded-full bg-nx-teal text-white shadow-lg ring-4 ring-nx-navy transition hover:opacity-90"
+              className="absolute -top-7 left-1/2 grid h-14 w-14 -translate-x-1/2 place-items-center rounded-full bg-nx-teal text-white shadow-lg ring-4 ring-nx-navy transition hover:opacity-90"
             >
               <Plus className={`h-7 w-7 transition-transform ${quickOpen ? 'rotate-45' : ''}`} />
             </button>
@@ -416,7 +416,7 @@ export default function ERPLayout() {
         }}
         aria-hidden={!quickOpen}
       >
-        <div className="mx-2 mb-2 rounded-3xl bg-nx-navy-elevated border border-nx-navy-border shadow-2xl overflow-hidden">
+        <div className="mx-2 mb-2 max-h-[80dvh] overflow-y-auto rounded-3xl bg-nx-navy-elevated border border-nx-navy-border shadow-2xl overscroll-contain">
           <div className="flex justify-center pt-2.5 pb-1">
             <span className="h-1.5 w-10 rounded-full bg-nx-mist/40" />
           </div>
