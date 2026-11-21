@@ -17,7 +17,44 @@ from .models import (
 class SecretariatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Secretariat
-        fields = ["id", "name", "code", "is_active"]
+        fields = [
+            "id", "name", "code", "is_active", "number_pattern", "sequence_padding",
+            "persian_digits", "type_letters",
+        ]
+
+
+class SecretariatNumberingSerializer(serializers.ModelSerializer):
+    """Only the numbering rules; admins and the secretariat's members edit these."""
+
+    class Meta:
+        model = Secretariat
+        fields = ["number_pattern", "sequence_padding", "persian_digits", "type_letters"]
+
+    def validate_number_pattern(self, value):
+        pattern = (value or "").strip()
+        if "{seq}" not in pattern:
+            raise serializers.ValidationError("الگوی شماره باید شامل {seq} باشد")
+        try:
+            pattern.format(year=1404, code="X", type="O", seq="000001")
+        except (KeyError, IndexError, ValueError):
+            raise serializers.ValidationError("فقط جای‌نگهدارهای {year}، {code}، {type} و {seq} مجاز هستند")
+        return pattern
+
+    def validate_sequence_padding(self, value):
+        if not 3 <= value <= 10:
+            raise serializers.ValidationError("تعداد ارقام شماره باید بین ۳ و ۱۰ باشد")
+        return value
+
+    def validate_type_letters(self, value):
+        if not isinstance(value, dict):
+            raise serializers.ValidationError("حروف نوع نامه باید به صورت نگاشت ارسال شود")
+        allowed = {"incoming", "outgoing", "internal"}
+        for key, letter in value.items():
+            if key not in allowed:
+                raise serializers.ValidationError(f"نوع نامعتبر: {key}")
+            if not isinstance(letter, str) or len(letter.strip()) > 3:
+                raise serializers.ValidationError("حرف هر نوع نامه باید حداکثر ۳ نویسه باشد")
+        return value
 
 
 class SecretariatMemberSerializer(serializers.ModelSerializer):

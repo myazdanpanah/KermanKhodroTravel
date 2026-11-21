@@ -24,6 +24,18 @@ class Secretariat(BaseModel):
     name = models.CharField(max_length=150)
     code = models.CharField(max_length=20, help_text="Short code used in registration numbers")
     is_active = models.BooleanField(default=True)
+    # Numbering rules, editable by admins and the secretariat's own managers.
+    number_pattern = models.CharField(
+        max_length=120,
+        default="{year}/{code}/{type}/{seq}",
+        help_text="Placeholders: {year} {code} {type} {seq}",
+    )
+    sequence_padding = models.PositiveSmallIntegerField(default=6)
+    persian_digits = models.BooleanField(default=False)
+    type_letters = models.JSONField(
+        default=dict, blank=True,
+        help_text='Optional per-type letters, e.g. {"outgoing": "ص"}',
+    )
 
     class Meta:
         ordering = ["name"]

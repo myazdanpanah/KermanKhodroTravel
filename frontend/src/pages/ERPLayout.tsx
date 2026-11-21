@@ -10,8 +10,10 @@ import {
   Calendar, Target, TrendingUp, Inbox, Mail,
   Settings, ChevronLeft, ChevronDown,
   Shield, Search, Sun, Moon, Menu, Briefcase, Check, X,
-  FilePlus2, UserPlus,
-} from 'lucide-react'
+} from 'lucide-react';
+import GlobalSearch from '../components/GlobalSearch';
+import QuickCreateButton from '../components/QuickCreateButton';
+import { useQuickActions } from '../lib/quickActions'
 
 // ─── Navigation Structure ───────────────────────────────────────
 
@@ -87,6 +89,8 @@ export default function ERPLayout() {
   // Mobile: bottom tab bar plus the menu sheet that slides up over it.
   const [mobileOpen, setMobileOpen] = useState(false)
   const [quickOpen, setQuickOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
+  const quickActions = useQuickActions()
   const sheetRef = useRef<HTMLDivElement>(null)
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     finance: true,
@@ -123,12 +127,17 @@ export default function ERPLayout() {
     window.setTimeout(() => navigate(to), SHEET_TRANSITION_MS)
   }
 
-  const QUICK_ACTIONS = [
-    { to: '/erp/billing/issue', label: 'ثبت صورت‌حساب جدید', icon: FilePlus2 },
-    { to: '/erp/billing/payments?new=1', label: 'ثبت پرداخت جدید', icon: CreditCard },
-    { to: '/erp/customers?new=1', label: 'ثبت مشتری جدید (CRM)', icon: UserPlus },
-    { to: '/erp/office/correspondence?new=1', label: 'ثبت نامه جدید', icon: Mail },
-  ]
+  // ⌘K / Ctrl+K opens the same search as the top-bar button.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        setSearchOpen(true)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   // A closed sheet is off-screen but still mounted: keep its rows out of
   // the tab order so focus cannot land in a menu nobody can see.
@@ -184,7 +193,7 @@ export default function ERPLayout() {
   )
 
   return (
-    <div className="min-h-screen bg-nx-navy flex" dir="rtl">
+    <div className="min-h-screen bg-nx-cream flex dark:bg-nx-navy" dir="rtl">
       {/* Mobile backdrop for the bottom sheet */}
       {mobileOpen && (
         <div
@@ -197,13 +206,13 @@ export default function ERPLayout() {
       <aside
         className={`
           ${collapsed ? 'w-16' : 'w-64'}
-          bg-nx-navy border-l border-nx-navy-border hidden lg:flex flex-col
+          bg-nx-cream border-l border-nx-border hidden lg:flex flex-col dark:bg-nx-navy dark:border-nx-navy-border
           transition-all duration-300 ease-in-out
           fixed top-0 right-0 h-screen z-40
         `}
       >
         {/* Brand Header */}
-        <div className="h-14 border-b border-nx-navy-border flex items-center justify-between px-3">
+        <div className="h-14 border-b border-nx-border flex items-center justify-between px-3 dark:border-nx-navy-border">
           {!collapsed && (
             <div className="flex items-center gap-2">
               <img
@@ -213,16 +222,16 @@ export default function ERPLayout() {
                 className="h-7 w-auto select-none"
               />
               <div>
-                <h1 className="text-sm font-bold text-white" style={{ fontFamily: 'Vazirmatn, sans-serif' }}>
+                <h1 className="text-sm font-bold text-nx-navy dark:text-white" style={{ fontFamily: 'Vazirmatn, sans-serif' }}>
                   Nexivo
                 </h1>
-                <p className="text-[10px] text-nx-mist">ERP</p>
+                <p className="text-[10px] text-slate-500 dark:text-nx-mist">ERP</p>
               </div>
             </div>
           )}
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="p-1.5 text-nx-mist hover:text-white hover:bg-white/5 rounded-nx-btn transition"
+            className="p-1.5 text-slate-500 hover:text-nx-navy hover:bg-black/5 rounded-nx-btn transition dark:text-nx-mist dark:hover:text-white dark:hover:bg-white/5"
           >
             <ChevronLeft className={`w-4 h-4 transition-transform ${collapsed ? 'rotate-180' : ''}`} />
           </button>
@@ -231,10 +240,14 @@ export default function ERPLayout() {
         {/* Search (when expanded) */}
         {!collapsed && (
           <div className="px-3 py-2">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-nx-mist/10 rounded-lg text-nx-mist text-xs">
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              className="flex w-full items-center gap-2 px-3 py-1.5 rounded-lg bg-black/5 text-slate-500 text-xs transition hover:bg-black/10 dark:bg-nx-mist/10 dark:text-nx-mist dark:hover:bg-nx-mist/20"
+            >
               <Search className="w-3.5 h-3.5" />
               <span>جستجو... ⌘K</span>
-            </div>
+            </button>
           </div>
         )}
 
@@ -257,8 +270,8 @@ export default function ERPLayout() {
                     className={`
                       w-full flex items-center justify-between px-3 py-1.5
                       text-[11px] font-semibold uppercase tracking-wider
-                      ${hasActive ? 'text-nx-blue' : 'text-nx-mist'}
-                      hover:text-white transition rounded-nx-btn
+                      ${hasActive ? 'text-nx-teal dark:text-nx-blue' : 'text-slate-500 dark:text-nx-mist'}
+                      hover:text-nx-navy dark:hover:text-white transition rounded-nx-btn
                     `}
                   >
                     <span>{section.label}</span>
@@ -279,8 +292,8 @@ export default function ERPLayout() {
                         className={({ isActive }) =>
                           `flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
                             isActive
-                              ? 'bg-nx-blue/10 text-nx-blue border border-nx-blue/30'
-                              : 'text-nx-mist hover:bg-white/5 hover:text-white'
+                              ? 'bg-nx-teal/10 text-nx-teal border border-nx-teal/30 dark:bg-nx-blue/10 dark:text-nx-blue dark:border-nx-blue/30'
+                              : 'text-slate-600 hover:bg-black/5 hover:text-nx-navy dark:text-nx-mist dark:hover:bg-white/5 dark:hover:text-white'
                           } ${collapsed ? 'justify-center' : ''}`
                         }
                         title={collapsed ? item.label : undefined}
@@ -303,28 +316,32 @@ export default function ERPLayout() {
         className={`flex-1 min-w-0 w-full overflow-x-hidden mr-0 ${collapsed ? 'lg:mr-16' : 'lg:mr-64'} pb-[calc(96px+env(safe-area-inset-bottom))] lg:pb-0 transition-all duration-300`}
       >
         {/* Top Navigation Bar */}
-        <header className="h-14 bg-nx-navy border-b border-nx-navy-border flex items-center justify-between px-6 sticky top-0 z-20">
+        <header className="h-14 bg-nx-cream/90 backdrop-blur border-b border-nx-border flex items-center justify-between px-4 sm:px-6 sticky top-0 z-20 dark:bg-nx-navy/90 dark:border-nx-navy-border">
           <div className="flex items-center gap-4">
             {/* Breadcrumbs */}
             <nav className="hidden lg:flex items-center gap-2 text-sm">
-              <span className="text-nx-mist">خانه</span>
+              <span className="text-slate-500 dark:text-nx-mist">خانه</span>
               {activeSection && (
                 <>
-                  <span className="text-nx-mist">/</span>
-                  <span className="text-white">{activeSection.label}</span>
+                  <span className="text-slate-400 dark:text-nx-mist">/</span>
+                  <span className="text-nx-navy dark:text-white">{activeSection.label}</span>
                 </>
               )}
               {activeItem && activeItem.label !== activeSection?.label && (
                 <>
-                  <span className="text-nx-mist">/</span>
-                  <span className="text-nx-mist font-medium">{activeItem.label}</span>
+                  <span className="text-slate-400 dark:text-nx-mist">/</span>
+                  <span className="text-slate-500 dark:text-nx-mist font-medium">{activeItem.label}</span>
                 </>
               )}
             </nav>
           </div>
           <div className="flex items-center gap-3">
             {/* Global Search */}
-            <button className="p-2 text-nx-mist hover:text-white hover:bg-white/5 rounded-nx-btn transition">
+            <button
+              onClick={() => setSearchOpen(true)}
+              className="p-2 text-slate-500 hover:text-nx-navy hover:bg-black/5 rounded-nx-btn transition dark:text-nx-mist dark:hover:text-white dark:hover:bg-white/5"
+              title="جستجو (⌘K)"
+            >
               <Search className="w-5 h-5" />
             </button>
             {/* Notifications: unread approvals and rejections live here */}
@@ -332,7 +349,7 @@ export default function ERPLayout() {
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 text-nx-mist hover:text-white hover:bg-white/5 rounded-nx-btn transition"
+              className="p-2 text-slate-500 hover:text-nx-navy hover:bg-black/5 rounded-nx-btn transition dark:text-nx-mist dark:hover:text-white dark:hover:bg-white/5"
               title={dark ? 'حالت روشن' : 'حالت تاریک'}
             >
               {dark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -341,13 +358,15 @@ export default function ERPLayout() {
             <UserMenu onLogout={handleLogout} />
           </div>
         </header>
-        <Outlet />
+        <div className="px-3 py-4 sm:px-4 lg:px-8 lg:py-7">
+          <Outlet />
+        </div>
       </main>
 
       {/* ─── Mobile bottom navigation ─────────────────── */}
       {/* Visual order left→right: dashboard, invoices, quick add, office, menu. */}
       <nav
-        className="fixed bottom-0 inset-x-0 z-30 lg:hidden bg-nx-navy/95 backdrop-blur border-t border-nx-navy-border"
+        className="fixed bottom-0 inset-x-0 z-30 lg:hidden bg-white/95 backdrop-blur border-t border-nx-border dark:bg-nx-navy/95 dark:border-nx-navy-border"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="grid grid-cols-5 items-end">
@@ -355,7 +374,7 @@ export default function ERPLayout() {
             to="/erp"
             end
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 py-2 text-[10px] transition ${isActive ? 'text-nx-blue' : 'text-nx-mist'}`
+              `flex flex-col items-center gap-0.5 py-2 text-[10px] transition ${isActive ? 'text-nx-teal dark:text-nx-blue' : 'text-slate-500 dark:text-nx-mist'}`
             }
           >
             <LayoutDashboard className="w-5 h-5" />
@@ -364,7 +383,7 @@ export default function ERPLayout() {
           <NavLink
             to="/erp/billing/invoices"
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 py-2 text-[10px] transition ${isActive ? 'text-nx-blue' : 'text-nx-mist'}`
+              `flex flex-col items-center gap-0.5 py-2 text-[10px] transition ${isActive ? 'text-nx-teal dark:text-nx-blue' : 'text-slate-500 dark:text-nx-mist'}`
             }
           >
             <FileText className="w-5 h-5" />
@@ -375,7 +394,7 @@ export default function ERPLayout() {
               onClick={() => { setMobileOpen(false); setQuickOpen((value) => !value) }}
               aria-label="ثبت جدید"
               aria-expanded={quickOpen}
-              className="absolute -top-7 left-1/2 grid h-14 w-14 -translate-x-1/2 place-items-center rounded-full bg-nx-teal text-white shadow-lg ring-4 ring-nx-navy transition hover:opacity-90"
+              className="absolute -top-7 left-1/2 grid h-14 w-14 -translate-x-1/2 place-items-center rounded-full bg-nx-teal text-white shadow-lg ring-4 ring-white transition hover:opacity-90 dark:ring-nx-navy"
             >
               <Plus className={`h-7 w-7 transition-transform ${quickOpen ? 'rotate-45' : ''}`} />
             </button>
@@ -383,7 +402,7 @@ export default function ERPLayout() {
           <NavLink
             to="/erp/office"
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 py-2 text-[10px] transition ${isActive ? 'text-nx-blue' : 'text-nx-mist'}`
+              `flex flex-col items-center gap-0.5 py-2 text-[10px] transition ${isActive ? 'text-nx-teal dark:text-nx-blue' : 'text-slate-500 dark:text-nx-mist'}`
             }
           >
             <Inbox className="w-5 h-5" />
@@ -392,7 +411,7 @@ export default function ERPLayout() {
           <button
             onClick={() => { setQuickOpen(false); setMobileOpen(true) }}
             className={`flex flex-col items-center gap-0.5 py-2 text-[10px] ${
-              mobileOpen ? 'text-nx-blue' : 'text-nx-mist'
+              mobileOpen ? 'text-nx-teal dark:text-nx-blue' : 'text-slate-500 dark:text-nx-mist'
             }`}
           >
             <Menu className="w-5 h-5" />
@@ -416,31 +435,35 @@ export default function ERPLayout() {
         }}
         aria-hidden={!quickOpen}
       >
-        <div className="mx-2 mb-2 max-h-[80dvh] overflow-y-auto rounded-3xl bg-nx-navy-elevated border border-nx-navy-border shadow-2xl overscroll-contain">
+        <div className="mx-2 mb-2 max-h-[80dvh] overflow-y-auto rounded-3xl bg-white border border-nx-border shadow-2xl overscroll-contain dark:bg-nx-navy-elevated dark:border-nx-navy-border">
           <div className="flex justify-center pt-2.5 pb-1">
-            <span className="h-1.5 w-10 rounded-full bg-nx-mist/40" />
+            <span className="h-1.5 w-10 rounded-full bg-slate-300 dark:bg-nx-mist/40" />
           </div>
           <div className="flex items-center justify-between px-5 pb-2 pt-1">
-            <h2 className="text-base font-bold text-white">ثبت جدید</h2>
+            <h2 className="text-base font-bold text-nx-navy dark:text-white">ثبت جدید</h2>
             <button
               onClick={() => setQuickOpen(false)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-nx-mist hover:bg-white/5"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-slate-500 hover:bg-black/5 dark:text-nx-mist dark:hover:bg-white/5"
             >
               <X className="w-4 h-4" /> بستن
             </button>
           </div>
           <div className="px-3 pb-4 space-y-1">
-            {QUICK_ACTIONS.map((action) => (
+            {quickActions.length === 0 ? (
+              <p className="px-3 py-6 text-center text-xs text-slate-500 dark:text-nx-mist">
+                برای حساب شما موردی که بتوانید ثبت کنید وجود ندارد.
+              </p>
+            ) : quickActions.map((action) => (
               <button
                 key={action.to}
                 onClick={() => goFromQuickAdd(action.to)}
-                className="w-full flex items-center gap-3 px-2.5 py-2.5 rounded-xl text-right text-slate-200 hover:bg-white/5"
+                className="w-full flex items-center gap-3 px-2.5 py-2.5 rounded-xl text-right text-nx-navy hover:bg-black/5 dark:text-slate-200 dark:hover:bg-white/5"
               >
                 <span className="w-9 h-9 rounded-xl grid place-items-center bg-nx-teal/15 text-nx-teal">
                   <action.icon className="w-5 h-5" />
                 </span>
                 <span className="flex-1 text-[15px] font-medium">{action.label}</span>
-                <ChevronLeft className="w-4 h-4 text-nx-mist" />
+                <ChevronLeft className="w-4 h-4 text-slate-400 dark:text-nx-mist" />
               </button>
             ))}
           </div>
@@ -460,15 +483,15 @@ export default function ERPLayout() {
         }}
         aria-hidden={!mobileOpen}
       >
-        <div className="mx-2 mb-2 rounded-3xl bg-nx-navy-elevated border border-nx-navy-border shadow-2xl overflow-hidden">
+        <div className="mx-2 mb-2 rounded-3xl bg-white border border-nx-border shadow-2xl overflow-hidden dark:bg-nx-navy-elevated dark:border-nx-navy-border">
           <div className="flex justify-center pt-2.5 pb-1">
-            <span className="h-1.5 w-10 rounded-full bg-nx-mist/40" />
+            <span className="h-1.5 w-10 rounded-full bg-slate-300 dark:bg-nx-mist/40" />
           </div>
           <div className="flex items-center justify-between px-5 pb-2 pt-1">
-            <h2 className="text-base font-bold text-white">منو</h2>
+            <h2 className="text-base font-bold text-nx-navy dark:text-white">منو</h2>
             <button
               onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-nx-mist hover:bg-white/5"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-slate-500 hover:bg-black/5 dark:text-nx-mist dark:hover:bg-white/5"
             >
               <X className="w-4 h-4" /> بستن
             </button>
@@ -476,7 +499,7 @@ export default function ERPLayout() {
           <div className="max-h-[66vh] overflow-y-auto px-3 pb-4 space-y-4">
             {sections.map((section) => (
               <div key={section.id}>
-                <p className="px-2 mb-1.5 text-[11px] font-semibold tracking-wide text-nx-mist">{section.label}</p>
+                <p className="px-2 mb-1.5 text-[11px] font-semibold tracking-wide text-slate-500 dark:text-nx-mist">{section.label}</p>
                 <div className="space-y-1">
                   {section.items.map((item) => {
                     const active = item.end
@@ -487,18 +510,18 @@ export default function ERPLayout() {
                         key={item.to}
                         onClick={() => goFromSheet(item.to)}
                         className={`w-full flex items-center gap-3 px-2.5 py-2.5 rounded-xl text-right transition ${
-                          active ? 'bg-nx-blue/15 text-white' : 'text-slate-200 hover:bg-white/5'
+                          active ? 'bg-nx-teal/10 text-nx-teal dark:bg-nx-blue/15 dark:text-white' : 'text-nx-navy hover:bg-black/5 dark:text-slate-200 dark:hover:bg-white/5'
                         }`}
                       >
                         <span
                           className={`w-9 h-9 rounded-xl grid place-items-center flex-shrink-0 ${
-                            active ? 'bg-nx-blue text-white' : 'bg-white/5 text-nx-mist'
+                            active ? 'bg-nx-teal text-white dark:bg-nx-blue' : 'bg-black/5 text-slate-500 dark:bg-white/5 dark:text-nx-mist'
                           }`}
                         >
                           <item.icon className="w-5 h-5" />
                         </span>
                         <span className="flex-1 text-[15px] font-medium">{item.label}</span>
-                        {active && <Check className="w-4 h-4 text-nx-blue" />}
+                        {active && <Check className="w-4 h-4 text-nx-teal dark:text-nx-blue" />}
                       </button>
                     )
                   })}
@@ -508,6 +531,9 @@ export default function ERPLayout() {
           </div>
         </div>
       </div>
+
+      <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
+      <QuickCreateButton />
     </div>
   )
 }

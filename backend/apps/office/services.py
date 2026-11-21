@@ -211,9 +211,25 @@ def _jalali_year(letter, fallback=None):
 TYPE_CODE = {"incoming": "I", "outgoing": "O", "internal": "N"}
 
 
-def registration_number(year, secretariat_code, correspondence_type, sequence):
-    """Official number: year/secretariat/type-book/sequence."""
-    return f"{year}/{secretariat_code}/{TYPE_CODE.get(correspondence_type, 'X')}/{sequence:06d}"
+PERSIAN_DIGITS = str.maketrans("0123456789", "۰۱۲۳۴۵۶۷۸۹")
+DEFAULT_NUMBER_PATTERN = "{year}/{code}/{type}/{seq}"
+NUMBER_PLACEHOLDERS = ("year", "code", "type", "seq")
+
+
+def registration_number(
+    year, secretariat_code, correspondence_type, sequence,
+    *, pattern=None, padding=6, persian_digits=False, type_letters=None,
+):
+    """Render a registration number from the secretariat's numbering rules."""
+    letters = dict(TYPE_CODE)
+    letters.update({k: v for k, v in (type_letters or {}).items() if v})
+    number = (pattern or DEFAULT_NUMBER_PATTERN).format(
+        year=year,
+        code=secretariat_code,
+        type=letters.get(correspondence_type, "X"),
+        seq=str(sequence).zfill(max(1, padding)),
+    )
+    return number.translate(PERSIAN_DIGITS) if persian_digits else number
 
 
 def is_secretariat_member(user, secretariat_id, require_register=False):
@@ -233,10 +249,8 @@ def can_register_letter(user, letter):
 
 
 def registration_label(letter):
-    return registration_number(
-        letter.registration_year, letter.secretariat.code,
-        letter.correspondence_type, letter.registration_sequence,
-    )
+    """The number stored at registration time, not a re-render of current rules."""
+    return letter.registration_number or ""
 
 
 @transaction.atomic
@@ -269,8 +283,11 @@ def register_correspondence(letter, user, year=None):
     letter.registration_status = "registered"
     letter.registration_year = reg_year
     letter.registration_sequence = sequence.last_number
+    secretariat = letter.secretariat
     letter.registration_number = registration_number(
-        reg_year, letter.secretariat.code, letter.correspondence_type, sequence.last_number,
+        reg_year, secretariat.code, letter.correspondence_type, sequence.last_number,
+        pattern=secretariat.number_pattern, padding=secretariat.sequence_padding,
+        persian_digits=secretariat.persian_digits, type_letters=secretariat.type_letters,
     )
     letter.registered_at = timezone.now()
     letter.registered_by = user

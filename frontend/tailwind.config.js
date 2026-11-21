@@ -25,6 +25,7 @@ export default {
         'nx-blue': 'rgb(var(--nx-blue) / <alpha-value>)', // Intelligence Blue — action signal
         'nx-teal': 'rgb(var(--nx-teal) / <alpha-value>)', // Digital Teal — status signal
         'nx-mist': '#A5B4CC', // Silver Mist — disabled / separators
+        'nx-cream': '#F7F3EA', // warm light canvas — softer than pure white
         'nx-border': '#E5E7EB', // card-tokens.json → default border
         'nx-muted': '#6B7280', // button-tokens.json → disabled text
         // Status signals — color-palette.json → color.status. Semantic layer over

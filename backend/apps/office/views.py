@@ -25,6 +25,7 @@ from .serializers import (
     CorrespondenceDetailSerializer,
     CorrespondenceListSerializer,
     DraftUpdateSerializer,
+    SecretariatNumberingSerializer,
     SecretariatSerializer,
 )
 from .services import (
@@ -39,6 +40,7 @@ from .services import (
     create_correspondence,
     delete_attachment,
     is_privileged,
+    is_secretariat_member,
     log_action,
     mark_read,
     refer_correspondence,
@@ -516,6 +518,10 @@ def secretariat_list(request):
             "name": row.name,
             "code": row.code,
             "is_active": row.is_active,
+            "number_pattern": row.number_pattern,
+            "sequence_padding": row.sequence_padding,
+            "persian_digits": row.persian_digits,
+            "type_letters": row.type_letters or {},
             "members": [
                 {"id": member.id, "user": member.user_id,
                  "user_name": member.user.get_full_name() or member.user.username,
@@ -537,6 +543,27 @@ def secretariat_list(request):
         return business_rule_error("دبیرخانه‌ای با این کد وجود دارد")
     return success_response(data=SecretariatSerializer(secretariat).data, message="دبیرخانه ایجاد شد",
                             http_status_code=201)
+
+
+@api_view(["PATCH"])
+def secretariat_detail(request, pk):
+    """Numbering rules: admins or any member (manager) of that secretariat."""
+    gate = _gate(request)
+    if gate:
+        return gate
+    secretariat = Secretariat.objects.filter(pk=pk, company=request.user.company).first()
+    if secretariat is None:
+        return not_found_response("دبیرخانه پیدا نشد")
+    if not (is_privileged(request.user) or is_secretariat_member(request.user, secretariat.id)):
+        return forbidden_response("تغییر شماره‌گذاری فقط برای مدیر دبیرخانه یا مدیران مجاز است")
+    serializer = SecretariatNumberingSerializer(secretariat, data=request.data, partial=True)
+    if not serializer.is_valid():
+        return validation_error_response(serializer.errors)
+    serializer.save()
+    return success_response(
+        data=SecretariatSerializer(secretariat).data,
+        message="تنظیمات شماره‌گذاری ذخیره شد",
+    )
 
 
 @api_view(["POST", "DELETE"])

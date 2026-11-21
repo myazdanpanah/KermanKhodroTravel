@@ -116,6 +116,10 @@ export interface SecretariatInfo {
   name: string;
   code: string;
   is_active: boolean;
+  number_pattern?: string;
+  sequence_padding?: number;
+  persian_digits?: boolean;
+  type_letters?: Partial<Record<'incoming' | 'outgoing' | 'internal', string>>;
   members: { id: number; user: number; user_name: string; can_register: boolean }[];
 }
 
@@ -156,8 +160,14 @@ export const officeApi = {
     apiClient.post<{ data: Letter }>(`/office/correspondence/${id}/reply/`, payload),
   archiveLetter: (id: number) =>
     apiClient.post<{ data: Letter }>(`/office/correspondence/${id}/archive/`, {}),
-  uploadAttachment: (id: number, form: FormData) =>
-    apiClient.post<{ data: Attachment }>(`/office/correspondence/${id}/attachments/`, form),
+  uploadAttachment: (id: number, form: FormData, onProgress?: (percent: number) => void) =>
+    apiClient.post<{ data: Attachment }>(`/office/correspondence/${id}/attachments/`, form, {
+      onUploadProgress: (event) => {
+        if (!onProgress) return
+        const total = event.total || 0
+        onProgress(total > 0 ? Math.min(99, Math.round((event.loaded * 100) / total)) : 0)
+      },
+    }),
   deleteAttachment: (id: number, attachmentId: number) =>
     apiClient.delete(`/office/correspondence/${id}/attachments/${attachmentId}/`),
   downloadAttachment: (id: number, attachmentId: number) =>
@@ -181,6 +191,12 @@ export const officeApi = {
   getSecretariats: () => apiClient.get<{ data: SecretariatInfo[] }>('/office/secretariats/'),
   createSecretariat: (payload: { name: string; code: string }) =>
     apiClient.post<{ data: SecretariatInfo }>('/office/secretariats/', payload),
+  updateSecretariat: (id: number, payload: {
+    number_pattern: string;
+    sequence_padding: number;
+    persian_digits: boolean;
+    type_letters: Record<string, string>;
+  }) => apiClient.patch<{ data: SecretariatInfo }>(`/office/secretariats/${id}/`, payload),
   addSecretariatMember: (id: number, payload: { user_id: number; can_register: boolean }) =>
     apiClient.post(`/office/secretariats/${id}/members/`, payload),
   removeSecretariatMember: (id: number, memberId: number) =>

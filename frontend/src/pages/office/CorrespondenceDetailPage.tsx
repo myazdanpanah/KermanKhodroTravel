@@ -91,6 +91,7 @@ export default function CorrespondenceDetailPage() {
   const [newRecipient, setNewRecipient] = useState({ user_id: '', delivery_type: 'primary' });
   const fileInput = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<{ attachment: Attachment; url: string; kind: 'pdf' | 'image' } | null>(null);
+  const [upload, setUpload] = useState<{ name: string; progress: number } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -205,11 +206,17 @@ export default function CorrespondenceDetailPage() {
     const form = new FormData();
     form.append('file', file);
     setBusy(true);
+    setUpload({ name: file.name, progress: 0 });
     try {
-      await officeApi.uploadAttachment(letter.id, form);
-      toast('پیوست افزوده شد', 'success');
+      await officeApi.uploadAttachment(letter.id, form, (percent) => {
+        setUpload({ name: file.name, progress: percent });
+      });
+      setUpload({ name: file.name, progress: 100 });
+      toast(`«${file.name}» بارگذاری شد`, 'success');
       await load();
+      window.setTimeout(() => setUpload(null), 900);
     } catch (err) {
+      setUpload(null);
       toast(errorMessage(err, 'بارگذاری پیوست انجام نشد'), 'error');
     } finally {
       setBusy(false);
@@ -532,6 +539,20 @@ export default function CorrespondenceDetailPage() {
                   className="flex items-center gap-1.5 rounded-lg border border-nx-border px-3 py-1.5 text-xs text-nx-navy disabled:opacity-50 dark:border-nx-navy-border dark:text-white">
                   <Upload className="h-3.5 w-3.5" /> افزودن پیوست
                 </button>
+                {upload && (
+                  <div className="mt-2">
+                    <div className="flex items-center justify-between gap-2 text-[10px] text-nx-mist">
+                      <span className="truncate">{upload.name}</span>
+                      <span>{upload.progress === 100 ? 'بارگذاری شد' : `${upload.progress}٪`}</span>
+                    </div>
+                    <div className="mt-1 h-1 overflow-hidden rounded bg-black/10 dark:bg-white/10">
+                      <div
+                        className={`h-full rounded transition-all ${upload.progress === 100 ? 'bg-nx-teal' : 'bg-nx-blue'}`}
+                        style={{ width: `${upload.progress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
                 <p className="mt-1 text-[10px] text-nx-mist">
                   حداکثر ۱۰ مگابایت؛ PDF، JPG/PNG، DOCX، XLSX یا ZIP. پیش‌نمایش PDF و تصاویر در همین صفحه انجام می‌شود؛ برای Word/Excel فایل را دانلود کنید.
                 </p>

@@ -18,6 +18,126 @@ interface SecretariatPanelProps {
   embedded?: boolean;
 }
 
+type NumberingForm = {
+  pattern: string;
+  padding: string;
+  persian: boolean;
+  letters: { incoming: string; outgoing: string; internal: string };
+};
+
+const DEFAULT_LETTERS = { incoming: 'I', outgoing: 'O', internal: 'N' };
+
+function renderPreview(code: string, form: NumberingForm) {
+  const sample = (form.pattern || '{year}/{code}/{type}/{seq}')
+    .replace(/\{year\}/g, '1405')
+    .replace(/\{code\}/g, code)
+    .replace(/\{type\}/g, form.letters.outgoing || 'O')
+    .replace(/\{seq\}/g, '1'.padStart(Number(form.padding) || 6, '0'));
+  return form.persian
+    ? sample.replace(/[0-9]/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)])
+    : sample;
+}
+
+/** Numbering rules for one secretariat, editable by admins and its managers. */
+function NumberingEditor({ row, onSaved }: { row: SecretariatInfo; onSaved: (row: SecretariatInfo) => void }) {
+  const { toast } = useToast();
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState<NumberingForm>({
+    pattern: row.number_pattern || '{year}/{code}/{type}/{seq}',
+    padding: String(row.sequence_padding ?? 6),
+    persian: Boolean(row.persian_digits),
+    letters: {
+      incoming: row.type_letters?.incoming || '',
+      outgoing: row.type_letters?.outgoing || '',
+      internal: row.type_letters?.internal || '',
+    },
+  });
+
+  const save = async () => {
+    if (!form.pattern.includes('{seq}')) {
+      toast('الگوی شماره باید شامل {seq} باشد', 'error');
+      return;
+    }
+    const padding = Number(form.padding);
+    if (!Number.isFinite(padding) || padding < 3 || padding > 10) {
+      toast('تعداد ارقام شماره باید بین ۳ و ۱۰ باشد', 'error');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await officeApi.updateSecretariat(row.id, {
+        number_pattern: form.pattern,
+        sequence_padding: padding,
+        persian_digits: form.persian,
+        type_letters: {
+          incoming: form.letters.incoming.trim(),
+          outgoing: form.letters.outgoing.trim(),
+          internal: form.letters.internal.trim(),
+        },
+      });
+      onSaved({ ...row, ...res.data.data });
+      toast('تنظیمات شماره‌گذاری ذخیره شد', 'success');
+      setOpen(false);
+    } catch {
+      toast('ذخیرهٔ تنظیمات شماره‌گذاری انجام نشد', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="mt-2 rounded-lg border border-nx-border p-2 dark:border-nx-navy-border">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-[11px] text-nx-mist">
+          شمارهٔ بعدی: <span className="font-mono text-nx-navy dark:text-white" data-digits="latin">{renderPreview(row.code, form)}</span>
+        </p>
+        <button onClick={() => setOpen((value) => !value)}
+          className="rounded-lg border border-nx-border px-2 py-1 text-[11px] text-nx-navy dark:border-nx-navy-border dark:text-white">
+          {open ? 'بستن تنظیمات شماره‌گذاری' : 'تنظیمات شماره‌گذاری'}
+        </button>
+      </div>
+      {open && (
+        <div className="mt-2 space-y-2">
+          <label className="block text-[11px] text-nx-mist">
+            الگوی شماره (جای‌نگهدارها: {'{year} {code} {type} {seq}'})
+            <input value={form.pattern} onChange={(e) => setForm({ ...form, pattern: e.target.value })} dir="ltr"
+              className="mt-1 w-full rounded-lg border border-nx-border bg-transparent px-2 py-1.5 font-mono text-xs dark:border-nx-navy-border dark:text-white" />
+          </label>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <label className="block text-[11px] text-nx-mist">
+              تعداد ارقام شمارهٔ ترتیبی
+              <input value={form.padding} onChange={(e) => setForm({ ...form, padding: e.target.value })}
+                inputMode="numeric"
+                className="mt-1 w-full rounded-lg border border-nx-border bg-transparent px-2 py-1.5 text-xs dark:border-nx-navy-border dark:text-white" />
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {([['incoming', 'وارده'], ['outgoing', 'صادره'], ['internal', 'داخلی']] as const).map(([key, label]) => (
+                <label key={key} className="block text-[11px] text-nx-mist">
+                  حرف {label}
+                  <input value={form.letters[key]} placeholder={DEFAULT_LETTERS[key]}
+                    onChange={(e) => setForm({ ...form, letters: { ...form.letters, [key]: e.target.value } })}
+                    className="mt-1 w-full rounded-lg border border-nx-border bg-transparent px-2 py-1.5 text-center text-xs dark:border-nx-navy-border dark:text-white" />
+                </label>
+              ))}
+            </div>
+          </div>
+          <label className="flex items-center gap-2 text-[11px] text-nx-navy dark:text-white">
+            <input type="checkbox" checked={form.persian} onChange={(e) => setForm({ ...form, persian: e.target.checked })} />
+            نمایش اعداد شماره با ارقام فارسی (۰۱۲۳۴۵۶۷۸۹)
+          </label>
+          <div className="flex items-center justify-end gap-2">
+            <button onClick={save} disabled={saving}
+              className="rounded-lg bg-nx-blue px-3 py-1.5 text-xs text-white disabled:opacity-50">
+              {saving ? 'در حال ذخیره…' : 'ذخیرهٔ تنظیمات'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function SecretariatPanel({ meta, onClose, embedded = false }: SecretariatPanelProps) {
   const { toast } = useToast();
   const [rows, setRows] = useState<SecretariatInfo[]>([]);
@@ -182,6 +302,11 @@ export default function SecretariatPanel({ meta, onClose, embedded = false }: Se
                     افزودن
                   </button>
                 </div>
+
+                <NumberingEditor
+                  row={row}
+                  onSaved={(updated) => setRows((prev) => prev.map((item) => (item.id === updated.id ? { ...item, ...updated } : item)))}
+                />
               </li>
             ))}
           </ul>

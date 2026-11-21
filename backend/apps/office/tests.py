@@ -256,3 +256,43 @@ class BusinessLinkTests(OfficeTestBase):
             "entity_type": "invoice", "source_record_id": "999999",
         }, format="json")
         self.assertEqual(response.status_code, 404)
+
+
+class SecretariatNumberingTests(OfficeTestBase):
+    """Admins and secretariat managers can shape the official number."""
+
+    def setUp(self):
+        super().setUp()
+        self.client = APIClient()
+        from .models import SecretariatMember
+
+        self.manager = create_test_user(
+            username="office_manager", company=self.company, role="sales",
+        )
+        SecretariatMember.objects.create(secretariat=self.secretariat, user=self.manager)
+        self.url = f"/api/v1/office/secretariats/{self.secretariat.id}/"
+
+    def test_manager_sets_persian_numbering_and_registers(self):
+        self.client.force_authenticate(self.manager)
+        response = self.client.patch(self.url, {
+            "number_pattern": "{year}/{type}-{seq}/{code}",
+            "sequence_padding": 4,
+            "persian_digits": True,
+            "type_letters": {"outgoing": "ص"},
+        }, format="json")
+        self.assertEqual(response.status_code, 200, response.data)
+
+        letter = self.draft()
+        register_correspondence(letter, self.manager)
+        letter.refresh_from_db()
+        self.assertEqual(letter.registration_number, "۱۴۰۴/ص-۰۰۰۱/OUT")
+
+    def test_non_member_cannot_change_numbering(self):
+        self.client.force_authenticate(self.sales)
+        response = self.client.patch(self.url, {"persian_digits": True}, format="json")
+        self.assertEqual(response.status_code, 403)
+
+    def test_pattern_must_contain_sequence(self):
+        self.client.force_authenticate(self.ceo)
+        response = self.client.patch(self.url, {"number_pattern": "{year}/{code}"}, format="json")
+        self.assertEqual(response.status_code, 400)

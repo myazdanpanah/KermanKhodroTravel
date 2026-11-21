@@ -15,6 +15,9 @@ import { useThemeStore, syncThemeClass } from './store/themeStore'
 import { useBrandingStore, applyBranding } from './store/brandingStore'
 import './utils/resizeObserverPolyfill'
 import './index.css'
+import { installPersianDigits } from './lib/persianDigits'
+
+installPersianDigits()
 
 function ThemeSync() {
   const dark = useThemeStore((s) => s.dark)

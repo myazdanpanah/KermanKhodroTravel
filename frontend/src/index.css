@@ -31,12 +31,14 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
+  background: #F7F3EA;
   /* Readability first: dark text on the light canvas, white text on the dark one. */
   color: #0f172a;
 }
 
 html.dark body {
   color: #f8fafc;
+  background: #101D35;
 }
 
 /* Muted copy keeps AA contrast on both canvases. */

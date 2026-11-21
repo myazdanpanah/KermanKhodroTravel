@@ -4,11 +4,15 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Search, X, Inbox, Clock, Send, Eye, FileEdit, AlertTriangle, Archive, Paperclip } from 'lucide-react';
+import {
+  Plus, Search, X, Inbox, Clock, Send, Eye, FileEdit, AlertTriangle, Archive, Paperclip,
+  CheckCircle2, AlertCircle, Loader2, FileText,
+} from 'lucide-react';
 import { officeApi, Letter, OfficeMeta } from '../../api/office';
 import { useToast } from '../../components/Toast';
 import JalaliDateInput from '../../components/JalaliDateInput';
 import { formatJalali } from '../../lib/jalali';
+import { apiErrorMessage } from '../../lib/apiError';
 
 const BUCKETS: { key: string; label: string; icon: typeof Inbox }[] = [
   { key: 'inbox', label: 'صندوق ورودی', icon: Inbox },
@@ -28,6 +32,20 @@ const PRIORITY_LABEL: Record<string, string> = { low: 'کم', normal: 'عادی'
 const TYPE_LABEL: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 
 type RecipientDraft = { user_id: string; delivery_type: 'primary' | 'action_required' | 'cc' };
+
+type UploadRow = {
+  file: File;
+  progress: number;
+  status: 'pending' | 'uploading' | 'done' | 'error';
+  error?: string;
+  previewUrl?: string;
+};
+
+function formatSize(bytes: number) {
+  if (bytes < 1024) return `${bytes.toLocaleString('fa-IR')} بایت`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toLocaleString('fa-IR', { maximumFractionDigits: 1 })} کیلوبایت`;
+  return `${(bytes / (1024 * 1024)).toLocaleString('fa-IR', { maximumFractionDigits: 1 })} مگابایت`;
+}
 
 const emptyForm = {
   subject: '', body: '', correspondence_type: 'internal', secretariat_id: '',
@@ -49,7 +67,7 @@ export default function CorrespondenceListPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [recipients, setRecipients] = useState<RecipientDraft[]>([]);
-  const [files, setFiles] = useState<File[]>([]);
+  const [uploads, setUploads] = useState<UploadRow[]>([]);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const addRecipient = () => {
@@ -99,8 +117,16 @@ export default function CorrespondenceListPage() {
     (letter.registration_number || '').includes(search) ||
     letter.sender_display.includes(search));
 
+  const clearUploads = () => {
+    setUploads((prev) => {
+      prev.forEach((row) => { if (row.previewUrl) URL.revokeObjectURL(row.previewUrl); });
+      return [];
+    });
+  };
+
   const closeForm = () => {
     setShowForm(false);
+    clearUploads();
     if (params.get('new')) {
       const updated = new URLSearchParams(params);
       updated.delete('new');
@@ -110,7 +136,25 @@ export default function CorrespondenceListPage() {
 
   const addFiles = (list: FileList | null) => {
     if (!list) return;
-    setFiles((prev) => [...prev, ...Array.from(list)]);
+    const rows = Array.from(list).map<UploadRow>((file) => ({
+      file,
+      progress: 0,
+      status: 'pending',
+      previewUrl: file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined,
+    }));
+    setUploads((prev) => [...prev, ...rows]);
+  };
+
+  const removeUpload = (index: number) => {
+    setUploads((prev) => {
+      const row = prev[index];
+      if (row?.previewUrl) URL.revokeObjectURL(row.previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const patchUpload = (index: number, patch: Partial<UploadRow>) => {
+    setUploads((prev) => prev.map((row, i) => (i === index ? { ...row, ...patch } : row)));
   };
 
   const submit = async () => {
@@ -154,21 +198,34 @@ export default function CorrespondenceListPage() {
 
       // The letter exists now, so attachments go to its own private endpoint.
       let uploaded = 0;
-      for (const file of files) {
+      for (let index = 0; index < uploads.length; index += 1) {
+        patchUpload(index, { status: 'uploading', progress: 0 });
         const data = new FormData();
-        data.append('file', file);
+        data.append('file', uploads[index].file);
         try {
-          await officeApi.uploadAttachment(letterId, data);
+          await officeApi.uploadAttachment(letterId, data, (percent) => {
+            patchUpload(index, { progress: percent });
+          });
+          patchUpload(index, { status: 'done', progress: 100 });
           uploaded += 1;
-        } catch {
-          toast(`بارگذاری «${file.name}» انجام نشد`, 'error');
+        } catch (error) {
+          patchUpload(index, { status: 'error', progress: 0, error: apiErrorMessage(error, 'بارگذاری انجام نشد') });
+          toast(apiErrorMessage(error, `بارگذاری «${uploads[index].file.name}» انجام نشد`), 'error');
         }
       }
-      toast(uploaded > 0 ? `پیش‌نویس با ${uploaded} پیوست ساخته شد` : 'پیش‌نویس نامه ایجاد شد', 'success');
+      const failed = uploads.length - uploaded;
+      toast(
+        failed > 0
+          ? `پیش‌نویس ساخته شد؛ ${uploaded} پیوست بارگذاری شد و ${failed} فایل ناموفق بود`
+          : uploaded > 0
+            ? `پیش‌نویس با ${uploaded} پیوست ساخته شد`
+            : 'پیش‌نویس نامه ایجاد شد',
+        failed > 0 ? 'error' : 'success',
+      );
       setShowForm(false);
       setForm(emptyForm);
       setRecipients([]);
-      setFiles([]);
+      clearUploads();
       navigate(`/erp/office/correspondence/${letterId}`);
     } catch {
       toast('خطا در ایجاد نامه', 'error');
@@ -366,17 +423,46 @@ export default function CorrespondenceListPage() {
                     addFiles(e.target.files);
                     e.target.value = '';
                   }} />
-                {files.length === 0 ? (
-                  <p className="text-[11px] text-nx-mist">حداکثر ۱۰ مگابایت برای هر فایل؛ PDF، JPG/PNG، DOCX، XLSX یا ZIP. فایل‌ها پس از ساخت پیش‌نویس بارگذاری می‌شوند.</p>
+                {uploads.length === 0 ? (
+                  <p className="text-[11px] text-nx-mist">
+                    حداکثر ۱۰ مگابایت برای هر فایل؛ PDF، JPG/PNG، DOCX، XLSX یا ZIP. فایل‌ها بلافاصله پس از انتخاب نمایش داده می‌شوند و هنگام ذخیره با درصد بارگذاری تأیید می‌شوند.
+                  </p>
                 ) : (
-                  <ul className="space-y-1">
-                    {files.map((file, index) => (
-                      <li key={`${file.name}-${index}`} className="flex items-center justify-between gap-2 text-[11px]">
-                        <span className="truncate text-nx-navy dark:text-white">{file.name}</span>
-                        <button type="button" onClick={() => setFiles((prev) => prev.filter((_, i) => i !== index))}
-                          className="text-nx-mist hover:text-nx-danger" title="حذف فایل">
-                          <X className="h-3.5 w-3.5" />
-                        </button>
+                  <ul className="space-y-2">
+                    {uploads.map((row, index) => (
+                      <li key={`${row.file.name}-${index}`} className="rounded-lg border border-nx-border p-2 dark:border-nx-navy-border">
+                        <div className="flex items-center gap-2">
+                          {row.previewUrl ? (
+                            <img src={row.previewUrl} alt={row.file.name} className="h-9 w-9 rounded object-cover" />
+                          ) : (
+                            <span className="grid h-9 w-9 place-items-center rounded bg-black/5 text-nx-mist dark:bg-white/10">
+                              <FileText className="h-4 w-4" />
+                            </span>
+                          )}
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-[11px] font-medium text-nx-navy dark:text-white">{row.file.name}</p>
+                            <p className="text-[10px] text-nx-mist">{formatSize(row.file.size)}</p>
+                          </div>
+                          {row.status === 'done' && <CheckCircle2 className="h-4 w-4 shrink-0 text-nx-teal" />}
+                          {row.status === 'error' && <AlertCircle className="h-4 w-4 shrink-0 text-nx-danger" />}
+                          {row.status === 'uploading' && <Loader2 className="h-4 w-4 shrink-0 animate-spin text-nx-blue" />}
+                          {row.status !== 'uploading' && (
+                            <button type="button" onClick={() => removeUpload(index)}
+                              className="shrink-0 text-nx-mist hover:text-nx-danger" title="حذف فایل">
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        {(row.status === 'uploading' || row.status === 'done') && (
+                          <div className="mt-1.5 h-1 overflow-hidden rounded bg-black/10 dark:bg-white/10">
+                            <div
+                              className={`h-full rounded transition-all ${row.status === 'done' ? 'bg-nx-teal' : 'bg-nx-blue'}`}
+                              style={{ width: `${row.progress}%` }}
+                            />
+                          </div>
+                        )}
+                        {row.status === 'done' && <p className="mt-1 text-[10px] text-nx-teal">بارگذاری انجام شد</p>}
+                        {row.error && <p className="mt-1 text-[10px] text-nx-danger">{row.error}</p>}
                       </li>
                     ))}
                   </ul>

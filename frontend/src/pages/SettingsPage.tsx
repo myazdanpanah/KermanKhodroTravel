@@ -11,6 +11,7 @@ import {
   Palette, Upload, RotateCcw, FileText, Inbox
 } from 'lucide-react'
 import BillingLetterheadTab from './BillingLetterheadTab'
+import AdminSettingsPage from './AdminSettingsPage'
 import SecretariatPanel from './office/SecretariatPanel'
 import { officeApi, OfficeMeta } from '../api/office'
 
@@ -696,7 +697,7 @@ function SecretariatsTab() {
 export default function SettingsPage() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'modules' | 'branding' | 'letterhead' | 'org' | 'secretariats'>('modules')
+  const [activeTab, setActiveTab] = useState<'modules' | 'users' | 'branding' | 'letterhead' | 'org' | 'secretariats'>('modules')
 
   useEffect(() => {
     if (!user || (user.role !== 'admin' && user.role !== 'ceo')) {
@@ -708,6 +709,7 @@ export default function SettingsPage() {
 
   const tabs = [
     { id: 'modules' as const, label: 'مدیریت ماژول‌ها', icon: Puzzle },
+    { id: 'users' as const, label: 'کاربران و دسترسی‌ها', icon: Users },
     { id: 'branding' as const, label: 'برندینگ', icon: Palette },
     { id: 'letterhead' as const, label: 'سربرگ و اطلاعات نامه', icon: FileText },
     { id: 'org' as const, label: 'ساختار سازمانی', icon: Building2 },
@@ -718,11 +720,11 @@ export default function SettingsPage() {
     <div className="p-6">
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-xl font-bold text-white">تنظیمات</h1>
-          <p className="text-sm text-nx-mist mt-1">مدیریت ماژول‌ها و ساختار سازمانی</p>
+          <h1 className="text-xl font-bold text-nx-navy dark:text-white">تنظیمات</h1>
+          <p className="mt-1 text-sm text-slate-500 dark:text-nx-mist">مدیریت ماژول‌ها، کاربران و ساختار سازمانی</p>
         </div>
         {/* Tabs */}
-        <div className="flex items-center gap-1 mb-6">
+        <div className="mb-6 flex items-center gap-1 overflow-x-auto pb-1">
           {tabs.map((tab) => {
             const Icon = tab.icon
             return (
@@ -731,8 +733,8 @@ export default function SettingsPage() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
                   activeTab === tab.id
-                    ? 'bg-nx-blue/10 dark:bg-nx-blue/40 text-nx-blue dark:text-nx-blue'
-                    : 'text-slate-300 hover:bg-nx-mist/10 dark:hover:bg-nx-navy'
+                    ? 'bg-nx-teal/10 text-nx-teal dark:bg-nx-blue/40 dark:text-nx-blue'
+                    : 'text-slate-500 hover:bg-black/5 dark:text-slate-300 dark:hover:bg-nx-navy'
                 }`}
               >
                 <Icon className="w-4 h-4" /> {tab.label}
@@ -743,6 +745,7 @@ export default function SettingsPage() {
 
         {/* Tab Content */}
         {activeTab === 'modules' && <ModuleManagementTab />}
+        {activeTab === 'users' && <AdminSettingsPage />}
         {activeTab === 'branding' && <BrandingTab />}
         {activeTab === 'letterhead' && <BillingLetterheadTab />}
         {activeTab === 'org' && <OrganizationTab />}

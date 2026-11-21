@@ -37,7 +37,8 @@ test('secretary without manager rights completes the flow; a non-member is block
   const registerButton = page.getByRole('button', { name: 'ثبت در دبیرخانه' });
   await expect(registerButton).toBeVisible();
   await registerButton.click();
-  await expect(page.getByText(/\/E2E\/O\/000001/)).toBeVisible();
+  // Digits are rendered in Persian across the UI; the type letter stays Latin.
+  await expect(page.getByText(/\/E2E\/O\/[۰-۹]+/)).toBeVisible();
 
   // Refer the registered letter to the outsider with an instruction.
   await page.getByRole('button', { name: 'ارجاع', exact: true }).first().click();
