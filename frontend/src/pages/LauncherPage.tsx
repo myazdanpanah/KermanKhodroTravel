@@ -45,6 +45,7 @@ const MODULE_ROUTES: Record<string, string> = {
   bi_dashboard: '/dashboards',
   finance: '/erp',
   crm: '/erp/crm',
+  office: '/erp/office',
   db_manager: '/db-manager',
   datasets: '/data/upload',
   llm: '/erp/settings/ai',
