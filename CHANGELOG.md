@@ -2,6 +2,15 @@
 
 All notable changes to the Nexivo platform are documented here.
 
+## [Unreleased] — November 21, 2026
+
+### 🏢 Office Automation
+- **Secretariats live in Settings** — creating a secretariat and managing its registrars moved from the workbench modal to a dedicated «دبیرخانه‌ها» tab under Settings, where members are picked from the company's central user directory (name, division, role).
+- **Multi-recipient composer** — a new letter can carry several recipients at once, each as primary recipient, action-required or CC; duplicate users are dropped and the letter's recipients stay editable on the draft page.
+- **Jalali date pickers** — letter date and due date use the same shared Persian calendar picker as billing debts/payments, so every Office date is entered and shown in the Shamsi calendar.
+- **Readable dropdowns** — native select options keep dark text on the light OS menu surface, fixing unselected items that were white-on-white in dark mode.
+- **Launcher route fix** — the Office tile on the welcome screen now opens `/erp/office` instead of showing a "not enabled" toast.
+
 ## [Unreleased] — November 20, 2026
 
 ### 🏢 Office Automation (Phase 1–2)

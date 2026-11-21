@@ -106,6 +106,26 @@ class AttachmentUploadTests(AttachmentTestBase):
         self.assertEqual(response.status_code, 422)
         self.assertEqual(letter.attachments.count(), 1)
 
+    def test_rejects_content_that_does_not_match_extension(self):
+        letter = self.draft()
+        response = self.upload(
+            letter, name="scan.pdf", content=b"MZ\x90\x00 not a pdf", content_type="application/pdf",
+        )
+        self.assertEqual(response.status_code, 422)
+        self.assertEqual(letter.attachments.count(), 0)
+
+    def test_accepts_files_with_matching_signatures(self):
+        letter = self.draft()
+        png = self.upload(
+            letter, name="photo.png", content=b"\x89PNG\r\n\x1a\nrest", content_type="image/png",
+        )
+        self.assertEqual(png.status_code, 201, png.data)
+        docx = self.upload(
+            letter, name="letter.docx", content=b"PK\x03\x04rest",
+            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        )
+        self.assertEqual(docx.status_code, 201, docx.data)
+
     def test_archived_letter_rejects_upload(self):
         letter = self.draft()
         archive_correspondence(letter, self.ceo)
@@ -141,6 +161,32 @@ class AttachmentAccessTests(AttachmentTestBase):
             f"/api/v1/office/correspondence/{letter.id}/attachments/{attachment.id}/download/",
         )
         self.assertIn(anonymous.status_code, (401, 403))
+
+    def test_download_is_audited_and_cannot_be_framed(self):
+        letter = self.draft()
+        upload = self.upload(letter)
+        attachment = CorrespondenceAttachment.objects.get(pk=upload.data["data"]["id"])
+        response = self.download(letter, attachment)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Security-Policy"], "default-src 'none'; sandbox")
+        self.assertEqual(response["X-Frame-Options"], "DENY")
+
+        timeline = self.client.get(f"/api/v1/office/correspondence/{letter.id}/timeline/")
+        downloads = [e for e in timeline.data["data"] if e["action"] == "attachment_downloaded"]
+        self.assertEqual(len(downloads), 1)
+        self.assertEqual(downloads[0]["metadata"]["attachment_id"], attachment.id)
+
+    def test_detail_reports_attachment_management_capability(self):
+        letter = self.draft(recipients=[{
+            "recipient_type": "user", "recipient_user_id": self.finance.id,
+        }])
+        creator = self.client.get(f"/api/v1/office/correspondence/{letter.id}/")
+        self.assertTrue(creator.data["data"]["can_manage_attachments"])
+
+        finance_client = APIClient()
+        finance_client.force_authenticate(self.finance)
+        recipient = finance_client.get(f"/api/v1/office/correspondence/{letter.id}/")
+        self.assertFalse(recipient.data["data"]["can_manage_attachments"])
 
     def test_confidential_letter_attachment_is_hidden(self):
         letter = self.draft(confidentiality="highly_confidential", recipients=[{

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { officeApi, Attachment, Letter, OfficeMeta, BusinessLink, TimelineEvent } from '../../api/office';
 import { useToast } from '../../components/Toast';
+import JalaliDateInput from '../../components/JalaliDateInput';
 import { formatJalali } from '../../lib/jalali';
 
 const TYPE_LABEL: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
@@ -139,7 +140,7 @@ export default function CorrespondenceDetailPage() {
       subject: letter.subject,
       body: letter.body || '',
       priority: letter.priority,
-      due_at: letter.due_at ? new Date(letter.due_at).toISOString().slice(0, 16) : '',
+      due_at: letter.due_at ? new Date(letter.due_at).toISOString().slice(0, 10) : '',
       recipients: (letter.recipients || []).map((recipient) => ({
         label: recipient.user_name || recipient.team_name || recipient.division_name || recipient.external_name,
         recipient_type: recipient.recipient_type,
@@ -161,7 +162,7 @@ export default function CorrespondenceDetailPage() {
         subject: editForm.subject,
         body: editForm.body,
         priority: editForm.priority,
-        due_at: editForm.due_at ? new Date(editForm.due_at).toISOString() : null,
+        due_at: editForm.due_at ? new Date(`${editForm.due_at}T23:59:59`).toISOString() : null,
         recipients: editForm.recipients.map((recipient) => ({
           recipient_type: recipient.recipient_type,
           delivery_type: recipient.delivery_type,
@@ -315,12 +316,10 @@ export default function CorrespondenceDetailPage() {
               ))}
             </select>
           </div>
-          <label className="mt-2 block text-xs text-nx-mist">
-            مهلت اقدام
-            <input type="datetime-local" value={editForm.due_at}
-              onChange={(e) => setEditForm({ ...editForm, due_at: e.target.value })}
-              className="mt-1 w-full rounded-lg border border-nx-border bg-transparent px-3 py-2 text-sm dark:border-nx-navy-border dark:text-white" />
-          </label>
+          <div className="mt-2 text-xs text-nx-mist">
+            <JalaliDateInput label="مهلت اقدام" value={editForm.due_at}
+              onChange={(iso) => setEditForm({ ...editForm, due_at: iso })} />
+          </div>
           <textarea rows={5} value={editForm.body}
             onChange={(e) => setEditForm({ ...editForm, body: e.target.value })}
             placeholder="متن نامه…"
@@ -549,7 +548,7 @@ export default function CorrespondenceDetailPage() {
               <Row label="مسئول" value={letter.owner_name || '—'} />
               <Row label="اولویت" value={PRIORITY_LABEL[letter.priority]} />
               <Row label="محرمانگی" value={CONF_LABEL[letter.confidentiality]} />
-              <Row label="تاریخ نامه" value={letter.letter_date_jalali || '—'} />
+              <Row label="تاریخ نامه" value={letter.letter_date_jalali || formatJalali(letter.letter_date) || '—'} />
               <Row label="ثبت" value={letter.registered_at ? formatJalali(letter.registered_at) : 'ثبت نشده'} />
               <Row label="مهلت" value={letter.due_at ? formatJalali(letter.due_at) : '—'} />
               {letter.parent_subject && <Row label="پاسخ به" value={letter.parent_subject} />}

@@ -4,11 +4,11 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, X, Inbox, Clock, Send, Eye, FileEdit, AlertTriangle, Archive, Settings } from 'lucide-react';
+import { Plus, Search, X, Inbox, Clock, Send, Eye, FileEdit, AlertTriangle, Archive } from 'lucide-react';
 import { officeApi, Letter, OfficeMeta } from '../../api/office';
 import { useToast } from '../../components/Toast';
+import JalaliDateInput from '../../components/JalaliDateInput';
 import { formatJalali } from '../../lib/jalali';
-import SecretariatPanel from './SecretariatPanel';
 
 const BUCKETS: { key: string; label: string; icon: typeof Inbox }[] = [
   { key: 'inbox', label: 'صندوق ورودی', icon: Inbox },
@@ -27,10 +27,12 @@ const STATUS_LABEL: Record<string, string> = {
 const PRIORITY_LABEL: Record<string, string> = { low: 'کم', normal: 'عادی', high: 'زیاد', urgent: 'فوری' };
 const TYPE_LABEL: Record<string, string> = { incoming: 'وارده', outgoing: 'صادره', internal: 'داخلی' };
 
+type RecipientDraft = { user_id: string; delivery_type: 'primary' | 'action_required' | 'cc' };
+
 const emptyForm = {
   subject: '', body: '', correspondence_type: 'internal', secretariat_id: '',
-  priority: 'normal', confidentiality: 'normal', letter_date_jalali: '', due_at: '',
-  sender_name: '', sender_organization: '', recipient_user_id: '',
+  priority: 'normal', confidentiality: 'normal', letter_date: '', due_at: '',
+  sender_name: '', sender_organization: '',
 };
 
 export default function WorkbenchPage() {
@@ -45,7 +47,19 @@ export default function WorkbenchPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
-  const [showSecretariats, setShowSecretariats] = useState(false);
+  const [recipients, setRecipients] = useState<RecipientDraft[]>([]);
+
+  const addRecipient = () => {
+    setRecipients((prev) => [...prev, { user_id: '', delivery_type: 'primary' }]);
+  };
+
+  const updateRecipient = (index: number, patch: Partial<RecipientDraft>) => {
+    setRecipients((prev) => prev.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+  };
+
+  const removeRecipient = (index: number) => {
+    setRecipients((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const load = async (nextBucket = bucket) => {
     setLoading(true);
@@ -88,22 +102,34 @@ export default function WorkbenchPage() {
         correspondence_type: form.correspondence_type,
         priority: form.priority,
         confidentiality: form.confidentiality,
-        letter_date_jalali: form.letter_date_jalali,
-        due_at: form.due_at ? new Date(form.due_at).toISOString() : null,
+        letter_date: form.letter_date || null,
+        letter_date_jalali: form.letter_date ? formatJalali(form.letter_date) : '',
+        due_at: form.due_at ? new Date(`${form.due_at}T23:59:59`).toISOString() : null,
       };
       if (form.secretariat_id) payload.secretariat_id = Number(form.secretariat_id);
       if (form.sender_name) payload.sender_name = form.sender_name;
       if (form.sender_organization) payload.sender_organization = form.sender_organization;
-      if (form.recipient_user_id) {
-        payload.recipients = [{
-          recipient_type: 'user', recipient_user_id: Number(form.recipient_user_id),
-          delivery_type: 'action_required',
-        }];
-      }
+      // One row per recipient; a user listed twice keeps the first role.
+      const seen = new Set<number>();
+      const rows = recipients
+        .filter((row) => row.user_id)
+        .filter((row) => {
+          const id = Number(row.user_id);
+          if (seen.has(id)) return false;
+          seen.add(id);
+          return true;
+        })
+        .map((row) => ({
+          recipient_type: 'user',
+          recipient_user_id: Number(row.user_id),
+          delivery_type: row.delivery_type,
+        }));
+      if (rows.length > 0) payload.recipients = rows;
       const res = await officeApi.createLetter(payload);
       toast('پیش‌نویس نامه ایجاد شد', 'success');
       setShowForm(false);
       setForm(emptyForm);
+      setRecipients([]);
       navigate(`/erp/office/correspondence/${res.data.data.id}`);
     } catch {
       toast('خطا در ایجاد نامه', 'error');
@@ -120,12 +146,6 @@ export default function WorkbenchPage() {
           <p className="mt-1 text-sm text-nx-mist">کارتابل شخصی، نامه‌های در جریان و اقدام‌های باز</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {meta?.capabilities.privileged && (
-            <button onClick={() => setShowSecretariats(true)}
-              className="flex items-center gap-2 rounded-lg border border-nx-border px-4 py-2 text-sm text-nx-navy dark:border-nx-navy-border dark:text-white">
-              <Settings className="h-4 w-4" /> دبیرخانه‌ها
-            </button>
-          )}
           <button
             onClick={() => setShowForm(true)}
             className="flex items-center gap-2 rounded-lg bg-nx-blue px-4 py-2 text-sm font-medium text-white hover:opacity-90"
@@ -194,10 +214,6 @@ export default function WorkbenchPage() {
         )}
       </div>
 
-      {showSecretariats && meta && (
-        <SecretariatPanel meta={meta} onClose={() => setShowSecretariats(false)} />
-      )}
-
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowForm(false)}>
           <div
@@ -245,25 +261,53 @@ export default function WorkbenchPage() {
                   {meta?.confidentialities.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
                 </select>
               </label>
-              <label className="text-xs text-nx-mist">
-                تاریخ نامه (شمسی)
-                <input value={form.letter_date_jalali} onChange={(e) => setForm({ ...form, letter_date_jalali: e.target.value })}
-                  placeholder="1404/09/01"
-                  className="mt-1 w-full rounded-lg border border-nx-border bg-transparent px-3 py-2 text-sm dark:border-nx-navy-border dark:text-white" />
-              </label>
-              <label className="text-xs text-nx-mist">
-                مهلت اقدام
-                <input type="datetime-local" value={form.due_at} onChange={(e) => setForm({ ...form, due_at: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-nx-border bg-transparent px-3 py-2 text-sm dark:border-nx-navy-border dark:text-white" />
-              </label>
-              <label className="sm:col-span-2 text-xs text-nx-mist">
-                گیرنده (نیازمند اقدام)
-                <select value={form.recipient_user_id} onChange={(e) => setForm({ ...form, recipient_user_id: e.target.value })}
-                  className="mt-1 w-full rounded-lg border border-nx-border bg-transparent px-3 py-2 text-sm dark:border-nx-navy-border dark:text-white">
-                  <option value="">— بدون گیرنده —</option>
-                  {meta?.users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-                </select>
-              </label>
+              <div className="text-xs text-nx-mist">
+                <JalaliDateInput label="تاریخ نامه (شمسی)" value={form.letter_date}
+                  onChange={(iso) => setForm({ ...form, letter_date: iso })} />
+              </div>
+              <div className="text-xs text-nx-mist">
+                <JalaliDateInput label="مهلت اقدام" value={form.due_at}
+                  onChange={(iso) => setForm({ ...form, due_at: iso })} />
+              </div>
+              <div className="space-y-2 rounded-lg border border-nx-border p-3 sm:col-span-2 dark:border-nx-navy-border">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-xs font-medium text-nx-navy dark:text-white">گیرندگان و رونوشت</p>
+                  <button type="button" onClick={addRecipient}
+                    className="flex items-center gap-1 text-xs text-nx-blue hover:opacity-70">
+                    <Plus className="h-3.5 w-3.5" /> افزودن گیرنده
+                  </button>
+                </div>
+                {recipients.length === 0 ? (
+                  <p className="text-[11px] text-nx-mist">در صورت نیاز، یک یا چند کاربر را با نقش گیرنده اصلی، نیازمند اقدام یا رونوشت اضافه کنید.</p>
+                ) : (
+                  <ul className="space-y-2">
+                    {recipients.map((row, index) => (
+                      <li key={index} className="flex flex-wrap items-center gap-2">
+                        <select value={row.user_id} onChange={(e) => updateRecipient(index, { user_id: e.target.value })}
+                          className="min-w-0 flex-1 rounded-lg border border-nx-border bg-transparent px-2 py-1.5 text-xs dark:border-nx-navy-border dark:text-white">
+                          <option value="">— انتخاب کاربر —</option>
+                          {meta?.users.map((u) => (
+                            <option key={u.id} value={u.id}>
+                              {u.name}{u.division_name ? ` — ${u.division_name}` : ''}
+                            </option>
+                          ))}
+                        </select>
+                        <select value={row.delivery_type}
+                          onChange={(e) => updateRecipient(index, { delivery_type: e.target.value as RecipientDraft['delivery_type'] })}
+                          className="rounded-lg border border-nx-border bg-transparent px-2 py-1.5 text-xs dark:border-nx-navy-border dark:text-white">
+                          <option value="primary">گیرنده اصلی</option>
+                          <option value="action_required">نیازمند اقدام</option>
+                          <option value="cc">رونوشت</option>
+                        </select>
+                        <button type="button" onClick={() => removeRecipient(index)}
+                          className="text-nx-mist hover:text-nx-danger" title="حذف گیرنده">
+                          <X className="h-4 w-4" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <label className="sm:col-span-2 text-xs text-nx-mist">
                 متن نامه
                 <textarea value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} rows={5}

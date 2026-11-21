@@ -322,6 +322,14 @@ html[dir="rtl"] .react-resizable-handle:active::after {
   --pc-calendar-radius: 12px;
 }
 
+/* Native dropdown lists are painted by the browser on a light surface, so their
+   options must stay dark even inside a dark-themed form. Unselected items were
+   white-on-white and unreadable. */
+select option {
+  color: #0F172A;
+  background-color: #FFFFFF;
+}
+
 .dark {
   --pc-color-surface: #1E2A42;
   --pc-color-text: #E6EDF8;

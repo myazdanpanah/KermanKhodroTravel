@@ -4,7 +4,16 @@
 
 import apiClient from './client';
 
-export interface OfficeMetaUser { id: number; name: string; role: string }
+export interface OfficeMetaUser {
+  id: number;
+  name: string;
+  username: string;
+  role: string;
+  email: string;
+  division: number | null;
+  division_name: string;
+  team_name: string;
+}
 export interface OfficeMetaTeam { id: number; name: string; division: string }
 export interface OfficeMetaDivision { id: number; name: string }
 export interface OfficeOption { value: string; label: string }

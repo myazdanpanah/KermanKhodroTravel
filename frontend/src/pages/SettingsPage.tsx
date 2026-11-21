@@ -11,6 +11,8 @@ import {
   Palette, Upload, RotateCcw, FileText, Inbox
 } from 'lucide-react'
 import BillingLetterheadTab from './BillingLetterheadTab'
+import SecretariatPanel from './office/SecretariatPanel'
+import { officeApi, OfficeMeta } from '../api/office'
 
 // ─── Module Management ────────────────────────────────────────────
 
@@ -670,12 +672,31 @@ function BrandingTab() {
   )
 }
 
+// ─── Secretariats & Registrars ───────────────────────────────────
+
+function SecretariatsTab() {
+  const { toast } = useToast()
+  const [meta, setMeta] = useState<OfficeMeta | null>(null)
+
+  useEffect(() => {
+    officeApi.getMeta()
+      .then((res) => setMeta(res.data.data))
+      .catch(() => toast('خطا در دریافت کاربران شرکت', 'error'))
+  }, [toast])
+
+  if (!meta) {
+    return <div className="p-12 text-center text-nx-mist">در حال بارگذاری...</div>
+  }
+
+  return <SecretariatPanel meta={meta} embedded />
+}
+
 // ─── Main Settings Page ───────────────────────────────────────────
 
 export default function SettingsPage() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'modules' | 'branding' | 'letterhead' | 'org'>('modules')
+  const [activeTab, setActiveTab] = useState<'modules' | 'branding' | 'letterhead' | 'org' | 'secretariats'>('modules')
 
   useEffect(() => {
     if (!user || (user.role !== 'admin' && user.role !== 'ceo')) {
@@ -690,6 +711,7 @@ export default function SettingsPage() {
     { id: 'branding' as const, label: 'برندینگ', icon: Palette },
     { id: 'letterhead' as const, label: 'سربرگ و اطلاعات نامه', icon: FileText },
     { id: 'org' as const, label: 'ساختار سازمانی', icon: Building2 },
+    { id: 'secretariats' as const, label: 'دبیرخانه‌ها', icon: Inbox },
   ]
 
   return (
@@ -724,6 +746,7 @@ export default function SettingsPage() {
         {activeTab === 'branding' && <BrandingTab />}
         {activeTab === 'letterhead' && <BillingLetterheadTab />}
         {activeTab === 'org' && <OrganizationTab />}
+        {activeTab === 'secretariats' && <SecretariatsTab />}
       </div>
     </div>
   )

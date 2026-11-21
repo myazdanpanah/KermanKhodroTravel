@@ -34,10 +34,12 @@ from .services import (
     add_comment,
     can_register_letter,
     archive_correspondence,
+    can_manage_attachments,
     can_open,
     create_correspondence,
     delete_attachment,
     is_privileged,
+    log_action,
     mark_read,
     refer_correspondence,
     register_correspondence,
@@ -188,6 +190,7 @@ def correspondence_detail(request, pk):
         payload = CorrespondenceDetailSerializer(letter).data
         payload["business_links"] = business.links_for(letter.company, "correspondence", letter.id, request.user)
         payload["can_edit"] = can_edit_draft(letter, request.user)
+        payload["can_manage_attachments"] = can_manage_attachments(request.user, letter)
         return success_response(data=payload)
 
     serializer = DraftUpdateSerializer(data=request.data, partial=True)
@@ -385,12 +388,25 @@ def office_meta(request):
     if gate:
         return gate
     company = request.user.company
-    users = User.objects.filter(company=company, is_active=True).order_by("first_name", "username")
+    users = (
+        User.objects.filter(company=company, is_active=True)
+        .select_related("division", "team")
+        .order_by("first_name", "username")
+    )
     return success_response(data={
         "secretariats": SecretariatSerializer(
             Secretariat.objects.filter(company=company, is_active=True), many=True).data,
         "users": [
-            {"id": user.id, "name": user.get_full_name() or user.username, "role": user.role}
+            {
+                "id": user.id,
+                "name": user.get_full_name() or user.username,
+                "username": user.username,
+                "role": user.role,
+                "email": user.email,
+                "division": user.division_id,
+                "division_name": user.division.name if user.division_id else "",
+                "team_name": user.team.name if user.team_id else "",
+            }
             for user in users
         ],
         "teams": [
@@ -590,7 +606,7 @@ def correspondence_attachment_download(request, pk, attachment_id):
     letter, error = _letter(request, pk)
     if error:
         return error
-    attachment = letter.attachments.filter(pk=attachment_id).first()
+    attachment = letter.attachments.filter(pk=attachment_id, company=letter.company).first()
     if attachment is None:
         return not_found_response("پیوست یافت نشد")
     try:
@@ -605,4 +621,12 @@ def correspondence_attachment_download(request, pk, attachment_id):
     )
     response["X-Content-Type-Options"] = "nosniff"
     response["Cache-Control"] = "private, no-store"
+    # Even a file that would render in a browser cannot run script or frame
+    # itself: it is a download, not a page.
+    response["Content-Security-Policy"] = "default-src 'none'; sandbox"
+    response["X-Frame-Options"] = "DENY"
+    log_action(
+        letter, request.user, "attachment_downloaded",
+        metadata={"attachment_id": attachment.id},
+    )
     return response

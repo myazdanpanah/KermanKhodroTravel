@@ -7,7 +7,18 @@ import { Plus, Trash2, X } from 'lucide-react';
 import { officeApi, OfficeMeta, SecretariatInfo } from '../../api/office';
 import { useToast } from '../../components/Toast';
 
-export default function SecretariatPanel({ meta, onClose }: { meta: OfficeMeta; onClose: () => void }) {
+const ROLE_LABEL: Record<string, string> = {
+  admin: 'مدیر سیستم', ceo: 'مدیرعامل', finance: 'مالی', sales: 'فروش', hr: 'منابع انسانی',
+};
+
+interface SecretariatPanelProps {
+  meta: OfficeMeta;
+  onClose?: () => void;
+  /** Render inside the settings page instead of a modal. */
+  embedded?: boolean;
+}
+
+export default function SecretariatPanel({ meta, onClose, embedded = false }: SecretariatPanelProps) {
   const { toast } = useToast();
   const [rows, setRows] = useState<SecretariatInfo[]>([]);
   const [loading, setLoading] = useState(true);
@@ -72,15 +83,27 @@ export default function SecretariatPanel({ meta, onClose }: { meta: OfficeMeta; 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-5 dark:bg-nx-navy"
+    <div
+      className={embedded ? '' : 'fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4'}
+      onClick={embedded ? undefined : onClose}
+    >
+      <div
+        className={
+          embedded
+            ? 'rounded-xl border border-nx-border bg-white p-5 dark:border-nx-navy-border dark:bg-nx-navy'
+            : 'max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-xl bg-white p-5 dark:bg-nx-navy'
+        }
         onClick={(event) => event.stopPropagation()}>
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-lg font-bold text-nx-navy dark:text-white">دبیرخانه‌ها و ثبت‌کنندگان</h2>
-            <p className="mt-1 text-xs text-nx-mist">فقط اعضای دارای حق «ثبت» می‌توانند برای نامه شماره رسمی بگیرند.</p>
+            <p className="mt-1 text-xs text-nx-mist">
+              کاربران از فهرست مرکزی کاربران شرکت انتخاب می‌شوند؛ فقط اعضای دارای حق «ثبت» می‌توانند برای نامه شماره رسمی بگیرند.
+            </p>
           </div>
-          <button onClick={onClose} className="text-nx-mist hover:text-nx-danger"><X className="h-5 w-5" /></button>
+          {onClose && (
+            <button onClick={onClose} className="text-nx-mist hover:text-nx-danger"><X className="h-5 w-5" /></button>
+          )}
         </div>
 
         <div className="mb-4 grid gap-2 rounded-lg border border-nx-border p-3 sm:grid-cols-3 dark:border-nx-navy-border">
@@ -138,7 +161,13 @@ export default function SecretariatPanel({ meta, onClose }: { meta: OfficeMeta; 
                     }))}
                     className="min-w-0 flex-1 rounded-lg border border-nx-border bg-transparent px-2 py-1.5 text-xs dark:border-nx-navy-border dark:text-white">
                     <option value="">افزودن عضو…</option>
-                    {meta.users.map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
+                    {meta.users.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {user.name}
+                        {user.division_name ? ` — ${user.division_name}` : ''}
+                        {user.role && ROLE_LABEL[user.role] ? ` (${ROLE_LABEL[user.role]})` : ''}
+                      </option>
+                    ))}
                   </select>
                   <label className="flex items-center gap-1 text-xs text-nx-mist">
                     <input type="checkbox"

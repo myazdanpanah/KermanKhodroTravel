@@ -427,6 +427,21 @@ ALLOWED_ATTACHMENT_TYPES = {
     ".zip": {"application/zip", "application/x-zip-compressed"},
 }
 _GENERIC_CONTENT_TYPES = {"", "application/octet-stream"}
+
+# The declared content type and the extension are both claims; the file head is
+# evidence. A renamed executable must not pass as a PDF just because it says so.
+_ZIP_MAGIC = (b"PK\x03\x04", b"PK\x05\x06", b"PK\x07\x08")
+ATTACHMENT_SIGNATURES = {
+    ".pdf": (b"%PDF",),
+    ".jpg": (b"\xff\xd8\xff",),
+    ".jpeg": (b"\xff\xd8\xff",),
+    ".png": (b"\x89PNG\r\n\x1a\n",),
+    # DOCX and XLSX are ZIP containers, so they share the archive signature.
+    ".docx": _ZIP_MAGIC,
+    ".xlsx": _ZIP_MAGIC,
+    ".zip": _ZIP_MAGIC,
+}
+ATTACHMENT_SIGNATURE_BYTES = 8
 ATTACHMENT_HINT = "فقط PDF، تصویر (JPG/PNG)، Word (DOCX)، Excel (XLSX) و ZIP مجاز است"
 
 
@@ -436,6 +451,18 @@ def _attachment_checksum(upload):
         digest.update(chunk)
     upload.seek(0)
     return digest.hexdigest()
+
+
+def _file_head(upload):
+    """Read the first bytes for signature checks without consuming the upload."""
+    upload.seek(0)
+    head = upload.read(ATTACHMENT_SIGNATURE_BYTES) or b""
+    upload.seek(0)
+    return head
+
+
+def _signature_matches(suffix, head):
+    return any(head.startswith(magic) for magic in ATTACHMENT_SIGNATURES.get(suffix, ()))
 
 
 def validate_attachment(upload):
@@ -456,6 +483,8 @@ def validate_attachment(upload):
     if size > ATTACHMENT_MAX_BYTES:
         limit_mb = ATTACHMENT_MAX_BYTES // (1024 * 1024)
         raise OfficeError(f"حجم فایل بیش از حد مجاز ({limit_mb} مگابایت) است", 400)
+    if not _signature_matches(suffix, _file_head(upload)):
+        raise OfficeError(f"محتوای فایل با پسوند آن هم‌خوانی ندارد؛ {ATTACHMENT_HINT}", 400)
     return original_name, suffix, declared, size
 
 
@@ -484,6 +513,15 @@ def add_attachment(letter, user, upload):
         metadata={"attachment_id": attachment.id, "size_bytes": size},
     )
     return attachment
+
+
+def can_manage_attachments(user, letter):
+    """Who may delete any attachment: managers, the letter's creator or owner."""
+    return bool(
+        is_privileged(user)
+        or letter.created_by_id == user.id
+        or letter.owner_id == user.id
+    )
 
 
 def can_manage_attachment(user, attachment):
