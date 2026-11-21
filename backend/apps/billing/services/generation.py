@@ -13,6 +13,7 @@ so they exist on disk and in the DB BLOB.
 from __future__ import annotations
 
 import base64
+import html
 import datetime as dt
 import io
 import json
@@ -31,11 +32,24 @@ from typing import Iterator
 import requests
 from django.conf import settings as django_settings
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 
-from ..models import ApprovalRequest, CompanySettings, FinalFile, Invoice, InvoiceTemplate, Payer
+from ..models import (
+    ApprovalRequest,
+    CompanySettings,
+    Credit,
+    FinalFile,
+    Invoice,
+    InvoiceTemplate,
+    ManualDebt,
+    Payer,
+    Payment,
+    ReportDesign,
+)
 from .files import save_final_file
 from .normalize import gregorian_to_persian, persian_date_to_gregorian, to_persian_digits
+from .report_design import design_css, normalize_design, render_text, table_element, visible_columns
 
 try:  # Jinja2 ships with WeasyPrint but is imported eagerly for the HTML path
     from jinja2 import Environment, select_autoescape
@@ -290,62 +304,66 @@ INVOICE_HTML = """
 <html dir="rtl" lang="fa"><head><meta charset="UTF-8"><style>{{ css|safe }}</style></head>
 <body>
 {% for page in pages %}
-  <div class="page"{% if not loop.first %} style="page-break-before: always;"{% endif %}>
-    <div class="header-top">
-      <div class="right-logo">{% if seller.logo %}<img src="{{ seller.logo }}" class="logo">{% endif %}</div>
-      <div class="left-info">
-        <div>تاریخ: {{ invoice_date }}</div>
-        <div>شماره صورتحساب: {{ invoice_number }}</div>
+  <div class="page">
+    {% for el in page.elements %}
+      {% if el.type == 'text' %}
+      <div class="el el-text" style="left: {{ el.x }}mm; top: {{ el.y }}mm; width: {{ el.w }}mm; height: {{ el.h }}mm; font-size: {{ el.size }}pt; font-weight: {{ 'bold' if el.bold else 'normal' }}; text-align: {{ el.align }}; color: {{ el.color }};{% if el.box %} background: {{ el.bg or '#ffffff' }};{% endif %}{% if el.border %} border: 0.4mm solid {{ accent }}; padding: 1.5mm;{% endif %}">{{ el.html|safe }}</div>
+      {% elif el.type == 'table' %}
+      <div class="el el-table" style="left: {{ el.x }}mm; top: {{ el.y }}mm; width: {{ el.w }}mm; height: {{ el.h }}mm; font-size: {{ el.size }}pt;">
+        <table>
+          <colgroup>{% for column in el.columns %}<col style="width: {{ column.width }}%;">{% endfor %}</colgroup>
+          <thead><tr>{% for column in el.columns %}<th>{{ column.label }}</th>{% endfor %}</tr></thead>
+          <tbody>
+          {% for row in page.rows %}
+            <tr>{% for column in el.columns %}<td>{{ row[column.field] }}</td>{% endfor %}</tr>
+          {% endfor %}
+          {% if el.show_page_totals %}
+            <tr class="page-totals">
+              {% for column in el.columns %}<td>{% if loop.first %}جمع صفحه{% elif column.key == 'debit' %}{{ page.total_debt_display }}{% elif column.key == 'credit' %}{{ page.total_credit_display }}{% elif column.key == 'balance' %}{{ page.total_balance_display }}{% endif %}</td>{% endfor %}
+            </tr>
+          {% endif %}
+          </tbody>
+        </table>
       </div>
-    </div>
-    <div class="header-box">صورت حساب {{ service_type }} {{ buyer_name }}</div>
-    <table class="data-table">
-      <colgroup>
-        <col class="c-rank"><col class="c-contract"><col class="c-passenger"><col class="c-description">
-        <col class="c-date"><col class="c-notes"><col class="c-debit"><col class="c-credit"><col class="c-balance">
-      </colgroup>
-      <thead><tr>
-        <th>ردیف</th><th>شماره قرارداد</th><th>نام مسافر</th><th>شرح خدمات</th>
-        <th>تاریخ</th><th>توضیحات</th><th>بدهکار (ریال)</th><th>بستانکار (ریال)</th><th>مانده در خط</th>
-      </tr></thead>
-      <tbody>
-      {% for row in page.rows %}
-        <tr>
-          <td>{{ loop.index + (page.page_num - 1) * 8 }}</td>
-          <td>{{ row.contract }}</td>
-          <td>{{ row.passenger }}</td>
-          <td>{{ row.description }}</td>
-          <td>{{ row.date }}</td>
-          <td>{{ row.notes }}</td>
-          <td>{{ row.debt_display }}</td>
-          <td>{{ row.credit_display }}</td>
-          <td>{{ row.balance_display }}</td>
-        </tr>
-      {% endfor %}
-      </tbody>
-    </table>
-    <div class="totals-row">
-      <div>جمع بدهکار این صفحه: {{ page.total_debt_display }} ریال</div>
-      <div>جمع بستانکار این صفحه: {{ page.total_credit_display }} ریال</div>
-      <div>مانده این صفحه: {{ page.total_balance_display }} ریال</div>
-    </div>
-    {% if page.is_last %}
-      <div class="totals-row">
-        <div>جمع کل نهایی بدهکار: {{ grand_total_debt_display }} ریال</div>
-        <div>جمع کل نهایی بستانکار: {{ grand_total_credit_display }} ریال</div>
-        <div>مانده نهایی: {{ grand_total_balance_display }} ریال</div>
+      {% elif el.type == 'line' %}
+      <div class="el" style="left: {{ el.x }}mm; top: {{ el.y }}mm; width: {{ el.w }}mm; height: 0; border-top: {{ el.thickness }}mm solid {{ el.color }};"></div>
+      {% elif el.type == 'rect' %}
+      <div class="el" style="left: {{ el.x }}mm; top: {{ el.y }}mm; width: {{ el.w }}mm; height: {{ el.h }}mm; border: {{ el.thickness }}mm solid {{ el.color }};{% if el.bg %} background: {{ el.bg }};{% endif %}"></div>
+      {% elif el.type == 'spacer' %}
+      <div class="el" style="left: {{ el.x }}mm; top: {{ el.y }}mm; width: {{ el.w }}mm; height: {{ el.h }}mm;"></div>
+      {% elif el.type == 'qr' or el.type == 'barcode' %}
+      <div class="el" style="left: {{ el.x }}mm; top: {{ el.y }}mm; width: {{ el.w }}mm; height: {{ el.h }}mm;">{% if el.src %}<img src="{{ el.src }}" style="width: 100%; height: 100%; object-fit: contain;" alt="">{% endif %}</div>
+      {% elif el.type == 'frame' %}
+      <div class="el el-frame frame-{{ el.variant }}" style="left: {{ el.x }}mm; top: {{ el.y }}mm; width: {{ el.w }}mm; height: {{ el.h }}mm;{% if el.border %} border: {{ el.thickness }}mm dashed {{ accent }};{% endif %}{% if el.bg %} background: {{ el.bg }};{% endif %}">
+        {% if el.title %}<span class="frame-title" style="background: {{ header_bg }};">{{ el.title }}</span>{% endif %}
       </div>
-      <div class="footer">
-        <div class="signature">
-          {% if seller.signature %}<img src="{{ seller.signature }}" style="max-height: 60px;">{% else %}<p>................................</p>{% endif %}
-          <p>{{ seller.manager_name }}<br>{{ seller.manager_position }}</p>
-        </div>
-        <div class="stamp">
-          {% if seller.stamp %}<img src="{{ seller.stamp }}" style="max-height: 60px;">{% else %}<p>................................</p>{% endif %}
-          <p>مهر شرکت</p>
-        </div>
+      {% elif el.type == 'repeater' %}
+      <div class="el" style="left: {{ el.x }}mm; top: {{ el.y }}mm; width: {{ el.w }}mm; height: {{ el.h }}mm; font-size: {{ el.size }}pt; color: {{ el.color }}; overflow: hidden;">
+        {% for line in el.lines %}<div class="repeater-line">{{ line|safe }}</div>{% endfor %}
       </div>
-    {% endif %}
+      {% elif el.type == 'subreport' %}
+      <div class="el subreport" style="left: {{ el.x }}mm; top: {{ el.y }}mm; width: {{ el.w }}mm; height: {{ el.h }}mm; font-size: {{ el.size }}pt;">
+        {% if el.title %}<div class="subreport-title">{{ el.title }}</div>{% endif %}
+        {% for line in el.lines %}<div>{{ line }}</div>{% endfor %}
+      </div>
+      {% elif el.type == 'labels' %}
+      <div class="el labels" style="left: {{ el.x }}mm; top: {{ el.y }}mm; width: {{ el.w }}mm; height: {{ el.h }}mm; font-size: {{ el.size }}pt; grid-template-columns: repeat({{ el.cols }}, 1fr); grid-template-rows: repeat({{ el.rows }}, 1fr);">
+        {% for cell in el.cells %}<div class="label-cell"{% if el.border %} style="border: 0.3mm solid {{ accent }};"{% endif %}>{{ cell|safe }}</div>{% endfor %}
+      </div>
+      {% elif el.type == 'logo' %}
+      <div class="el el-logo" style="left: {{ el.x }}mm; top: {{ el.y }}mm; width: {{ el.w }}mm; height: {{ el.h }}mm;">{% if seller.logo %}<img src="{{ seller.logo }}" alt="">{% endif %}</div>
+      {% elif el.type == 'signature' %}
+      <div class="el el-signature" style="left: {{ el.x }}mm; top: {{ el.y }}mm; width: {{ el.w }}mm; height: {{ el.h }}mm;">
+        {% if seller.signature %}<img src="{{ seller.signature }}" alt="">{% else %}<p>................................</p>{% endif %}
+        <p>{{ seller.manager_name }}<br>{{ seller.manager_position }}</p>
+      </div>
+      {% elif el.type == 'stamp' %}
+      <div class="el el-stamp" style="left: {{ el.x }}mm; top: {{ el.y }}mm; width: {{ el.w }}mm; height: {{ el.h }}mm;">
+        {% if seller.stamp %}<img src="{{ seller.stamp }}" alt="">{% else %}<p>................................</p>{% endif %}
+        <p>{{ signature_label }}</p>
+      </div>
+      {% endif %}
+    {% endfor %}
   </div>
 {% endfor %}
 </body></html>
@@ -390,35 +408,118 @@ def _invoice_row(row: dict, service_key: str) -> dict:
         "debt": debt,
         "credit": credit,
         "balance": debt - credit,
+        "row_number": "",
         "debt_display": _amount(debt),
         "credit_display": _amount(credit),
         "balance_display": _signed_amount(debt - credit),
     }
 
 
+def _qr_data_uri(text: str) -> str:
+    try:
+        import qrcode
+
+        image = qrcode.make(text or " ")
+        buffer = io.BytesIO()
+        image.save(buffer, format="PNG")
+        return "data:image/png;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
+    except Exception:  # noqa: BLE001 - a missing optional lib must not break the PDF
+        return ""
+
+
+def _barcode_data_uri(text: str) -> str:
+    try:
+        import barcode
+        from barcode.writer import SVGWriter
+
+        buffer = io.BytesIO()
+        barcode.get("code128", text or "-", writer=SVGWriter()).write(buffer)
+        return "data:image/svg+xml;base64," + base64.b64encode(buffer.getvalue()).decode("ascii")
+    except Exception:  # noqa: BLE001
+        return ""
+
+
+def _subreport_lines(source: str, request_obj, values: dict) -> list[str]:
+    """Small database-backed report blocks (payer totals, payments, invoices)."""
+    code = str(getattr(request_obj, "payer_code", "") or "")
+    if source == "payer_summary" and code:
+        invoices = Invoice.objects.filter(payer_code=code, reversed_at__isnull=True).aggregate(total=Sum("amount"))["total"] or 0
+        debts = ManualDebt.objects.filter(payer_code=code).aggregate(total=Sum("amount"))["total"] or 0
+        payments = Payment.objects.filter(payer_code=code).aggregate(total=Sum("amount"))["total"] or 0
+        credits = Credit.objects.filter(payer_code=code).aggregate(total=Sum("amount"))["total"] or 0
+        balance = int(invoices) + int(debts) - int(payments) - int(credits)
+        return [
+            f"جمع بدهی: {_amount(int(invoices) + int(debts))} ریال",
+            f"جمع پرداخت: {_amount(int(payments))} ریال",
+            f"بستانکاری: {_amount(int(credits))} ریال",
+            f"مانده: {_signed_amount(balance)} ریال",
+        ]
+    if source == "payments" and code:
+        rows = Payment.objects.filter(payer_code=code).order_by("-payment_date", "-id")[:3]
+        return [
+            f"{gregorian_to_persian(row.payment_date)} — {_amount(row.amount)} ریال"
+            + (f" — {row.tracking_number}" if row.tracking_number else "")
+            for row in rows
+        ] or ["پرداختی ثبت نشده است."]
+    if source == "invoices" and code:
+        qs = Invoice.objects.filter(payer_code=code, reversed_at__isnull=True)
+        total = qs.aggregate(total=Sum("amount"))["total"] or 0
+        return [f"تعداد صورتحساب: {to_persian_digits(str(qs.count()))}", f"جمع مبلغ: {_amount(total)} ریال"]
+    return [
+        f"شماره نامه: {values.get('number', '')}",
+        f"تاریخ: {values.get('date', '')}",
+        f"شرکت: {values.get('buyer_name', '')}",
+    ]
+
+
+def _page_elements(design: dict, values: dict, rows: list[dict], request_obj) -> list[dict]:
+    """Render the design blocks for one page (text placeholders resolved)."""
+    elements = []
+    for element in design["elements"]:
+        if not element.get("show", True):
+            continue
+        item = dict(element)
+        if element["type"] == "text":
+            plain = render_text(element["text"], values)
+            item["html"] = html.escape(plain).replace(chr(10), "<br>")
+        elif element["type"] == "table":
+            item["columns"] = visible_columns({"elements": [element]})
+        elif element["type"] == "qr":
+            item["src"] = _qr_data_uri(render_text(element.get("data") or "", values))
+        elif element["type"] == "barcode":
+            item["src"] = _barcode_data_uri(render_text(element.get("data") or "", values))
+        elif element["type"] == "repeater":
+            limit = max(1, min(int(element.get("max_rows") or 6), 20))
+            item["lines"] = [
+                html.escape(render_text(element.get("template") or "", {**values, **row})).replace(chr(10), "<br>")
+                for row in rows[:limit]
+            ]
+        elif element["type"] == "labels":
+            capacity = max(1, min(int(element.get("cols") or 2), 6)) * max(1, min(int(element.get("rows") or 4), 12))
+            item["cells"] = [
+                html.escape(render_text(element.get("template") or "", {**values, **row}))
+                for row in rows[:capacity]
+            ]
+            if not item["cells"]:
+                item["cells"] = [""] * capacity
+        elif element["type"] == "subreport":
+            item["lines"] = _subreport_lines(element.get("source") or "payer_summary", request_obj, values)
+        elements.append(item)
+    return elements
+
+
 def build_invoice_context(
     request_obj: ApprovalRequest, service_key: str, rows: list[dict], letter_number: str
 ) -> dict:
     company = CompanySettings.load()
+    design_model = ReportDesign.load()
+    design = normalize_design(design_model.design_json)
     invoice_rows = [_invoice_row(row, service_key) for row in rows]
+    for index, row in enumerate(invoice_rows):
+        row["row_number"] = to_persian_digits(str(index + 1))
 
-    chunk_size = 8
-    pages = []
-    for index in range(0, len(invoice_rows), chunk_size):
-        chunk = invoice_rows[index : index + chunk_size]
-        page_debt = sum(row["debt"] for row in chunk)
-        page_credit = sum(row["credit"] for row in chunk)
-        page_balance = sum(row["balance"] for row in chunk)
-        pages.append(
-            {
-                "page_num": len(pages) + 1,
-                "rows": chunk,
-                "total_debt_display": _amount(page_debt),
-                "total_credit_display": _amount(page_credit),
-                "total_balance_display": _signed_amount(page_balance),
-                "is_last": index + chunk_size >= len(invoice_rows),
-            }
-        )
+    table = table_element(design)
+    chunk_size = max(1, min(int(table.get("rows_per_page") or 8), 20))
 
     grand_debt = sum(row["debt"] for row in invoice_rows)
     grand_credit = sum(row["credit"] for row in invoice_rows)
@@ -427,9 +528,57 @@ def build_invoice_context(
     if service_key == "service" and (request_obj.service_category or "").strip():
         label = request_obj.service_category.strip()
 
+    values = {
+        "service_type": label,
+        "buyer_name": request_obj.payer_name,
+        "number": letter_number,
+        "date": request_obj.letter_date,
+        "grand_debt": _amount(grand_debt),
+        "grand_credit": _amount(grand_credit),
+        "grand_balance": _signed_amount(grand_balance),
+        "manager_name": company.manager_name,
+        "manager_position": company.manager_position,
+    }
+
+    pages = []
+    for index in range(0, max(len(invoice_rows), 1), chunk_size):
+        chunk = invoice_rows[index : index + chunk_size]
+        page_debt = sum(row["debt"] for row in chunk)
+        page_credit = sum(row["credit"] for row in chunk)
+        page_balance = sum(row["balance"] for row in chunk)
+        page_values = {
+            **values,
+            "page_debt": _amount(page_debt),
+            "page_credit": _amount(page_credit),
+            "page_balance": _signed_amount(page_balance),
+        }
+        pages.append(
+            {
+                "page_num": len(pages) + 1,
+                "rows": chunk,
+                "total_debt_display": page_values["page_debt"],
+                "total_credit_display": page_values["page_credit"],
+                "total_balance_display": page_values["page_balance"],
+                "is_last": index + chunk_size >= len(invoice_rows),
+                "elements": _page_elements(design, page_values, chunk, request_obj),
+            }
+        )
+
+    title_texts = [
+        render_text(element["text"], values)
+        for element in design["elements"]
+        if element["type"] == "text" and element.get("id") == "title"
+    ]
+
     return {
-        "css": INVOICE_CSS,
+        "css": INVOICE_CSS + design_css(design),
         "pages": pages,
+        "columns": visible_columns(design),
+        "design": design,
+        "accent": design["accent_color"],
+        "font_family": design["font_family"],
+        "title": title_texts[0] if title_texts else values["buyer_name"],
+        "signature_label": design["signature_label"],
         "seller": {
             "logo": _data_uri(company.logo_path),
             "signature": _data_uri(company.signature_path),
