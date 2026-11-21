@@ -121,6 +121,9 @@ export interface SecretariatInfo {
 
 export interface WorkbenchSummary {
   buckets: Record<string, number>;
+  types: Record<'incoming' | 'outgoing' | 'internal', number>;
+  unread: number;
+  total: number;
   generated_at: string;
 }
 

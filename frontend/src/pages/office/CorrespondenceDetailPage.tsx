@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-  ArrowRight, Archive, BadgeCheck, Building2, Download, FileText, Link2, MessageSquare,
+  ArrowRight, Archive, BadgeCheck, Building2, Download, Eye, FileText, Link2, MessageSquare,
   Paperclip, Pencil, Send, Trash2, Upload, Users, X,
 } from 'lucide-react';
 import { officeApi, Attachment, Letter, OfficeMeta, BusinessLink, TimelineEvent } from '../../api/office';
@@ -90,6 +90,7 @@ export default function CorrespondenceDetailPage() {
   });
   const [newRecipient, setNewRecipient] = useState({ user_id: '', delivery_type: 'primary' });
   const fileInput = useRef<HTMLInputElement>(null);
+  const [preview, setPreview] = useState<{ attachment: Attachment; url: string; kind: 'pdf' | 'image' } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -213,6 +214,42 @@ export default function CorrespondenceDetailPage() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const previewKind = (attachment: Attachment): 'pdf' | 'image' | null => {
+    const type = (attachment.content_type || '').toLowerCase();
+    const name = attachment.original_name.toLowerCase();
+    if (type === 'application/pdf' || name.endsWith('.pdf')) return 'pdf';
+    if (type === 'image/jpeg' || type === 'image/png' || /\.(jpe?g|png)$/.test(name)) return 'image';
+    return null;
+  };
+
+  const openPreview = async (attachment: Attachment) => {
+    if (!letter) return;
+    const kind = previewKind(attachment);
+    if (!kind) {
+      toast('پیش‌نمایش این قالب در مرورگر ممکن نیست؛ فایل را دانلود کنید', 'error');
+      return;
+    }
+    try {
+      const response = await officeApi.downloadAttachment(letter.id, attachment.id);
+      const url = URL.createObjectURL(
+        new Blob([response.data], { type: attachment.content_type || 'application/octet-stream' }),
+      );
+      setPreview((prev) => {
+        if (prev) URL.revokeObjectURL(prev.url);
+        return { attachment, url, kind };
+      });
+    } catch {
+      toast('پیش‌نمایش فایل انجام نشد', 'error');
+    }
+  };
+
+  const closePreview = () => {
+    setPreview((prev) => {
+      if (prev) URL.revokeObjectURL(prev.url);
+      return null;
+    });
   };
 
   const downloadAttachment = async (attachment: Attachment) => {
@@ -460,6 +497,12 @@ export default function CorrespondenceDetailPage() {
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-1.5">
+                      {previewKind(attachment) && (
+                        <button onClick={() => openPreview(attachment)}
+                          className="text-nx-blue hover:opacity-70" title="پیش‌نمایش">
+                          <Eye className="h-4 w-4" />
+                        </button>
+                      )}
                       <button onClick={() => downloadAttachment(attachment)}
                         className="text-nx-blue hover:opacity-70" title="دانلود">
                         <Download className="h-4 w-4" />
@@ -490,7 +533,7 @@ export default function CorrespondenceDetailPage() {
                   <Upload className="h-3.5 w-3.5" /> افزودن پیوست
                 </button>
                 <p className="mt-1 text-[10px] text-nx-mist">
-                  حداکثر ۱۰ مگابایت؛ PDF، JPG/PNG، DOCX، XLSX یا ZIP
+                  حداکثر ۱۰ مگابایت؛ PDF، JPG/PNG، DOCX، XLSX یا ZIP. پیش‌نمایش PDF و تصاویر در همین صفحه انجام می‌شود؛ برای Word/Excel فایل را دانلود کنید.
                 </p>
               </div>
             )}
@@ -673,6 +716,37 @@ export default function CorrespondenceDetailPage() {
           </div>
         </aside>
       </div>
+
+      {preview && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4" onClick={closePreview}>
+          <div className="flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-white dark:bg-nx-navy"
+            onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between gap-2 border-b border-nx-border p-3 dark:border-nx-navy-border">
+              <p className="truncate text-sm font-medium text-nx-navy dark:text-white">
+                {preview.attachment.original_name}
+              </p>
+              <div className="flex shrink-0 items-center gap-3">
+                <button onClick={() => downloadAttachment(preview.attachment)}
+                  className="text-nx-blue hover:opacity-70" title="دانلود">
+                  <Download className="h-4 w-4" />
+                </button>
+                <button onClick={closePreview} className="text-nx-mist hover:text-nx-danger" title="بستن">
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-auto bg-nx-mist/10 p-2">
+              {preview.kind === 'pdf' ? (
+                <iframe src={preview.url} title={preview.attachment.original_name}
+                  className="h-full w-full rounded-lg bg-white" />
+              ) : (
+                <img src={preview.url} alt={preview.attachment.original_name}
+                  className="mx-auto max-h-full rounded-lg" />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

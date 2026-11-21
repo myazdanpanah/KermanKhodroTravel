@@ -124,7 +124,28 @@ def workbench(request):
     buckets = {}
     for bucket in ("inbox", "action", "approvals", "sent", "cc", "overdue", "drafts", "archived"):
         buckets[bucket] = _bucket(request.user, bucket).distinct().count()
-    return success_response(data={"buckets": buckets, "generated_at": timezone.now().isoformat()})
+
+    # The dashboard also reports the letter books and what still awaits the user.
+    active = _base_queryset(request.user).filter(archived_at__isnull=True)
+    types = {
+        key: active.filter(correspondence_type=key).distinct().count()
+        for key in ("incoming", "outgoing", "internal")
+    }
+    unread = (
+        active.filter(
+            recipients__recipient_user=request.user,
+            recipients__delivery_status__in=["pending", "delivered"],
+        )
+        .distinct()
+        .count()
+    )
+    return success_response(data={
+        "buckets": buckets,
+        "types": types,
+        "unread": unread,
+        "total": active.distinct().count(),
+        "generated_at": timezone.now().isoformat(),
+    })
 
 
 @api_view(["GET"])

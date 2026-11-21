@@ -158,6 +158,25 @@ class WorkbenchAPITests(OfficeTestBase):
         self.assertEqual(response.data["data"]["buckets"]["action"], 1)
         self.assertEqual(response.data["data"]["buckets"]["inbox"], 1)
 
+    def test_workbench_reports_type_books_and_unread(self):
+        incoming = self.draft(correspondence_type="incoming", recipients=[{
+            "recipient_type": "user", "recipient_user_id": self.finance.id,
+        }])
+        outgoing = self.draft(correspondence_type="outgoing", subject="نامه صادره")
+        register_correspondence(incoming, self.ceo)
+        register_correspondence(outgoing, self.ceo)
+
+        self.client.force_authenticate(user=self.finance)
+        data = self.client.get("/api/v1/office/workbench/").data["data"]
+        self.assertEqual(data["types"]["incoming"], 1)
+        self.assertEqual(data["types"]["outgoing"], 0)
+        self.assertEqual(data["unread"], 1)
+
+        # Opening the letter marks it read, so the dashboard counter drops.
+        self.client.get(f"/api/v1/office/correspondence/{incoming.id}/")
+        data = self.client.get("/api/v1/office/workbench/").data["data"]
+        self.assertEqual(data["unread"], 0)
+
     def test_overdue_bucket(self):
         letter = self.draft(due_at=timezone.now() - datetime.timedelta(days=2))
         register_correspondence(letter, self.ceo)

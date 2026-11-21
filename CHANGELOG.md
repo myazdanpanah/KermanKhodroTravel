@@ -5,6 +5,9 @@ All notable changes to the Nexivo platform are documented here.
 ## [Unreleased] — November 21, 2026
 
 ### 🏢 Office Automation
+- **Workbench dashboard** — `/erp/office` is now a dashboard of stat cards (incoming, outgoing, internal, action-required, unread, CC, drafts, overdue) plus the latest letters; the full cartable with buckets and search moved to `/erp/office/correspondence`.
+- **Attachments while composing** — a new letter can carry files: they are queued in the composer and uploaded to the letter's private endpoint right after the draft is created.
+- **In-page previews** — PDF, JPG and PNG attachments open in a modal inside the letter page (blob from the authenticated download endpoint); Word/Excel/ZIP offer download and explain that preview is not available.
 - **Secretariats live in Settings** — creating a secretariat and managing its registrars moved from the workbench modal to a dedicated «دبیرخانه‌ها» tab under Settings, where members are picked from the company's central user directory (name, division, role).
 - **Multi-recipient composer** — a new letter can carry several recipients at once, each as primary recipient, action-required or CC; duplicate users are dropped and the letter's recipients stay editable on the draft page.
 - **Jalali date pickers** — letter date and due date use the same shared Persian calendar picker as billing debts/payments, so every Office date is entered and shown in the Shamsi calendar.
