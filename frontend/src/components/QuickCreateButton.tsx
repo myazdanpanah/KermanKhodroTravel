@@ -32,17 +32,17 @@ export default function QuickCreateButton() {
       {/* RTL: items-end is the physical left edge, matching the page gutter. */}
       <div className="fixed bottom-7 left-8 z-40 hidden flex-col items-end lg:flex">
         <div
-          className={`mb-3 w-64 origin-bottom-left rounded-2xl border border-nx-navy-border bg-nx-navy-elevated p-2 shadow-2xl transition-all duration-300 ease-out ${
+          className={`mb-3 w-64 origin-bottom-left rounded-2xl border border-nx-border bg-white p-2 shadow-2xl transition-all duration-300 ease-out dark:border-nx-navy-border dark:bg-nx-navy-elevated ${
             open ? 'scale-100 opacity-100' : 'pointer-events-none scale-0 opacity-0'
           }`}
           style={{ transformOrigin: 'left bottom' }}
         >
-          <p className="px-2 pb-1 pt-0.5 text-[11px] text-nx-mist">ثبت جدید</p>
+          <p className="px-2 pb-1 pt-0.5 text-[11px] text-slate-500 dark:text-nx-mist">ثبت جدید</p>
           {actions.map((action, index) => (
             <button
               key={action.to}
               onClick={() => { setOpen(false); navigate(action.to); }}
-              className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-right text-sm text-slate-200 transition hover:bg-white/5"
+              className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-right text-sm text-nx-navy transition hover:bg-black/5 dark:text-slate-200 dark:hover:bg-white/5"
               style={{
                 transitionDelay: open ? `${60 + index * 45}ms` : '0ms',
                 transitionProperty: 'opacity, transform',
@@ -63,7 +63,7 @@ export default function QuickCreateButton() {
           onClick={() => setOpen((value) => !value)}
           aria-label="ثبت جدید"
           aria-expanded={open}
-          className="grid h-14 w-14 place-items-center rounded-full bg-nx-teal text-white shadow-xl ring-4 ring-nx-navy transition-transform duration-300 hover:scale-105 active:scale-95"
+          className="grid h-14 w-14 place-items-center rounded-full bg-nx-teal text-white shadow-xl ring-4 ring-white transition-transform duration-300 hover:scale-105 active:scale-95 dark:ring-nx-navy"
         >
           <Plus className={`h-7 w-7 transition-transform duration-300 ${open ? 'rotate-45' : ''}`} />
         </button>
