@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import api from '../../api/client'
 import { useToast } from '../../components/Toast'
 import { useAuthStore } from '../../store/authStore'
@@ -35,6 +36,17 @@ export default function BillingPaymentsPage() {
   const [saving, setSaving] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null)
+  const [params, setParams] = useSearchParams()
+
+  // Quick-add from the mobile bar lands here with ?new=1: open the form once.
+  useEffect(() => {
+    if (params.get('new') !== '1') return
+    const next = new URLSearchParams(params)
+    next.delete('new')
+    setParams(next, { replace: true })
+    setIdempotencyKey(newIdempotencyKey())
+    setOpen(true)
+  }, [params, setParams])
 
   const load = useCallback(async () => {
     setLoading(true)

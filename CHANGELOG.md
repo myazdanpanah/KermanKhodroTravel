@@ -14,6 +14,10 @@ All notable changes to the Nexivo platform are documented here.
 - **Readable dropdowns** — native select options keep dark text on the light OS menu surface, fixing unselected items that were white-on-white in dark mode.
 - **Launcher route fix** — the Office tile on the welcome screen now opens `/erp/office` instead of showing a "not enabled" toast.
 
+### 📱 Mobile navigation (PWA)
+- **New bottom bar** — left→right: dashboard, invoices, a large round quick-add button in the brand accent colour, the office workbench, and the menu sheet.
+- **Quick add sheet** — the round button raises a sheet with new invoice, new payment, new CRM customer and new letter; each action lands on its page with the create form already open.
+
 ## [Unreleased] — November 20, 2026
 
 ### 🏢 Office Automation (Phase 1–2)

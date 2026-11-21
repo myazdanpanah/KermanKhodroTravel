@@ -21,7 +21,10 @@ export default function CustomersPage() {
   const [customers, setCustomers] = useState<CustomerItem[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [showCreate, setShowCreate] = useState(false)
+  // Quick-add from the mobile bar links here with ?new=1.
+  const [showCreate, setShowCreate] = useState(
+    () => new URLSearchParams(window.location.search).get('new') === '1',
+  )
   const [form, setForm] = useState({
     name: '', national_id: '', phone: '', mobile: '', email: '', address: '',
   })

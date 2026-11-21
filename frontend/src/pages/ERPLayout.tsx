@@ -10,6 +10,7 @@ import {
   Calendar, Target, TrendingUp, Inbox, Mail,
   Settings, ChevronLeft, ChevronDown,
   Shield, Search, Sun, Moon, Menu, Briefcase, Check, X,
+  FilePlus2, UserPlus,
 } from 'lucide-react'
 
 // ─── Navigation Structure ───────────────────────────────────────
@@ -85,6 +86,7 @@ export default function ERPLayout() {
   const [collapsed, setCollapsed] = useState(false)
   // Mobile: bottom tab bar plus the menu sheet that slides up over it.
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [quickOpen, setQuickOpen] = useState(false)
   const sheetRef = useRef<HTMLDivElement>(null)
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     finance: true,
@@ -104,9 +106,10 @@ export default function ERPLayout() {
     setExpandedSections((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }))
   }
 
-  // Close the mobile sheet whenever the route changes.
+  // Close the mobile sheets whenever the route changes.
   useEffect(() => {
     setMobileOpen(false)
+    setQuickOpen(false)
   }, [location.pathname])
 
   // Selecting from the sheet: let it slide back down, then show the page.
@@ -114,6 +117,18 @@ export default function ERPLayout() {
     setMobileOpen(false)
     window.setTimeout(() => navigate(to), SHEET_TRANSITION_MS)
   }
+
+  const goFromQuickAdd = (to: string) => {
+    setQuickOpen(false)
+    window.setTimeout(() => navigate(to), SHEET_TRANSITION_MS)
+  }
+
+  const QUICK_ACTIONS = [
+    { to: '/erp/billing/issue', label: 'ثبت صورت‌حساب جدید', icon: FilePlus2 },
+    { to: '/erp/billing/payments?new=1', label: 'ثبت پرداخت جدید', icon: CreditCard },
+    { to: '/erp/customers?new=1', label: 'ثبت مشتری جدید (CRM)', icon: UserPlus },
+    { to: '/erp/office/correspondence?new=1', label: 'ثبت نامه جدید', icon: Mail },
+  ]
 
   // A closed sheet is off-screen but still mounted: keep its rows out of
   // the tab order so focus cannot land in a menu nobody can see.
@@ -330,36 +345,52 @@ export default function ERPLayout() {
       </main>
 
       {/* ─── Mobile bottom navigation ─────────────────── */}
+      {/* Visual order left→right: dashboard, invoices, quick add, office, menu. */}
       <nav
         className="fixed bottom-0 inset-x-0 z-30 lg:hidden bg-nx-navy/95 backdrop-blur border-t border-nx-navy-border"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="grid grid-cols-5">
-          {[
-            { to: '/erp', icon: LayoutDashboard, label: 'داشبورد', end: true },
-            ...(canIssue ? [{ to: '/erp/billing/issue', icon: Plus, label: 'صدور', end: false }] : []),
-            { to: '/erp/billing/invoices', icon: FileText, label: 'صورت‌حساب', end: false },
-            { to: '/erp/billing/payments', icon: CreditCard, label: 'پرداخت', end: false },
-          ].map((item) => {
-            const active = item.end
-              ? location.pathname === item.to
-              : location.pathname.startsWith(item.to)
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                className={`flex flex-col items-center gap-0.5 py-2 text-[10px] transition ${
-                  active ? 'text-nx-blue' : 'text-nx-mist'
-                }`}
-              >
-                <item.icon className="w-5 h-5" />
-                <span>{item.label}</span>
-              </NavLink>
-            )
-          })}
+        <div className="grid grid-cols-5 items-end" dir="ltr">
+          <NavLink
+            to="/erp"
+            end
+            className={({ isActive }) =>
+              `flex flex-col items-center gap-0.5 py-2 text-[10px] transition ${isActive ? 'text-nx-blue' : 'text-nx-mist'}`
+            }
+          >
+            <LayoutDashboard className="w-5 h-5" />
+            <span>داشبورد</span>
+          </NavLink>
+          <NavLink
+            to="/erp/billing/invoices"
+            className={({ isActive }) =>
+              `flex flex-col items-center gap-0.5 py-2 text-[10px] transition ${isActive ? 'text-nx-blue' : 'text-nx-mist'}`
+            }
+          >
+            <FileText className="w-5 h-5" />
+            <span>صورت‌حساب</span>
+          </NavLink>
+          <div className="flex justify-center">
+            <button
+              onClick={() => { setMobileOpen(false); setQuickOpen((value) => !value) }}
+              aria-label="ثبت جدید"
+              aria-expanded={quickOpen}
+              className="-mt-7 grid h-14 w-14 place-items-center rounded-full bg-nx-teal text-white shadow-lg ring-4 ring-nx-navy transition hover:opacity-90"
+            >
+              <Plus className={`h-7 w-7 transition-transform ${quickOpen ? 'rotate-45' : ''}`} />
+            </button>
+          </div>
+          <NavLink
+            to="/erp/office"
+            className={({ isActive }) =>
+              `flex flex-col items-center gap-0.5 py-2 text-[10px] transition ${isActive ? 'text-nx-blue' : 'text-nx-mist'}`
+            }
+          >
+            <Inbox className="w-5 h-5" />
+            <span>میزکار اداری</span>
+          </NavLink>
           <button
-            onClick={() => setMobileOpen(true)}
+            onClick={() => { setQuickOpen(false); setMobileOpen(true) }}
             className={`flex flex-col items-center gap-0.5 py-2 text-[10px] ${
               mobileOpen ? 'text-nx-blue' : 'text-nx-mist'
             }`}
@@ -369,6 +400,52 @@ export default function ERPLayout() {
           </button>
         </div>
       </nav>
+
+      {/* ─── Quick add: bottom sheet for creating a record from anywhere ─── */}
+      {quickOpen && (
+        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setQuickOpen(false)} />
+      )}
+      <div
+        className={`fixed inset-x-0 bottom-0 z-50 lg:hidden will-change-transform ${
+          quickOpen ? '' : 'pointer-events-none'
+        }`}
+        style={{
+          paddingBottom: 'env(safe-area-inset-bottom)',
+          transform: quickOpen ? 'translateY(0)' : 'translateY(115%)',
+          transition: `transform ${SHEET_TRANSITION_MS}ms ease-out`,
+        }}
+        aria-hidden={!quickOpen}
+      >
+        <div className="mx-2 mb-2 rounded-3xl bg-nx-navy-elevated border border-nx-navy-border shadow-2xl overflow-hidden">
+          <div className="flex justify-center pt-2.5 pb-1">
+            <span className="h-1.5 w-10 rounded-full bg-nx-mist/40" />
+          </div>
+          <div className="flex items-center justify-between px-5 pb-2 pt-1">
+            <h2 className="text-base font-bold text-white">ثبت جدید</h2>
+            <button
+              onClick={() => setQuickOpen(false)}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-nx-mist hover:bg-white/5"
+            >
+              <X className="w-4 h-4" /> بستن
+            </button>
+          </div>
+          <div className="px-3 pb-4 space-y-1">
+            {QUICK_ACTIONS.map((action) => (
+              <button
+                key={action.to}
+                onClick={() => goFromQuickAdd(action.to)}
+                className="w-full flex items-center gap-3 px-2.5 py-2.5 rounded-xl text-right text-slate-200 hover:bg-white/5"
+              >
+                <span className="w-9 h-9 rounded-xl grid place-items-center bg-nx-teal/15 text-nx-teal">
+                  <action.icon className="w-5 h-5" />
+                </span>
+                <span className="flex-1 text-[15px] font-medium">{action.label}</span>
+                <ChevronLeft className="w-4 h-4 text-nx-mist" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
 
       {/* ─── Mobile menu: a card that slides up from the bottom ───────── */}
       <div
