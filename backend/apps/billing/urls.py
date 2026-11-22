@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 
 from . import views
 
@@ -38,7 +38,7 @@ urlpatterns = [
     path("approvals/<int:pk>/files/", views.approval_files, name="approval-files"),
     # Files (spec 6.10)
     path("files/<int:pk>/download/", views.file_download, name="file-download"),
-    path("files/by-letter/<str:letter_number>/", views.file_by_letter, name="file-by-letter"),
+    re_path(r"^files/by-letter/(?P<letter_number>.+?)/?$", views.file_by_letter, name="file-by-letter"),
     path("files/<int:pk>/regenerate/", views.file_regenerate, name="file-regenerate"),
     # Templates (spec 6.11)
     path("templates/active/", views.template_active, name="template-active"),

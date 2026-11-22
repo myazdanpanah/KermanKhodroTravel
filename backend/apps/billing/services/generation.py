@@ -18,6 +18,7 @@ import datetime as dt
 import io
 import json
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -963,7 +964,14 @@ def _template_path_for(variant: str) -> Path | None:
         "subsidiary": [company.word_template_subsidiary_path, company.word_template_path],
         "credit": [company.word_template_credit_path],
     }.get(variant, [company.word_template_path])
-    for relative in candidates:
+
+    default_fallbacks = {
+        "debt": ["company_assets/word_template_debt.docx", "company_assets/word_template.docx"],
+        "subsidiary": ["company_assets/word_template_subsidiary.docx", "company_assets/word_template_debt.docx"],
+        "credit": ["company_assets/word_template_credit.docx"],
+    }.get(variant, ["company_assets/word_template_debt.docx"])
+
+    for relative in candidates + default_fallbacks:
         relative = (relative or "").strip()
         if not relative:
             continue
@@ -978,13 +986,21 @@ def _template_path_for(variant: str) -> Path | None:
 def _reverse_slashed(val: str) -> str:
     """
     Reverse slash-separated segments (e.g. 1405/013/00002 -> 00002/013/1405,
-    or 1405/08/24 -> 24/08/1405) so Microsoft Word's RTL paragraph layout
-    displays the numbers in the proper visual left-to-right order.
+    or 1405/08/24 -> 24/08/1405, or 'از 1405/08/24 تا 1405/08/30' -> 'از 24/08/1405 تا 30/08/1405')
+    so Microsoft Word's RTL paragraph layout displays the numbers in the proper visual left-to-right order.
     """
     if not val or not isinstance(val, str) or "/" not in val:
         return val
-    parts = val.split("/")
-    return "/".join(reversed(parts))
+
+    def _reverse_token(m):
+        return "/".join(reversed(m.group(0).split("/")))
+
+    # Matches any sequence of digits (ASCII or Persian/Arabic) separated by slashes
+    return re.sub(
+        r"[\d\u06F0-\u06F9\u0660-\u0669]+(?:/[\d\u06F0-\u06F9\u0660-\u0669]+)+",
+        _reverse_token,
+        val,
+    )
 
 
 def render_docx(context: dict) -> bytes:
@@ -995,12 +1011,9 @@ def render_docx(context: dict) -> bytes:
     text engine displays them in the correct visual order.
     """
     docx_ctx = dict(context)
-    if "letter_date" in docx_ctx and docx_ctx["letter_date"]:
-        docx_ctx["letter_date"] = _reverse_slashed(str(docx_ctx["letter_date"]))
-    if "letter_number" in docx_ctx and docx_ctx["letter_number"]:
-        docx_ctx["letter_number"] = _reverse_slashed(str(docx_ctx["letter_number"]))
-    if "generated_on" in docx_ctx and docx_ctx["generated_on"]:
-        docx_ctx["generated_on"] = _reverse_slashed(str(docx_ctx["generated_on"]))
+    for field in ("letter_date", "letter_number", "generated_on", "period_range", "description"):
+        if field in docx_ctx and docx_ctx[field]:
+            docx_ctx[field] = _reverse_slashed(str(docx_ctx[field]))
 
     # Also adapt any slash-separated dates or numbers inside rows
     if "rows" in docx_ctx and isinstance(docx_ctx["rows"], list):
