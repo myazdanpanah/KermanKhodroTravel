@@ -51,29 +51,33 @@ export function transformToPivotTable(
 
   for (const item of data) {
     const rVal = String(item[rowDimension] ?? '').trim()
-    const cVal = String(item[colDimension] ?? '').trim()
-    if (!rVal && !cVal) continue
+    let cVal = String(item[colDimension] ?? '').trim()
+    if (!cVal) cVal = 'بدون دسته‌بندی'
+    if (!rVal) continue
 
     let mVal = 0
-    if (metricKey && item[metricKey] !== undefined) {
+    // Detect the aggregated metric value (any column that is neither the row nor column dimension)
+    const metricCandidates = Object.keys(item).filter((k) => k !== rowDimension && k !== colDimension)
+    if (metricKey && item[metricKey] !== undefined && metricKey !== rowDimension && metricKey !== colDimension) {
       mVal = Number(item[metricKey]) || 0
+    } else if (metricCandidates.length > 0 && item[metricCandidates[0]] !== undefined) {
+      mVal = Number(item[metricCandidates[0]]) || 0
     } else {
-      const keys = Object.keys(item)
-      const foundMetricKey = keys.find((k) => k !== rowDimension && k !== colDimension)
-      if (foundMetricKey) {
-        mVal = Number(item[foundMetricKey]) || 0
-      } else if (keys.length > 2) {
-        mVal = Number(item[keys[2]]) || 0
-      }
+      mVal = 1
     }
 
-    if (rVal) rowValuesSet.add(rVal)
-    if (cVal) colValuesSet.add(cVal)
+    rowValuesSet.add(rVal)
+    colValuesSet.add(cVal)
     const current = cellMap.get(`${rVal}:::${cVal}`) || 0
     cellMap.set(`${rVal}:::${cVal}`, current + mVal)
   }
 
-  const colValues = Array.from(colValuesSet).sort((a, b) => a.localeCompare(b, 'fa'))
+  // Sort columns alphabetically, putting 'بدون دسته‌بندی' at the end
+  const colValues = Array.from(colValuesSet).sort((a, b) => {
+    if (a === 'بدون دسته‌بندی') return 1
+    if (b === 'بدون دسته‌بندی') return -1
+    return a.localeCompare(b, 'fa')
+  })
   const rowValues = Array.from(rowValuesSet).sort((a, b) => a.localeCompare(b, 'fa'))
 
   const colTotals: Record<string, number> = {}
@@ -1230,21 +1234,27 @@ export default function ChartWidget({
         reqColumns = Array.from(new Set([kpiFormula.metricA.col, kpiFormula.metricB.col]))
       }
 
+      let pivotDimensions: string[] | undefined
       if (isPivot && pivotConfig?.rowDimension && pivotConfig?.colDimension) {
-        reqColumns = Array.from(new Set([
-          pivotConfig.rowDimension,
-          pivotConfig.colDimension,
-          pivotConfig.metricCol || 'id',
-        ].filter(Boolean)))
-        if (pivotConfig.metricCol) {
-          metrics = {
-            [pivotConfig.metricCol]: pivotConfig.aggFunc || 'COUNT',
-          }
+        pivotDimensions = [pivotConfig.rowDimension, pivotConfig.colDimension]
+        const mCol = pivotConfig.metricCol || 'id'
+        const rawAgg = pivotConfig.aggFunc || 'COUNT'
+        // When counting rows/invoices per customer and service type, COUNT is the primary aggregator
+        const actualAgg =
+          mCol === pivotConfig.colDimension || mCol === pivotConfig.rowDimension || rawAgg === 'COUNT_DISTINCT'
+            ? 'COUNT'
+            : rawAgg
+        metrics = {
+          [mCol]: actualAgg,
         }
+        reqColumns = Array.from(
+          new Set([pivotConfig.rowDimension, pivotConfig.colDimension, mCol].filter(Boolean))
+        )
       }
 
       const res = await api.post(`/datasets/${widget.datasetId}/query/`, {
         columns: reqColumns,
+        dimensions: pivotDimensions,
         metrics: metrics || undefined,
         date_truncs: widget.queryConfig?.date_truncs || undefined,
         filters: mergedFilters.length > 0 ? mergedFilters : undefined,

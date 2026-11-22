@@ -789,7 +789,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                         onChange={(e) => setPivotConfig({ ...pivotConfig, metricCol: e.target.value })}
                         className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-nx-navy-border dark:bg-nx-navy dark:text-white outline-none focus:ring-2 focus:ring-nx-blue"
                       >
-                        <option value="">(پیش‌فرض: شمارش فاکتورها/id)</option>
+                        <option value="">(پیش‌فرض: شمارش تعداد صورت‌حساب‌ها)</option>
                         {selectedDataset.column_names.map((c) => (
                           <option key={c} value={c}>{c}</option>
                         ))}

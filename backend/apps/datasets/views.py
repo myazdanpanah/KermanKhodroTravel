@@ -456,11 +456,16 @@ def dataset_query(request, pk):
     date_truncs = request.data.get("date_truncs", {})  # {col: unit}
 
     # --- Aggregation (GROUP BY) path ---
-    if metrics_map or date_truncs:
-        # Only aggregate columns that are in the requested columns list
+    explicit_dims = request.data.get("dimensions")
+    if metrics_map or date_truncs or explicit_dims:
         cols_set = set(columns)
-        metric_cols = [c for c in metrics_map.keys() if c in cols_set]
-        dim_cols = [c for c in columns if c not in metric_cols]
+        if explicit_dims and isinstance(explicit_dims, list):
+            # Explicit dimensions (e.g. Pivot Table with rowDimension and colDimension)
+            dim_cols = [c for c in explicit_dims if c in cols_set]
+            metric_cols = [c for c in metrics_map.keys() if c in cols_set or c in ('*', '_count')]
+        else:
+            metric_cols = [c for c in metrics_map.keys() if c in cols_set]
+            dim_cols = [c for c in columns if c not in metric_cols]
 
         # If no explicit dimensions, two cases:
         #   1) Only date_truncs (no metrics) → use date-truncated cols as dimensions
@@ -494,13 +499,16 @@ def dataset_query(request, pk):
                 group_by_parts.append(f'"{c}"')
         for col in metric_cols:
             func = metrics_map[col].upper()
-            # When a metric column is also a dimension column, use a unique alias
-            # to avoid cursor.description returning duplicate column names
-            alias = f'{func.lower()}_{col}' if col in dim_cols else col
-            if func == 'COUNT_DISTINCT':
-                select_parts.append(f'COUNT(DISTINCT "{col}") AS "{alias}"')
+            if col in ('*', '_count'):
+                select_parts.append('COUNT(*) AS "metric_value"')
             else:
-                select_parts.append(f'{func}("{col}") AS "{alias}"')
+                # When a metric column is also a dimension column, use a unique alias
+                # to avoid cursor.description returning duplicate column names
+                alias = f'{func.lower()}_{col}' if col in dim_cols else col
+                if func == 'COUNT_DISTINCT':
+                    select_parts.append(f'COUNT(DISTINCT "{col}") AS "{alias}"')
+                else:
+                    select_parts.append(f'{func}("{col}") AS "{alias}"')
 
         # Build query — only add GROUP BY if there are dimensions
         if dim_cols:
