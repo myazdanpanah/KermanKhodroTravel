@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { useDashboardStore } from '../store/dashboardStore'
 import api from '../api/client'
-import { X, BarChart3, PieChart, TrendingUp, Table, Hash, Circle, Target, GitBranch, Grid3x3, TreePine, ArrowRightLeft, Filter, Radar, Network, Map, Code2, Calculator, Play, CheckCircle2, AlertCircle } from 'lucide-react'
+import { X, BarChart3, PieChart, TrendingUp, Table, Hash, Circle, Target, GitBranch, Grid3x3, TreePine, ArrowRightLeft, Filter, Radar, Network, Map, Code2, Calculator, Play, CheckCircle2, AlertCircle, LayoutGrid } from 'lucide-react'
 import { formatKpiValue, DEFAULT_KPI_FORMAT, type KpiFormat } from '../utils/kpiFormat'
 import { PRESET_PALETTES } from '../utils/palettes'
 import { DEFAULT_WIDGET_STYLE, type WidgetStyle } from '../utils/themeConfig'
@@ -20,6 +20,16 @@ interface ConditionalRule {
   value: number
   value2?: number
   color: string
+}
+
+export interface PivotConfig {
+  enabled?: boolean
+  rowDimension: string
+  colDimension: string
+  metricCol: string
+  aggFunc: 'COUNT' | 'COUNT_DISTINCT' | 'SUM' | 'AVG' | 'MIN' | 'MAX'
+  showRowTotals?: boolean
+  showColTotals?: boolean
 }
 
 export interface KpiFormulaConfig {
@@ -53,7 +63,8 @@ const chartTypes = [
   { value: 'radar', label: 'راداری', icon: Radar },
   { value: 'graph', label: 'شبکه‌ای', icon: Network },
   { value: 'map', label: 'نقشه', icon: Map },
-  { value: 'table', label: 'جدول', icon: Table },
+  { value: 'table', label: 'جدول ساده', icon: Table },
+  { value: 'pivot_table', label: 'جدول محوری (Pivot)', icon: LayoutGrid },
   { value: 'kpi', label: 'شاخص کلیدی', icon: Hash },
   { value: 'leader_kpi', label: 'برترین', icon: TrendingUp },
 ]
@@ -186,6 +197,20 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
     }
   )
 
+  // Pivot Table Configuration State
+  const savedPivotConfig = (widget?.chartConfig as Record<string, unknown>)?.pivotConfig as PivotConfig | undefined
+  const [pivotConfig, setPivotConfig] = useState<PivotConfig>(
+    savedPivotConfig || {
+      enabled: widget?.chartType === 'pivot_table',
+      rowDimension: '',
+      colDimension: '',
+      metricCol: '',
+      aggFunc: 'COUNT',
+      showRowTotals: true,
+      showColTotals: true,
+    }
+  )
+
   const handleTestSql = async () => {
     if (!customSql.trim()) return
     setSqlTesting(true)
@@ -223,6 +248,20 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
       prevDatasetIdRef.current = selectedDatasetId
       if (selectedDataset) {
         setSelectedColumns(selectedDataset.column_names)
+        if (selectedDataset.column_names.length > 0) {
+          setPivotConfig((prev) => {
+            const cols = selectedDataset.column_names
+            const rowDim = prev.rowDimension || cols.find((c) => /payer|customer|name|client|مشتری|طرف/i.test(c)) || cols[0] || ''
+            const colDim = prev.colDimension || cols.find((c) => /type|service|نوع|خدمت|status/i.test(c) && c !== rowDim) || cols[1] || ''
+            const metricCol = prev.metricCol || cols.find((c) => /id|count|amount|مبلغ|شناسه/i.test(c)) || cols[0] || ''
+            return {
+              ...prev,
+              rowDimension: rowDim,
+              colDimension: colDim,
+              metricCol: metricCol,
+            }
+          })
+        }
         if (chartType !== 'table' && chartType !== 'leader_kpi') {
           const autoMetrics: Record<string, string> = {}
           for (const col of selectedDataset.column_names) {
@@ -367,6 +406,20 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
     }
     if (chartType === 'map') {
       chartConfig.mapUrl = mapUrl
+    }
+    const isPivot = chartType === 'pivot_table' || (chartType === 'table' && Boolean(pivotConfig.enabled))
+    if (isPivot) {
+      chartConfig.pivotConfig = { ...pivotConfig, enabled: true }
+      const cols = [pivotConfig.rowDimension, pivotConfig.colDimension, pivotConfig.metricCol].filter(Boolean)
+      if (cols.length > 0) {
+        queryConfig.columns = Array.from(new Set(cols))
+      }
+      const metricTarget = pivotConfig.metricCol || cols[0] || 'id'
+      queryConfig.metrics = {
+        [metricTarget]: pivotConfig.aggFunc || 'COUNT',
+      }
+    } else {
+      delete chartConfig.pivotConfig
     }
     // Background
     if (bgColor) chartConfig.bgColor = bgColor
@@ -606,6 +659,144 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
             )}
           </div>
 
+          {/* Pivot Table Configuration Card (Looker Studio Style) */}
+          {(chartType === 'pivot_table' || chartType === 'table') && selectedDataset && (
+            <div className="border border-nx-blue/30 bg-blue-50/20 dark:bg-nx-blue/5 rounded-xl p-3.5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-nx-blue/10 text-nx-blue dark:bg-nx-blue/20">
+                    <LayoutGrid className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <h4 className="text-xs font-bold text-nx-navy dark:text-white">
+                      تنظیمات جدول محوری (Pivot Table)
+                    </h4>
+                    <p className="text-[10px] text-slate-500 dark:text-nx-mist">
+                      تفکیک ماتریسی دو بعدی با ستون‌های پویا و جمع کل سطر و ستون
+                    </p>
+                  </div>
+                </div>
+                {chartType === 'table' && (
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(pivotConfig.enabled)}
+                      onChange={(e) => setPivotConfig({ ...pivotConfig, enabled: e.target.checked })}
+                      className="sr-only peer"
+                    />
+                    <div className="w-8 h-4.5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-nx-blue"></div>
+                  </label>
+                )}
+              </div>
+
+              {(chartType === 'pivot_table' || pivotConfig.enabled) && (
+                <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-white/10">
+                  {/* Row Dimension */}
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-700 dark:text-nx-mist mb-1">
+                      بُعد سطرها (ردیف‌های یکتا - مثلاً مشتری):
+                      <span className="text-rose-500 mr-1">*</span>
+                    </label>
+                    <select
+                      value={pivotConfig.rowDimension}
+                      onChange={(e) => setPivotConfig({ ...pivotConfig, rowDimension: e.target.value })}
+                      className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-nx-navy-border dark:bg-nx-navy dark:text-white outline-none focus:ring-2 focus:ring-nx-blue"
+                    >
+                      <option value="">انتخاب ستون ردیف...</option>
+                      {selectedDataset.column_names.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    <p className="text-[10px] text-slate-400 dark:text-nx-mist mt-0.5">
+                      هر مقدار یکتا از این ستون، یک سطر از جدول را تشکیل می‌دهد (مانند نام طرف‌حساب یا مشتری).
+                    </p>
+                  </div>
+
+                  {/* Col Dimension */}
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-700 dark:text-nx-mist mb-1">
+                      بُعد ستون‌ها (عناوین ستون‌های پویا - مثلاً نوع خدمت/فاکتور):
+                      <span className="text-rose-500 mr-1">*</span>
+                    </label>
+                    <select
+                      value={pivotConfig.colDimension}
+                      onChange={(e) => setPivotConfig({ ...pivotConfig, colDimension: e.target.value })}
+                      className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-nx-navy-border dark:bg-nx-navy dark:text-white outline-none focus:ring-2 focus:ring-nx-blue"
+                    >
+                      <option value="">انتخاب ستون عناوین پویا...</option>
+                      {selectedDataset.column_names.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    <p className="text-[10px] text-slate-400 dark:text-nx-mist mt-0.5">
+                      مقادیر این ستون به عنوان ستون‌های جدول چیده می‌شوند (مانند پرواز، هتل، قطار).
+                    </p>
+                  </div>
+
+                  {/* Metric & Aggregation */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 dark:text-nx-mist mb-1">
+                        ستون مقدار (محاسبه):
+                      </label>
+                      <select
+                        value={pivotConfig.metricCol}
+                        onChange={(e) => setPivotConfig({ ...pivotConfig, metricCol: e.target.value })}
+                        className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-nx-navy-border dark:bg-nx-navy dark:text-white outline-none focus:ring-2 focus:ring-nx-blue"
+                      >
+                        <option value="">(پیش‌فرض: شمارش فاکتورها/id)</option>
+                        {selectedDataset.column_names.map((c) => (
+                          <option key={c} value={c}>{c}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 dark:text-nx-mist mb-1">
+                        تابع تجمیع:
+                      </label>
+                      <select
+                        value={pivotConfig.aggFunc || 'COUNT'}
+                        onChange={(e) => setPivotConfig({ ...pivotConfig, aggFunc: e.target.value as any })}
+                        className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-nx-navy-border dark:bg-nx-navy dark:text-white outline-none focus:ring-2 focus:ring-nx-blue"
+                      >
+                        <option value="COUNT">تعداد (COUNT - شمارش تعداد)</option>
+                        <option value="SUM">مجموع (SUM - جمع مبالغ)</option>
+                        <option value="AVG">میانگین (AVG)</option>
+                        <option value="COUNT_DISTINCT">تعداد یکتا (COUNT DISTINCT)</option>
+                        <option value="MIN">حداقل (MIN)</option>
+                        <option value="MAX">حداکثر (MAX)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Totals Options */}
+                  <div className="pt-2 space-y-1.5 border-t border-slate-200 dark:border-white/10">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={pivotConfig.showRowTotals !== false}
+                        onChange={(e) => setPivotConfig({ ...pivotConfig, showRowTotals: e.target.checked })}
+                        className="w-3.5 h-3.5 text-nx-blue rounded"
+                      />
+                      <span>محاسبه و نمایش ستون «جمع کل» برای هر سطر (مجموع خدمات مشتری)</span>
+                    </label>
+
+                    <label className="flex items-center gap-2 cursor-pointer text-xs text-slate-700 dark:text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={pivotConfig.showColTotals !== false}
+                        onChange={(e) => setPivotConfig({ ...pivotConfig, showColTotals: e.target.checked })}
+                        className="w-3.5 h-3.5 text-nx-blue rounded"
+                      />
+                      <span>محاسبه و نمایش سطر «جمع کل» در انتهای جدول (مجموع خدمت برای کل شرکت)</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Column Layout Hints for special chart types */}
           {selectedDataset && selectedDataset.column_names.length > 0 && ['heatmap', 'sankey', 'graph'].includes(chartType) && (
             <div className="bg-nx-warning-50 dark:bg-nx-warning-900/20 border border-nx-warning-200 dark:border-nx-warning-700 rounded-xl px-4 py-3 text-xs text-nx-warning-700 dark:text-nx-warning-300 leading-relaxed">
@@ -621,10 +812,10 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
           )}
 
           {/* Column Picker with Dimension / Metric roles */}
-          {selectedDataset && selectedDataset.column_names.length > 0 && (
+          {selectedDataset && selectedDataset.column_names.length > 0 && chartType !== 'pivot_table' && !(chartType === 'table' && pivotConfig.enabled) && (
             <div>
               <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist mb-2">
-                ستون\u200cها
+                ستون‌ها
                 {chartType !== 'table' && (
                   <span className="text-xs text-nx-mist mr-2">
                     (روی برچسب کلیک کنید تا بین دسته/مقدار تغییر کند)
@@ -712,7 +903,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
           )}
 
           {/* Date Granularity Picker */}
-          {selectedDataset && chartType !== 'table' && (
+          {selectedDataset && chartType !== 'table' && chartType !== 'pivot_table' && (
             <div>
               <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist mb-2">
                 گروه‌بندی تاریخ
@@ -1156,7 +1347,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
           </div>
 
           {/* Sort & Limit */}
-          {chartType !== 'table' && chartType !== 'kpi' && chartType !== 'leader_kpi' && (
+          {chartType !== 'table' && chartType !== 'pivot_table' && chartType !== 'kpi' && chartType !== 'leader_kpi' && (
             <div className="border border-nx-border dark:border-nx-muted rounded-xl p-4 space-y-3">
               <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist">مرتب‌سازی و محدودیت</label>
               <div className="flex gap-3">
@@ -1369,7 +1560,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
           )}
 
           {/* Color Palette */}
-          {chartType !== 'table' && (
+          {chartType !== 'table' && chartType !== 'pivot_table' && (
             <div>
               <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist mb-2">پالت رنگ</label>
               <div className="space-y-2">
@@ -1396,7 +1587,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
           )}
 
           {/* Widget Style */}
-          {chartType !== 'table' && (
+          {chartType !== 'table' && chartType !== 'pivot_table' && (
             <div className="border border-nx-border dark:border-nx-muted rounded-xl p-4 space-y-4">
               <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist">سبک نمودار</label>
 

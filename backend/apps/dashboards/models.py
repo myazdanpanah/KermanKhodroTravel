@@ -98,6 +98,7 @@ class Widget(models.Model):
         ("scatter", "Scatter Plot"),
         ("gauge", "Gauge Chart"),
         ("table", "Data Table"),
+        ("pivot_table", "Pivot Table"),
         ("kpi", "KPI Card"),
         ("heatmap", "Heatmap"),
         ("treemap", "Tree Map"),

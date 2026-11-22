@@ -33,7 +33,97 @@ interface ChartWidgetProps {
  */
 const NO_AGG_TYPES = new Set(['table', 'sankey', 'graph'])
 /** Chart types that render as simple HTML cards (not ECharts). */
-const CARD_TYPES = new Set(['table', 'kpi', 'leader_kpi'])
+const CARD_TYPES = new Set(['table', 'pivot_table', 'kpi', 'leader_kpi'])
+
+export function transformToPivotTable(
+  data: Record<string, unknown>[],
+  rowDimension: string,
+  colDimension: string,
+  metricKey?: string,
+  options?: { showRowTotals?: boolean; showColTotals?: boolean }
+) {
+  const showRowTotals = options?.showRowTotals !== false
+  const showColTotals = options?.showColTotals !== false
+
+  const colValuesSet = new Set<string>()
+  const rowValuesSet = new Set<string>()
+  const cellMap = new Map<string, number>()
+
+  for (const item of data) {
+    const rVal = String(item[rowDimension] ?? '').trim()
+    const cVal = String(item[colDimension] ?? '').trim()
+    if (!rVal && !cVal) continue
+
+    let mVal = 0
+    if (metricKey && item[metricKey] !== undefined) {
+      mVal = Number(item[metricKey]) || 0
+    } else {
+      const keys = Object.keys(item)
+      const foundMetricKey = keys.find((k) => k !== rowDimension && k !== colDimension)
+      if (foundMetricKey) {
+        mVal = Number(item[foundMetricKey]) || 0
+      } else if (keys.length > 2) {
+        mVal = Number(item[keys[2]]) || 0
+      }
+    }
+
+    if (rVal) rowValuesSet.add(rVal)
+    if (cVal) colValuesSet.add(cVal)
+    const current = cellMap.get(`${rVal}:::${cVal}`) || 0
+    cellMap.set(`${rVal}:::${cVal}`, current + mVal)
+  }
+
+  const colValues = Array.from(colValuesSet).sort((a, b) => a.localeCompare(b, 'fa'))
+  const rowValues = Array.from(rowValuesSet).sort((a, b) => a.localeCompare(b, 'fa'))
+
+  const colTotals: Record<string, number> = {}
+  colValues.forEach((c) => { colTotals[c] = 0 })
+  let grandTotal = 0
+
+  const rows = rowValues.map((rVal) => {
+    const rowObj: Record<string, unknown> = { [rowDimension]: rVal }
+    let rowSum = 0
+    for (const cVal of colValues) {
+      const val = cellMap.get(`${rVal}:::${cVal}`) || 0
+      rowObj[cVal] = val
+      rowSum += val
+      colTotals[cVal] = (colTotals[cVal] || 0) + val
+    }
+    if (showRowTotals) {
+      rowObj['جمع کل'] = rowSum
+    }
+    grandTotal += rowSum
+    return rowObj
+  })
+
+  // Sort rows descending by row total so largest contributors come first
+  if (showRowTotals) {
+    rows.sort((a, b) => (Number(b['جمع کل']) || 0) - (Number(a['جمع کل']) || 0))
+  }
+
+  const footerRow: Record<string, unknown> = { [rowDimension]: 'جمع کل' }
+  for (const cVal of colValues) {
+    footerRow[cVal] = colTotals[cVal] || 0
+  }
+  if (showRowTotals) {
+    footerRow['جمع کل'] = grandTotal
+  }
+
+  const columns = [
+    rowDimension,
+    ...colValues,
+    ...(showRowTotals ? ['جمع کل'] : [])
+  ]
+
+  return {
+    columns,
+    colValues,
+    rows,
+    footerRow: showColTotals ? footerRow : null,
+    rowDimension,
+    colDimension,
+  }
+}
 
 /**
  * Chart types where all selected columns are treated as metrics (no GROUP BY dimension).
@@ -1034,6 +1124,15 @@ export default function ChartWidget({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [tableData, setTableData] = useState<{ columns: string[]; rows: Record<string, unknown>[] } | null>(null)
+  const [pivotData, setPivotData] = useState<{
+    columns: string[]
+    colValues: string[]
+    rows: Record<string, unknown>[]
+    footerRow: Record<string, unknown> | null
+    rowDimension: string
+    colDimension: string
+  } | null>(null)
+  const [pivotSearch, setPivotSearch] = useState('')
   const [kpiData, setKpiData] = useState<{ value: string; rawValue?: number; breakdown?: string } | null>(null)
   const [leaderData, setLeaderData] = useState<{ name: string; value: number } | null>(null)
 
@@ -1066,6 +1165,7 @@ export default function ChartWidget({
 
   const fetchData = useCallback(async () => {
     setTableData(null)
+    setPivotData(null)
     setKpiData(null)
     setLeaderData(null)
     setError(null)
@@ -1097,7 +1197,10 @@ export default function ChartWidget({
     setLoading(true)
 
     try {
-      const metrics = buildMetrics(widget.chartType, widget.queryConfig, widget.columnTypes, widget.chartConfig)
+      const isPivot = widget.chartType === 'pivot_table' || Boolean((widget.chartConfig as any)?.pivotConfig?.enabled)
+      const pivotConfig = (widget.chartConfig as any)?.pivotConfig
+
+      let metrics = buildMetrics(widget.chartType, widget.queryConfig, widget.columnTypes, widget.chartConfig)
 
       // Merge all filter sources: widget-level, dashboard control, cross-chart, and drill-down
       const widgetFilters = (widget.queryConfig?.filters as Array<{col: string; op: string; val: string | number | (string | number)[]}>) || []
@@ -1127,6 +1230,19 @@ export default function ChartWidget({
         reqColumns = Array.from(new Set([kpiFormula.metricA.col, kpiFormula.metricB.col]))
       }
 
+      if (isPivot && pivotConfig?.rowDimension && pivotConfig?.colDimension) {
+        reqColumns = Array.from(new Set([
+          pivotConfig.rowDimension,
+          pivotConfig.colDimension,
+          pivotConfig.metricCol || 'id',
+        ].filter(Boolean)))
+        if (pivotConfig.metricCol) {
+          metrics = {
+            [pivotConfig.metricCol]: pivotConfig.aggFunc || 'COUNT',
+          }
+        }
+      }
+
       const res = await api.post(`/datasets/${widget.datasetId}/query/`, {
         columns: reqColumns,
         metrics: metrics || undefined,
@@ -1140,7 +1256,19 @@ export default function ChartWidget({
       const chart = chartInstance.current
       if (usesECharts && (!chart || chart.isDisposed())) return
 
-      if (widget.chartType === 'table') {
+      if (isPivot && pivotConfig?.rowDimension && pivotConfig?.colDimension) {
+        const transformed = transformToPivotTable(
+          result.data,
+          pivotConfig.rowDimension,
+          pivotConfig.colDimension,
+          pivotConfig.metricCol,
+          {
+            showRowTotals: pivotConfig.showRowTotals !== false,
+            showColTotals: pivotConfig.showColTotals !== false,
+          }
+        )
+        setPivotData(transformed)
+      } else if (widget.chartType === 'table') {
         setTableData({ columns: result.columns, rows: result.data })
       } else if (widget.chartType === 'leader_kpi') {
         // Leader KPI: first column = dimension (name), last column = metric (count)
@@ -1326,6 +1454,130 @@ export default function ChartWidget({
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 border-2 border-nx-blue border-t-transparent rounded-full animate-spin" />
           در حال بارگذاری...
+        </div>
+      </div>
+    )
+  }
+
+  if (
+    (widget.chartType === 'pivot_table' || (widget.chartType === 'table' && Boolean((widget.chartConfig as any)?.pivotConfig?.enabled))) &&
+    pivotData
+  ) {
+    const filteredRows = pivotSearch.trim()
+      ? pivotData.rows.filter((r) =>
+          String(r[pivotData.rowDimension] ?? '').includes(pivotSearch.trim())
+        )
+      : pivotData.rows
+
+    return (
+      <div className="h-full flex flex-col overflow-hidden text-xs" dir="rtl">
+        {/* Search bar & summary header */}
+        <div className="flex items-center justify-between gap-2 p-2 border-b border-slate-200 dark:border-nx-navy-border bg-slate-50/70 dark:bg-nx-navy/40 shrink-0">
+          <div className="flex items-center gap-2 flex-1 max-w-xs">
+            <input
+              type="text"
+              value={pivotSearch}
+              onChange={(e) => setPivotSearch(e.target.value)}
+              placeholder={`جستجو در ${pivotData.rowDimension}…`}
+              className="w-full text-xs px-2.5 py-1 rounded-lg border border-slate-300 dark:border-nx-navy-border bg-white dark:bg-nx-navy-elevated text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-nx-blue"
+            />
+          </div>
+          <div className="text-[11px] text-slate-500 dark:text-nx-mist">
+            <span>{toPersianDigits(filteredRows.length)} سطر</span>
+            <span className="mx-1">•</span>
+            <span>{toPersianDigits(pivotData.colValues.length)} نوع {pivotData.colDimension}</span>
+          </div>
+        </div>
+
+        {/* Pivot Matrix Table */}
+        <div className="flex-1 overflow-auto">
+          <table className="w-full min-w-max text-right border-collapse">
+            <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-nx-navy-elevated shadow-xs border-b border-slate-200 dark:border-nx-navy-border">
+              <tr>
+                <th className="py-2.5 px-3 font-semibold text-slate-700 dark:text-slate-200 sticky right-0 z-20 bg-slate-100 dark:bg-nx-navy-elevated border-l border-slate-200 dark:border-nx-navy-border">
+                  {pivotData.rowDimension}
+                </th>
+                {pivotData.colValues.map((colName) => (
+                  <th
+                    key={colName}
+                    className="py-2.5 px-3 text-center font-medium text-slate-600 dark:text-nx-mist whitespace-nowrap min-w-[90px]"
+                  >
+                    {colName}
+                  </th>
+                ))}
+                {pivotData.columns.includes('جمع کل') && (
+                  <th className="py-2.5 px-3 text-center font-bold text-nx-blue dark:text-nx-teal bg-nx-blue/5 dark:bg-nx-blue/10 min-w-[100px] border-r border-slate-200 dark:border-nx-navy-border">
+                    جمع کل
+                  </th>
+                )}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+              {filteredRows.length === 0 ? (
+                <tr>
+                  <td
+                    colSpan={pivotData.columns.length + 1}
+                    className="py-8 text-center text-slate-400 dark:text-nx-mist"
+                  >
+                    موردی یافت نشد.
+                  </td>
+                </tr>
+              ) : (
+                filteredRows.map((row, idx) => {
+                  const rowLabel = String(row[pivotData.rowDimension] ?? '')
+                  return (
+                    <tr
+                      key={`${rowLabel}-${idx}`}
+                      className="hover:bg-slate-50 dark:hover:bg-white/5 transition group"
+                    >
+                      <td className="py-2 px-3 font-medium text-slate-900 dark:text-white whitespace-nowrap sticky right-0 bg-white dark:bg-nx-navy group-hover:bg-slate-50 dark:group-hover:bg-nx-navy border-l border-slate-200 dark:border-nx-navy-border">
+                        {rowLabel}
+                      </td>
+                      {pivotData.colValues.map((colName) => {
+                        const val = Number(row[colName]) || 0
+                        return (
+                          <td
+                            key={colName}
+                            className={`py-2 px-3 text-center whitespace-nowrap ${
+                              val > 0
+                                ? 'font-medium text-slate-800 dark:text-slate-200'
+                                : 'text-slate-300 dark:text-slate-600'
+                            }`}
+                          >
+                            {val > 0 ? toPersianDigits(val.toLocaleString()) : '—'}
+                          </td>
+                        )
+                      })}
+                      {pivotData.columns.includes('جمع کل') && (
+                        <td className="py-2 px-3 text-center font-bold text-slate-900 dark:text-white bg-slate-50/50 dark:bg-white/5 border-r border-slate-200 dark:border-nx-navy-border whitespace-nowrap">
+                          {toPersianDigits((Number(row['جمع کل']) || 0).toLocaleString())}
+                        </td>
+                      )}
+                    </tr>
+                  )
+                })
+              )}
+            </tbody>
+            {pivotData.footerRow && (
+              <tfoot className="sticky bottom-0 z-10 bg-slate-200/90 dark:bg-nx-navy-elevated font-bold text-slate-900 dark:text-white border-t-2 border-slate-300 dark:border-nx-navy-border shadow-xs">
+                <tr>
+                  <td className="py-2.5 px-3 sticky right-0 bg-slate-200/90 dark:bg-nx-navy-elevated border-l border-slate-300 dark:border-nx-navy-border">
+                    جمع کل
+                  </td>
+                  {pivotData.colValues.map((colName) => (
+                    <td key={colName} className="py-2.5 px-3 text-center whitespace-nowrap text-nx-navy dark:text-white">
+                      {toPersianDigits((Number(pivotData.footerRow![colName]) || 0).toLocaleString())}
+                    </td>
+                  ))}
+                  {pivotData.columns.includes('جمع کل') && (
+                    <td className="py-2.5 px-3 text-center font-extrabold text-nx-blue dark:text-nx-teal bg-nx-blue/10 dark:bg-nx-blue/20 border-r border-slate-300 dark:border-nx-navy-border whitespace-nowrap">
+                      {toPersianDigits((Number(pivotData.footerRow!['جمع کل']) || 0).toLocaleString())}
+                    </td>
+                  )}
+                </tr>
+              </tfoot>
+            )}
+          </table>
         </div>
       </div>
     )
