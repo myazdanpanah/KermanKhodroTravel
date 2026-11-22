@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { useDashboardStore } from '../store/dashboardStore'
 import api from '../api/client'
-import { X, BarChart3, PieChart, TrendingUp, Table, Hash, Circle, Target, GitBranch, Grid3x3, TreePine, ArrowRightLeft, Filter, Radar, Network, Map, Code2, Calculator, Play, CheckCircle2, AlertCircle, LayoutGrid } from 'lucide-react'
+import { X, BarChart3, PieChart, TrendingUp, Table, Hash, Circle, Target, GitBranch, Grid3x3, TreePine, ArrowRightLeft, Filter, Radar, Network, Map, Code2, Calculator, Play, CheckCircle2, AlertCircle, LayoutGrid, Database, Palette, Check } from 'lucide-react'
 import { formatKpiValue, DEFAULT_KPI_FORMAT, type KpiFormat } from '../utils/kpiFormat'
 import { PRESET_PALETTES } from '../utils/palettes'
 import { DEFAULT_WIDGET_STYLE, type WidgetStyle } from '../utils/themeConfig'
@@ -95,6 +95,7 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
 
   const [title, setTitle] = useState(widget?.title || '')
   const [chartType, setChartType] = useState(widget?.chartType || 'bar')
+  const [activeTab, setActiveTab] = useState<'data' | 'style'>('data')
   const [datasets, setDatasets] = useState<Dataset[]>([])
   const [selectedDatasetId, setSelectedDatasetId] = useState<number | null>(widget?.datasetId || null)
   const [selectedColumns, setSelectedColumns] = useState<string[]>(
@@ -483,19 +484,63 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
   return (
     <div className="fixed inset-0 z-50 flex" dir="rtl">
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/30" onClick={onClose} />
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity" onClick={onClose} />
 
-      {/* Panel */}
-      <div className="absolute left-0 top-0 bottom-0 w-full max-w-96 bg-white dark:bg-nx-navy shadow-xl overflow-y-auto">
-        <div className="sticky top-0 bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border px-6 py-4 flex items-center justify-between">
-          <h3 className="font-bold text-nx-navy dark:text-slate-100">تنظیمات نمودار</h3>
-          <button onClick={onClose} className="p-1 text-slate-600 dark:text-slate-200 hover:text-nx-mist dark:hover:text-nx-mist transition">
-            <X className="w-5 h-5" />
+      {/* Panel Drawer */}
+      <div className="absolute left-0 top-0 bottom-0 w-full max-w-md sm:w-[440px] bg-white dark:bg-nx-navy shadow-2xl flex flex-col h-full z-10 animate-in slide-in-from-left duration-200">
+        {/* Sticky Header */}
+        <div className="px-5 py-3.5 bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-2">
+            <h3 className="font-bold text-sm text-nx-navy dark:text-slate-100">تنظیمات نمودار</h3>
+            {title && (
+              <span className="text-[11px] px-2 py-0.5 rounded-md bg-slate-100 dark:bg-nx-navy-elevated text-slate-600 dark:text-slate-300 truncate max-w-[150px]">
+                {title}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg text-slate-500 hover:text-slate-700 dark:text-slate-300 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition"
+            title="بستن"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
-          {/* Title */}
+        {/* Tab Switcher */}
+        <div className="flex border-b border-nx-border dark:border-nx-navy-border bg-slate-50/80 dark:bg-nx-navy-elevated/40 px-3 shrink-0">
+          <button
+            type="button"
+            onClick={() => setActiveTab('data')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold border-b-2 transition ${
+              activeTab === 'data'
+                ? 'border-nx-blue text-nx-blue dark:text-white bg-white/80 dark:bg-white/5'
+                : 'border-transparent text-slate-500 dark:text-nx-mist hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Database className="w-3.5 h-3.5" />
+            <span>تنظیمات داده</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('style')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-bold border-b-2 transition ${
+              activeTab === 'style'
+                ? 'border-nx-blue text-nx-blue dark:text-white bg-white/80 dark:bg-white/5'
+                : 'border-transparent text-slate-500 dark:text-nx-mist hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Palette className="w-3.5 h-3.5" />
+            <span>ظاهر و استایل</span>
+          </button>
+        </div>
+
+        {/* Scrollable Body */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          {activeTab === 'data' && (
+            <>
+              {/* Title */}
           <div>
             <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist mb-1">عنوان</label>
             <input
@@ -1119,113 +1164,6 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
             </div>
           )}
 
-          {/* KPI Number Formatting */}
-          {chartType === 'kpi' && (
-            <div className="border border-nx-border dark:border-nx-muted rounded-xl p-4 space-y-4">
-              <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist">قالب عدد</label>
-
-              {/* Format type */}
-              <div>
-                <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">نوع قالب</label>
-                <select
-                  value={kpiFormat.type}
-                  onChange={(e) => setKpiFormat({ ...kpiFormat, type: e.target.value as KpiFormat['type'] })}
-                  className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
-                >
-                  <option value="auto">خودکار</option>
-                  <option value="number">عدد</option>
-                  <option value="currency">ارز</option>
-                  <option value="percentage">درصد</option>
-                </select>
-              </div>
-
-              {/* Currency symbol (only for currency) */}
-              {kpiFormat.type === 'currency' && (
-                <div>
-                  <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">نماد ارز</label>
-                  <input
-                    type="text"
-                    value={kpiFormat.currency}
-                    onChange={(e) => setKpiFormat({ ...kpiFormat, currency: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
-                    placeholder="$"
-                    maxLength={5}
-                  />
-                </div>
-              )}
-
-              {/* Decimal places */}
-              <div>
-                <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">اعداد اعشاری: {kpiFormat.decimals}</label>
-                <input
-                  type="range"
-                  min={0}
-                  max={10}
-                  value={kpiFormat.decimals}
-                  onChange={(e) => setKpiFormat({ ...kpiFormat, decimals: parseInt(e.target.value) })}
-                  className="w-full accent-nx-blue"
-                />
-                <div className="flex justify-between text-[10px] text-nx-mist mt-0.5">
-                  <span>0</span>
-                  <span>5</span>
-                  <span>10</span>
-                </div>
-              </div>
-
-              {/* Prefix */}
-              <div>
-              <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">پیشوند</label>
-              <input
-                type="text"
-                value={kpiFormat.prefix}
-                onChange={(e) => setKpiFormat({ ...kpiFormat, prefix: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
-                placeholder="مثلاً: "
-                maxLength={10}
-                />
-              </div>
-
-              {/* Suffix */}
-              <div>
-              <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">پسوند</label>
-              <input
-                type="text"
-                value={kpiFormat.suffix}
-                onChange={(e) => setKpiFormat({ ...kpiFormat, suffix: e.target.value })}
-                className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
-                placeholder="مثلاً: تومان"
-                maxLength={10}
-                />
-              </div>
-
-              {/* Preview */}                  <div className="bg-white dark:bg-nx-navy rounded-lg p-3 text-center">
-                <span className="text-[10px] text-nx-mist block mb-1">پیش‌نمایش</span>
-                <span className="text-lg font-bold text-nx-blue">
-                  {formatKpiValue(12345.6789, kpiFormat)}
-                </span>
-              </div>
-            </div>
-          )}
-
-          {/* Map GeoJSON URL */}
-          {chartType === 'map' && (
-            <div>
-              <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist mb-1">
-                آدرس فایل GeoJSON نقشه
-              </label>
-              <input
-                type="text"
-                value={mapUrl}
-                onChange={(e) => setMapUrl(e.target.value)}                      className="w-full px-4 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none text-sm"
-                placeholder="https://example.com/maps/iran.json"
-                dir="ltr"
-              />
-              <p className="text-xs text-nx-mist mt-1">
-                فایل GeoJSON باید شامل اطلاعات جغرافیایی نقشه باشد. نام نقشه در فایل باید با نام انتخاب شده مطابقت داشته باشد.
-              </p>
-            </div>
-          )}
-
           {/* Widget-Level Filters (Looker Studio-style) */}
           {selectedDataset && (
             <div className="border border-nx-border dark:border-nx-muted rounded-xl p-4 space-y-3">
@@ -1309,43 +1247,6 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
             </div>
           )}
 
-          {/* Chart Background */}
-          <div className="border border-nx-border dark:border-nx-muted rounded-xl p-4 space-y-3">
-            <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist">پس‌زمینه نمودار</label>
-            <div>
-              <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">رنگ پس‌زمینه</label>
-              <div className="flex items-center gap-2">                  <input
-                    type="color"
-                    value={bgColor || '#ffffff'}
-                    onChange={(e) => setBgColor(e.target.value)}
-                    className="w-8 h-8 rounded-lg border border-nx-mist dark:border-nx-muted cursor-pointer"
-                  />
-                  <input
-                    type="text"
-                    value={bgColor}
-                    onChange={(e) => setBgColor(e.target.value)}
-                    placeholder="#ffffff یا خالی برای شفاف"
-                    className="flex-1 px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
-                  dir="ltr"
-                />
-                {bgColor && (
-                  <button onClick={() => setBgColor('')} className="text-xs text-nx-danger-500 hover:text-nx-danger-700">پاک</button>
-                )}
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">آدرس تصویر پس‌زمینه (URL)</label>
-              <input
-                type="text"
-                value={bgImage}
-                onChange={(e) => setBgImage(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
-                placeholder="https://example.com/bg.png"
-                dir="ltr"
-              />
-            </div>
-          </div>
-
           {/* Sort & Limit */}
           {chartType !== 'table' && chartType !== 'pivot_table' && chartType !== 'kpi' && chartType !== 'leader_kpi' && (
             <div className="border border-nx-border dark:border-nx-muted rounded-xl p-4 space-y-3">
@@ -1379,6 +1280,39 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
               <p className="text-[10px] text-slate-600 dark:text-slate-200">
                 در نمودار دایره‌ای، موارد بیشتر از سقف به طور هوشمند در دسته «سایر» تجمیع می‌شوند تا چارت خوانا و شبیه دیتا استودیو باشد.
               </p>
+            </div>
+          )}
+
+            </>
+          )}
+
+          {/* TAB 2: STYLE & APPEARANCE */}
+          {activeTab === 'style' && (
+            <>
+          {/* Color Palette */}
+          {chartType !== 'table' && chartType !== 'pivot_table' && (
+            <div>
+              <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist mb-2">پالت رنگ</label>
+              <div className="space-y-2">
+                {PRESET_PALETTES.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => setPaletteId(p.id)}
+                    className={`w-full flex items-center gap-3 p-2.5 rounded-xl border-2 transition ${
+                      paletteId === p.id
+                        ? 'border-nx-blue bg-nx-blue/10 dark:bg-nx-blue/30'
+                        : 'border-nx-border dark:border-nx-muted hover:border-nx-mist dark:hover:border-nx-muted'
+                    }`}
+                  >
+                    <div className="flex gap-0.5">
+                      {p.colors.slice(0, 6).map((c, i) => (
+                        <div key={i} className="w-4 h-4 rounded-full" style={{ backgroundColor: c }} />
+                      ))}
+                    </div>
+                    <span className="text-xs font-medium text-nx-navy dark:text-nx-mist">{p.name}</span>
+                  </button>
+                ))}
+              </div>
             </div>
           )}
 
@@ -1467,6 +1401,225 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                   <button onClick={() => setSingleColor('')} className="text-xs text-nx-danger-500 hover:text-nx-danger-700">پاک</button>
                 )}
               </div>
+            </div>
+          )}
+
+          {/* KPI Number Formatting */}
+          {chartType === 'kpi' && (
+            <div className="border border-nx-border dark:border-nx-muted rounded-xl p-4 space-y-4">
+              <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist">قالب عدد</label>
+
+              {/* Format type */}
+              <div>
+                <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">نوع قالب</label>
+                <select
+                  value={kpiFormat.type}
+                  onChange={(e) => setKpiFormat({ ...kpiFormat, type: e.target.value as KpiFormat['type'] })}
+                  className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
+                >
+                  <option value="auto">خودکار</option>
+                  <option value="number">عدد</option>
+                  <option value="currency">ارز</option>
+                  <option value="percentage">درصد</option>
+                </select>
+              </div>
+
+              {/* Currency symbol (only for currency) */}
+              {kpiFormat.type === 'currency' && (
+                <div>
+                  <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">نماد ارز</label>
+                  <input
+                    type="text"
+                    value={kpiFormat.currency}
+                    onChange={(e) => setKpiFormat({ ...kpiFormat, currency: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
+                    placeholder="$"
+                    maxLength={5}
+                  />
+                </div>
+              )}
+
+              {/* Decimal places */}
+              <div>
+                <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">اعداد اعشاری: {kpiFormat.decimals}</label>
+                <input
+                  type="range"
+                  min={0}
+                  max={10}
+                  value={kpiFormat.decimals}
+                  onChange={(e) => setKpiFormat({ ...kpiFormat, decimals: parseInt(e.target.value) })}
+                  className="w-full accent-nx-blue"
+                />
+                <div className="flex justify-between text-[10px] text-nx-mist mt-0.5">
+                  <span>0</span>
+                  <span>5</span>
+                  <span>10</span>
+                </div>
+              </div>
+
+              {/* Prefix */}
+              <div>
+              <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">پیشوند</label>
+              <input
+                type="text"
+                value={kpiFormat.prefix}
+                onChange={(e) => setKpiFormat({ ...kpiFormat, prefix: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
+                placeholder="مثلاً: "
+                maxLength={10}
+                />
+              </div>
+
+              {/* Suffix */}
+              <div>
+              <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">پسوند</label>
+              <input
+                type="text"
+                value={kpiFormat.suffix}
+                onChange={(e) => setKpiFormat({ ...kpiFormat, suffix: e.target.value })}
+                className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none"
+                placeholder="مثلاً: تومان"
+                maxLength={10}
+                />
+              </div>
+
+              {/* Preview */}                  <div className="bg-white dark:bg-nx-navy rounded-lg p-3 text-center">
+                <span className="text-[10px] text-nx-mist block mb-1">پیش‌نمایش</span>
+                <span className="text-lg font-bold text-nx-blue">
+                  {formatKpiValue(12345.6789, kpiFormat)}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Widget Style */}
+          {chartType !== 'table' && chartType !== 'pivot_table' && (
+            <div className="border border-nx-border dark:border-nx-muted rounded-xl p-4 space-y-4">
+              <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist">سبک نمودار</label>
+
+              {/* Shadow */}
+              <div>                  <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">سایه</label>
+                <div className="flex gap-2">
+                  {(['none', 'sm', 'md', 'lg'] as const).map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setWidgetStyle({ ...widgetStyle, shadow: s })}
+                      className={`flex-1 py-2 rounded-lg text-xs font-medium border transition ${
+                        widgetStyle.shadow === s
+                          ? 'border-nx-blue bg-nx-blue/10 dark:bg-nx-blue/30 text-nx-blue dark:text-nx-blue'
+                          : 'border-nx-border dark:border-nx-muted text-slate-600 dark:text-slate-200 hover:border-nx-mist dark:hover:border-nx-muted'
+                      }`}
+                    >
+                      {s === 'none' ? 'بدون' : s === 'sm' ? 'کم' : s === 'md' ? 'متوسط' : 'زیاد'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Border Radius */}
+              <div>
+                <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">گردی گوشه: {widgetStyle.borderRadius}px</label>
+                <input
+                  type="range"
+                  min={0}
+                  max={32}
+                  value={widgetStyle.borderRadius}
+                  onChange={(e) => setWidgetStyle({ ...widgetStyle, borderRadius: parseInt(e.target.value) })}
+                  className="w-full accent-nx-blue"
+                />
+              </div>
+
+              {/* Legend Position */}
+              <div>
+                <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">موقعیت راهنما</label>
+                <select
+                  value={widgetStyle.legendPosition}
+                  onChange={(e) => setWidgetStyle({ ...widgetStyle, legendPosition: e.target.value as WidgetStyle['legendPosition'] })}
+                  className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
+                >
+                  <option value="top">بالا</option>
+                  <option value="bottom">پایین</option>
+                  <option value="left">چپ</option>
+                  <option value="right">راست</option>
+                  <option value="hidden">مخفی</option>
+                </select>
+              </div>
+
+              {/* Tooltip Style */}
+              <div>
+                <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">سبک راهنما</label>
+                <div className="flex gap-2">
+                  {(['light', 'dark'] as const).map((ts) => (
+                    <button
+                      key={ts}
+                      onClick={() => setWidgetStyle({ ...widgetStyle, tooltipStyle: ts })}
+                      className={`flex-1 py-2 rounded-lg text-xs font-medium border transition ${
+                        widgetStyle.tooltipStyle === ts
+                          ? 'border-nx-blue bg-nx-blue/10 dark:bg-nx-blue/30 text-nx-blue dark:text-nx-blue'
+                          : 'border-nx-border dark:border-nx-muted text-slate-600 dark:text-slate-200 hover:border-nx-mist dark:hover:border-nx-muted'
+                      }`}
+                    >
+                      {ts === 'light' ? 'روشن' : 'تاریک'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Chart Background */}
+          <div className="border border-nx-border dark:border-nx-muted rounded-xl p-4 space-y-3">
+            <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist">پس‌زمینه نمودار</label>
+            <div>
+              <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">رنگ پس‌زمینه</label>
+              <div className="flex items-center gap-2">                  <input
+                    type="color"
+                    value={bgColor || '#ffffff'}
+                    onChange={(e) => setBgColor(e.target.value)}
+                    className="w-8 h-8 rounded-lg border border-nx-mist dark:border-nx-muted cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={bgColor}
+                    onChange={(e) => setBgColor(e.target.value)}
+                    placeholder="#ffffff یا خالی برای شفاف"
+                    className="flex-1 px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
+                  dir="ltr"
+                />
+                {bgColor && (
+                  <button onClick={() => setBgColor('')} className="text-xs text-nx-danger-500 hover:text-nx-danger-700">پاک</button>
+                )}
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">آدرس تصویر پس‌زمینه (URL)</label>
+              <input
+                type="text"
+                value={bgImage}
+                onChange={(e) => setBgImage(e.target.value)}
+                className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
+                placeholder="https://example.com/bg.png"
+                dir="ltr"
+              />
+            </div>
+          </div>
+
+          {/* Map GeoJSON URL */}
+          {chartType === 'map' && (
+            <div>
+              <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist mb-1">
+                آدرس فایل GeoJSON نقشه
+              </label>
+              <input
+                type="text"
+                value={mapUrl}
+                onChange={(e) => setMapUrl(e.target.value)}                      className="w-full px-4 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none text-sm"
+                placeholder="https://example.com/maps/iran.json"
+                dir="ltr"
+              />
+              <p className="text-xs text-nx-mist mt-1">
+                فایل GeoJSON باید شامل اطلاعات جغرافیایی نقشه باشد. نام نقشه در فایل باید با نام انتخاب شده مطابقت داشته باشد.
+              </p>
             </div>
           )}
 
@@ -1559,114 +1712,26 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
             </div>
           )}
 
-          {/* Color Palette */}
-          {chartType !== 'table' && chartType !== 'pivot_table' && (
-            <div>
-              <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist mb-2">پالت رنگ</label>
-              <div className="space-y-2">
-                {PRESET_PALETTES.map((p) => (
-                  <button
-                    key={p.id}
-                    onClick={() => setPaletteId(p.id)}
-                    className={`w-full flex items-center gap-3 p-2.5 rounded-xl border-2 transition ${
-                      paletteId === p.id
-                        ? 'border-nx-blue bg-nx-blue/10 dark:bg-nx-blue/30'
-                        : 'border-nx-border dark:border-nx-muted hover:border-nx-mist dark:hover:border-nx-muted'
-                    }`}
-                  >
-                    <div className="flex gap-0.5">
-                      {p.colors.slice(0, 6).map((c, i) => (
-                        <div key={i} className="w-4 h-4 rounded-full" style={{ backgroundColor: c }} />
-                      ))}
-                    </div>
-                    <span className="text-xs font-medium text-nx-navy dark:text-nx-mist">{p.name}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
+            </>
           )}
+        </div>
 
-          {/* Widget Style */}
-          {chartType !== 'table' && chartType !== 'pivot_table' && (
-            <div className="border border-nx-border dark:border-nx-muted rounded-xl p-4 space-y-4">
-              <label className="block text-sm font-medium text-nx-navy dark:text-nx-mist">سبک نمودار</label>
-
-              {/* Shadow */}
-              <div>                  <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">سایه</label>
-                <div className="flex gap-2">
-                  {(['none', 'sm', 'md', 'lg'] as const).map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => setWidgetStyle({ ...widgetStyle, shadow: s })}
-                      className={`flex-1 py-2 rounded-lg text-xs font-medium border transition ${
-                        widgetStyle.shadow === s
-                          ? 'border-nx-blue bg-nx-blue/10 dark:bg-nx-blue/30 text-nx-blue dark:text-nx-blue'
-                          : 'border-nx-border dark:border-nx-muted text-slate-600 dark:text-slate-200 hover:border-nx-mist dark:hover:border-nx-muted'
-                      }`}
-                    >
-                      {s === 'none' ? 'بدون' : s === 'sm' ? 'کم' : s === 'md' ? 'متوسط' : 'زیاد'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Border Radius */}
-              <div>
-                <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">گردی گوشه: {widgetStyle.borderRadius}px</label>
-                <input
-                  type="range"
-                  min={0}
-                  max={32}
-                  value={widgetStyle.borderRadius}
-                  onChange={(e) => setWidgetStyle({ ...widgetStyle, borderRadius: parseInt(e.target.value) })}
-                  className="w-full accent-nx-blue"
-                />
-              </div>
-
-              {/* Legend Position */}
-              <div>
-                <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">موقعیت راهنما</label>
-                <select
-                  value={widgetStyle.legendPosition}
-                  onChange={(e) => setWidgetStyle({ ...widgetStyle, legendPosition: e.target.value as WidgetStyle['legendPosition'] })}
-                  className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
-                >
-                  <option value="top">بالا</option>
-                  <option value="bottom">پایین</option>
-                  <option value="left">چپ</option>
-                  <option value="right">راست</option>
-                  <option value="hidden">مخفی</option>
-                </select>
-              </div>
-
-              {/* Tooltip Style */}
-              <div>
-                <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">سبک راهنما</label>
-                <div className="flex gap-2">
-                  {(['light', 'dark'] as const).map((ts) => (
-                    <button
-                      key={ts}
-                      onClick={() => setWidgetStyle({ ...widgetStyle, tooltipStyle: ts })}
-                      className={`flex-1 py-2 rounded-lg text-xs font-medium border transition ${
-                        widgetStyle.tooltipStyle === ts
-                          ? 'border-nx-blue bg-nx-blue/10 dark:bg-nx-blue/30 text-nx-blue dark:text-nx-blue'
-                          : 'border-nx-border dark:border-nx-muted text-slate-600 dark:text-slate-200 hover:border-nx-mist dark:hover:border-nx-muted'
-                      }`}
-                    >
-                      {ts === 'light' ? 'روشن' : 'تاریک'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Save */}
+        {/* Pinned Bottom Footer */}
+        <div className="p-3.5 border-t border-nx-border dark:border-nx-navy-border bg-white dark:bg-nx-navy shrink-0 flex items-center gap-2.5 shadow-lg">
           <button
+            type="button"
             onClick={handleSave}
-            className="w-full py-3 bg-nx-blue text-white rounded-xl font-medium hover:bg-nx-blue transition"
+            className="flex-1 py-2.5 px-4 bg-nx-blue hover:bg-nx-blue-600 text-white rounded-xl text-xs font-semibold shadow-xs hover:shadow transition flex items-center justify-center gap-1.5 cursor-pointer"
           >
-            ذخیره تنظیمات
+            <Check className="w-4 h-4" />
+            <span>ذخیره تنظیمات</span>
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="py-2.5 px-4 border border-slate-200 dark:border-nx-navy-border hover:bg-slate-100 dark:hover:bg-white/5 text-slate-700 dark:text-slate-300 rounded-xl text-xs font-medium transition cursor-pointer"
+          >
+            انصراف
           </button>
         </div>
       </div>
