@@ -55,6 +55,7 @@ class DashboardSerializer(serializers.ModelSerializer):
     widgets = WidgetSerializer(many=True, read_only=True)
     owner_name = serializers.CharField(source="owner.username", read_only=True)
     filter_controls = serializers.JSONField(required=False, default=list)
+    has_design_password = serializers.SerializerMethodField()
 
     class Meta:
         model = Dashboard
@@ -62,10 +63,14 @@ class DashboardSerializer(serializers.ModelSerializer):
             "id", "name", "description", "owner", "owner_name",
             "layout", "allowed_roles", "is_published",
             "filter_controls",
+            "is_design_locked", "has_design_password",
             "pages", "widgets",
             "created_at", "updated_at",
         ]
-        read_only_fields = ["id", "owner", "created_at", "updated_at"]
+        read_only_fields = ["id", "owner", "is_design_locked", "has_design_password", "created_at", "updated_at"]
+
+    def get_has_design_password(self, obj):
+        return bool(obj.design_password_hash)
 
 
 class DashboardCreateSerializer(serializers.ModelSerializer):

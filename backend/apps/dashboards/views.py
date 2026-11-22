@@ -41,6 +41,36 @@ def _user_can_edit_dashboard(request, dashboard):
     return request.user.role in (dashboard.allowed_roles or [])
 
 
+def _check_design_lock(dashboard, request):
+    """
+    Check if the dashboard design is locked.
+    If is_design_locked is True, require a valid design password via:
+      - Header 'X-Design-Password'
+      - Request body field 'design_password'
+    If the password is valid, returns None (allowed).
+    If invalid or missing, returns HTTP 423 Locked response.
+    """
+    if not dashboard.is_design_locked:
+        return None
+    if dashboard.design_password_hash:
+        from django.contrib.auth.hashers import check_password
+        provided_pwd = (
+            request.headers.get("X-Design-Password")
+            or request.META.get("HTTP_X_DESIGN_PASSWORD")
+            or (request.data.get("design_password") if hasattr(request, "data") and isinstance(request.data, dict) else "")
+            or ""
+        )
+        if provided_pwd and check_password(provided_pwd, dashboard.design_password_hash):
+            return None
+    return Response(
+        {
+            "error": "چینش و طراحی این داشبورد قفل شده است. برای اعمال تغییرات باید رمز قفل طراحی را وارد نمایید.",
+            "is_design_locked": True,
+        },
+        status=status.HTTP_423_LOCKED,
+    )
+
+
 # ---- Dashboard Templates ----
 
 DASHBOARD_TEMPLATES = {
@@ -315,6 +345,9 @@ def dashboard_detail(request, pk):
         return Response(DashboardSerializer(dashboard).data)
 
     elif request.method == "DELETE":
+        lock_gate = _check_design_lock(dashboard, request)
+        if lock_gate:
+            return lock_gate
         dashboard.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
@@ -329,6 +362,10 @@ def dashboard_layout(request, pk):
         dashboard = Dashboard.objects.get(pk=pk)
     except Dashboard.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+    lock_gate = _check_design_lock(dashboard, request)
+    if lock_gate:
+        return lock_gate
 
     # Allow owner, CEO, admin, or anyone with dashboard access
     if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
@@ -376,6 +413,99 @@ def dashboard_layout(request, pk):
     return Response(DashboardSerializer(dashboard).data)
 
 
+@api_view(["POST"])
+def dashboard_design_lock(request, pk):
+    """
+    Manage dashboard design lock.
+    Actions:
+      - set_lock: Set password and lock the design
+      - verify: Verify entered password (for unlocking in session)
+      - lock: Re-lock the design
+      - unlock: Unlock the design globally (requires password)
+      - remove_lock: Remove the password and unlock (requires current password)
+    """
+    gate = _check_dashboard_module(request)
+    if gate:
+        return gate
+    try:
+        dashboard = Dashboard.objects.get(pk=pk)
+    except Dashboard.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+
+    if not _user_can_edit_dashboard(request, dashboard):
+        return Response(
+            {"error": "شما دسترسی ویرایش این داشبورد را ندارید."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
+    action = request.data.get("action")
+    pwd = (request.data.get("password") or "").strip()
+    from django.contrib.auth.hashers import make_password, check_password
+
+    if action == "verify":
+        if not dashboard.design_password_hash:
+            return Response({"valid": True, "detail": "رمزی برای این داشبورد تنظیم نشده است."})
+        if check_password(pwd, dashboard.design_password_hash):
+            return Response({"valid": True, "detail": "رمز قفل طراحی تأیید شد."})
+        return Response({"valid": False, "error": "رمز قفل طراحی نادرست است."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if action == "set_lock":
+        if not pwd:
+            return Response({"error": "رمز قفل نمی‌تواند خالی باشد."}, status=status.HTTP_400_BAD_REQUEST)
+        # If already has password, require current password unless user is staff or admin
+        current_pwd = (request.data.get("current_password") or "").strip()
+        if dashboard.design_password_hash and not request.user.is_staff and request.user.role != "admin":
+            if not check_password(current_pwd, dashboard.design_password_hash):
+                return Response({"error": "رمز فعلی نادرست است."}, status=status.HTTP_400_BAD_REQUEST)
+        dashboard.design_password_hash = make_password(pwd)
+        dashboard.is_design_locked = True
+        dashboard.save()
+        return Response({
+            "detail": "رمز قفل طراحی با موفقیت تنظیم شد و چینش داشبورد قفل گردید.",
+            "is_design_locked": True,
+            "has_design_password": True,
+        })
+
+    if action == "lock":
+        if not dashboard.design_password_hash:
+            return Response({"error": "ابتدا باید رمز قفل طراحی تعیین شود."}, status=status.HTTP_400_BAD_REQUEST)
+        dashboard.is_design_locked = True
+        dashboard.save()
+        return Response({
+            "detail": "چینش داشبورد با موفقیت قفل شد.",
+            "is_design_locked": True,
+            "has_design_password": True,
+        })
+
+    if action == "unlock":
+        if dashboard.design_password_hash and not check_password(pwd, dashboard.design_password_hash):
+            return Response({"error": "رمز قفل طراحی نادرست است."}, status=status.HTTP_400_BAD_REQUEST)
+        dashboard.is_design_locked = False
+        dashboard.save()
+        return Response({
+            "detail": "قفل طراحی داشبورد با موفقیت باز شد.",
+            "is_design_locked": False,
+            "has_design_password": bool(dashboard.design_password_hash),
+        })
+
+    if action == "remove_lock":
+        if dashboard.design_password_hash:
+            current_pwd = (request.data.get("current_password") or pwd or "").strip()
+            if not request.user.is_staff and request.user.role != "admin":
+                if not check_password(current_pwd, dashboard.design_password_hash):
+                    return Response({"error": "رمز قفل طراحی نادرست است."}, status=status.HTTP_400_BAD_REQUEST)
+        dashboard.design_password_hash = ""
+        dashboard.is_design_locked = False
+        dashboard.save()
+        return Response({
+            "detail": "قفل طراحی و رمز آن با موفقیت حذف شدند.",
+            "is_design_locked": False,
+            "has_design_password": False,
+        })
+
+    return Response({"error": "عملیات نامعتبر است."}, status=status.HTTP_400_BAD_REQUEST)
+
+
 @api_view(["PUT"])
 def dashboard_filter_controls(request, pk):
     """Persist dashboard-level filter controls."""
@@ -386,6 +516,10 @@ def dashboard_filter_controls(request, pk):
         dashboard = Dashboard.objects.get(pk=pk)
     except Dashboard.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+    lock_gate = _check_design_lock(dashboard, request)
+    if lock_gate:
+        return lock_gate
 
     if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
         if dashboard.owner != request.user and request.user.role not in dashboard.allowed_roles:
@@ -411,6 +545,10 @@ def page_create(request, dashboard_pk):
         dashboard = Dashboard.objects.get(pk=dashboard_pk)
     except Dashboard.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+    lock_gate = _check_design_lock(dashboard, request)
+    if lock_gate:
+        return lock_gate
 
     if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
         if dashboard.owner != request.user and request.user.role not in dashboard.allowed_roles:
@@ -470,6 +608,10 @@ def page_detail(request, dashboard_pk, page_pk):
             status=status.HTTP_403_FORBIDDEN,
         )
 
+    lock_gate = _check_design_lock(dashboard, request)
+    if lock_gate:
+        return lock_gate
+
     if request.method == "PUT":
         old_roles = list(page.allowed_roles or [])
         serializer = DashboardPageCreateSerializer(page, data=request.data, partial=True)
@@ -504,6 +646,10 @@ def page_duplicate(request, dashboard_pk, page_pk):
         dashboard = Dashboard.objects.get(pk=dashboard_pk)
     except Dashboard.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+    lock_gate = _check_design_lock(dashboard, request)
+    if lock_gate:
+        return lock_gate
 
     if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
         if dashboard.owner != request.user and request.user.role not in dashboard.allowed_roles:
@@ -572,6 +718,10 @@ def page_reorder(request, dashboard_pk):
     except Dashboard.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
+    lock_gate = _check_design_lock(dashboard, request)
+    if lock_gate:
+        return lock_gate
+
     if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
         if dashboard.owner != request.user and request.user.role not in dashboard.allowed_roles:
             return Response(
@@ -622,6 +772,10 @@ def page_import(request, dashboard_pk):
         dashboard = Dashboard.objects.get(pk=dashboard_pk)
     except Dashboard.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
+
+    lock_gate = _check_design_lock(dashboard, request)
+    if lock_gate:
+        return lock_gate
 
     if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
         if dashboard.owner != request.user and request.user.role not in dashboard.allowed_roles:
@@ -675,6 +829,10 @@ def widget_create(request, dashboard_pk):
     except Dashboard.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
+    lock_gate = _check_design_lock(dashboard, request)
+    if lock_gate:
+        return lock_gate
+
     if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
         if dashboard.owner != request.user and request.user.role not in dashboard.allowed_roles:
             return Response(
@@ -720,6 +878,10 @@ def widget_detail(request, dashboard_pk, widget_pk):
             {"error": "You do not have permission to modify this dashboard"},
             status=status.HTTP_403_FORBIDDEN,
         )
+
+    lock_gate = _check_design_lock(dashboard, request)
+    if lock_gate:
+        return lock_gate
 
     if request.method == "PUT":
         serializer = WidgetCreateSerializer(widget, data=request.data, partial=True)

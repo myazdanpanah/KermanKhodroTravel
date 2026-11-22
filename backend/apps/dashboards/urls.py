@@ -7,6 +7,7 @@ urlpatterns = [
     path("create-from-template/", views.dashboard_create_from_template, name="dashboard-create-from-template"),
     path("<int:pk>/", views.dashboard_detail, name="dashboard-detail"),
     path("<int:pk>/layout/", views.dashboard_layout, name="dashboard-layout"),
+    path("<int:pk>/design-lock/", views.dashboard_design_lock, name="dashboard-design-lock"),
     path("<int:pk>/filter-controls/", views.dashboard_filter_controls, name="dashboard-filter-controls"),
     path("<int:pk>/duplicate/", views.dashboard_duplicate, name="dashboard-duplicate"),
     path("<int:pk>/share/", views.dashboard_share, name="dashboard-share"),

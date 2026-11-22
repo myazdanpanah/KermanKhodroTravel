@@ -34,6 +34,18 @@ class Dashboard(models.Model):
         help_text='Persisted dashboard-level filter controls',
     )
 
+    # Design Lock (Admin password-protected layout and widget modifications)
+    is_design_locked = models.BooleanField(
+        default=False,
+        help_text='When locked, the dashboard layout and widgets cannot be modified without the design password',
+    )
+    design_password_hash = models.CharField(
+        max_length=255,
+        blank=True,
+        default="",
+        help_text='Hashed password required to unlock design modifications',
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

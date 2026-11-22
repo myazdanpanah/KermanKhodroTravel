@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import api from '../api/client'
 
 export interface GridItem {
   i: string
@@ -79,6 +80,13 @@ interface DashboardState {
   filters: DashboardFilter[]
   // Dashboard-level filter controls (persistent, user-configured)
   filterControls: DashboardFilterControl[]
+  // Design lock state
+  isDesignLocked: boolean
+  hasDesignPassword: boolean
+  sessionUnlocked: boolean
+  sessionPassword: string
+  setDesignLockState: (isLocked: boolean, hasPassword: boolean) => void
+  setSessionUnlocked: (unlocked: boolean, password?: string) => void
   // Undo/redo history
   undoStack: LayoutSnapshot[]
   redoStack: LayoutSnapshot[]
@@ -150,6 +158,19 @@ export const useDashboardStore = create<DashboardState>()(
     (set) => ({
       dashboardId: null,
       dashboardName: '',
+      isDesignLocked: false,
+      hasDesignPassword: false,
+      sessionUnlocked: false,
+      sessionPassword: '',
+      setDesignLockState: (isLocked, hasPassword) => set({ isDesignLocked: isLocked, hasDesignPassword: hasPassword }),
+      setSessionUnlocked: (unlocked, password = '') => {
+        if (unlocked && password) {
+          api.defaults.headers.common['X-Design-Password'] = password
+        } else {
+          delete api.defaults.headers.common['X-Design-Password']
+        }
+        set({ sessionUnlocked: unlocked, sessionPassword: password })
+      },
       pages: [],
       activePageId: null,
       layout: [],
@@ -346,10 +367,15 @@ export const useDashboardStore = create<DashboardState>()(
             canRedo: newRedoStack.length > 0,
           }
         }),
-      reset: () =>
+      reset: () => {
+        delete api.defaults.headers.common['X-Design-Password']
         set({
           dashboardId: null,
           dashboardName: '',
+          isDesignLocked: false,
+          hasDesignPassword: false,
+          sessionUnlocked: false,
+          sessionPassword: '',
           pages: [],
           activePageId: null,
           layout: [],
@@ -360,10 +386,16 @@ export const useDashboardStore = create<DashboardState>()(
           redoStack: [],
           canUndo: false,
           canRedo: false,
-        }),
+        })
+      },
     }),
     {
       name: 'nexivo-dashboard',
+      partialize: (state) => ({
+        ...state,
+        sessionUnlocked: false,
+        sessionPassword: '',
+      }),
     }
   )
 )

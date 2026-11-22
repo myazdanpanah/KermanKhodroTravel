@@ -13,7 +13,8 @@ const ROLE_OPTIONS = [
 ]
 
 export default function PageNavBar() {
-  const { pages, activePageId, setActivePage, addPage, updatePage, removePage, setPages, dashboardId } = useDashboardStore()
+  const { pages, activePageId, setActivePage, addPage, updatePage, removePage, setPages, dashboardId, isDesignLocked, sessionUnlocked } = useDashboardStore()
+  const isEffectiveDesignLocked = Boolean(isDesignLocked && !sessionUnlocked)
   const { toast } = useToast()
   const [renamingId, setRenamingId] = useState<string | null>(null)
   const [renameValue, setRenameValue] = useState('')
@@ -37,7 +38,7 @@ export default function PageNavBar() {
   }, [showMenu, showAccessControl])
 
   const handleAddPage = async () => {
-    if (!dashboardId) return
+    if (!dashboardId || isEffectiveDesignLocked) return
     const order = pages.length
     try {
       const res = await api.post(`/dashboards/${dashboardId}/pages/`, {
@@ -58,7 +59,7 @@ export default function PageNavBar() {
   }
 
   const handleRename = async (pageId: string) => {
-    if (!dashboardId || !renameValue.trim()) return
+    if (!dashboardId || isEffectiveDesignLocked || !renameValue.trim()) return
     try {
       await api.put(`/dashboards/${dashboardId}/pages/${pageId}/`, {
         name: renameValue.trim(),
@@ -72,7 +73,7 @@ export default function PageNavBar() {
   }
 
   const handleDeletePage = async (pageId: string) => {
-    if (!dashboardId) return
+    if (!dashboardId || isEffectiveDesignLocked) return
     if (pages.length <= 1) {
       toast('امکان حذف آخرین صفحه وجود ندارد', 'error')
       return
@@ -91,7 +92,7 @@ export default function PageNavBar() {
   }
 
   const handleDuplicatePage = async (pageId: string) => {
-    if (!dashboardId) return
+    if (!dashboardId || isEffectiveDesignLocked) return
     try {
       const res = await api.post(`/dashboards/${dashboardId}/pages/${pageId}/duplicate/`)
       const newPage: DashboardPageConfig = {
@@ -137,7 +138,7 @@ export default function PageNavBar() {
   }
 
   const handleImportPage = async () => {
-    if (!dashboardId) return
+    if (!dashboardId || isEffectiveDesignLocked) return
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = '.json'
@@ -205,6 +206,10 @@ export default function PageNavBar() {
 
   // Drag-and-drop handlers
   const handleDragStart = (e: React.DragEvent, index: number) => {
+    if (isEffectiveDesignLocked) {
+      e.preventDefault()
+      return
+    }
     setDragIndex(index)
     e.dataTransfer.effectAllowed = 'move'
   }
@@ -299,7 +304,7 @@ export default function PageNavBar() {
               className={`relative group flex items-center transition-all ${
                 dragOverIndex === index && dragIndex !== index ? 'border-l-2 border-nx-blue' : ''
               }`}
-              draggable={pages.length > 1}
+              draggable={!isEffectiveDesignLocked && pages.length > 1}
               onDragStart={(e) => handleDragStart(e, index)}
               onDragOver={(e) => handleDragOver(e, index)}
               onDragLeave={handleDragLeave}
@@ -364,21 +369,25 @@ export default function PageNavBar() {
           )
         })}
 
-        {/* Add page button */}
-        <button
-          onClick={handleAddPage}
-          className="flex items-center gap-1 px-2 py-1.5 text-xs text-nx-mist hover:text-nx-blue hover:bg-nx-blue/10 rounded-lg transition"
-          title="افزودن صفحه جدید"
-        >
-          <Plus className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={handleImportPage}
-          className="flex items-center gap-1 px-2 py-1.5 text-xs text-nx-mist hover:text-nx-blue hover:bg-nx-blue/10 rounded-lg transition"
-          title="وارد کردن صفحه"
-        >
-          <Upload className="w-3.5 h-3.5" />
-        </button>
+        {/* Add page button (hidden when locked) */}
+        {!isEffectiveDesignLocked && (
+          <>
+            <button
+              onClick={handleAddPage}
+              className="flex items-center gap-1 px-2 py-1.5 text-xs text-nx-mist hover:text-nx-blue hover:bg-nx-blue/10 rounded-lg transition"
+              title="افزودن صفحه جدید"
+            >
+              <Plus className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleImportPage}
+              className="flex items-center gap-1 px-2 py-1.5 text-xs text-nx-mist hover:text-nx-blue hover:bg-nx-blue/10 rounded-lg transition"
+              title="وارد کردن صفحه"
+            >
+              <Upload className="w-3.5 h-3.5" />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Inline menu panel — scrolls within the tab section */}
@@ -394,19 +403,27 @@ export default function PageNavBar() {
             </button>
           </div>
           <div className="flex flex-wrap gap-1">
-            <MenuItem icon={Pencil} label="تغییر نام" onClick={() => startRename(menuPage)} />
-            <MenuItem icon={Copy} label="کپی صفحه" onClick={() => handleDuplicatePage(menuPage.id)} />
+            {!isEffectiveDesignLocked && (
+              <>
+                <MenuItem icon={Pencil} label="تغییر نام" onClick={() => startRename(menuPage)} />
+                <MenuItem icon={Copy} label="کپی صفحه" onClick={() => handleDuplicatePage(menuPage.id)} />
+              </>
+            )}
             <MenuItem icon={Download} label="خروجی JSON" onClick={() => handleExportPage(menuPage.id)} />
-            <MenuItem
-              icon={Shield}
-              label="کنترل دسترسی"
-              onClick={() => {
-                setShowMenu(null)
-                setShowAccessControl(showAccessControl === menuPage.id ? null : menuPage.id)
-              }}
-            />
-            {pages.length > 1 && (
-              <MenuItem icon={Trash2} label="حذف صفحه" onClick={() => handleDeletePage(menuPage.id)} danger />
+            {!isEffectiveDesignLocked && (
+              <>
+                <MenuItem
+                  icon={Shield}
+                  label="کنترل دسترسی"
+                  onClick={() => {
+                    setShowMenu(null)
+                    setShowAccessControl(showAccessControl === menuPage.id ? null : menuPage.id)
+                  }}
+                />
+                {pages.length > 1 && (
+                  <MenuItem icon={Trash2} label="حذف صفحه" onClick={() => handleDeletePage(menuPage.id)} danger />
+                )}
+              </>
             )}
           </div>
         </div>

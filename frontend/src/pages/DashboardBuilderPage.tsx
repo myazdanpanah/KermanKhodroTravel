@@ -8,8 +8,9 @@ import WidgetConfigPanel from '../components/WidgetConfigPanel'
 import DashboardFilterBar from '../components/DashboardFilterBar'
 import PageNavBar from '../components/PageNavBar'
 import ThemeToggle from '../components/ThemeToggle'
+import DesignLockModal from '../components/DesignLockModal'
 import { useToast } from '../components/Toast'
-import { Plus, ArrowRight, Settings, Trash2, Share2, X, Undo2, Redo2, Filter, XCircle, Download, Maximize2, Minimize2, Play, FileText, Copy, RefreshCw, Clock, ChevronDown } from 'lucide-react'
+import { Plus, ArrowRight, Settings, Trash2, Share2, X, Undo2, Redo2, Filter, XCircle, Download, Maximize2, Minimize2, Play, FileText, Copy, RefreshCw, Clock, ChevronDown, Lock, Unlock } from 'lucide-react'
 import { ALL_ROLES } from '../utils/roles'
 import { useAuthStore } from '../store/authStore'
 import { computeResponsiveLayout } from '../utils/layoutUtils'
@@ -30,6 +31,7 @@ export default function DashboardBuilderPage() {
     layout, widgets, setLayout, setWidgets, addWidget, removeWidget,
     setDashboard, filters,    setFilter, removeCrossFilter, filterControls,
     setFilterControls, canUndo, canRedo, undo, redo, pushLayoutSnapshot,
+    isDesignLocked, sessionUnlocked, setDesignLockState,
   } = useDashboardStore()
 
   // Compute active control filters from filterControls state
@@ -46,6 +48,8 @@ export default function DashboardBuilderPage() {
   const [isMobile, setIsMobile] = useState(false)
   // Builder device mode: 'auto' follows viewport; 'desktop'/'mobile' force a layout for editing.
   const [deviceMode, setDeviceMode] = useState<'auto' | 'desktop' | 'mobile'>('auto')
+  const [showLockModal, setShowLockModal] = useState(false)
+  const isEffectiveDesignLocked = Boolean(isDesignLocked && !sessionUnlocked)
 
   // Share modal state
   const [showShareModal, setShowShareModal] = useState(false)
@@ -181,6 +185,9 @@ export default function DashboardBuilderPage() {
     try {
       const res = await api.get(`/dashboards/${dashboardId}/`)
       setDashboard(res.data.id, res.data.name)
+      if (res.data.is_design_locked !== undefined) {
+        setDesignLockState(Boolean(res.data.is_design_locked), Boolean(res.data.has_design_password))
+      }
 
       // Load persisted filter controls
       if (res.data.filter_controls) {
@@ -303,6 +310,7 @@ export default function DashboardBuilderPage() {
 
   const handleLayoutChange = useCallback(
     (newLayout: Array<{ i: string; x: number; y: number; w: number; h: number }>) => {
+      if (isEffectiveDesignLocked) return
       // Push debounced snapshot for undo (fires once per drag/resize session)
       pushSnapshotDebounced()
       // Clamp each widget to its chart type's size constraints
@@ -329,11 +337,11 @@ export default function DashboardBuilderPage() {
         }).catch(() => {})
       }
     },
-    [activePageId, id, setLayout, editingMobile, pushSnapshotDebounced, currentPageWidgets]
+    [activePageId, id, setLayout, editingMobile, pushSnapshotDebounced, currentPageWidgets, isEffectiveDesignLocked]
   )
 
   const addNewWidget = async () => {
-    if (!id) return
+    if (!id || isEffectiveDesignLocked) return
     try {
       const payload: Record<string, unknown> = {
         title: 'نمودار جدید',
@@ -388,7 +396,7 @@ export default function DashboardBuilderPage() {
   }
 
   const deleteWidget = async (widgetId: string) => {
-    if (!id) return
+    if (!id || isEffectiveDesignLocked) return
     if (!window.confirm('آیا از حذف این نمودار اطمینان دارید؟')) return
     try {
       await api.delete(`/dashboards/${id}/widgets/${widgetId}/`)
@@ -596,10 +604,12 @@ export default function DashboardBuilderPage() {
                   ))}
                 </div>
               )}
-              {/* Drag handle — always present for clean grid movement */}
-              <div className="drag-handle p-1 text-slate-600 dark:text-slate-200 cursor-grab active:cursor-grabbing md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg>
-              </div>
+              {/* Drag handle — hidden when design is locked */}
+              {!isEffectiveDesignLocked && (
+                <div className="drag-handle p-1 text-slate-600 dark:text-slate-200 cursor-grab active:cursor-grabbing md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg>
+                </div>
+              )}
               {/* Export dropdown */}
               <div className="relative">
                 <button
@@ -672,25 +682,31 @@ export default function DashboardBuilderPage() {
               >
                 <Maximize2 className="w-3.5 h-3.5" />
               </button>
-              <button
-                onClick={() => {
-                  if (isMobile) {
-                    setMobileSettingsWidget(w.id)
-                  } else {
-                    setEditingWidget(w.id)
-                    setShowConfig(true)
-                  }
-                }}
-                className="p-1 text-nx-mist hover:text-nx-blue active:text-nx-blue transition md:opacity-0 md:group-hover:opacity-100"
-              >
-                <Settings className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => deleteWidget(w.id)}
-                className="p-1 text-nx-mist hover:text-nx-danger-500 active:text-nx-danger-600 transition md:opacity-0 md:group-hover:opacity-100"
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
+              {!isEffectiveDesignLocked && canEdit && (
+                <>
+                  <button
+                    onClick={() => {
+                      if (isMobile) {
+                        setMobileSettingsWidget(w.id)
+                      } else {
+                        setEditingWidget(w.id)
+                        setShowConfig(true)
+                      }
+                    }}
+                    className="p-1 text-nx-mist hover:text-nx-blue active:text-nx-blue transition md:opacity-0 md:group-hover:opacity-100"
+                    title="تنظیمات نمودار"
+                  >
+                    <Settings className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => deleteWidget(w.id)}
+                    className="p-1 text-nx-mist hover:text-nx-danger-500 active:text-nx-danger-600 transition md:opacity-0 md:group-hover:opacity-100"
+                    title="حذف نمودار"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
             </div>
           </div>
           <div className="flex-1 w-full min-h-0 p-1 overflow-hidden" id={`chart-${w.id}`}>
@@ -939,6 +955,38 @@ export default function DashboardBuilderPage() {
               <FileText className="w-4 h-4" />
               PDF
             </button>
+            {/* Design Lock Button */}
+            {canEdit && (
+              <button
+                onClick={() => setShowLockModal(true)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-lg transition text-xs font-semibold ${
+                  isEffectiveDesignLocked
+                    ? 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800 hover:bg-rose-100'
+                    : sessionUnlocked
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 hover:bg-emerald-100'
+                    : 'bg-white dark:bg-nx-navy border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist hover:bg-slate-50'
+                }`}
+                title="قفل طراحی و چینش داشبورد"
+              >
+                {isEffectiveDesignLocked ? (
+                  <>
+                    <Lock className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                    <span>چینش قفل است</span>
+                  </>
+                ) : sessionUnlocked ? (
+                  <>
+                    <Unlock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    <span>قفل‌گشایی شده</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3.5 h-3.5 text-slate-500" />
+                    <span>قفل طراحی</span>
+                  </>
+                )}
+              </button>
+            )}
+
             <button
               onClick={openShareModal}
               className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist rounded-lg hover:bg-white dark:hover:bg-nx-navy transition text-sm"
@@ -947,7 +995,7 @@ export default function DashboardBuilderPage() {
               <Share2 className="w-4 h-4" />
               اشتراک‌گذاری
             </button>
-            {canEdit && (
+            {canEdit && !isEffectiveDesignLocked && (
               <button
                 onClick={addNewWidget}
                 className="flex items-center gap-2 px-3 py-1.5 bg-nx-blue text-white rounded-lg hover:bg-nx-blue transition text-sm"
@@ -975,14 +1023,16 @@ export default function DashboardBuilderPage() {
               {activePage ? `${activePage.name} خالی است` : 'داشبورد خالی است'}
             </h3>
             <p className="text-slate-600 dark:text-slate-200 mb-6">
-              اولین نمودار خود را اضافه کنید
+              {isEffectiveDesignLocked ? 'چینش این داشبورد قفل است و افزودن نمودار بدون رمز امکان‌پذیر نیست.' : 'اولین نمودار خود را اضافه کنید'}
             </p>
-            <button
-              onClick={addNewWidget}
-              className="px-6 py-3 bg-nx-blue text-white rounded-xl hover:bg-nx-blue transition font-medium"
-            >
-              افزودن نمودار
-            </button>
+            {!isEffectiveDesignLocked && (
+              <button
+                onClick={addNewWidget}
+                className="px-6 py-3 bg-nx-blue text-white rounded-xl hover:bg-nx-blue transition font-medium"
+              >
+                افزودن نمودار
+              </button>
+            )}
           </div>
         ) : (
           <div className="react-grid-layout-wrapper">
@@ -997,8 +1047,8 @@ export default function DashboardBuilderPage() {
               onDragStop={() => setIsDragging(false)}
               onResizeStart={() => setIsDragging(true)}
               onResizeStop={() => setIsDragging(false)}
-              isDraggable
-              isResizable
+              isDraggable={!isEffectiveDesignLocked && !presentMode}
+              isResizable={!isEffectiveDesignLocked && !presentMode}
               useCSSTransforms
               compactType="vertical"
               draggableHandle='.drag-handle'
@@ -1139,6 +1189,14 @@ export default function DashboardBuilderPage() {
             <p className="text-xs text-slate-600 dark:text-slate-200">لطفاً صبر کنید...</p>
           </div>
         </div>
+      )}
+      {/* Design Lock Modal */}
+      {id && (
+        <DesignLockModal
+          isOpen={showLockModal}
+          onClose={() => setShowLockModal(false)}
+          dashboardId={parseInt(id)}
+        />
       )}
     </div>
   )
