@@ -343,7 +343,7 @@ export default function DashboardBuilderPage() {
         grid_x: 0,
         grid_y: 0,
         grid_w: 6,
-        grid_h: 4,
+        grid_h: 5,
       }
       // Assign widget to active page
       if (activePageId) {
@@ -567,9 +567,9 @@ export default function DashboardBuilderPage() {
     const activeFilters = filters.filter((f) => f.sourceWidgetId !== w.id)
     const hasActiveFilter = activeFilters.length > 0
     return (
-      <div key={w.id} className="group" style={{ direction: 'rtl', textAlign: 'right' }}>
-        <div className={`bg-white dark:bg-nx-navy border h-full overflow-hidden ${shadow} hover:shadow-md transition ${hasActiveFilter ? 'border-nx-blue dark:border-nx-blue ring-1 ring-nx-blue/10 dark:ring-nx-blue' : 'border-nx-border dark:border-nx-navy-border'}`} style={{ borderRadius: radius }}>
-          <div className="relative flex items-center px-4 py-2 border-b border-nx-border dark:border-nx-navy-border">
+      <div key={w.id} className="group h-full" style={{ direction: 'rtl', textAlign: 'right' }}>
+        <div className={`bg-white dark:bg-nx-navy border h-full flex flex-col overflow-hidden ${shadow} hover:shadow-md transition ${hasActiveFilter ? 'border-nx-blue dark:border-nx-blue ring-1 ring-nx-blue/10 dark:ring-nx-blue' : 'border-nx-border dark:border-nx-navy-border'}`} style={{ borderRadius: radius }}>
+          <div className="relative flex items-center px-4 py-2 border-b border-nx-border dark:border-nx-navy-border shrink-0">
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <span className="text-sm font-medium text-nx-navy dark:text-slate-100 truncate max-w-[60%] text-center">
                 {w.title}
@@ -693,7 +693,7 @@ export default function DashboardBuilderPage() {
               </button>
             </div>
           </div>
-          <div className="p-1 sm:p-2" style={{ height: 'calc(100% - 40px)' }}>
+          <div className="flex-1 w-full min-h-0 p-1 overflow-hidden" id={`chart-${w.id}`}>
             <ChartWidget
               widget={w}
               dashboardFilters={filters}
@@ -766,12 +766,12 @@ export default function DashboardBuilderPage() {
                   const shadow = ws?.shadow === 'none' ? '' : ws?.shadow === 'md' ? 'shadow-md' : ws?.shadow === 'lg' ? 'shadow-lg' : 'shadow-sm'
                   const radius = ws?.borderRadius ?? 16
                   return (
-                    <div key={w.id} style={{ direction: 'rtl', textAlign: 'right' }}>
-                      <div className={`bg-white dark:bg-nx-navy border h-full overflow-hidden ${shadow} border-nx-border dark:border-nx-navy-border`} style={{ borderRadius: radius }}>
-                        <div className="px-4 py-2 border-b border-nx-border dark:border-nx-navy-border">
+                    <div key={w.id} className="h-full" style={{ direction: 'rtl', textAlign: 'right' }}>
+                      <div className={`bg-white dark:bg-nx-navy border h-full flex flex-col overflow-hidden ${shadow} border-nx-border dark:border-nx-navy-border`} style={{ borderRadius: radius }}>
+                        <div className="px-4 py-2 border-b border-nx-border dark:border-nx-navy-border shrink-0">
                           <span className="text-sm font-medium text-nx-navy dark:text-slate-100">{w.title}</span>
                         </div>
-                        <div className="p-1 sm:p-2" style={{ height: 'calc(100% - 40px)' }}>
+                        <div className="flex-1 w-full min-h-0 p-1 overflow-hidden" id={`chart-${w.id}`}>
                           <ChartWidget
                             widget={w}
                             dashboardFilters={filters}

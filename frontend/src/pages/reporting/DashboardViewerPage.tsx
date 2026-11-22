@@ -94,14 +94,14 @@ export default function DashboardViewerPage() {
           {widgets.map((widget: DashboardWidget) => (
             <div
               key={widget.id}
-              className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border overflow-hidden hover:shadow-md transition"
+              className="bg-white dark:bg-nx-navy rounded-xl border border-nx-border dark:border-nx-navy-border overflow-hidden hover:shadow-md transition flex flex-col"
               style={{ minHeight: `${widget.height * 60}px` }}
             >
-              <div className="px-4 py-2 border-b border-nx-border dark:border-nx-navy-border flex items-center justify-between">
+              <div className="px-4 py-2 border-b border-nx-border dark:border-nx-navy-border flex items-center justify-between shrink-0">
                 <h3 className="text-sm font-medium text-nx-navy dark:text-white">{widget.title}</h3>
                 <span className="text-xs text-nx-mist">{CHART_TYPE_LABELS[widget.chart_type] || widget.chart_type}</span>
               </div>
-              <div className="p-2" style={{ height: `${widget.height * 60 - 40}px` }}>
+              <div className="p-1 flex-1 min-h-0 w-full" style={{ minHeight: `${Math.max(widget.height * 60 - 40, 200)}px` }}>
                 {widget.query_config?.dataset_id ? (
                   <ChartWidget
                     widget={{

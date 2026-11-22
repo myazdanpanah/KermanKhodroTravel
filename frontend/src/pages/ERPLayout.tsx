@@ -10,7 +10,6 @@ import {
   Calendar, Target, TrendingUp, Inbox, Mail,
   Settings, ChevronLeft, ChevronDown,
   Search, Sun, Moon, Menu, Briefcase, Check, X, FileSignature, PieChart, Megaphone, MessageSquare,
-  BarChart3,
 } from 'lucide-react';
 import GlobalSearch from '../components/GlobalSearch';
 import QuickCreateButton from '../components/QuickCreateButton';
@@ -39,7 +38,6 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'داشبورد',
     items: [
       { to: '/erp/management', icon: PieChart, label: 'داشبورد مدیریتی', end: true },
-      { to: '/dashboards', icon: BarChart3, label: 'داشبوردهای هوش تجاری (BI)' },
     ],
   },
   {

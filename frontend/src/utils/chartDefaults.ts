@@ -47,10 +47,10 @@ export function getChartDefaults(chartType: string): EChartsOption {
       textVerticalAlign: 'top',
     },
     grid: {
-      top: 40,
-      right: 20,
-      bottom: 30,
-      left: 50,
+      top: 24,
+      right: 12,
+      bottom: 16,
+      left: 12,
       containLabel: true,
     },
     tooltip: {
@@ -100,7 +100,8 @@ export function getChartDefaults(chartType: string): EChartsOption {
         series: [
           {
             type: 'pie',
-            radius: chartType === 'donut' ? ['45%', '70%'] : ['0%', '70%'],
+            radius: chartType === 'donut' ? ['42%', '78%'] : ['0%', '78%'],
+            center: ['50%', '50%'],
             data: [],
           },
         ],
@@ -138,6 +139,8 @@ export function getChartDefaults(chartType: string): EChartsOption {
         series: [
           {
             type: 'gauge',
+            radius: '88%',
+            center: ['50%', '55%'],
             detail: { formatter: '{value}' },
             data: [{ value: 0, name: '' }],
           },
@@ -151,10 +154,10 @@ export function getChartDefaults(chartType: string): EChartsOption {
           position: 'top',
         },
         grid: {
-          top: 40,
-          right: 80,
-          bottom: 60,
-          left: 80,
+          top: 24,
+          right: 50,
+          bottom: 40,
+          left: 50,
           containLabel: true,
         },
         xAxis: {
@@ -203,7 +206,13 @@ export function getChartDefaults(chartType: string): EChartsOption {
           trigger: 'item' as const,
           formatter: '{b}: {c}',
         },
-        series: [],
+        series: [{
+          type: 'funnel',
+          left: '5%',
+          top: 15,
+          bottom: 15,
+          width: '90%',
+        }],
       }
 
     case 'radar':

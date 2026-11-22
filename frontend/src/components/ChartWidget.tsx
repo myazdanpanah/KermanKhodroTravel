@@ -319,7 +319,7 @@ function buildChartOption(
       series: [
         {
           type: 'pie',
-          radius: chartType === 'donut' ? ['45%', '70%'] : ['0%', '70%'],
+          radius: chartType === 'donut' ? ['42%', '78%'] : ['0%', '78%'],
           center: ['50%', '50%'],
           data: pieData.map((d, i) => ({
             ...d,
@@ -387,15 +387,17 @@ function buildChartOption(
       ...customConfig,
       series: [{
         type: 'gauge',
+        radius: '88%',
+        center: ['50%', '55%'],
         min: 0,
         max: 100,
-        progress: { show: true, width: 18 },
-        axisLine: { lineStyle: { width: 18 } },
+        progress: { show: true, width: 16 },
+        axisLine: { lineStyle: { width: 16 } },
         axisTick: { show: false },
-        splitLine: { length: 10, lineStyle: { width: 2 } },
+        splitLine: { length: 8, lineStyle: { width: 2 } },
         pointer: { width: 5 },
-        axisLabel: { distance: 20, fontSize: 10, fontFamily: 'Vazirmatn', formatter: (val: number) => toPersianDigits(val) },
-        detail: { valueAnimation: true, fontSize: 20, offsetCenter: [0, '70%'], fontFamily: 'Vazirmatn', formatter: (val: number) => toPersianDigits(val) },
+        axisLabel: { distance: 16, fontSize: 10, fontFamily: 'Vazirmatn', formatter: (val: number) => toPersianDigits(val) },
+        detail: { valueAnimation: true, fontSize: 22, offsetCenter: [0, '68%'], fontFamily: 'Vazirmatn', formatter: (val: number) => toPersianDigits(val) },
         title: { offsetCenter: [0, '90%'] },
         data: [{ value: rawVal, name: valueCol }],
       }],
@@ -477,6 +479,12 @@ function buildChartOption(
       },
       series: [{
         type: 'treemap',
+        left: 8,
+        right: 8,
+        top: 8,
+        bottom: 8,
+        width: 'auto',
+        height: 'auto',
         data: treemapData,
         roam: false,
         nodeClick: false,
@@ -563,10 +571,10 @@ function buildChartOption(
       },
       series: [{
         type: 'funnel',
-        left: '10%',
-        top: 20,
-        bottom: 20,
-        width: '80%',
+        left: '5%',
+        top: 15,
+        bottom: 15,
+        width: '90%',
         min: 0,
         max: funnelData.length > 0 ? funnelData[0].value : 100,
         minSize: '0%',
@@ -804,10 +812,10 @@ function buildChartOption(
       },
       legend: valueCols.length > 1 ? (legendPos === 'hidden' ? { show: false } : { show: true, [legendPos]: 10 }) : { show: false },
       grid: {
-        top: valueCols.length > 1 ? 40 : 30,
-        right: 30,
-        bottom: 30,
-        left: 80,
+        top: valueCols.length > 1 ? 32 : 16,
+        right: 16,
+        bottom: 16,
+        left: 16,
         containLabel: true,
       },
       xAxis: {
@@ -836,10 +844,10 @@ function buildChartOption(
     },
     legend: valueCols.length > 1 ? (legendPos === 'hidden' ? { show: false } : { show: true, [legendPos]: 10 }) : { show: false },
     grid: {
-      top: valueCols.length > 1 ? 40 : 30,
-      right: 20,
-      bottom: valueCols.length > 1 ? 40 : 30,
-      left: 50,
+      top: valueCols.length > 1 ? 32 : 16,
+      right: 12,
+      bottom: valueCols.length > 1 ? 30 : 16,
+      left: 12,
       containLabel: true,
     },
     xAxis: {
@@ -1010,6 +1018,11 @@ export default function ChartWidget({
           isRTL
         )
         chart.setOption(finalOption as Record<string, unknown>, true)
+        requestAnimationFrame(() => {
+          if (!chart.isDisposed()) {
+            chart.resize()
+          }
+        })
 
         // Add cross-chart filter click handler
         if (onFilter) {
@@ -1060,6 +1073,11 @@ export default function ChartWidget({
               const retryOption = buildChartOption(widget.chartType, retryResult, widget.chartConfig || {})
               const retryFinal = applyRTL(retryOption as import('echarts').EChartsOption, document.documentElement.dir === 'rtl')
               chart.setOption(retryFinal as Record<string, unknown>, true)
+              requestAnimationFrame(() => {
+                if (!chart.isDisposed()) {
+                  chart.resize()
+                }
+              })
               setError(null)
             }
             return
@@ -1171,10 +1189,10 @@ export default function ChartWidget({
       const leaderColor = condColor || (cfg.singleColor as string) || undefined
 
       return (
-        <div className="flex flex-col items-center justify-center h-full p-4 gap-2">
+        <div className="flex flex-col items-center justify-center h-full w-full p-2 gap-2 flex-1">
           <span className="text-nx-warning-500 text-3xl">🏆</span>
           <span
-            className="font-extrabold leading-none text-nx-blue dark:text-nx-blue"
+            className="font-extrabold leading-none text-nx-blue dark:text-nx-blue text-center"
             style={{ fontSize: '28px', color: leaderColor }}
           >
             {leaderData.name}
@@ -1186,7 +1204,7 @@ export default function ChartWidget({
       )
     }
     return (
-      <div className="flex items-center justify-center h-full text-nx-mist text-sm">
+      <div className="flex items-center justify-center h-full w-full text-nx-mist text-sm">
         منبع داده تعیین نشده
       </div>
     )
@@ -1202,7 +1220,7 @@ export default function ChartWidget({
     }
     if (kpiData) {
       const cfg = widget.chartConfig || {}
-            // Color precedence: conditional rule → explicit singleColor → default
+      // Color precedence: conditional rule → explicit singleColor → default
       const kpiVal = kpiData.rawValue ?? 0
       const condColor = evalConditionalRules(readConditionalRules(cfg), kpiVal)
       const kpiColor =
@@ -1211,11 +1229,11 @@ export default function ChartWidget({
         undefined
 
       return (
-        <div className="flex flex-col items-center justify-center h-full p-4">
+        <div className="flex flex-col items-center justify-center h-full w-full p-2 flex-1">
           <span
-            className="font-extrabold leading-none text-nx-blue dark:text-nx-blue"
+            className="font-extrabold leading-none text-nx-blue dark:text-nx-blue text-center"
             style={{
-              fontSize: '28px',
+              fontSize: '32px',
               color: kpiColor,
             }}
           >
@@ -1225,7 +1243,7 @@ export default function ChartWidget({
       )
     }
     return (
-      <div className="flex items-center justify-center h-full text-nx-mist text-sm">
+      <div className="flex items-center justify-center h-full w-full text-nx-mist text-sm">
         منبع داده تعیین نشده
       </div>
     )
@@ -1250,7 +1268,8 @@ export default function ChartWidget({
   const containerStyle: React.CSSProperties = {
     height: '100%',
     width: '100%',
-    minHeight: '200px',
+    minHeight: 0,
+    flex: 1,
     backgroundColor: chartBgColor || undefined,
     backgroundImage: chartBgImage ? `url(${chartBgImage})` : undefined,
     backgroundSize: chartBgImage ? 'cover' : undefined,
@@ -1261,6 +1280,7 @@ export default function ChartWidget({
     <div
       ref={chartRef}
       style={containerStyle}
+      className="w-full h-full flex-1"
     />
   )
 }

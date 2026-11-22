@@ -169,12 +169,12 @@ export const useDashboardStore = create<DashboardState>()(
                       widgets: [...p.widgets, widget],
                       layout: [
                         ...p.layout,
-                        { i: widget.id, x: 0, y: Infinity, w: 6, h: 4 },
+                        { i: widget.id, x: 0, y: Infinity, w: 6, h: 5 },
                       ],
                       // Seed a stacked full-width mobile layout entry
                       mobileLayout: [
                         ...(p.mobileLayout || []),
-                        { i: widget.id, x: 0, y: Infinity, w: 12, h: 4 },
+                        { i: widget.id, x: 0, y: Infinity, w: 12, h: 5 },
                       ],
                     }
                   : p
@@ -186,7 +186,7 @@ export const useDashboardStore = create<DashboardState>()(
             widgets: [...state.widgets, widget],
             layout: [
               ...state.layout,
-              { i: widget.id, x: 0, y: Infinity, w: 6, h: 4 },
+              { i: widget.id, x: 0, y: Infinity, w: 6, h: 5 },
             ],
           }
         }),
