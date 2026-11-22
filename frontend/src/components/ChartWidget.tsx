@@ -53,10 +53,22 @@ function isNumericType(colType: string | undefined): boolean {
 function buildMetrics(
   chartType: string,
   queryConfig: Record<string, unknown> | undefined,
-  columnTypes?: Record<string, string>
+  columnTypes?: Record<string, string>,
+  chartConfig?: Record<string, unknown>
 ): Record<string, string> | undefined {
   // Charts that never aggregate
   if (NO_AGG_TYPES.has(chartType)) return undefined
+
+  // KPI with dual-metric formula calculation
+  if (chartType === 'kpi') {
+    const kpiFormula = (chartConfig?.kpiFormula as any)
+    if (kpiFormula?.enabled && kpiFormula.metricA?.col && kpiFormula.metricB?.col) {
+      return {
+        [kpiFormula.metricA.col]: kpiFormula.metricA.agg || 'SUM',
+        [kpiFormula.metricB.col]: kpiFormula.metricB.agg || 'SUM',
+      }
+    }
+  }
 
   // Use explicit metrics if provided
   if (queryConfig?.metrics && typeof queryConfig.metrics === 'object') {
@@ -296,8 +308,8 @@ function buildChartOption(
     // Apply Google Data Studio-style top-N smart aggregation into 'سایر' (Others)
     const sortBy = readSortBy(customConfig) || 'desc'
     const sortLimit = customConfig.sortLimit as number | undefined
-    // Default to top 7 slices (top 6 + "سایر") like Google Data Studio to prevent unreadable clutter
-    const effectiveLimit = (sortLimit && sortLimit > 0) ? sortLimit : 7
+    // Default to top 8 slices (top 7 + "سایر") to keep it spacious and clean like ERP
+    const effectiveLimit = (sortLimit && sortLimit > 0) ? sortLimit : 8
 
     // Sort descending by value so major contributors lead
     const sorted = [...data].sort((a, b) => {
@@ -324,6 +336,11 @@ function buildChartOption(
       }))
     }
 
+    const VIBRANT_ERP_PALETTE = [
+      '#EF4444', '#F97316', '#F59E0B', '#3678F6', '#8B5CF6',
+      '#24C6B2', '#EC4899', '#0EA5E9', '#10B981', '#64748B'
+    ]
+
     // Per-slice colors: explicit overrides beat palette, conditional rules beat overrides
     const sliceKeys = pieData.map((d) => d.name)
     const sliceColors = resolveKeyedColors(customConfig, sliceKeys, 'sliceColors')
@@ -336,6 +353,7 @@ function buildChartOption(
     return {
       ...pieDefaults,
       ...customConfig,
+      color: VIBRANT_ERP_PALETTE,
       tooltip: {
         trigger: 'item',
         backgroundColor: isDark ? '#1e293b' : '#ffffff',
@@ -343,35 +361,40 @@ function buildChartOption(
         borderWidth: 1,
         textStyle: { fontFamily: 'Vazirmatn', color: isDark ? '#f8fafc' : '#0f172a' },
         formatter: (p: any) =>
-          `<div dir="rtl" style="font-family: Vazirmatn; font-size: 12px; padding: 2px;">
-            <strong>${p.name}</strong><br/>
+          `<div dir="rtl" style="font-family: Vazirmatn; font-size: 11.5px; padding: 4px; line-height: 1.6;">
+            <strong style="color: ${p.color || '#3678F6'};">${p.name}</strong><br/>
             مقدار: <span style="font-weight: bold;">${toPersianDigits(Number(p.value).toLocaleString())}</span><br/>
-            سهم: <span style="font-weight: bold; color: #2563eb;">${toPersianDigits(Number(p.percent).toFixed(1))}٪</span>
+            سهم: <span style="font-weight: bold; color: ${p.color || '#3678F6'};">${toPersianDigits(Number(p.percent).toFixed(1))}٪</span>
           </div>`,
       },
       legend: legendPos === 'hidden' ? { show: false } : {
         show: true,
         type: 'scroll',
-        [legendPos]: 10,
+        bottom: 0,
         textStyle: { fontFamily: 'Vazirmatn', fontSize: 11, color: isDark ? '#cbd5e1' : '#64748b' },
+        pageIconColor: isDark ? '#94A3B8' : '#64748B',
+        pageTextStyle: { color: isDark ? '#94A3B8' : '#64748B', fontFamily: 'Vazirmatn' },
       },
       series: [
         {
           type: 'pie',
-          radius: chartType === 'donut' ? ['46%', '74%'] : ['0%', '74%'],
-          center: ['50%', '50%'],
+          radius: chartType === 'donut' ? ['42%', '70%'] : ['0%', '70%'],
+          center: ['50%', '42%'],
           avoidLabelOverlap: true,
           minAngle: 4,
-          padAngle: 2,
+          padAngle: 3,
           itemStyle: {
-            borderRadius: 6,
-            borderColor: isDark ? '#0f172a' : '#ffffff',
+            borderRadius: 8,
+            borderColor: isDark ? '#0f1b2e' : '#ffffff',
             borderWidth: 2,
+          },
+          labelLayout: {
+            hideOverlap: true,
           },
           data: pieData.map((d, i) => ({
             ...d,
             itemStyle: {
-              color: evalConditionalRules(condRules, d.value) || sliceColors[i],
+              color: evalConditionalRules(condRules, d.value) || sliceColors[i] || VIBRANT_ERP_PALETTE[i % VIBRANT_ERP_PALETTE.length],
             },
           })),
           label: {
@@ -379,11 +402,11 @@ function buildChartOption(
             position: 'outer',
             alignTo: 'none',
             formatter: (p: any) => {
-              if (p.percent < 3.5) return ''
+              if (p.percent < 2.5) return ''
               return `${p.name}: ${toPersianDigits(Number(p.percent).toFixed(0))}٪`
             },
             fontFamily: 'Vazirmatn',
-            fontSize: 11,
+            fontSize: 10.5,
             color: isDark ? '#e2e8f0' : '#334155',
             backgroundColor: 'transparent',
             borderColor: 'transparent',
@@ -392,7 +415,7 @@ function buildChartOption(
           },
           labelLine: {
             show: true,
-            length: 10,
+            length: 12,
             length2: 8,
             smooth: true,
             lineStyle: {
@@ -401,6 +424,11 @@ function buildChartOption(
             },
           },
           emphasis: {
+            label: {
+              show: true,
+              fontSize: 12,
+              fontWeight: 'bold',
+            },
             itemStyle: {
               shadowBlur: 10,
               shadowOffsetX: 0,
@@ -1006,7 +1034,7 @@ export default function ChartWidget({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [tableData, setTableData] = useState<{ columns: string[]; rows: Record<string, unknown>[] } | null>(null)
-  const [kpiData, setKpiData] = useState<{ value: string; rawValue?: number } | null>(null)
+  const [kpiData, setKpiData] = useState<{ value: string; rawValue?: number; breakdown?: string } | null>(null)
   const [leaderData, setLeaderData] = useState<{ name: string; value: number } | null>(null)
 
   const usesECharts = !CARD_TYPES.has(widget.chartType)
@@ -1069,7 +1097,7 @@ export default function ChartWidget({
     setLoading(true)
 
     try {
-      const metrics = buildMetrics(widget.chartType, widget.queryConfig, widget.columnTypes)
+      const metrics = buildMetrics(widget.chartType, widget.queryConfig, widget.columnTypes, widget.chartConfig)
 
       // Merge all filter sources: widget-level, dashboard control, cross-chart, and drill-down
       const widgetFilters = (widget.queryConfig?.filters as Array<{col: string; op: string; val: string | number | (string | number)[]}>) || []
@@ -1091,11 +1119,20 @@ export default function ChartWidget({
         ...drillFilters,
       ]
 
+      const customSql = widget.queryConfig?.custom_sql as string | undefined
+
+      let reqColumns = (widget.queryConfig?.columns as string[]) || undefined
+      const kpiFormula = (widget.chartConfig as any)?.kpiFormula
+      if (widget.chartType === 'kpi' && kpiFormula?.enabled && kpiFormula.metricA?.col && kpiFormula.metricB?.col) {
+        reqColumns = Array.from(new Set([kpiFormula.metricA.col, kpiFormula.metricB.col]))
+      }
+
       const res = await api.post(`/datasets/${widget.datasetId}/query/`, {
-        columns: widget.queryConfig?.columns || undefined,
+        columns: reqColumns,
         metrics: metrics || undefined,
         date_truncs: widget.queryConfig?.date_truncs || undefined,
         filters: mergedFilters.length > 0 ? mergedFilters : undefined,
+        custom_sql: customSql || undefined,
       })
 
       const result: QueryResult = res.data
@@ -1122,15 +1159,71 @@ export default function ChartWidget({
           setLeaderData({ name: String(bestRow[dimCol] ?? ''), value: bestVal })
         }
       } else if (widget.chartType === 'kpi') {
-        const metricCols = Object.keys(metrics || {})
-        const valueCol = metricCols[0] || result.columns[result.columns.length - 1]
-        const rawVal = result.data.length > 0 ? result.data[0][valueCol] : 0
-        const num = Number(rawVal) || 0
+        const kpiFormula = (widget.chartConfig as any)?.kpiFormula
+        let num = 0
+        let breakdownText = ''
+
+        if (kpiFormula?.enabled && kpiFormula.metricA?.col && kpiFormula.metricB?.col && result.data.length > 0) {
+          const row = result.data[0]
+          const colA = kpiFormula.metricA.col
+          const colB = kpiFormula.metricB.col
+          const valA = Number(row[colA] ?? row[`${(kpiFormula.metricA.agg || 'sum').toLowerCase()}_${colA}`] ?? Object.values(row)[0]) || 0
+          const valB = Number(row[colB] ?? row[`${(kpiFormula.metricB.agg || 'sum').toLowerCase()}_${colB}`] ?? Object.values(row)[1]) || 0
+
+          switch (kpiFormula.operator) {
+            case 'subtract':
+              num = valA - valB
+              break
+            case 'percent':
+              num = valB !== 0 ? (valA / valB) * 100 : 0
+              break
+            case 'divide':
+              num = valB !== 0 ? valA / valB : 0
+              break
+            case 'add':
+              num = valA + valB
+              break
+            case 'multiply':
+              num = valA * valB
+              break
+            case 'custom':
+              try {
+                const expr = (kpiFormula.customExpression || 'A - B')
+                  .replace(/A/g, String(valA))
+                  .replace(/B/g, String(valB))
+                num = Number(Function(`"use strict"; return (${expr})`)()) || 0
+              } catch {
+                num = 0
+              }
+              break
+            default:
+              num = valA - valB
+          }
+
+          if (kpiFormula.showBreakdown !== false) {
+            const opSymbol =
+              kpiFormula.operator === 'subtract' ? '−' :
+              kpiFormula.operator === 'add' ? '+' :
+              kpiFormula.operator === 'percent' ? '÷ (درصد)' :
+              kpiFormula.operator === 'divide' ? '÷' :
+              kpiFormula.operator === 'multiply' ? '×' :
+              kpiFormula.customExpression || 'فرمول'
+
+            const labelA = kpiFormula.metricA.label || colA
+            const labelB = kpiFormula.metricB.label || colB
+            breakdownText = `${labelA}: ${toPersianDigits(Number(valA).toLocaleString())} ${opSymbol} ${labelB}: ${toPersianDigits(Number(valB).toLocaleString())}`
+          }
+        } else {
+          const metricCols = Object.keys(metrics || {})
+          const valueCol = metricCols[0] || result.columns[result.columns.length - 1]
+          const rawVal = result.data.length > 0 ? result.data[0][valueCol] : 0
+          num = Number(rawVal) || 0
+        }
 
         const fmt = (widget.chartConfig as Record<string, unknown>)?.kpiFormat as KpiFormat | undefined
         const formatted = formatKpiValue(num, fmt)
 
-        setKpiData({ value: formatted, rawValue: num })
+        setKpiData({ value: formatted, rawValue: num, breakdown: breakdownText })
       } else {
         if (!chart) return
         const chartOption = buildChartOption(
@@ -1365,6 +1458,11 @@ export default function ChartWidget({
           >
             {kpiData.value}
           </span>
+          {kpiData.breakdown && (
+            <p className="text-[11px] text-slate-500 dark:text-nx-mist mt-2.5 text-center max-w-[95%] truncate font-medium" title={kpiData.breakdown}>
+              {kpiData.breakdown}
+            </p>
+          )}
         </div>
       )
     }

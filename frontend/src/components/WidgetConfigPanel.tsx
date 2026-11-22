@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { useDashboardStore } from '../store/dashboardStore'
 import api from '../api/client'
-import { X, BarChart3, PieChart, TrendingUp, Table, Hash, Circle, Target, GitBranch, Grid3x3, TreePine, ArrowRightLeft, Filter, Radar, Network, Map } from 'lucide-react'
+import { X, BarChart3, PieChart, TrendingUp, Table, Hash, Circle, Target, GitBranch, Grid3x3, TreePine, ArrowRightLeft, Filter, Radar, Network, Map, Code2, Calculator, Play, CheckCircle2, AlertCircle } from 'lucide-react'
 import { formatKpiValue, DEFAULT_KPI_FORMAT, type KpiFormat } from '../utils/kpiFormat'
 import { PRESET_PALETTES } from '../utils/palettes'
 import { DEFAULT_WIDGET_STYLE, type WidgetStyle } from '../utils/themeConfig'
@@ -20,6 +20,15 @@ interface ConditionalRule {
   value: number
   value2?: number
   color: string
+}
+
+export interface KpiFormulaConfig {
+  enabled: boolean
+  metricA: { col: string; agg: string; label?: string }
+  metricB: { col: string; agg: string; label?: string }
+  operator: 'subtract' | 'percent' | 'divide' | 'add' | 'multiply' | 'custom'
+  customExpression?: string
+  showBreakdown?: boolean
 }
 
 interface WidgetConfigPanelProps {
@@ -147,6 +156,59 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
   const [condRules, setCondRules] = useState<ConditionalRule[]>(
     ((widget?.chartConfig as Record<string, unknown>)?.conditionalRules as ConditionalRule[]) || []
   )
+
+  // Custom SQL state for advanced users
+  const [customSql, setCustomSql] = useState<string>(
+    (widget?.queryConfig?.custom_sql as string) || ''
+  )
+  const [useCustomSql, setUseCustomSql] = useState<boolean>(
+    Boolean((widget?.queryConfig?.custom_sql as string) || false)
+  )
+  const [sqlTesting, setSqlTesting] = useState<boolean>(false)
+  const [sqlTestResult, setSqlTestResult] = useState<{
+    success: boolean
+    message: string
+    rowCount?: number
+    columns?: string[]
+    executionTimeMs?: number
+  } | null>(null)
+
+  // KPI Dual-Metric Math Formula State
+  const savedKpiFormula = (widget?.chartConfig as Record<string, unknown>)?.kpiFormula as KpiFormulaConfig | undefined
+  const [kpiFormula, setKpiFormula] = useState<KpiFormulaConfig>(
+    savedKpiFormula || {
+      enabled: false,
+      metricA: { col: '', agg: 'SUM', label: '' },
+      metricB: { col: '', agg: 'SUM', label: '' },
+      operator: 'subtract',
+      customExpression: 'A - B',
+      showBreakdown: true,
+    }
+  )
+
+  const handleTestSql = async () => {
+    if (!customSql.trim()) return
+    setSqlTesting(true)
+    setSqlTestResult(null)
+    try {
+      const res = await api.post('/datasets/test-sql/', { custom_sql: customSql.trim() })
+      setSqlTestResult({
+        success: true,
+        message: `کوئری با موفقیت اجرا شد (${res.data.row_count} سطر در ${res.data.execution_time_ms} میلی‌ثانیه)`,
+        rowCount: res.data.row_count,
+        columns: res.data.columns,
+        executionTimeMs: res.data.execution_time_ms,
+      })
+    } catch (err: any) {
+      const msg = err.response?.data?.error || err.message || 'خطا در اجرای کوئری'
+      setSqlTestResult({
+        success: false,
+        message: msg,
+      })
+    } finally {
+      setSqlTesting(false)
+    }
+  }
 
   const selectedDataset = datasets.find((d) => d.id === selectedDatasetId)
 
@@ -277,6 +339,13 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
       queryConfig.filters = undefined
     }
 
+    // Custom SQL
+    if (useCustomSql && customSql.trim()) {
+      queryConfig.custom_sql = customSql.trim()
+    } else {
+      delete queryConfig.custom_sql
+    }
+
     // Save chartConfig
     const chartConfig: Record<string, unknown> = {
       ...widget.chartConfig,
@@ -285,6 +354,16 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
     }
     if (chartType === 'kpi') {
       chartConfig.kpiFormat = kpiFormat
+      if (kpiFormula.enabled && kpiFormula.metricA.col && kpiFormula.metricB.col) {
+        chartConfig.kpiFormula = kpiFormula
+        queryConfig.columns = Array.from(new Set([kpiFormula.metricA.col, kpiFormula.metricB.col]))
+        queryConfig.metrics = {
+          [kpiFormula.metricA.col]: kpiFormula.metricA.agg || 'SUM',
+          [kpiFormula.metricB.col]: kpiFormula.metricB.agg || 'SUM',
+        }
+      } else {
+        delete chartConfig.kpiFormula
+      }
     }
     if (chartType === 'map') {
       chartConfig.mapUrl = mapUrl
@@ -414,6 +493,117 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Custom SQL Query Editor (Advanced Users) */}
+          <div className="border border-slate-200 dark:border-nx-navy-border rounded-xl p-3.5 space-y-3 bg-slate-50/70 dark:bg-nx-navy/40">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 rounded-lg bg-nx-blue/10 text-nx-blue dark:bg-nx-blue/20">
+                  <Code2 className="w-4 h-4" />
+                </span>
+                <div>
+                  <h4 className="text-xs font-bold text-nx-navy dark:text-white">
+                    فرمول و کوئری SQL سفارشی (کاربر حرفه‌ای)
+                  </h4>
+                  <p className="text-[10px] text-slate-500 dark:text-nx-mist">
+                    امکان نوشتن مستقیم دستورات SQL جهت استخراج، فرمول‌ها و محاسبات پیشرفته
+                  </p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={useCustomSql}
+                  onChange={(e) => setUseCustomSql(e.target.checked)}
+                  className="sr-only peer"
+                />
+                <div className="w-8 h-4.5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-nx-blue"></div>
+              </label>
+            </div>
+
+            {useCustomSql && (
+              <div className="space-y-2.5 pt-2 border-t border-slate-200 dark:border-white/10">
+                {selectedDataset && (
+                  <div className="text-[11px] text-slate-500 dark:text-nx-mist flex flex-wrap items-center gap-1">
+                    <span className="text-[10px]">جدول:</span>
+                    <button
+                      type="button"
+                      onClick={() => setCustomSql((prev) => `${prev} "${selectedDataset.name}"`)}
+                      className="font-mono text-[10px] bg-slate-200 dark:bg-white/10 px-1.5 py-0.5 rounded text-nx-blue hover:underline"
+                      title="درج نام جدول در کوئری"
+                    >
+                      "{selectedDataset.name}"
+                    </button>
+                    <span className="text-[10px] mr-1.5">ستون‌ها:</span>
+                    {selectedDataset.column_names.slice(0, 5).map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setCustomSql((prev) => `${prev} "${c}"`)}
+                        className="font-mono text-[10px] bg-slate-200/70 dark:bg-white/5 px-1 py-0.5 rounded text-slate-700 dark:text-slate-300 hover:text-nx-blue"
+                        title="درج نام ستون"
+                      >
+                        "{c}"
+                      </button>
+                    ))}
+                    {selectedDataset.column_names.length > 5 && (
+                      <span className="text-[10px] text-slate-400">+{selectedDataset.column_names.length - 5}</span>
+                    )}
+                  </div>
+                )}
+
+                <textarea
+                  value={customSql}
+                  onChange={(e) => setCustomSql(e.target.value)}
+                  placeholder={
+                    selectedDataset
+                      ? `SELECT col1, SUM(col2) FROM "${selectedDataset.name}" GROUP BY col1 LIMIT 100`
+                      : "SELECT ... FROM ... LIMIT 100"
+                  }
+                  rows={4}
+                  dir="ltr"
+                  className="w-full text-xs font-mono p-2.5 rounded-xl border border-slate-300 dark:border-nx-navy-border bg-white dark:bg-nx-navy-elevated text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-nx-blue outline-none transition"
+                />
+
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] text-slate-400 dark:text-nx-mist">
+                    فقط دستورات خواندنی (SELECT / WITH) مجاز هستند.
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleTestSql}
+                    disabled={sqlTesting || !customSql.trim()}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-nx-blue/10 text-nx-blue hover:bg-nx-blue/20 dark:bg-nx-blue/20 dark:text-white transition disabled:opacity-50"
+                  >
+                    <Play className="w-3 h-3" />
+                    {sqlTesting ? 'در حال اجرا…' : 'تست کوئری'}
+                  </button>
+                </div>
+
+                {sqlTestResult && (
+                  <div className={`p-2 rounded-lg text-xs border flex items-start gap-1.5 ${
+                    sqlTestResult.success
+                      ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300'
+                      : 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800 text-rose-800 dark:text-rose-300'
+                  }`}>
+                    {sqlTestResult.success ? (
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                    ) : (
+                      <AlertCircle className="w-4 h-4 text-rose-500 shrink-0 mt-0.5" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-[11px]">{sqlTestResult.message}</div>
+                      {sqlTestResult.columns && sqlTestResult.columns.length > 0 && (
+                        <div className="mt-0.5 text-[10px] opacity-80 truncate">
+                          ستون‌ها: {sqlTestResult.columns.join('، ')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Column Layout Hints for special chart types */}
@@ -564,6 +754,177 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                     </div>
                   ))}
               </div>
+            </div>
+          )}
+
+          {/* Dual-Metric Math Formula Builder for KPI */}
+          {chartType === 'kpi' && selectedDataset && (
+            <div className="border border-nx-blue/30 bg-blue-50/20 dark:bg-nx-blue/5 rounded-xl p-3.5 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="p-1.5 rounded-lg bg-nx-blue/10 text-nx-blue dark:bg-nx-blue/20">
+                    <Calculator className="w-4 h-4" />
+                  </span>
+                  <div>
+                    <h4 className="text-xs font-bold text-nx-navy dark:text-white">
+                      محاسبهٔ ریاضی بین دو شاخص (فرمول ترکیبی KPI)
+                    </h4>
+                    <p className="text-[10px] text-slate-500 dark:text-nx-mist">
+                      انجام محاسبات ریاضی مانند مانده، نسبت وصول، حاشیه سود بین دو میزان
+                    </p>
+                  </div>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={kpiFormula.enabled}
+                    onChange={(e) => setKpiFormula({ ...kpiFormula, enabled: e.target.checked })}
+                    className="sr-only peer"
+                  />
+                  <div className="w-8 h-4.5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:right-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3.5 after:w-3.5 after:transition-all peer-checked:bg-nx-blue"></div>
+                </label>
+              </div>
+
+              {kpiFormula.enabled && (
+                <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-white/10">
+                  {/* Metric A */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 dark:text-nx-mist mb-1">
+                        میزان اول (شاخص A):
+                      </label>
+                      <select
+                        value={kpiFormula.metricA.col}
+                        onChange={(e) => setKpiFormula({
+                          ...kpiFormula,
+                          metricA: { ...kpiFormula.metricA, col: e.target.value }
+                        })}
+                        className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-nx-navy-border dark:bg-nx-navy dark:text-white"
+                      >
+                        <option value="">انتخاب ستون اول...</option>
+                        {selectedDataset.column_names.map((col) => (
+                          <option key={col} value={col}>{col}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 dark:text-nx-mist mb-1">
+                        تابع تجمیعی A:
+                      </label>
+                      <select
+                        value={kpiFormula.metricA.agg}
+                        onChange={(e) => setKpiFormula({
+                          ...kpiFormula,
+                          metricA: { ...kpiFormula.metricA, agg: e.target.value }
+                        })}
+                        className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-nx-navy-border dark:bg-nx-navy dark:text-white"
+                      >
+                        {AGG_OPTIONS.map((agg) => (
+                          <option key={agg} value={agg}>{agg}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Math Operator */}
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-700 dark:text-nx-mist mb-1">
+                      عملیات ریاضی بین دو میزان:
+                    </label>
+                    <div className="grid grid-cols-3 sm:grid-cols-6 gap-1">
+                      {[
+                        { op: 'subtract', label: 'تفریق (A − B)' },
+                        { op: 'percent', label: 'درصد (A/B × ۱۰۰)' },
+                        { op: 'divide', label: 'تقسیم (A ÷ B)' },
+                        { op: 'add', label: 'جمع (A + B)' },
+                        { op: 'multiply', label: 'ضرب (A × B)' },
+                        { op: 'custom', label: 'فرمول دستی' },
+                      ].map((item) => (
+                        <button
+                          key={item.op}
+                          type="button"
+                          onClick={() => setKpiFormula({ ...kpiFormula, operator: item.op as any })}
+                          className={`p-1.5 rounded-lg text-center text-[10px] font-medium transition border ${
+                            kpiFormula.operator === item.op
+                              ? 'bg-nx-blue text-white border-nx-blue shadow-xs'
+                              : 'bg-white dark:bg-nx-navy border-slate-200 dark:border-nx-navy-border text-slate-700 dark:text-nx-mist hover:bg-slate-50 dark:hover:bg-white/5'
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                    {kpiFormula.operator === 'custom' && (
+                      <div className="mt-2">
+                        <label className="block text-[10px] text-slate-500 dark:text-nx-mist mb-1">
+                          فرمول با متغیرهای A و B (مانند: <code>(A - B) / A * 100</code>):
+                        </label>
+                        <input
+                          type="text"
+                          value={kpiFormula.customExpression || ''}
+                          onChange={(e) => setKpiFormula({ ...kpiFormula, customExpression: e.target.value })}
+                          placeholder="(A - B) / A * 100"
+                          dir="ltr"
+                          className="w-full text-xs font-mono p-2 rounded-lg border border-slate-300 dark:border-nx-navy-border dark:bg-nx-navy dark:text-white"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Metric B */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 dark:text-nx-mist mb-1">
+                        میزان دوم (شاخص B):
+                      </label>
+                      <select
+                        value={kpiFormula.metricB.col}
+                        onChange={(e) => setKpiFormula({
+                          ...kpiFormula,
+                          metricB: { ...kpiFormula.metricB, col: e.target.value }
+                        })}
+                        className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-nx-navy-border dark:bg-nx-navy dark:text-white"
+                      >
+                        <option value="">انتخاب ستون دوم...</option>
+                        {selectedDataset.column_names.map((col) => (
+                          <option key={col} value={col}>{col}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-medium text-slate-700 dark:text-nx-mist mb-1">
+                        تابع تجمیعی B:
+                      </label>
+                      <select
+                        value={kpiFormula.metricB.agg}
+                        onChange={(e) => setKpiFormula({
+                          ...kpiFormula,
+                          metricB: { ...kpiFormula.metricB, agg: e.target.value }
+                        })}
+                        className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-nx-navy-border dark:bg-nx-navy dark:text-white"
+                      >
+                        {AGG_OPTIONS.map((agg) => (
+                          <option key={agg} value={agg}>{agg}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Toggle breakdown display */}
+                  <div className="flex items-center gap-2 pt-1">
+                    <input
+                      type="checkbox"
+                      id="showBreakdown"
+                      checked={kpiFormula.showBreakdown !== false}
+                      onChange={(e) => setKpiFormula({ ...kpiFormula, showBreakdown: e.target.checked })}
+                      className="w-3.5 h-3.5 text-nx-blue rounded"
+                    />
+                    <label htmlFor="showBreakdown" className="text-[11px] text-slate-600 dark:text-nx-mist cursor-pointer">
+                      نمایش ریز مقادیر دو میزان (A و B) به عنوان زیرنویس در کارت KPI
+                    </label>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

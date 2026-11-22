@@ -100,10 +100,14 @@ export function getChartDefaults(chartType: string): EChartsOption {
         series: [
           {
             type: 'pie',
-            radius: chartType === 'donut' ? ['46%', '74%'] : ['0%', '74%'],
-            center: ['50%', '50%'],
+            radius: chartType === 'donut' ? ['42%', '70%'] : ['0%', '70%'],
+            center: ['50%', '42%'],
             avoidLabelOverlap: true,
-            padAngle: 2,
+            padAngle: 3,
+            itemStyle: {
+              borderRadius: 8,
+              borderWidth: 2,
+            },
             data: [],
           },
         ],

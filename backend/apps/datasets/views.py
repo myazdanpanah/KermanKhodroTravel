@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 import tempfile
 
 from rest_framework import status, permissions
@@ -190,6 +191,28 @@ NUMERIC_PG_TYPES = {
 # COUNT works on any type; COUNT_DISTINCT also works on any type; these are the only ones that support SUM/AVG/MIN/MAX
 AGG_NUMERIC_FUNCTIONS = {"SUM", "AVG", "MIN", "MAX"}
 
+DANGEROUS_SQL_PATTERN = re.compile(
+    r"\b(DROP|DELETE|UPDATE|INSERT|ALTER|TRUNCATE|GRANT|REVOKE|CREATE|EXEC|EXECUTE|COPY)\b",
+    re.IGNORECASE,
+)
+
+
+def _validate_safe_select_sql(sql_text: str) -> tuple[bool, str]:
+    """Validate that custom SQL only executes safe read-only queries."""
+    cleaned = (sql_text or "").strip().rstrip(";")
+    if not cleaned:
+        return False, "کوئری SQL خالی است."
+    # Disallow multiple chained queries
+    if ";" in cleaned:
+        return False, "اجرای چندین دستور مجزا در یک کوئری مجاز نیست."
+    first_word = cleaned.split()[0].upper() if cleaned.split() else ""
+    if first_word not in ("SELECT", "WITH"):
+        return False, "فقط کوئری‌های خواندنی (SELECT یا WITH) مجاز هستند."
+    match = DANGEROUS_SQL_PATTERN.search(cleaned)
+    if match:
+        return False, f"دستور غیرمجاز '{match.group(0)}' در کوئری یافت شد."
+    return True, ""
+
 
 @api_view(["POST"])
 def dataset_query(request, pk):
@@ -226,6 +249,35 @@ def dataset_query(request, pk):
             return Response(
                 {"error": "You do not have access to this dataset"},
                 status=status.HTTP_403_FORBIDDEN,
+            )
+
+    # Check for direct custom SQL query from advanced user
+    custom_sql = (request.data.get("custom_sql") or "").strip()
+    if custom_sql:
+        is_safe, error_msg = _validate_safe_select_sql(custom_sql)
+        if not is_safe:
+            return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
+        final_sql = custom_sql.rstrip(";")
+        if not re.search(r"\bLIMIT\s+\d+", final_sql, re.IGNORECASE):
+            final_sql += " LIMIT 1000"
+        from django.db import connection
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(final_sql)
+                rows = cursor.fetchall()
+                col_names = [desc[0] for desc in cursor.description]
+            data = [dict(zip(col_names, row)) for row in rows]
+            return Response({
+                "columns": col_names,
+                "data": data,
+                "row_count": len(data),
+                "is_custom_sql": True,
+            })
+        except Exception as exc:
+            logger.warning("Custom SQL error: %s", exc)
+            return Response(
+                {"error": f"خطا در اجرای کوئری SQL: {str(exc)}"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
     # Get role-based filters
@@ -636,6 +688,49 @@ def sync_erp_datasets_view(request):
     serializer = DatasetSerializer(datasets, many=True)
     return Response({
         "message": "جداول ERP با موفقیت با مجموعه داده‌های هوش تجاری همگام شدند",
-        "count": len(datasets),
         "datasets": serializer.data,
-    }, status=status.HTTP_200_OK)
+    })
+
+
+@api_view(["POST"])
+def dataset_test_sql(request, pk=None):
+    """
+    Test and preview a custom SQL query for advanced users.
+    Returns: { columns, data, row_count, execution_time_ms }
+    """
+    gate = _check_datasets_module(request)
+    if gate:
+        return gate
+    custom_sql = (request.data.get("custom_sql") or "").strip()
+    if not custom_sql:
+        return Response({"error": "کوئری SQL الزامی است."}, status=status.HTTP_400_BAD_REQUEST)
+
+    is_safe, error_msg = _validate_safe_select_sql(custom_sql)
+    if not is_safe:
+        return Response({"error": error_msg}, status=status.HTTP_400_BAD_REQUEST)
+
+    final_sql = custom_sql.rstrip(";")
+    if not re.search(r"\bLIMIT\s+\d+", final_sql, re.IGNORECASE):
+        final_sql += " LIMIT 50"
+
+    import time
+    start = time.perf_counter()
+    from django.db import connection
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute(final_sql)
+            rows = cursor.fetchall()
+            col_names = [desc[0] for desc in cursor.description]
+        data = [dict(zip(col_names, row)) for row in rows]
+        elapsed = round((time.perf_counter() - start) * 1000, 1)
+        return Response({
+            "columns": col_names,
+            "data": data,
+            "row_count": len(data),
+            "execution_time_ms": elapsed,
+        })
+    except Exception as exc:
+        return Response(
+            {"error": f"خطا در اجرای کوئری SQL: {str(exc)}"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
