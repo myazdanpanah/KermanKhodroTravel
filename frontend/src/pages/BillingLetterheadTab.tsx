@@ -67,8 +67,8 @@ const EMPTY: BillingSettings = {
 }
 
 const INPUT =
-  'w-full px-3 py-2.5 rounded-xl border border-nx-navy-border bg-nx-navy-elevated text-white placeholder:text-nx-mist/45 text-sm focus:ring-2 focus:ring-nx-blue focus:border-nx-blue outline-none transition'
-const LABEL = 'block text-xs font-medium text-nx-mist mb-1.5'
+  'w-full px-3 py-2.5 rounded-xl border border-slate-300 dark:border-nx-navy-border bg-white dark:bg-nx-navy-elevated text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-nx-mist/45 text-sm focus:ring-2 focus:ring-nx-blue focus:border-nx-blue outline-none transition'
+const LABEL = 'block text-xs font-medium text-slate-700 dark:text-nx-mist mb-1.5'
 
 function Field({
   label,
@@ -109,7 +109,7 @@ function Field({
           className={`${INPUT} disabled:opacity-60`}
         />
       )}
-      {hint && <p className="mt-1 text-[10px] text-nx-mist/70">{hint}</p>}
+      {hint && <p className="mt-1 text-[10px] text-slate-500 dark:text-nx-mist/70">{hint}</p>}
     </div>
   )
 }
@@ -140,24 +140,24 @@ function AssetUpload({
   const isImage = imagePreview && /\.(png|jpe?g|webp|gif)$/i.test(currentPath || '')
 
   return (
-    <div className="rounded-xl border border-nx-navy-border bg-nx-navy p-4">
+    <div className="rounded-xl border border-slate-200 dark:border-nx-navy-border bg-slate-50/70 dark:bg-nx-navy p-4 shadow-xs">
       <div className="flex items-center gap-2 mb-2">
         <Icon className="w-4 h-4 text-nx-blue" />
-        <h4 className="text-sm font-semibold text-white">{title}</h4>
+        <h4 className="text-sm font-semibold text-slate-900 dark:text-white">{title}</h4>
       </div>
-      <p className="text-[11px] text-nx-mist/80 mb-3 leading-5">{hint}</p>
+      <p className="text-[11px] text-slate-500 dark:text-nx-mist/80 mb-3 leading-5">{hint}</p>
 
       <div className="flex items-center gap-3">
-        <div className="w-20 h-16 rounded-lg border border-dashed border-nx-navy-border bg-nx-navy-elevated flex items-center justify-center overflow-hidden shrink-0">
+        <div className="w-20 h-16 rounded-lg border border-dashed border-slate-300 dark:border-nx-navy-border bg-white dark:bg-nx-navy-elevated flex items-center justify-center overflow-hidden shrink-0">
           {isImage ? (
             <img src={`/media/${currentPath}`} alt={title} className="max-w-full max-h-full object-contain" />
           ) : (
-            <Icon className="w-6 h-6 text-nx-mist/50" />
+            <Icon className="w-6 h-6 text-slate-400 dark:text-nx-mist/50" />
           )}
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] text-nx-mist truncate" title={currentPath}>
+          <p className="text-[11px] text-slate-600 dark:text-nx-mist truncate" title={currentPath}>
             {fileName || 'فایلی بارگذاری نشده است'}
           </p>
           <button
@@ -285,12 +285,12 @@ export default function BillingLetterheadTab() {
 
   return (
     <div className="space-y-5" dir="rtl">
-      <div className="rounded-xl border border-nx-navy-border bg-nx-navy-elevated p-5">
+      <div className="rounded-xl border border-slate-200 dark:border-nx-navy-border bg-white dark:bg-nx-navy-elevated p-5 shadow-xs">
         <div className="flex items-center gap-2 mb-1">
           <FileText className="w-5 h-5 text-nx-blue" />
-          <h3 className="text-base font-bold text-white">سربرگ و اطلاعات نامه</h3>
+          <h3 className="text-base font-bold text-slate-900 dark:text-white">سربرگ و اطلاعات نامه</h3>
         </div>
-        <p className="text-xs text-nx-mist leading-6">
+        <p className="text-xs text-slate-600 dark:text-nx-mist leading-6">
           این مقادیر همان چیزی است که روی نامه‌ها و صورتحساب‌های تولیدشده چاپ می‌شود؛ هر تغییری
           اینجا بدهید، از دفعهٔ بعد در فایل Word و PDF استفاده می‌شود.
           {!canEdit && ' برای ویرایش، مجوز «مدیریت تنظیمات» لازم است.'}
@@ -298,10 +298,10 @@ export default function BillingLetterheadTab() {
       </div>
 
       {/* Company identity */}
-      <section className="rounded-xl border border-nx-navy-border bg-nx-navy p-5">
+      <section className="rounded-xl border border-slate-200 dark:border-nx-navy-border bg-white dark:bg-nx-navy p-5 shadow-xs">
         <div className="flex items-center gap-2 mb-4">
           <Building2 className="w-4 h-4 text-nx-blue" />
-          <h4 className="text-sm font-bold text-white">اطلاعات شرکت</h4>
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white">اطلاعات شرکت</h4>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="نام شرکت" value={form.company_name} onChange={set('company_name')} disabled={!canEdit} placeholder="شرکت خدمات مسافرت هوایی …" />
@@ -317,20 +317,20 @@ export default function BillingLetterheadTab() {
       </section>
 
       {/* Banks */}
-      <section className="rounded-xl border border-nx-navy-border bg-nx-navy p-5">
+      <section className="rounded-xl border border-slate-200 dark:border-nx-navy-border bg-white dark:bg-nx-navy p-5 shadow-xs">
         <div className="flex items-center gap-2 mb-4">
           <CreditCard className="w-4 h-4 text-nx-blue" />
-          <h4 className="text-sm font-bold text-white">اطلاعات بانکی</h4>
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white">اطلاعات بانکی</h4>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <p className="md:col-span-2 text-[11px] text-nx-mist/80">حساب اول</p>
+          <p className="md:col-span-2 text-[11px] text-slate-500 dark:text-nx-mist/80">حساب اول</p>
           <Field label="نام بانک ۱" value={form.bank_name1} onChange={set('bank_name1')} disabled={!canEdit} placeholder="ملت" />
           <Field label="شماره حساب ۱" value={form.account_number1} onChange={set('account_number1')} disabled={!canEdit} />
           <div className="md:col-span-2">
             <Field label="شماره شبا ۱" value={form.shaba_number1} onChange={set('shaba_number1')} disabled={!canEdit} placeholder="IR..." />
           </div>
 
-          <p className="md:col-span-2 text-[11px] text-nx-mist/80 mt-2">حساب دوم (اختیاری)</p>
+          <p className="md:col-span-2 text-[11px] text-slate-500 dark:text-nx-mist/80 mt-2">حساب دوم (اختیاری)</p>
           <Field label="نام بانک ۲" value={form.bank_name2} onChange={set('bank_name2')} disabled={!canEdit} placeholder="سامان" />
           <Field label="شماره حساب ۲" value={form.account_number2} onChange={set('account_number2')} disabled={!canEdit} />
           <div className="md:col-span-2">
@@ -340,10 +340,10 @@ export default function BillingLetterheadTab() {
       </section>
 
       {/* Manager */}
-      <section className="rounded-xl border border-nx-navy-border bg-nx-navy p-5">
+      <section className="rounded-xl border border-slate-200 dark:border-nx-navy-border bg-white dark:bg-nx-navy p-5 shadow-xs">
         <div className="flex items-center gap-2 mb-4">
           <User className="w-4 h-4 text-nx-blue" />
-          <h4 className="text-sm font-bold text-white">امضاکنندهٔ نامه</h4>
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white">امضاکنندهٔ نامه</h4>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Field label="نام مدیر" value={form.manager_name} onChange={set('manager_name')} disabled={!canEdit} />
@@ -362,10 +362,10 @@ export default function BillingLetterheadTab() {
       </section>
 
       {/* Assets */}
-      <section className="rounded-xl border border-nx-navy-border bg-nx-navy p-5">
+      <section className="rounded-xl border border-slate-200 dark:border-nx-navy-border bg-white dark:bg-nx-navy p-5 shadow-xs">
         <div className="flex items-center gap-2 mb-4">
           <ImageIcon className="w-4 h-4 text-nx-blue" />
-          <h4 className="text-sm font-bold text-white">فایل‌های سربرگ</h4>
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white">فایل‌های سربرگ</h4>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <AssetUpload
@@ -435,10 +435,10 @@ export default function BillingLetterheadTab() {
       </section>
 
       {/* Output path */}
-      <section className="rounded-xl border border-nx-navy-border bg-nx-navy p-5">
+      <section className="rounded-xl border border-slate-200 dark:border-nx-navy-border bg-white dark:bg-nx-navy p-5 shadow-xs">
         <div className="flex items-center gap-2 mb-4">
           <FolderOpen className="w-4 h-4 text-nx-blue" />
-          <h4 className="text-sm font-bold text-white">مسیر ذخیرهٔ فایل‌های تأییدشده</h4>
+          <h4 className="text-sm font-bold text-slate-900 dark:text-white">مسیر ذخیرهٔ فایل‌های تأییدشده</h4>
         </div>
         <Field
           label="مسیر (اختیاری)"

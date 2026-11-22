@@ -35,6 +35,9 @@
           if (storedBrand.name) {
             var appTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
             if (appTitle) appTitle.content = storedBrand.name;
+            var appName = document.querySelector('meta[name="application-name"]');
+            if (appName) appName.content = storedBrand.name;
+            document.title = storedBrand.name;
           }
         } catch(e) {}
       })();

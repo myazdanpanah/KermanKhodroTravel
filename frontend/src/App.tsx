@@ -106,6 +106,7 @@ const PassengersPage = lazy(() => import('./pages/service_sales/PassengersPage')
 const CommissionsPage = lazy(() => import('./pages/service_sales/CommissionsPage'))
 const RefundsPage = lazy(() => import('./pages/service_sales/RefundsPage'))
 // Settings (inside ERP)
+const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const SSOSettingsPage = lazy(() => import('./pages/settings/SSOSettingsPage'))
 // Audit Log
@@ -276,6 +277,8 @@ export default function App() {
           <Route path="ai/nl-query" element={<NLQueryPage />} />
           {/* Advanced Analytics */}
           <Route path="analytics" element={<AdvancedAnalyticsPage />} />
+          {/* Notifications */}
+          <Route path="notifications" element={<NotificationsPage />} />
           {/* Settings */}
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/:tab" element={<SettingsPage />} />

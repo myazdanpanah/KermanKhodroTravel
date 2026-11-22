@@ -9,7 +9,7 @@ import {
   LayoutDashboard, FileText, CreditCard, Users, Gauge, Plus,
   Calendar, Target, TrendingUp, Inbox, Mail,
   Settings, ChevronLeft, ChevronDown,
-  Search, Sun, Moon, Menu, Briefcase, Check, X, FileSignature, PieChart, Megaphone, MessageSquare,
+  Search, Sun, Moon, Menu, Briefcase, Check, X, FileSignature, PieChart, Megaphone, MessageSquare, Bell,
 } from 'lucide-react';
 import GlobalSearch from '../components/GlobalSearch';
 import QuickCreateButton from '../components/QuickCreateButton';
@@ -75,6 +75,13 @@ const NAV_SECTIONS: NavSection[] = [
     ],
   },
   {
+    id: 'notifications',
+    label: 'اعلانات',
+    items: [
+      { to: '/erp/notifications', icon: Bell, label: 'اعلانات' },
+    ],
+  },
+  {
     id: 'settings',
     label: 'تنظیمات',
     items: [
@@ -101,6 +108,7 @@ export default function ERPLayout() {
     finance: true,
     crm: true,
     office: true,
+    notifications: true,
   })
   const { user, logout } = useAuthStore()
 

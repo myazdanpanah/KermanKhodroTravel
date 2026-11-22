@@ -1322,3 +1322,22 @@ def notification_mark_all_read(request):
     """Mark all notifications as read for the current user."""
     updated = Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
     return Response({"updated": updated})
+
+
+@api_view(["POST", "DELETE"])
+def notification_clear_read(request):
+    """Delete all read notifications for the current user."""
+    deleted, _ = Notification.objects.filter(recipient=request.user, is_read=True).delete()
+    return Response({"deleted": deleted})
+
+
+@api_view(["POST", "DELETE"])
+def notification_delete(request, pk):
+    """Delete a single notification."""
+    try:
+        notification = Notification.objects.get(pk=pk, recipient=request.user)
+    except Notification.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    notification.delete()
+    return Response({"ok": True})
+

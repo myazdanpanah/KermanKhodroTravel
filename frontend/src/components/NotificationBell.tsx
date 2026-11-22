@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { Bell, Check, CheckCheck, X } from 'lucide-react'
+import { useNavigate, Link } from 'react-router-dom'
+import { Bell, Check, CheckCheck, X, Trash2, ExternalLink } from 'lucide-react'
 import api from '../api/client'
 import { useToast } from './Toast'
+import { playOfficeChime } from '../utils/sound'
 
 interface Notification {
   id: number
@@ -23,6 +24,7 @@ export default function NotificationBell() {
   const { toast } = useToast()
   const navigate = useNavigate()
   const ref = useRef<HTMLDivElement>(null)
+  const prevUnreadRef = useRef<number | null>(null)
 
   useEffect(() => {
     fetchNotifications()
@@ -45,8 +47,17 @@ export default function NotificationBell() {
   const fetchNotifications = async () => {
     try {
       const res = await api.get('/dashboards/notifications/')
-      setNotifications(res.data.notifications || [])
-      setUnreadCount(res.data.unread_count || 0)
+      const list = res.data.notifications || []
+      const newCount = res.data.unread_count || 0
+
+      // Play soft chime if new unread notification arrived while user is online
+      if (prevUnreadRef.current !== null && newCount > prevUnreadRef.current) {
+        playOfficeChime()
+      }
+      prevUnreadRef.current = newCount
+
+      setNotifications(list)
+      setUnreadCount(newCount)
     } catch {
       // ignore
     }
@@ -58,7 +69,11 @@ export default function NotificationBell() {
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
       )
-      setUnreadCount((prev) => Math.max(0, prev - 1))
+      setUnreadCount((prev) => {
+        const next = Math.max(0, prev - 1)
+        prevUnreadRef.current = next
+        return next
+      })
     } catch {
       toast('خطا در علامت‌گذاری', 'error')
     }
@@ -82,9 +97,20 @@ export default function NotificationBell() {
       await api.post('/dashboards/notifications/read-all/')
       setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
       setUnreadCount(0)
+      prevUnreadRef.current = 0
       toast('همه اعلان‌ها خوانده شد', 'success')
     } catch {
       toast('خطا در علامت‌گذاری', 'error')
+    }
+  }
+
+  const clearReadNotifications = async () => {
+    try {
+      const res = await api.post('/dashboards/notifications/clear-read/')
+      setNotifications((prev) => prev.filter((n) => !n.is_read))
+      toast(res.data?.detail || 'اعلان‌های خوانده‌شده پاک‌سازی شدند', 'success')
+    } catch {
+      toast('خطا در پاک‌سازی اعلان‌ها', 'error')
     }
   }
 
@@ -130,19 +156,30 @@ export default function NotificationBell() {
 
       {open && (
         <div className="fixed inset-x-4 top-16 sm:absolute sm:inset-x-auto sm:left-0 sm:top-full sm:mt-2 sm:w-96 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-navy-border rounded-2xl shadow-2xl z-50 overflow-hidden" dir="rtl">
-          <div className="flex items-center justify-between px-4 py-3 border-b border-nx-border">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-nx-border dark:border-nx-navy-border">
             <h3 className="font-bold text-sm text-nx-navy dark:text-slate-100">اعلان‌ها</h3>
             <div className="flex items-center gap-2">
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
-                  className="flex items-center gap-1 text-xs text-nx-blue dark:text-nx-blue hover:text-nx-blue dark:hover:text-nx-blue font-medium"
+                  className="flex items-center gap-1 text-xs text-nx-blue dark:text-blue-400 hover:underline font-medium"
+                  title="علامت‌گذاری همه به‌عنوان خوانده‌شده"
                 >
                   <CheckCheck className="w-3.5 h-3.5" />
                   همه خوانده شد
                 </button>
               )}
-              <button onClick={() => setOpen(false)} className="p-1 text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist">
+              {notifications.some((n) => n.is_read) && (
+                <button
+                  onClick={clearReadNotifications}
+                  className="flex items-center gap-1 text-xs text-slate-500 hover:text-rose-500 dark:text-nx-mist dark:hover:text-rose-400 font-medium transition"
+                  title="پاک‌سازی پیام‌های خوانده‌شده"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  پاک‌سازی
+                </button>
+              )}
+              <button onClick={() => setOpen(false)} className="p-1 text-nx-mist hover:text-slate-700 dark:hover:text-white">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -192,6 +229,17 @@ export default function NotificationBell() {
                 </div>
               ))
             )}
+          </div>
+
+          <div className="p-2 border-t border-nx-border dark:border-nx-navy-border bg-slate-50/70 dark:bg-nx-navy-elevated/40 text-center">
+            <Link
+              to="/erp/notifications"
+              onClick={() => setOpen(false)}
+              className="inline-flex items-center gap-1.5 text-xs font-medium text-nx-blue dark:text-blue-400 hover:underline py-1 px-3"
+            >
+              <span>مشاهده و بایگانی همه اعلانات</span>
+              <ExternalLink className="w-3 h-3" />
+            </Link>
           </div>
         </div>
       )}

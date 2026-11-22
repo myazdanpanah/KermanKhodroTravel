@@ -88,6 +88,30 @@ function setFaviconLink(href: string, type = 'image/png') {
   }
 }
 
+export function applyMetadata(b: Branding) {
+  if (b.name) {
+    let titleMeta = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-title"]')
+    if (!titleMeta) {
+      titleMeta = document.createElement('meta')
+      titleMeta.name = 'apple-mobile-web-app-title'
+      document.head.appendChild(titleMeta)
+    }
+    titleMeta.content = b.name
+
+    let appNameMeta = document.querySelector<HTMLMetaElement>('meta[name="application-name"]')
+    if (!appNameMeta) {
+      appNameMeta = document.createElement('meta')
+      appNameMeta.name = 'application-name'
+      document.head.appendChild(appNameMeta)
+    }
+    appNameMeta.content = b.name
+
+    if (!document.title.includes(b.name)) {
+      document.title = `${b.name} | سامانه مدیریت سازمانی`
+    }
+  }
+}
+
 /**
  * Point the browser tab icon and iOS Apple Touch icon at the uploaded organizational logo.
  *
@@ -99,11 +123,6 @@ function applyFavicon(b: Branding) {
   if (!src) {
     setFaviconLink('/brand/nexivo-favicon.png')
     return
-  }
-
-  if (b.name) {
-    const titleMeta = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-title"]')
-    if (titleMeta) titleMeta.content = b.name
   }
 
   const image = new Image()
@@ -132,6 +151,7 @@ function applyFavicon(b: Branding) {
 function persist(b: Branding) {
   applyBranding(b)
   applyFavicon(b)
+  applyMetadata(b)
   try {
     localStorage.setItem(CACHE_KEY, JSON.stringify(b))
   } catch {

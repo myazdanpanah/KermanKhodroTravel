@@ -491,6 +491,7 @@ function BrandingTab() {
   const { toast } = useToast()
   const branding = useBrandingStore((s) => s.branding)
   const setBranding = useBrandingStore((s) => s.setBranding)
+  const [orgName, setOrgName] = useState(branding.name || '')
   const [primary, setPrimary] = useState(branding.primaryColor)
   const [accent, setAccent] = useState(branding.accentColor)
   const [logoFile, setLogoFile] = useState<File | null>(null)
@@ -499,6 +500,7 @@ function BrandingTab() {
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    setOrgName(branding.name || '')
     setPrimary(branding.primaryColor)
     setAccent(branding.accentColor)
     setLogoPreview(branding.logoUrl)
@@ -519,6 +521,7 @@ function BrandingTab() {
     setSaving(true)
     try {
       const fd = new FormData()
+      if (orgName.trim()) fd.append('name', orgName.trim())
       fd.append('primary_color', primary)
       fd.append('accent_color', accent)
       if (logoFile) fd.append('logo', logoFile)
@@ -528,13 +531,13 @@ function BrandingTab() {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       setBranding({
-        name: res.data.name || branding.name,
+        name: res.data.name || orgName.trim() || branding.name,
         logoUrl: res.data.logo_url ?? null,
         primaryColor: res.data.primary_color,
         accentColor: res.data.accent_color,
       })
       setLogoFile(null)
-      toast(clearLogo ? 'لوگو حذف شد' : 'برندینگ سازمان ذخیره و اعمال شد', 'success')
+      toast(clearLogo ? 'لوگو حذف شد' : 'برندینگ و نام سازمان ذخیره و اعمال شد', 'success')
     } catch (err: unknown) {
       const apiError = (err as { response?: { data?: { error?: string } } })?.response?.data?.error
       toast(apiError || 'خطا در ذخیره برندینگ', 'error')
@@ -551,21 +554,39 @@ function BrandingTab() {
   const changed =
     !logoFile &&
     primary.toUpperCase() === branding.primaryColor.toUpperCase() &&
-    accent.toUpperCase() === branding.accentColor.toUpperCase()
+    accent.toUpperCase() === branding.accentColor.toUpperCase() &&
+    orgName.trim() === (branding.name || '').trim()
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2 bg-nx-navy-elevated border border-nx-navy-border rounded-nx-card p-6">
+      <div className="lg:col-span-2 bg-white dark:bg-nx-navy-elevated border border-slate-200 dark:border-nx-navy-border rounded-nx-card p-6 shadow-xs">
         <div className="flex items-center gap-2 mb-6">
           <Palette className="w-5 h-5 text-nx-blue" />
-          <h2 className="text-lg font-bold text-white">هویت بصری سازمان</h2>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">هویت بصری و برندینگ سازمان</h2>
+        </div>
+
+        {/* Organization Name */}
+        <div className="mb-6">
+          <label className="block text-sm font-medium text-slate-700 dark:text-nx-mist mb-2">
+            نام سازمان (عنوان برنامه در آیفون، PWA و تب مرورگر)
+          </label>
+          <input
+            type="text"
+            value={orgName}
+            onChange={(e) => setOrgName(e.target.value)}
+            placeholder="مثلاً: کرمان خودرو"
+            className="w-full max-w-md px-4 py-2.5 rounded-nx-btn border border-slate-300 dark:border-nx-navy-border bg-white dark:bg-nx-navy text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-nx-blue outline-none transition"
+          />
+          <p className="text-xs text-slate-500 dark:text-nx-mist/80 mt-1.5">
+            این نام در هدر سیستم، تب‌های مرورگر و به عنوان نام اپلیکیشن در هنگام افزودن به صفحه اصلی آیفون (Home Screen) نمایش داده می‌شود.
+          </p>
         </div>
 
         {/* Logo */}
         <div className="mb-8">
-          <label className="block text-sm font-medium text-nx-mist mb-2">لوگوی سازمان</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-nx-mist mb-2">لوگوی سازمان</label>
           <div className="flex items-center gap-4">
-            <div className="w-24 h-24 rounded-nx-btn bg-nx-navy border border-nx-navy-border flex items-center justify-center overflow-hidden">
+            <div className="w-24 h-24 rounded-nx-btn bg-slate-50 dark:bg-nx-navy border border-slate-200 dark:border-nx-navy-border flex items-center justify-center overflow-hidden">
               <img
                 src={logoPreview || DEFAULT_MARK}
                 alt="لوگو"
@@ -583,7 +604,7 @@ function BrandingTab() {
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="flex items-center gap-2 px-4 py-2 bg-nx-blue text-white rounded-nx-btn text-sm font-medium hover:bg-nx-blue/90 transition"
+                className="flex items-center gap-2 px-4 py-2 bg-nx-blue text-white rounded-nx-btn text-sm font-medium hover:bg-nx-blue/90 transition shadow-xs"
               >
                 <Upload className="w-4 h-4" /> انتخاب تصویر
               </button>
@@ -592,44 +613,44 @@ function BrandingTab() {
                   type="button"
                   onClick={() => save(true)}
                   disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 border border-nx-navy-border text-nx-mist rounded-nx-btn text-sm hover:text-white hover:border-nx-mist transition disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 border border-slate-300 dark:border-nx-navy-border text-slate-600 dark:text-nx-mist rounded-nx-btn text-sm hover:text-rose-600 dark:hover:text-white hover:border-rose-300 dark:hover:border-nx-mist transition disabled:opacity-50"
                 >
                   <Trash2 className="w-4 h-4" /> حذف لوگو
                 </button>
               )}
-              <p className="text-xs text-nx-mist/70">PNG / SVG / JPG تا ۲ مگابایت</p>
+              <p className="text-xs text-slate-500 dark:text-nx-mist/70">PNG / SVG / JPG تا ۲ مگابایت</p>
             </div>
           </div>
         </div>
 
         {/* Colors */}
         <div className="mb-8">
-          <label className="block text-sm font-medium text-nx-mist mb-2">رنگ‌های سیستم</label>
+          <label className="block text-sm font-medium text-slate-700 dark:text-nx-mist mb-2">رنگ‌های سیستم</label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="flex items-center gap-3 p-4 rounded-nx-btn border border-nx-navy-border bg-nx-navy">
+            <div className="flex items-center gap-3 p-4 rounded-nx-btn border border-slate-200 dark:border-nx-navy-border bg-slate-50 dark:bg-nx-navy">
               <input
                 type="color"
                 value={primary}
                 onChange={(e) => setPrimary(e.target.value.toUpperCase())}
-                className="w-10 h-10 rounded-nx-btn bg-transparent cursor-pointer border border-nx-navy-border"
+                className="w-10 h-10 rounded-nx-btn bg-transparent cursor-pointer border border-slate-300 dark:border-nx-navy-border"
                 aria-label="رنگ اصلی"
               />
               <div className="min-w-0">
-                <p className="text-sm text-white">رنگ اصلی</p>
-                <p className="text-xs text-nx-mist font-mono">{primary}</p>
+                <p className="text-sm font-medium text-slate-900 dark:text-white">رنگ اصلی</p>
+                <p className="text-xs text-slate-500 dark:text-nx-mist font-mono">{primary}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 p-4 rounded-nx-btn border border-nx-navy-border bg-nx-navy">
+            <div className="flex items-center gap-3 p-4 rounded-nx-btn border border-slate-200 dark:border-nx-navy-border bg-slate-50 dark:bg-nx-navy">
               <input
                 type="color"
                 value={accent}
                 onChange={(e) => setAccent(e.target.value.toUpperCase())}
-                className="w-10 h-10 rounded-nx-btn bg-transparent cursor-pointer border border-nx-navy-border"
+                className="w-10 h-10 rounded-nx-btn bg-transparent cursor-pointer border border-slate-300 dark:border-nx-navy-border"
                 aria-label="رنگ تأکیدی"
               />
               <div className="min-w-0">
-                <p className="text-sm text-white">رنگ تأکیدی</p>
-                <p className="text-xs text-nx-mist font-mono">{accent}</p>
+                <p className="text-sm font-medium text-slate-900 dark:text-white">رنگ تأکیدی</p>
+                <p className="text-xs text-slate-500 dark:text-nx-mist font-mono">{accent}</p>
               </div>
             </div>
           </div>
@@ -640,14 +661,14 @@ function BrandingTab() {
             type="button"
             onClick={() => save(false)}
             disabled={saving || changed}
-            className="flex items-center gap-2 px-6 py-2 bg-nx-blue text-white rounded-nx-btn text-sm font-medium hover:bg-nx-blue/90 transition disabled:bg-nx-mist disabled:text-nx-muted disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-6 py-2.5 bg-nx-blue text-white rounded-nx-btn text-sm font-medium hover:bg-nx-blue/90 transition disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
           >
             <Save className="w-4 h-4" /> {saving ? 'در حال ذخیره...' : 'ذخیره و اعمال'}
           </button>
           <button
             type="button"
             onClick={resetColors}
-            className="flex items-center gap-2 px-4 py-2 border border-nx-navy-border text-nx-mist rounded-nx-btn text-sm hover:text-white transition"
+            className="flex items-center gap-2 px-4 py-2.5 border border-slate-300 dark:border-nx-navy-border text-slate-700 dark:text-nx-mist rounded-nx-btn text-sm hover:bg-slate-100 dark:hover:bg-white/5 transition"
           >
             <RotateCcw className="w-4 h-4" /> بازگردانی رنگ‌های پیش‌فرض
           </button>
@@ -655,19 +676,22 @@ function BrandingTab() {
       </div>
 
       {/* Live preview */}
-      <div className="bg-nx-navy-elevated border border-nx-navy-border rounded-nx-card p-6">
-        <h3 className="text-sm font-bold text-white mb-4">پیش‌نمایش زنده</h3>
+      <div className="bg-white dark:bg-nx-navy-elevated border border-slate-200 dark:border-nx-navy-border rounded-nx-card p-6 shadow-xs h-fit">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4">پیش‌نمایش زنده برندینگ</h3>
         <div className="space-y-4">
-          <div className="w-20 h-20 rounded-nx-btn bg-nx-navy border border-nx-navy-border flex items-center justify-center overflow-hidden">
+          <div className="w-20 h-20 rounded-nx-btn bg-slate-50 dark:bg-nx-navy border border-slate-200 dark:border-nx-navy-border flex items-center justify-center overflow-hidden">
             <img src={logoPreview || DEFAULT_MARK} alt="لوگو" className="max-h-14 max-w-16 object-contain" />
           </div>
-          <button className="w-full px-4 py-2 bg-nx-blue text-white rounded-nx-btn text-sm font-medium">
+          {orgName && (
+            <p className="text-xs font-bold text-slate-800 dark:text-slate-100">{orgName}</p>
+          )}
+          <button className="w-full px-4 py-2.5 bg-nx-blue text-white rounded-nx-btn text-sm font-medium shadow-xs">
             دکمه اصلی
           </button>
-          <button className="w-full px-4 py-2 border border-nx-teal text-nx-teal rounded-nx-btn text-sm font-medium">
+          <button className="w-full px-4 py-2.5 border border-nx-teal text-nx-teal rounded-nx-btn text-sm font-medium">
             دکمه ثانویه
           </button>
-          <div className="flex items-center gap-2 text-xs text-nx-mist">
+          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-nx-mist">
             <span className="w-2 h-2 rounded-full bg-nx-teal" /> وضعیت موفق
           </div>
         </div>
