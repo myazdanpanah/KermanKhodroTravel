@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import api from '../../api/client'
 import { useToast } from '../../components/Toast'
-import { CARD, num, rial, type AgingBucketKey, type AgingReport, type Payer } from './shared'
+import { CARD, num, rial, toPersianDigits, type AgingBucketKey, type AgingReport, type Payer } from './shared'
 import { Download, Gauge, Eye } from 'lucide-react'
 import PayerStatementModal from './PayerStatementModal'
 
@@ -122,7 +122,7 @@ export default function BillingPerformancePage() {
                   onClick={() => setSelectedPayer({ code: row.code, name: row.name })}
                   className="border-t border-slate-200 dark:border-nx-navy-border hover:bg-blue-50/50 dark:hover:bg-white/5 cursor-pointer transition"
                 >
-                  <td className="px-4 py-3 font-mono text-slate-600 dark:text-nx-mist">{row.code}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-nx-mist">{toPersianDigits(row.code)}</td>
                   <td className="px-4 py-3 text-slate-900 dark:text-white font-medium">
                     <span className="hover:underline flex items-center gap-1.5 inline-flex">
                       {row.name}
@@ -193,7 +193,7 @@ export default function BillingPerformancePage() {
                 onClick={() => setSelectedPayer({ code: row.payer_code, name: row.payer_name })}
                 className="border-t border-slate-200 dark:border-nx-navy-border hover:bg-blue-50/50 dark:hover:bg-white/5 cursor-pointer transition"
               >
-                <td className="px-4 py-3 font-mono text-slate-600 dark:text-nx-mist">{row.payer_code}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-nx-mist">{toPersianDigits(row.payer_code)}</td>
                 <td className="px-4 py-3 text-slate-900 dark:text-white font-medium hover:underline">{row.payer_name}</td>
                 {AGING_COLUMNS.map((column) => (
                   <td

@@ -79,7 +79,7 @@ export const toPersianDigits = (input: string | number | undefined | null) =>
   String(input ?? '').replace(/[0-9]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)])
 
 export const num = (value: number | undefined | null) =>
-  Number(value || 0).toLocaleString('fa-IR')
+  toPersianDigits(Number(value || 0).toLocaleString('en-US'))
 
 export const rial = (value: number | undefined | null) => `${num(value)} ریال`
 

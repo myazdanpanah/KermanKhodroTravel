@@ -154,7 +154,7 @@ export default function PayerStatementModal({ payerCode, payerName, onClose }: P
                 <h2 className="text-base font-bold text-slate-900 dark:text-white">
                   {data?.payer.name || payerName || 'ریز گردش حساب'}
                 </h2>
-                <span className="font-mono text-xs px-2 py-0.5 rounded-md bg-slate-200 text-slate-700 dark:bg-white/10 dark:text-slate-300">
+                <span className="text-xs px-2 py-0.5 rounded-md bg-slate-200 text-slate-700 dark:bg-white/10 dark:text-slate-300 font-medium">
                   کد: {toPersianDigits(payerCode)}
                 </span>
               </div>
@@ -312,10 +312,10 @@ export default function PayerStatementModal({ payerCode, payerName, onClose }: P
                               key={`${row.date}-${row.reference}-${idx}`}
                               className="hover:bg-slate-50 dark:hover:bg-white/5 transition"
                             >
-                              <td className="py-2 px-3 text-center font-mono text-[11px] text-slate-400">
+                              <td className="py-2 px-3 text-center text-[11px] text-slate-400">
                                 {toPersianDigits(idx + 1)}
                               </td>
-                              <td className="py-2 px-3 font-mono text-[11px] text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                              <td className="py-2 px-3 text-[11px] text-slate-700 dark:text-slate-300 whitespace-nowrap">
                                 {toPersianDigits(row.date_jalali || row.date)}
                               </td>
                               <td className="py-2 px-3 whitespace-nowrap">
@@ -324,19 +324,19 @@ export default function PayerStatementModal({ payerCode, payerName, onClose }: P
                                   {badge.label}
                                 </span>
                               </td>
-                              <td className="py-2 px-3 font-mono text-[11px] text-slate-700 dark:text-slate-300 truncate max-w-[160px]" title={row.reference}>
+                              <td className="py-2 px-3 text-[11px] text-slate-700 dark:text-slate-300 truncate max-w-[160px]" title={row.reference}>
                                 {toPersianDigits(row.reference) || '—'}
                               </td>
                               <td className="py-2 px-3 text-slate-700 dark:text-slate-300 max-w-xs truncate" title={row.description}>
                                 {row.description || '—'}
                               </td>
-                              <td className="py-2 px-3 text-left font-mono font-medium text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                              <td className="py-2 px-3 text-left font-medium text-rose-600 dark:text-rose-400 whitespace-nowrap">
                                 {row.debit > 0 ? num(row.debit) : '—'}
                               </td>
-                              <td className="py-2 px-3 text-left font-mono font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                              <td className="py-2 px-3 text-left font-medium text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                                 {row.credit > 0 ? num(row.credit) : '—'}
                               </td>
-                              <td className={`py-2 px-3 text-left font-mono font-bold whitespace-nowrap ${
+                              <td className={`py-2 px-3 text-left font-bold whitespace-nowrap ${
                                 row.balance > 0
                                   ? 'text-rose-600 dark:text-rose-400'
                                   : row.balance < 0
@@ -356,13 +356,13 @@ export default function PayerStatementModal({ payerCode, payerName, onClose }: P
                           <td colSpan={5} className="py-2.5 px-3 text-left text-xs">
                             مجموع صفحه ({num(filteredRows.length)} مورد):
                           </td>
-                          <td className="py-2.5 px-3 text-left font-mono text-rose-600 dark:text-rose-400 whitespace-nowrap">
+                          <td className="py-2.5 px-3 text-left text-rose-600 dark:text-rose-400 whitespace-nowrap">
                             {rial(filteredRows.reduce((acc, r) => acc + r.debit, 0))}
                           </td>
-                          <td className="py-2.5 px-3 text-left font-mono text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                          <td className="py-2.5 px-3 text-left text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
                             {rial(filteredRows.reduce((acc, r) => acc + r.credit, 0))}
                           </td>
-                          <td className="py-2.5 px-3 text-left font-mono text-slate-900 dark:text-white whitespace-nowrap">
+                          <td className="py-2.5 px-3 text-left text-slate-900 dark:text-white whitespace-nowrap">
                             {rial(data.breakdown.balance)}
                           </td>
                         </tr>

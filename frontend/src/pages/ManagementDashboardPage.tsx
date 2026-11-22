@@ -343,7 +343,7 @@ export default function ManagementDashboardPage() {
                       title="مشاهده ریز گردش و کاردکس حساب"
                     >
                       <span className="flex items-center gap-1.5 text-slate-700 dark:text-nx-mist truncate group-hover:text-nx-blue dark:group-hover:text-blue-400 font-medium">
-                        <span className="font-mono text-[10px] w-4 text-slate-400">{toPersianDigits(index + 1)}.</span>
+                        <span className="text-[10px] w-4 text-slate-400">{toPersianDigits(index + 1)}.</span>
                         {payer.payer}
                       </span>
                       <span className="font-bold text-rose-600 dark:text-rose-400 shrink-0">{rial(payer.amount)}</span>

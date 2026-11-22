@@ -231,30 +231,20 @@ def _add_payer_sheet(workbook: Workbook, payer: Payer, is_first: bool = False) -
     else:
         sheet = workbook.create_sheet(sheet_title)
 
-    sheet.append([f"{payer.code} — {payer.name}"])
+    # Title at top
+    sheet.append([f"صورت گردش حساب: {payer.code} — {payer.name}"])
     sheet.merge_cells(start_row=1, start_column=1, end_row=1, end_column=7)
-    sheet["A1"].font = BOLD_FONT
-
-    breakdown = [
-        ("جمع بدهی (صورتحساب + بدهی دستی)", sums["debit"]),
-        ("جمع پرداخت‌ها", sums["payments"]),
-        ("بستانکاری", sums["credits"]),
-        ("مانده", sums["balance"]),
-    ]
-    for label, value in breakdown:
-        sheet.append([label, value])
-        sheet.merge_cells(start_row=sheet.max_row, start_column=1, end_row=sheet.max_row, end_column=6)
-        sheet.cell(row=sheet.max_row, column=7).value = value
-        sheet.cell(row=sheet.max_row, column=7).number_format = MONEY
-        sheet.cell(row=sheet.max_row, column=7).font = BOLD_FONT
+    sheet["A1"].font = Font(name="B Nazanin", size=13, bold=True, color="1F2937")
+    sheet["A1"].alignment = Alignment(horizontal="center", vertical="center")
 
     sheet.append([])
     header_row = sheet.max_row + 1
-    headers = ["تاریخ", "نوع", "شرح", "مرجع", "بدهی (ریال)", "پرداخت (ریال)", "مانده (ریال)"]
+    headers = ["تاریخ", "نوع سند", "شرح و توضیحات", "شماره مرجع / نامه", "بدهکار (ریال)", "بستانکار (ریال)", "مانده لحظه‌ای (ریال)"]
     sheet.append(headers)
     for cell in sheet[header_row]:
         cell.fill = HEADER_FILL
         cell.font = HEADER_FONT
+
     for entry in rows:
         sheet.append(
             [
@@ -267,10 +257,65 @@ def _add_payer_sheet(workbook: Workbook, payer: Payer, is_first: bool = False) -
                 entry["balance"],
             ]
         )
+
+    # Totals row at the bottom / end of transaction table
+    total_debit = sums["debit"]
+    total_credit = sums["credit"]
+    final_balance = sums["balance"]
+
+    sheet.append(
+        [
+            "",
+            "جمع کل اسناد",
+            f"تعداد: {len(rows)} مورد",
+            "",
+            total_debit,
+            total_credit,
+            final_balance,
+        ]
+    )
+    total_row = sheet.max_row
+    sheet.merge_cells(start_row=total_row, start_column=2, end_row=total_row, end_column=4)
+    TOTAL_FILL = PatternFill("solid", fgColor="E2E8F0")
+    for cell in sheet[total_row]:
+        cell.font = BOLD_FONT
+        cell.fill = TOTAL_FILL
+
+    # Summary breakdown block at the bottom of the sheet
+    sheet.append([])
+    sheet.append(["", "خلاصه وضعیت مانده حساب", "", "", "", "", ""])
+    summary_title_row = sheet.max_row
+    sheet.merge_cells(start_row=summary_title_row, start_column=2, end_row=summary_title_row, end_column=7)
+    sheet.cell(row=summary_title_row, column=2).font = BOLD_FONT
+    sheet.cell(row=summary_title_row, column=2).fill = PatternFill("solid", fgColor="E2E8F0")
+
+    breakdown = [
+        ("جمع فاکتورهای صادره", sums["invoices"]),
+        ("جمع بدهی‌های دستی", sums["debts"]),
+        ("جمع کل بدهی (بدهکاری)", sums["debit"]),
+        ("جمع پرداخت‌ها و واریزی‌ها", sums["payments"]),
+        ("جمع اعلامیه‌های بستانکاری", sums["credits"]),
+        ("جمع کل پرداختی و بستانکاری", sums["credit"]),
+        ("مانده نهایی حساب", sums["balance"]),
+    ]
+    for label, value in breakdown:
+        sheet.append(["", label, "", "", "", "", value])
+        cur_row = sheet.max_row
+        sheet.merge_cells(start_row=cur_row, start_column=2, end_row=cur_row, end_column=6)
+        val_cell = sheet.cell(row=cur_row, column=7)
+        val_cell.value = value
+        val_cell.number_format = MONEY
+        val_cell.font = BOLD_FONT
+        if "جمع کل" in label or "مانده نهایی" in label:
+            val_cell.fill = PatternFill("solid", fgColor="F1F5F9")
+            sheet.cell(row=cur_row, column=2).font = BOLD_FONT
+
     for row in sheet.iter_rows(min_row=header_row + 1):
         for cell in row[4:]:
-            cell.number_format = MONEY
-    _style_sheet(sheet, [14, 12, 42, 20, 16, 16, 18])
+            if isinstance(cell.value, (int, float)):
+                cell.number_format = MONEY
+
+    _style_sheet(sheet, [14, 14, 42, 22, 18, 18, 20])
 
 
 def _add_all_transactions_sheet(workbook: Workbook, payers: list[Payer]) -> None:

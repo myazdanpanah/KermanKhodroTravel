@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import api from '../../api/client'
 import { useToast } from '../../components/Toast'
 import { useAuthStore } from '../../store/authStore'
-import { CARD, INPUT, rial, type Payer } from './shared'
+import { CARD, INPUT, rial, toPersianDigits, type Payer } from './shared'
 import { Users, Plus, X, Pencil, Trash2, Power, AlertTriangle } from 'lucide-react'
 
 const empty = {
@@ -255,7 +255,7 @@ export default function BillingPayersPage() {
               <h3 className="font-bold text-base text-nx-navy dark:text-white">تأیید حذف مشتری</h3>
             </div>
             <p className="text-sm text-slate-600 dark:text-nx-mist mb-4 leading-6">
-              آیا از حذف مشتری <strong className="text-slate-900 dark:text-white">«{deletingPayer.name}»</strong> با کد <span className="font-mono">{deletingPayer.code}</span> اطمینان دارید؟
+              آیا از حذف مشتری <strong className="text-slate-900 dark:text-white">«{deletingPayer.name}»</strong> با کد <span className="font-medium text-slate-800 dark:text-slate-200">{toPersianDigits(deletingPayer.code)}</span> اطمینان دارید؟
               {deletingPayer.balance && deletingPayer.balance.balance === 0 ? (
                 <span className="block mt-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium">✓ مانده حساب این مشتری صفر (تسویه کامل) است.</span>
               ) : null}
@@ -300,7 +300,7 @@ export default function BillingPayersPage() {
               const isActive = row.is_active !== false
               return (
                 <tr key={row.code} className="border-t border-slate-200 dark:border-nx-navy-border hover:bg-slate-50/70 dark:hover:bg-nx-navy/40">
-                  <td className="px-4 py-3 font-mono text-slate-600 dark:text-nx-mist">{row.code}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-nx-mist">{toPersianDigits(row.code)}</td>
                   <td className="px-4 py-3 font-medium text-slate-900 dark:text-white">
                     {row.name}
                     {row.children_count > 0 && <span className="text-[10px] text-slate-500 dark:text-nx-mist/70"> • {row.children_count} زیرمجموعه</span>}
