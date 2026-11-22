@@ -12,10 +12,16 @@ export interface ColorPalette {
 
 export const PRESET_PALETTES: ColorPalette[] = [
   {
+    id: 'looker',
+    name: 'گوگل دیتا استودیو',
+    nameEn: 'Google Data Studio',
+    colors: ['#4285F4', '#EA4335', '#FBBC04', '#34A853', '#FF6D01', '#46BDC6', '#7BAAF7', '#F07B72', '#FCD060', '#57BB8A'],
+  },
+  {
     id: 'nexivo',
     name: 'نکسیوو',
     nameEn: 'Nexivo',
-    colors: ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16', '#ec4899', '#64748b'],
+    colors: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f97316', '#84cc16', '#ec4899', '#64748b'],
   },
   {
     id: 'ocean',

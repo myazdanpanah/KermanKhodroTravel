@@ -252,6 +252,7 @@ function buildChartOption(
 ): Record<string, unknown> {
   const { columns, data } = queryResult
   const defaults = getChartDefaults(chartType) as Record<string, unknown>
+  const isDark = typeof document !== 'undefined' && document.documentElement.classList.contains('dark')
 
   // Extract widget style overrides
   const ws = customConfig.widgetStyle as { legendPosition?: string; tooltipStyle?: string } | undefined
@@ -292,19 +293,44 @@ function buildChartOption(
     const labelCol = columns[0]
     const valueCol = columns.length > 1 ? columns[1] : columns[0]
 
-    // Apply sort & limit (top-N) consistently with bar charts
-    const sortBy = readSortBy(customConfig)
+    // Apply Google Data Studio-style top-N smart aggregation into 'سایر' (Others)
+    const sortBy = readSortBy(customConfig) || 'desc'
     const sortLimit = customConfig.sortLimit as number | undefined
-    const slicedData = applySortLimit(data, valueCol, sortBy, sortLimit)
+    // Default to top 7 slices (top 6 + "سایر") like Google Data Studio to prevent unreadable clutter
+    const effectiveLimit = (sortLimit && sortLimit > 0) ? sortLimit : 7
 
-    const pieData = slicedData.map((row) => ({
-      name: String(row[labelCol] ?? ''),
-      value: Number(row[valueCol]) || 0,
-    }))
+    // Sort descending by value so major contributors lead
+    const sorted = [...data].sort((a, b) => {
+      const aVal = Number(a[valueCol]) || 0
+      const bVal = Number(b[valueCol]) || 0
+      return sortBy === 'asc' ? aVal - bVal : bVal - aVal
+    })
+
+    let pieData: { name: string; value: number }[]
+    if (sorted.length > effectiveLimit) {
+      const topItems = sorted.slice(0, effectiveLimit - 1).map((row) => ({
+        name: String(row[labelCol] ?? ''),
+        value: Number(row[valueCol]) || 0,
+      }))
+      const othersVal = sorted.slice(effectiveLimit - 1).reduce((sum, row) => sum + (Number(row[valueCol]) || 0), 0)
+      pieData = [
+        ...topItems,
+        { name: 'سایر', value: othersVal },
+      ]
+    } else {
+      pieData = sorted.map((row) => ({
+        name: String(row[labelCol] ?? ''),
+        value: Number(row[valueCol]) || 0,
+      }))
+    }
 
     // Per-slice colors: explicit overrides beat palette, conditional rules beat overrides
     const sliceKeys = pieData.map((d) => d.name)
     const sliceColors = resolveKeyedColors(customConfig, sliceKeys, 'sliceColors')
+    const othersIdx = pieData.findIndex((d) => d.name === 'سایر')
+    if (othersIdx !== -1 && !((customConfig.sliceColors as Record<string, string>)?.[ 'سایر'])) {
+      sliceColors[othersIdx] = isDark ? '#64748b' : '#94a3b8'
+    }
 
     const pieDefaults = getChartDefaults(chartType) as Record<string, unknown>
     return {
@@ -312,15 +338,36 @@ function buildChartOption(
       ...customConfig,
       tooltip: {
         trigger: 'item',
-        textStyle: { fontFamily: 'Vazirmatn' },
+        backgroundColor: isDark ? '#1e293b' : '#ffffff',
+        borderColor: isDark ? '#334155' : '#e2e8f0',
+        borderWidth: 1,
+        textStyle: { fontFamily: 'Vazirmatn', color: isDark ? '#f8fafc' : '#0f172a' },
         formatter: (p: any) =>
-          `${p.name}: ${toPersianDigits(Number(p.value).toLocaleString())} (${toPersianDigits(Number(p.percent).toFixed(1))}٪)`,
+          `<div dir="rtl" style="font-family: Vazirmatn; font-size: 12px; padding: 2px;">
+            <strong>${p.name}</strong><br/>
+            مقدار: <span style="font-weight: bold;">${toPersianDigits(Number(p.value).toLocaleString())}</span><br/>
+            سهم: <span style="font-weight: bold; color: #2563eb;">${toPersianDigits(Number(p.percent).toFixed(1))}٪</span>
+          </div>`,
+      },
+      legend: legendPos === 'hidden' ? { show: false } : {
+        show: true,
+        type: 'scroll',
+        [legendPos]: 10,
+        textStyle: { fontFamily: 'Vazirmatn', fontSize: 11, color: isDark ? '#cbd5e1' : '#64748b' },
       },
       series: [
         {
           type: 'pie',
-          radius: chartType === 'donut' ? ['42%', '78%'] : ['0%', '78%'],
+          radius: chartType === 'donut' ? ['46%', '74%'] : ['0%', '74%'],
           center: ['50%', '50%'],
+          avoidLabelOverlap: true,
+          minAngle: 4,
+          padAngle: 2,
+          itemStyle: {
+            borderRadius: 6,
+            borderColor: isDark ? '#0f172a' : '#ffffff',
+            borderWidth: 2,
+          },
           data: pieData.map((d, i) => ({
             ...d,
             itemStyle: {
@@ -329,15 +376,35 @@ function buildChartOption(
           })),
           label: {
             show: true,
-            formatter: (p: any) => `${p.name}\n${toPersianDigits(Number(p.percent).toFixed(0))}٪`,
+            position: 'outer',
+            alignTo: 'none',
+            formatter: (p: any) => {
+              if (p.percent < 3.5) return ''
+              return `${p.name}: ${toPersianDigits(Number(p.percent).toFixed(0))}٪`
+            },
             fontFamily: 'Vazirmatn',
-            fontSize: labelFontSize,
+            fontSize: 11,
+            color: isDark ? '#e2e8f0' : '#334155',
+            backgroundColor: 'transparent',
+            borderColor: 'transparent',
+            textBorderColor: 'transparent',
+            lineHeight: 14,
+          },
+          labelLine: {
+            show: true,
+            length: 10,
+            length2: 8,
+            smooth: true,
+            lineStyle: {
+              color: isDark ? '#475569' : '#cbd5e1',
+              width: 1,
+            },
           },
           emphasis: {
             itemStyle: {
               shadowBlur: 10,
               shadowOffsetX: 0,
-              shadowColor: 'rgba(0, 0, 0, 0.3)',
+              shadowColor: 'rgba(0, 0, 0, 0.2)',
             },
           },
         },
@@ -765,9 +832,11 @@ function buildChartOption(
   const valueCols = columns.slice(1)
   // Sort/limit target column = first metric (or the category column itself if none)
   const sortValueCol = valueCols.length > 0 ? valueCols[0] : categoryCol
-  const sortBy = readSortBy(customConfig)
+  const sortBy = readSortBy(customConfig) || (chartType.includes('bar') ? 'desc' : undefined)
   const sortLimit = customConfig.sortLimit as number | undefined
-  const sortedData = applySortLimit(data, sortValueCol, sortBy, sortLimit)
+  // Google Data Studio defaults to Top 10 for bar charts if limit is not specified
+  const effectiveBarLimit = (sortLimit && sortLimit > 0) ? sortLimit : (chartType.includes('bar') ? 10 : undefined)
+  const sortedData = applySortLimit(data, sortValueCol, sortBy, effectiveBarLimit)
   const categoryData = sortedData.map((row) => String(row[categoryCol] ?? ''))
 
   const isHorizontal = chartType === 'bar_horizontal'
@@ -791,26 +860,53 @@ function buildChartOption(
       }
     }),
     smooth: chartType === 'line' || chartType === 'area',
-    areaStyle: chartType === 'area' ? { opacity: 0.3 } : undefined,
+    areaStyle: chartType === 'area' ? { opacity: 0.25 } : undefined,
     itemStyle: {
       color: barColors[idx % barColors.length],
-      borderRadius: chartType === 'bar' ? [4, 4, 0, 0] : undefined,
+      borderRadius: isHorizontal ? [0, 6, 6, 0] : [6, 6, 0, 0],
     },
-    barMaxWidth: 40,
+    barMaxWidth: 32,
   }))
+
+  const tooltipConfig = {
+    trigger: 'axis' as const,
+    backgroundColor: tooltipBg || (isDark ? '#1e293b' : '#ffffff'),
+    borderColor: isDark ? '#334155' : '#e2e8f0',
+    borderWidth: 1,
+    textStyle: {
+      fontFamily: 'Vazirmatn',
+      color: tooltipFg || (isDark ? '#f8fafc' : '#0f172a'),
+      fontSize: 12,
+    },
+    axisPointer: {
+      type: chartType === 'bar' || isStacked ? ('shadow' as const) : ('cross' as const),
+      shadowStyle: {
+        color: isDark ? 'rgba(255, 255, 255, 0.04)' : 'rgba(0, 0, 0, 0.04)',
+      },
+    },
+    formatter: (params: any) => {
+      if (!Array.isArray(params) || params.length === 0) return ''
+      const header = `<div dir="rtl" style="font-family: Vazirmatn; font-weight: bold; margin-bottom: 4px; border-bottom: 1px solid ${isDark ? '#334155' : '#f1f5f9'}; padding-bottom: 3px;">${params[0].axisValueLabel}</div>`
+      const lines = params.map((p: any) => {
+        const marker = p.marker || ''
+        const seriesName = p.seriesName || ''
+        const val = typeof p.value === 'object' && p.value !== null ? p.value.value : p.value
+        return `<div dir="rtl" style="font-family: Vazirmatn; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 2px;">
+          <span>${marker} ${seriesName}</span>
+          <span style="font-weight: bold;">${toPersianDigits(Number(val || 0).toLocaleString())}</span>
+        </div>`
+      })
+      return `<div dir="rtl" style="padding: 2px 4px;">${header}${lines.join('')}</div>`
+    },
+  }
 
   // Horizontal bar: swap xAxis and yAxis
   if (isHorizontal) {
     return {
       ...defaults,
       ...customConfig,
-      tooltip: {
-        trigger: 'axis',
-        backgroundColor: tooltipBg,
-        textStyle: tooltipFg ? { color: tooltipFg } : undefined,
-        axisPointer: { type: 'shadow' },
-      },
-      legend: valueCols.length > 1 ? (legendPos === 'hidden' ? { show: false } : { show: true, [legendPos]: 10 }) : { show: false },
+      tooltip: tooltipConfig,
+      legend: valueCols.length > 1 ? (legendPos === 'hidden' ? { show: false } : { show: true, [legendPos]: 10, textStyle: { fontFamily: 'Vazirmatn', fontSize: 11, color: isDark ? '#cbd5e1' : '#64748b' } }) : { show: false },
       grid: {
         top: valueCols.length > 1 ? 32 : 16,
         right: 16,
@@ -820,12 +916,29 @@ function buildChartOption(
       },
       xAxis: {
         type: 'value' as const,
-        axisLabel: { fontSize: labelFontSize, formatter: persianAxisFormatter },
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: {
+          lineStyle: {
+            color: isDark ? '#1e293b' : '#f1f5f9',
+            type: 'dashed',
+          },
+        },
+        axisLabel: { fontSize: labelFontSize, color: isDark ? '#94a3b8' : '#64748b', formatter: persianAxisFormatter },
       },
       yAxis: {
         type: 'category' as const,
         data: categoryData,
-        axisLabel: { fontSize: labelFontSize },
+        axisLine: { lineStyle: { color: isDark ? '#334155' : '#e2e8f0' } },
+        axisTick: { show: false },
+        axisLabel: {
+          fontSize: labelFontSize,
+          color: isDark ? '#94a3b8' : '#64748b',
+          overflow: 'truncate',
+          width: 90,
+          ellipsis: '...',
+          formatter: (val: string) => toPersianDigits(val),
+        },
       },
       series,
     }
@@ -834,15 +947,8 @@ function buildChartOption(
   return {
     ...defaults,
     ...customConfig,
-    tooltip: {
-      trigger: 'axis',
-      backgroundColor: tooltipBg,
-      textStyle: tooltipFg ? { color: tooltipFg } : undefined,
-      axisPointer: {
-        type: chartType === 'bar' || isStacked ? 'shadow' : 'cross',
-      },
-    },
-    legend: valueCols.length > 1 ? (legendPos === 'hidden' ? { show: false } : { show: true, [legendPos]: 10 }) : { show: false },
+    tooltip: tooltipConfig,
+    legend: valueCols.length > 1 ? (legendPos === 'hidden' ? { show: false } : { show: true, [legendPos]: 10, textStyle: { fontFamily: 'Vazirmatn', fontSize: 11, color: isDark ? '#cbd5e1' : '#64748b' } }) : { show: false },
     grid: {
       top: valueCols.length > 1 ? 32 : 16,
       right: 12,
@@ -853,14 +959,34 @@ function buildChartOption(
     xAxis: {
       type: 'category',
       data: categoryData,
+      axisLine: { lineStyle: { color: isDark ? '#334155' : '#e2e8f0' } },
+      axisTick: { show: false },
       axisLabel: {
-        rotate: categoryData.length > 8 ? 45 : 0,
+        rotate: categoryData.length > 5 ? 25 : 0,
         fontSize: labelFontSize,
+        color: isDark ? '#94a3b8' : '#64748b',
+        hideOverlap: true,
+        overflow: 'truncate',
+        width: 80,
+        ellipsis: '...',
+        formatter: (val: string) => toPersianDigits(val),
       },
     },
     yAxis: {
       type: 'value',
-      axisLabel: { fontSize: labelFontSize, formatter: persianAxisFormatter },
+      axisLine: { show: false },
+      axisTick: { show: false },
+      splitLine: {
+        lineStyle: {
+          color: isDark ? '#1e293b' : '#f1f5f9',
+          type: 'dashed',
+        },
+      },
+      axisLabel: {
+        fontSize: labelFontSize,
+        color: isDark ? '#94a3b8' : '#64748b',
+        formatter: persianAxisFormatter,
+      },
     },
     series,
   }

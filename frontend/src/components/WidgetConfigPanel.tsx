@@ -812,19 +812,21 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
                   </select>
                 </div>
                 <div className="flex-1">
-                  <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">تعداد نتایج</label>
+                  <label className="block text-xs text-slate-600 dark:text-slate-200 mb-1">تعداد نمایش (محدودیت)</label>
                   <input
                     type="number"
                     min={0}
                     max={100}
-                    value={sortLimit}
+                    value={sortLimit || ''}
                     onChange={(e) => setSortLimit(parseInt(e.target.value) || 0)}
                     className="w-full px-3 py-2 rounded-lg border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue outline-none"
-                    placeholder="0 = بدون محدودیت"
+                    placeholder="پیش‌فرض: ۱۰ (مشابه دیتا استودیو)"
                   />
                 </div>
               </div>
-              <p className="text-[10px] text-slate-600 dark:text-slate-200">مثلاً: ۱۰ مورد برتر یا ۵ مورد آخر</p>
+              <p className="text-[10px] text-slate-600 dark:text-slate-200">
+                در نمودار دایره‌ای، موارد بیشتر از سقف به طور هوشمند در دسته «سایر» تجمیع می‌شوند تا چارت خوانا و شبیه دیتا استودیو باشد.
+              </p>
             </div>
           )}
 
