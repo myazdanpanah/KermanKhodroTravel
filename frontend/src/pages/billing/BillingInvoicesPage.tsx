@@ -54,24 +54,42 @@ export default function BillingInvoicesPage() {
       .catch(() => undefined)
   }, [])
 
-  const download = async (row: Invoice) => {
+  const downloadPdf = async (row: Invoice) => {
     try {
-      const endpoint = row.file_id
-        ? `/billing/files/${row.file_id}/download/`
-        : `/billing/files/by-letter/${encodeURIComponent(row.letter_number)}/`
+      const endpoint = `/billing/invoices/${row.id}/download-pdf/`
       const res = await api.get(endpoint, { responseType: 'blob' })
-      const url = URL.createObjectURL(new Blob([res.data]))
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
       const link = document.createElement('a')
       link.href = url
-      link.download = `${row.invoice_type}_${row.letter_number.replace(/\//g, '-')}.pdf`
+      link.download = `صورت‌حساب_${row.invoice_type}_${row.letter_number.replace(/\//g, '-')}.pdf`
       document.body.appendChild(link)
       link.click()
       link.remove()
       setTimeout(() => URL.revokeObjectURL(url), 2000)
+      toast('صورت‌حساب PDF دانلود شد', 'success')
     } catch {
-      toast('دانلود فایل ناموفق بود', 'error')
+      toast('دانلود صورت‌حساب ناموفق بود', 'error')
     }
   }
+
+  const downloadLetter = async (row: Invoice) => {
+    try {
+      const endpoint = `/billing/invoices/${row.id}/download-letter/`
+      const res = await api.get(endpoint, { responseType: 'blob' })
+      const url = URL.createObjectURL(new Blob([res.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `نامه_${row.invoice_type}_${row.letter_number.replace(/\//g, '-')}.docx`
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 2000)
+      toast('نامه رسمی (Word) دانلود شد', 'success')
+    } catch {
+      toast('دانلود نامه رسمی ناموفق بود', 'error')
+    }
+  }
+
 
   const total = useMemo(() => rows.reduce((sum, row) => sum + Number(row.amount || 0), 0), [rows])
 
@@ -204,11 +222,20 @@ export default function BillingInvoicesPage() {
                       </button>
                     )}
                     <button
-                      onClick={() => void download(row)}
-                      className="p-1.5 rounded-lg text-nx-blue hover:bg-nx-blue/10"
-                      title="دانلود فایل نامه"
+                      onClick={() => void downloadPdf(row)}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 hover:bg-rose-100 dark:hover:bg-rose-900/40 text-xs font-medium transition"
+                      title="دانلود صورت‌حساب (PDF)"
                     >
-                      <Download className="w-4 h-4" />
+                      <FileText className="w-3.5 h-3.5" />
+                      <span>صورت‌حساب</span>
+                    </button>
+                    <button
+                      onClick={() => void downloadLetter(row)}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/30 hover:bg-blue-100 dark:hover:bg-blue-900/40 text-xs font-medium transition"
+                      title="دانلود نامه رسمی (Word)"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      <span>نامه</span>
                     </button>
                     {canDelete && (
                       <button onClick={() => void remove(row)} className="p-1.5 rounded-lg text-rose-500 dark:text-rose-400 hover:bg-rose-500/10" title="حذف">

@@ -50,16 +50,21 @@ class PayerSerializer(serializers.ModelSerializer):
 class InvoiceSerializer(serializers.ModelSerializer):
     issue_date_jalali = serializers.SerializerMethodField()
     file_id = serializers.SerializerMethodField()
+    pdf_file_id = serializers.SerializerMethodField()
+    letter_file_id = serializers.SerializerMethodField()
+    items_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
         fields = [
             "id", "letter_number", "payer", "payer_code", "invoice_type",
             "amount", "issue_date", "issue_date_jalali", "file_path", "created_at", "file_id",
+            "pdf_file_id", "letter_file_id", "items_count",
             "is_reversed", "reversed_at", "reversal_reason",
         ]
         read_only_fields = [
             "id", "created_at", "issue_date_jalali", "file_id",
+            "pdf_file_id", "letter_file_id", "items_count",
             "is_reversed", "reversed_at", "reversal_reason",
         ]
 
@@ -69,6 +74,21 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
         match = FinalFile.objects.filter(letter_number=obj.letter_number).order_by("-id").first()
         return match.id if match else None
+
+    def get_pdf_file_id(self, obj):
+        from .models import FinalFile
+
+        match = FinalFile.objects.filter(letter_number=obj.letter_number, file_name__endswith=".pdf").order_by("-id").first()
+        return match.id if match else None
+
+    def get_letter_file_id(self, obj):
+        from .models import FinalFile
+
+        match = FinalFile.objects.filter(letter_number=obj.letter_number, file_name__endswith=".docx").order_by("-id").first()
+        return match.id if match else None
+
+    def get_items_count(self, obj):
+        return obj.items.count()
 
     def get_issue_date_jalali(self, obj) -> str:
         from .services.normalize import gregorian_to_persian

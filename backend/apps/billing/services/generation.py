@@ -41,6 +41,7 @@ from ..models import (
     Credit,
     FinalFile,
     Invoice,
+    InvoiceItem,
     InvoiceTemplate,
     ManualDebt,
     Payer,
@@ -1258,6 +1259,58 @@ def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
                     # never reaches the ledger; surface it instead.
                     errors.append(
                         f"{invoice_type}: صورتحساب {letter} ابطال شده و دوباره به دفتر اضافه نشد."
+                    )
+
+                # Persist detailed line items for BI and reporting
+                InvoiceItem.objects.filter(invoice=invoice).delete()
+                for r in rows:
+                    p_name = str(r.get("نام مسافر") or r.get("مسافر") or r.get("passenger") or "").strip()
+                    dest = str(r.get("مسیر") or r.get("مقصد") or r.get("destination") or r.get("route") or "").strip()
+                    hotel = str(r.get("هتل") or r.get("hotel") or "").strip()
+                    t_num = str(r.get("شماره بلیط") or r.get("ticket") or "").strip()
+                    r_type = str(r.get("نوع اتاق") or r.get("room") or "").strip()
+                    c_num = str(r.get("قرارداد") or r.get("contract") or "").strip()
+                    g_cnt = 1
+                    try:
+                        g_cnt = int(r.get("تعداد نفرات") or r.get("guests") or 1)
+                    except (ValueError, TypeError):
+                        g_cnt = 1
+                    i_date = str(r.get("تاریخ پرواز") or r.get("تاریخ ورود و خروج") or r.get("تاریخ") or "").strip()
+                    desc = str(r.get("شرح خدمات") or r.get("توضیحات") or "").strip()
+                    try:
+                        debt_val = int(r.get("بدهکار") or 0)
+                    except (ValueError, TypeError):
+                        debt_val = 0
+                    try:
+                        credit_val = int(r.get("بستانکار") or 0)
+                    except (ValueError, TypeError):
+                        credit_val = 0
+                    try:
+                        net_val = int(r.get("مانده") or (debt_val - credit_val))
+                    except (ValueError, TypeError):
+                        net_val = debt_val - credit_val
+
+                    InvoiceItem.objects.create(
+                        invoice=invoice,
+                        approval_request=request_obj,
+                        letter_number=letter,
+                        payer=request_obj.payer_name,
+                        payer_code=request_obj.payer_code,
+                        service_type=invoice_type,
+                        passenger_name=p_name,
+                        destination=dest,
+                        hotel_name=hotel,
+                        ticket_number=t_num,
+                        room_type=r_type,
+                        contract_number=c_num,
+                        guest_count=g_cnt,
+                        item_date=i_date,
+                        issue_date=issue_date,
+                        description=desc,
+                        debt_amount=debt_val,
+                        credit_amount=credit_val,
+                        amount=net_val,
+                        raw_data=r,
                     )
 
     if errors and not produced:

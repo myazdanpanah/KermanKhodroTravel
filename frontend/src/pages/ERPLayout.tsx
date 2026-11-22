@@ -188,8 +188,8 @@ export default function ERPLayout() {
   // Only the three licensed modules (plus settings for admins) are reachable.
   const isAdmin = user?.role === 'admin' || user?.role === 'ceo'
   const allowedPrefixes = isAdmin
-    ? ['/erp/management', '/erp/billing', '/erp/crm', '/erp/office', '/erp/settings']
-    : ['/erp/management', '/erp/billing', '/erp/crm', '/erp/office']
+    ? ['/erp/management', '/erp/billing', '/erp/crm', '/erp/office', '/erp/settings', '/erp/notifications', '/erp/profile']
+    : ['/erp/management', '/erp/billing', '/erp/crm', '/erp/office', '/erp/notifications', '/erp/profile']
   const canIssue = isAdmin || Boolean(user?.permissions?.issue)
   const sections = (isAdmin ? NAV_SECTIONS : NAV_SECTIONS.filter((section) => section.id !== 'settings'))
     .map((section) =>

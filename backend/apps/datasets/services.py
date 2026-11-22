@@ -18,6 +18,12 @@ ERP_TABLES_META = [
         "allowed_roles": ["ceo", "admin", "finance"],
     },
     {
+        "table_name": "billing_invoiceitem",
+        "name": "اقلام و خدمات صورت‌حساب‌ها (Invoice Items)",
+        "description": "ریز مشخصات خدمات صورت‌حساب‌ها شامل مقاصد پرواز، هتل‌ها، نام مسافران، شماره بلیط، تاریخ‌ها و مبالغ برای تحلیل‌های پرتکرار",
+        "allowed_roles": ["ceo", "admin", "finance", "sales"],
+    },
+    {
         "table_name": "billing_payment",
         "name": "دریافت‌ها و پرداخت‌ها (Payments)",
         "description": "ریز دریافت‌ها و تسویه‌حساب‌های مالی، روش‌های پرداخت، تاریخ جلالی و کدهای پیگیری بانکی",

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 import uuid
 from datetime import timedelta
@@ -280,6 +281,191 @@ def invoice_detail(request, pk: int):
     with transaction.atomic():
         reverse_invoice(invoice, request.user, str(request.data.get("reason") or ""))
     return Response(InvoiceSerializer(invoice).data)
+
+
+@api_view(["GET"])
+@perm_required("can_view")
+def invoice_download_pdf(request, pk: int):
+    """
+    Download the generated Invoice PDF for this invoice.
+    If pre-generated in FinalFile, streams that; otherwise renders dynamically.
+    """
+    invoice = Invoice.objects.filter(pk=pk).first()
+    if invoice is None:
+        return _error("صورتحساب یافت نشد.", status.HTTP_404_NOT_FOUND)
+
+    # 1. Check if FinalFile with .pdf exists
+    final_file = FinalFile.objects.filter(
+        letter_number=invoice.letter_number, file_name__endswith=".pdf"
+    ).order_by("-id").first()
+    if final_file:
+        return file_download(request, final_file.pk)
+
+    # 2. Render PDF dynamically
+    try:
+        from .services.generation import html_to_pdf, DEFAULT_CSS, HTML_DOCUMENT
+        from .models import CompanySettings, ApprovalRequest
+        from .services.normalize import gregorian_to_persian
+
+        company = CompanySettings.load()
+        items = list(invoice.items.all().order_by("id"))
+        rows = []
+        if items:
+            for idx, it in enumerate(items, 1):
+                rows.append({
+                    "ردیف": idx,
+                    "نام مسافر": it.passenger_name or "—",
+                    "شرح خدمت / مقصد": it.destination or it.hotel_name or it.description or invoice.invoice_type,
+                    "شماره بلیط / اتاق": it.ticket_number or it.room_type or "—",
+                    "تاریخ": it.item_date or str(invoice.issue_date),
+                    "بدهکار": f"{it.debt_amount:,}",
+                    "بستانکار": f"{it.credit_amount:,}",
+                    "مانده": f"{it.amount:,}",
+                })
+        else:
+            rows.append({
+                "ردیف": 1,
+                "نام مسافر": "کلیه مسافران",
+                "شرح خدمت / مقصد": invoice.description or invoice.invoice_type,
+                "شماره بلیط / اتاق": "—",
+                "تاریخ": str(invoice.issue_date),
+                "بدهکار": f"{invoice.amount:,}",
+                "بستانکار": "0",
+                "مانده": f"{invoice.amount:,}",
+            })
+
+        jalali_date = gregorian_to_persian(invoice.issue_date) or str(invoice.issue_date)
+
+        rows_html = "".join([
+            f"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>{r['ردیف']}</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{r['نام مسافر']}</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{r['شرح خدمت / مقصد']}</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{r['شماره بلیط / اتاق']}</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{r['تاریخ']}</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{r['بدهکار']}</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{r['بستانکار']}</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{r['مانده']}</td></tr>"
+            for r in rows
+        ])
+        invoice_html_body = f"""
+        <div style="font-family: 'Vazirmatn', Tahoma, sans-serif; direction: rtl; padding: 20px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #003366; padding-bottom: 12px; margin-bottom: 16px;">
+                <div>
+                    <h2 style="margin: 0; color: #003366; font-size: 18px;">{company.company_name or 'سفرهای کرمان خودرو'}</h2>
+                    <p style="margin: 4px 0 0; font-size: 11px; color: #64748b;">صورت‌حساب رسمی خدمات مسافرتی و گردشگری</p>
+                </div>
+                <div style="text-align: left; font-size: 11px; line-height: 1.8;">
+                    <div><strong>شماره صورت‌حساب:</strong> {invoice.letter_number}</div>
+                    <div><strong>تاریخ صدور:</strong> {jalali_date}</div>
+                    <div><strong>نوع خدمت:</strong> {invoice.invoice_type}</div>
+                </div>
+            </div>
+            
+            <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 12px;">
+                <strong>طرف حساب / خریدار:</strong> {invoice.payer} (کد: {invoice.payer_code})
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 16px; text-align: center;">
+                <thead>
+                    <tr style="background: #003366; color: white;">
+                        <th style="padding: 6px; border: 1px solid #002244;">ردیف</th>
+                        <th style="padding: 6px; border: 1px solid #002244;">نام مسافر</th>
+                        <th style="padding: 6px; border: 1px solid #002244;">شرح خدمت / مقصد</th>
+                        <th style="padding: 6px; border: 1px solid #002244;">شماره بلیط / اتاق</th>
+                        <th style="padding: 6px; border: 1px solid #002244;">تاریخ</th>
+                        <th style="padding: 6px; border: 1px solid #002244;">بدهکار (ریال)</th>
+                        <th style="padding: 6px; border: 1px solid #002244;">بستانکار (ریال)</th>
+                        <th style="padding: 6px; border: 1px solid #002244;">مانده (ریال)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {rows_html}
+                </tbody>
+                <tfoot>
+                    <tr style="background: #f1f5f9; font-weight: bold;">
+                        <td colspan="5" style="padding: 8px; text-align: left; border: 1px solid #cbd5e1;">جمع کل (ریال):</td>
+                        <td style="padding: 8px; border: 1px solid #cbd5e1;">{invoice.amount:,}</td>
+                        <td style="padding: 8px; border: 1px solid #cbd5e1;">0</td>
+                        <td style="padding: 8px; border: 1px solid #cbd5e1;">{invoice.amount:,}</td>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <div style="margin-top: 24px; font-size: 10px; color: #64748b; text-align: justify; line-height: 1.6; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
+                {company.legal_note or 'برابر مقررات، برای هر یک از خدمات ارائه شده صورت‌حساب رسمی صادر می‌گردد.'}
+            </div>
+        </div>
+        """
+        full_html = HTML_DOCUMENT.format(css=DEFAULT_CSS, body=invoice_html_body)
+        pdf_bytes = html_to_pdf(full_html)
+        letter_slug = invoice.letter_number.replace("/", "-")
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="invoice_{letter_slug}.pdf"'
+        return response
+    except Exception as exc:
+        return _error(f"خطا در تولید فایل PDF صورت‌حساب: {exc}", status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(["GET"])
+@perm_required("can_view")
+def invoice_download_letter(request, pk: int):
+    """
+    Download the generated Official Letter (Word .docx) for this invoice.
+    If pre-generated in FinalFile, streams that; otherwise renders dynamically.
+    """
+    invoice = Invoice.objects.filter(pk=pk).first()
+    if invoice is None:
+        return _error("صورتحساب یافت نشد.", status.HTTP_404_NOT_FOUND)
+
+    # 1. Check if FinalFile with .docx exists
+    final_file = FinalFile.objects.filter(
+        letter_number=invoice.letter_number, file_name__endswith=".docx"
+    ).order_by("-id").first()
+    if final_file:
+        return file_download(request, final_file.pk)
+
+    # 2. Render Word docx on the fly
+    try:
+        import io
+        from docx import Document
+        from docx.shared import Pt
+        from docx.enum.text import WD_ALIGN_PARAGRAPH
+        from .services.normalize import gregorian_to_persian
+        from .models import CompanySettings
+
+        company = CompanySettings.load()
+        doc = Document()
+        jalali_date = gregorian_to_persian(invoice.issue_date) or str(invoice.issue_date)
+
+        p_title = doc.add_paragraph()
+        p_title.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        run_title = p_title.add_run(f"نامه رسمی صورت‌حساب {invoice.invoice_type}")
+        run_title.font.name = "B Nazanin"
+        run_title.font.size = Pt(16)
+        run_title.bold = True
+
+        p_meta = doc.add_paragraph()
+        p_meta.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        p_meta.add_run(f"تاریخ: {jalali_date}\nشماره: {invoice.letter_number}\nشرکت محترم: {invoice.payer}\n\n")
+
+        p_body = doc.add_paragraph()
+        p_body.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+        p_body.add_run(
+            f"احتراماً بدین‌وسیله صورت‌حساب مربوط به خدمات {invoice.invoice_type} به مبلغ {invoice.amount:,} ریال "
+            f"جهت اطلاع و انجام اقدامات مقتضی ارسال می‌گردد.\n"
+            f"خواهشمند است دستور فرمایید اقدامات لازم جهت واریز به حساب‌های این شرکت صورت پذیرد.\n\n"
+        )
+
+        p_sign = doc.add_paragraph()
+        p_sign.alignment = WD_ALIGN_PARAGRAPH.LEFT
+        p_sign.add_run(f"{company.company_name or 'سفرهای کرمان خودرو'}\nمدیریت مالی و امور قراردادها")
+
+        buf = io.BytesIO()
+        doc.save(buf)
+        docx_bytes = buf.getvalue()
+
+        letter_slug = invoice.letter_number.replace("/", "-")
+        response = HttpResponse(
+            docx_bytes,
+            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        )
+        response["Content-Disposition"] = f'attachment; filename="letter_{letter_slug}.docx"'
+        return response
+    except Exception as exc:
+        return _error(f"خطا در تولید فایل نامه: {exc}", status.HTTP_400_BAD_REQUEST)
 
 
 # ── payments / debts / credits ───────────────────────────────────────────
@@ -692,8 +878,21 @@ def file_download(request, pk: int):
 @api_view(["GET"])
 @perm_required("can_view")
 def file_by_letter(request, letter_number: str):
-    final_file = FinalFile.objects.filter(letter_number=letter_number).order_by("id").first()
+    format_type = (request.query_params.get("format") or "").lower()
+    qs = FinalFile.objects.filter(letter_number=letter_number)
+    if format_type == "pdf":
+        final_file = qs.filter(file_name__endswith=".pdf").order_by("-id").first()
+    elif format_type in ("docx", "word", "letter"):
+        final_file = qs.filter(file_name__endswith=".docx").order_by("-id").first()
+    else:
+        final_file = qs.order_by("id").first()
+
     if final_file is None:
+        invoice = Invoice.objects.filter(letter_number=letter_number).first()
+        if invoice:
+            if format_type in ("docx", "word", "letter"):
+                return invoice_download_letter(request, invoice.pk)
+            return invoice_download_pdf(request, invoice.pk)
         return _error("برای این شماره نامه فایلی تولید نشده است.", status.HTTP_404_NOT_FOUND)
     return file_download(request, final_file.pk)
 

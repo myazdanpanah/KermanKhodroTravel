@@ -451,6 +451,71 @@ class FinalFile(models.Model):
         return self.file_name
 
 
+class InvoiceItem(models.Model):
+    """
+    Detailed line item of an invoice / service (specifications).
+    Stores flight routes/destinations, hotel names, passenger names, ticket numbers, etc.
+    Enables rich BI querying: most frequent destinations, top hotels, frequent flyers.
+    """
+    invoice = models.ForeignKey(
+        Invoice,
+        on_delete=models.CASCADE,
+        related_name="items",
+        null=True,
+        blank=True,
+        verbose_name="صورت‌حساب",
+    )
+    approval_request = models.ForeignKey(
+        ApprovalRequest,
+        on_delete=models.SET_NULL,
+        related_name="items",
+        null=True,
+        blank=True,
+        verbose_name="درخواست صدور",
+    )
+    letter_number = models.CharField(max_length=50, db_index=True, verbose_name="شماره نامه")
+    payer = models.CharField(max_length=100, db_index=True, verbose_name="شرکت / مشتری")
+    payer_code = models.CharField(max_length=5, db_index=True, verbose_name="کد شرکت")
+    service_type = models.CharField(max_length=50, db_index=True, verbose_name="نوع خدمت")
+
+    # Core domain specifications
+    passenger_name = models.CharField(max_length=150, blank=True, default="", db_index=True, verbose_name="نام مسافر")
+    destination = models.CharField(max_length=150, blank=True, default="", db_index=True, verbose_name="مقصد / مسیر")
+    hotel_name = models.CharField(max_length=150, blank=True, default="", db_index=True, verbose_name="نام هتل")
+    ticket_number = models.CharField(max_length=50, blank=True, default="", verbose_name="شماره بلیط")
+    room_type = models.CharField(max_length=50, blank=True, default="", verbose_name="نوع اتاق")
+    contract_number = models.CharField(max_length=50, blank=True, default="", verbose_name="قرارداد")
+    guest_count = models.IntegerField(default=1, verbose_name="تعداد نفرات")
+    item_date = models.CharField(max_length=50, blank=True, default="", verbose_name="تاریخ خدمت / پرواز / اقامت")
+    issue_date = models.DateField(null=True, blank=True, db_index=True, verbose_name="تاریخ صدور")
+    description = models.CharField(max_length=500, blank=True, default="", verbose_name="توضیحات / شرح خدمت")
+
+    # Financial fields
+    debt_amount = models.BigIntegerField(default=0, verbose_name="مبلغ بدهکار (ریال)")
+    credit_amount = models.BigIntegerField(default=0, verbose_name="مبلغ بستانکار (ریال)")
+    amount = models.BigIntegerField(default=0, verbose_name="مبلغ خالص (ریال)")
+
+    # Raw metadata
+    raw_data = models.JSONField(default=dict, blank=True, verbose_name="داده خام سطر")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "قلم صورت‌حساب"
+        verbose_name_plural = "اقلام صورت‌حساب (ریز پرواز، هتل و خدمات)"
+        ordering = ["-issue_date", "-id"]
+        indexes = [
+            models.Index(fields=["destination"], name="idx_invitem_dest"),
+            models.Index(fields=["hotel_name"], name="idx_invitem_hotel"),
+            models.Index(fields=["passenger_name"], name="idx_invitem_passenger"),
+            models.Index(fields=["service_type"], name="idx_invitem_service"),
+            models.Index(fields=["payer_code"], name="idx_invitem_payer"),
+        ]
+
+    def __str__(self):
+        detail = self.destination or self.hotel_name or self.description or self.service_type
+        return f"{self.passenger_name} - {detail} ({self.letter_number})"
+
+
 class ServiceCategory(models.Model):
     """Billable service categories (spec 3.12)."""
 

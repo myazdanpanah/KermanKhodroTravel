@@ -59,6 +59,9 @@ export interface Invoice {
   issue_date_jalali: string
   file_path: string
   file_id?: number | null
+  pdf_file_id?: number | null
+  letter_file_id?: number | null
+  items_count?: number
   created_at: string
 }
 

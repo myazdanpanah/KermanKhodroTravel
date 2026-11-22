@@ -14,6 +14,8 @@ urlpatterns = [
     # Invoices (spec 6.4)
     path("invoices/", views.invoice_list, name="invoice-list"),
     path("invoices/<int:pk>/", views.invoice_detail, name="invoice-detail"),
+    path("invoices/<int:pk>/download-pdf/", views.invoice_download_pdf, name="invoice-download-pdf"),
+    path("invoices/<int:pk>/download-letter/", views.invoice_download_letter, name="invoice-download-letter"),
     # Payments (spec 6.5)
     path("payments/", views.payment_list, name="payment-list"),
     path("payments/<int:pk>/", views.payment_detail, name="payment-detail"),

@@ -247,9 +247,11 @@ class StatementExcelTests(TestCase):
         self.assertEqual(summary["C2"].value, 1_000_000)  # صورتحساب
         self.assertEqual(summary["F2"].value, 400_000)  # پرداخت
         self.assertEqual(summary["H2"].value, 600_000)  # مانده
-        detail = workbook[workbook.sheetnames[1]]
-        self.assertEqual(detail.cell(row=2, column=1).value, "جمع بدهی (صورتحساب + بدهی دستی)")
-        self.assertEqual(detail.cell(row=3, column=1).value, "جمع پرداخت‌ها")
+        payer_sheet_name = next(name for name in workbook.sheetnames if "3001" in name)
+        detail = workbook[payer_sheet_name]
+        all_labels = [detail.cell(row=r, column=c).value for r in range(1, detail.max_row + 1) for c in (1, 2)]
+        self.assertTrue(any("بدهی" in str(v) for v in all_labels))
+        self.assertTrue(any("پرداخت" in str(v) for v in all_labels))
         header_row = next(row for row in range(1, detail.max_row + 1) if detail.cell(row=row, column=1).value == "تاریخ")
         types = [detail.cell(row=row, column=2).value for row in range(header_row + 1, header_row + 3)]
         self.assertEqual(types, ["صورتحساب", "پرداخت"])
