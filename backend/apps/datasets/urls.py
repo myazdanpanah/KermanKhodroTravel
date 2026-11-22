@@ -9,5 +9,7 @@ urlpatterns = [
     # Superset integration
     path("superset/health/", views.superset_health, name="superset-health"),
     path("superset/sync-all/", views.superset_sync_all, name="superset-sync-all"),
+    path("superset/sync-erp/", views.sync_erp_datasets_view, name="superset-sync-erp"),
+    path("sync-erp-tables/", views.sync_erp_datasets_view, name="sync-erp-tables"),
     path("<int:pk>/superset/sync/", views.superset_sync_dataset, name="superset-sync-dataset"),
 ]

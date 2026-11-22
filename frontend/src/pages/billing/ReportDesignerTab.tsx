@@ -5,7 +5,7 @@ import {
   AlignCenter, AlignLeft, AlignRight, ArrowDown, Barcode, Box, Eye, EyeOff, LayoutGrid,
   Image as ImageIcon, LayoutTemplate, Lock, Minus, MousePointer2, MoveVertical,
   PenTool, Plus, QrCode, Redo2, RotateCcw, Save, Settings2, Square, Stamp,
-  Repeat, Table2, TableProperties, Trash2, Type, Undo2, Ungroup,
+  Repeat, Table2, TableProperties, Trash2, Type, Undo2, Ungroup, X,
 } from 'lucide-react'
 
 /**
@@ -201,12 +201,12 @@ const FIELD_BY_KEY: Record<string, keyof SampleRow> = {
   balance: 'balance_display',
 }
 
-const PANEL = 'rounded-2xl border border-nx-navy-border bg-nx-navy-elevated'
+const PANEL = 'rounded-2xl border border-slate-200 bg-white text-slate-900 shadow-sm dark:border-nx-navy-border dark:bg-nx-navy-elevated dark:text-white'
 const INPUT =
-  'w-full px-2.5 py-1.5 rounded-lg border border-nx-navy-border bg-nx-navy !text-white placeholder:!text-nx-mist/45 text-xs outline-none focus:ring-2 focus:ring-nx-blue'
-const LABEL = 'block text-[11px] text-nx-mist mb-1'
+  'w-full px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 text-xs outline-none focus:ring-2 focus:ring-nx-blue dark:border-nx-navy-border dark:bg-nx-navy dark:text-white dark:placeholder:text-nx-mist/45'
+const LABEL = 'block text-[11px] text-slate-600 dark:text-nx-mist mb-1'
 const BTN =
-  'inline-flex items-center gap-1.5 rounded-lg border border-nx-navy-border px-2.5 py-1.5 text-xs text-nx-mist hover:text-white hover:bg-nx-navy transition disabled:opacity-40'
+  'inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs text-slate-700 hover:text-slate-900 hover:bg-slate-100 dark:border-nx-navy-border dark:text-nx-mist dark:hover:text-white dark:hover:bg-nx-navy transition disabled:opacity-40'
 
 let idCounter = 0
 const newId = (type: ElementType) => `${type}-${Date.now().toString(36)}-${(idCounter += 1)}`
@@ -239,7 +239,12 @@ function zoneOf(element: DesignElement, height: number): 'header' | 'body' | 'fo
   return 'body'
 }
 
-export default function ReportDesignerTab() {
+interface ReportDesignerTabProps {
+  onClose?: () => void
+  isFullscreen?: boolean
+}
+
+export default function ReportDesignerTab({ onClose, isFullscreen }: ReportDesignerTabProps = {}) {
   const { toast } = useToast()
   const [payload, setPayload] = useState<Payload | null>(null)
   const [design, setDesign] = useState<Design | null>(null)
@@ -595,8 +600,8 @@ export default function ReportDesignerTab() {
   return (
     <div className={`${PANEL} overflow-hidden`}>
       {/* toolbar */}
-      <div className="flex flex-wrap items-center gap-2 border-b border-nx-navy-border px-3 py-2">
-        <span className="flex items-center gap-1.5 text-sm font-bold text-white">
+      <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-nx-navy-border bg-slate-50 dark:bg-nx-navy-elevated px-3 py-2">
+        <span className="flex items-center gap-1.5 text-sm font-bold text-slate-900 dark:text-white">
           <LayoutTemplate className="w-4 h-4 text-nx-blue" /> گزارش‌ساز صورت‌حساب
         </span>
         <input
@@ -607,7 +612,7 @@ export default function ReportDesignerTab() {
             setDirty(true)
           }}
         />
-        <span className={`text-[11px] ${dirty ? 'text-amber-400' : 'text-nx-mist/60'}`}>
+        <span className={`text-[11px] ${dirty ? 'text-amber-500' : 'text-slate-500 dark:text-nx-mist/60'}`}>
           {dirty ? 'ذخیره‌نشده' : savedLabel ? `آخرین ذخیره: ${savedLabel}` : 'ذخیره‌شده'}
         </span>
         <div className="mr-auto flex items-center gap-1.5">
@@ -617,9 +622,20 @@ export default function ReportDesignerTab() {
           <button type="button" className={BTN} onClick={redo} disabled={!future.length} title="ازنو">
             <Redo2 className="w-3.5 h-3.5" />
           </button>
+          {(onClose && (isFullscreen ?? true)) && (
+            <button
+              type="button"
+              className={`${BTN} border-rose-300 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 font-medium`}
+              onClick={onClose}
+              title="بستن گزارش‌ساز"
+            >
+              <X className="w-3.5 h-3.5 text-rose-500" />
+              <span>بستن</span>
+            </button>
+          )}
           <button
             type="button"
-            className={`${BTN} ${preview ? 'bg-nx-blue/20 !text-white' : ''}`}
+            className={`${BTN} ${preview ? 'bg-nx-blue/20 text-nx-blue dark:!text-white' : ''}`}
             onClick={() => setPreview((value) => !value)}
           >
             <Eye className="w-3.5 h-3.5" /> {preview ? 'ویرایش' : 'پیش‌نمایش'}
@@ -631,7 +647,7 @@ export default function ReportDesignerTab() {
             type="button"
             onClick={save}
             disabled={saving}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-nx-blue px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-nx-blue px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 hover:bg-nx-blue/90"
           >
             <Save className="w-3.5 h-3.5" /> {saving ? 'در حال ذخیره…' : 'ذخیره'}
           </button>
@@ -640,7 +656,7 @@ export default function ReportDesignerTab() {
 
       <div className="grid min-h-[620px] grid-cols-1 lg:grid-cols-[220px_minmax(0,1fr)_270px]">
         {/* Structure */}
-        <aside className="border-l border-nx-navy-border bg-nx-navy/60">
+        <aside className="border-l border-slate-200 dark:border-nx-navy-border bg-slate-50/70 dark:bg-nx-navy/60">
           <div className="border-b border-nx-navy-border/70 px-2 py-2">
             <p className="mb-1.5 px-1 text-[10px] font-bold uppercase tracking-wide text-nx-mist/60">اجزا</p>
             <div className="space-y-2">
@@ -658,7 +674,7 @@ export default function ReportDesignerTab() {
                           disabled={disabled}
                           title={disabled ? 'این جزء قبلاً اضافه شده است' : `افزودن ${item.label}`}
                           onClick={() => addElement(item.type, item.variant)}
-                          className="flex items-center gap-1 rounded-md border border-nx-navy-border/70 px-1.5 py-1.5 text-[10px] text-nx-mist hover:border-nx-blue hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
+                          className="flex items-center gap-1 rounded-md border border-slate-300 dark:border-nx-navy-border/70 px-1.5 py-1.5 text-[10px] text-slate-700 dark:text-nx-mist hover:border-nx-blue hover:text-nx-blue dark:hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
                         >
                           <Icon className="h-3 w-3 shrink-0" />
                           <span className="truncate">{item.label}</span>
@@ -668,12 +684,12 @@ export default function ReportDesignerTab() {
                   </div>
                 </div>
               ))}
-              <div className="rounded-md border border-nx-navy-border/70 p-2">
-                <p className="mb-1 text-[10px] text-nx-mist/50">کامپوننت از دیتابیس</p>
+              <div className="rounded-md border border-slate-200 dark:border-nx-navy-border/70 p-2">
+                <p className="mb-1 text-[10px] text-slate-500 dark:text-nx-mist/50">کامپوننت از دیتابیس</p>
                 <select
                   value={dbField}
                   onChange={(event) => setDbField(event.target.value)}
-                  className="w-full rounded-md border border-nx-navy-border bg-nx-navy px-1.5 py-1 text-[10px] text-nx-mist outline-none"
+                  className="w-full rounded-md border border-slate-300 dark:border-nx-navy-border bg-white dark:bg-nx-navy px-1.5 py-1 text-[10px] text-slate-900 dark:text-nx-mist outline-none"
                 >
                   {Object.keys(payload.sample.values).map((field) => (
                     <option key={field} value={field}>{field}</option>
@@ -682,7 +698,7 @@ export default function ReportDesignerTab() {
                 <button
                   type="button"
                   onClick={() => addDataField(dbField)}
-                  className="mt-1 w-full rounded-md bg-nx-blue/20 px-1.5 py-1 text-[10px] text-white hover:bg-nx-blue/30"
+                  className="mt-1 w-full rounded-md bg-nx-blue/20 px-1.5 py-1 text-[10px] text-nx-blue dark:text-white hover:bg-nx-blue/30 font-medium"
                 >
                   افزودن فیلد «{dbField}»
                 </button>
@@ -690,14 +706,14 @@ export default function ReportDesignerTab() {
             </div>
           </div>
           <div className="flex items-center justify-between px-3 py-2">
-            <span className="flex items-center gap-1.5 text-xs font-bold text-white">
-              <Ungroup className="w-3.5 h-3.5 text-nx-mist" /> ساختار
+            <span className="flex items-center gap-1.5 text-xs font-bold text-slate-900 dark:text-white">
+              <Ungroup className="w-3.5 h-3.5 text-slate-500 dark:text-nx-mist" /> ساختار
             </span>
             <div className="relative group">
-              <button type="button" className="rounded-md p-1 text-nx-mist hover:bg-nx-navy hover:text-white">
+              <button type="button" className="rounded-md p-1 text-slate-600 dark:text-nx-mist hover:bg-slate-200 dark:hover:bg-nx-navy hover:text-slate-900 dark:hover:text-white">
                 <Plus className="w-4 h-4" />
               </button>
-              <div className="invisible absolute left-0 top-full z-20 w-36 rounded-lg border border-nx-navy-border bg-nx-navy-elevated p-1 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">
+              <div className="invisible absolute left-0 top-full z-20 w-36 rounded-lg border border-slate-200 dark:border-nx-navy-border bg-white dark:bg-nx-navy-elevated p-1 opacity-0 shadow-lg transition group-hover:visible group-hover:opacity-100">
                 {(['text', 'table', 'logo', 'signature', 'stamp'] as ElementType[]).map((type) => {
                   const Icon = TYPE_ICONS[type]
                   const exists = design.elements.some((element) => element.type === type)
@@ -707,7 +723,7 @@ export default function ReportDesignerTab() {
                       key={type}
                       type="button"
                       onClick={() => addElement(type)}
-                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-nx-mist hover:bg-nx-navy hover:text-white"
+                      className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-xs text-slate-700 dark:text-nx-mist hover:bg-slate-100 dark:hover:bg-nx-navy hover:text-slate-900 dark:hover:text-white"
                     >
                       <Icon className="w-3.5 h-3.5" /> {TYPE_LABELS[type]}
                     </button>
@@ -719,11 +735,11 @@ export default function ReportDesignerTab() {
           <div className="space-y-2 px-2 pb-3">
             {(['header', 'body', 'footer'] as const).map((zone) => (
               <div key={zone}>
-                <div className="flex items-center gap-1 px-1 py-1 text-[10px] font-bold uppercase tracking-wide text-nx-mist/60">
+                <div className="flex items-center gap-1 px-1 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-nx-mist/60">
                   <ArrowDown className="w-3 h-3" />
                   {zone === 'header' ? 'سربرگ صفحه' : zone === 'body' ? 'بدنه' : 'پابرگ'}
                 </div>
-                {groups[zone].length === 0 && <p className="px-2 pb-1 text-[10px] text-nx-mist/40">خالی</p>}
+                {groups[zone].length === 0 && <p className="px-2 pb-1 text-[10px] text-slate-400 dark:text-nx-mist/40">خالی</p>}
                 {groups[zone].map((element) => {
                   const Icon = TYPE_ICONS[element.type]
                   return (
@@ -734,7 +750,7 @@ export default function ReportDesignerTab() {
                         setSettingsTab('element')
                       }}
                       className={`flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1.5 text-[11px] ${
-                        selectedId === element.id ? 'bg-nx-blue/20 text-white' : 'text-nx-mist hover:bg-nx-navy'
+                        selectedId === element.id ? 'bg-nx-blue/20 text-nx-blue dark:text-white font-medium' : 'text-slate-700 dark:text-nx-mist hover:bg-slate-200/60 dark:hover:bg-nx-navy'
                       }`}
                     >
                       <Icon className="w-3.5 h-3.5 shrink-0" />
@@ -746,7 +762,7 @@ export default function ReportDesignerTab() {
                           event.stopPropagation()
                           updateElement(element.id, { show: !element.show })
                         }}
-                        className="text-nx-mist/70 hover:text-white"
+                        className="text-slate-500 dark:text-nx-mist/70 hover:text-slate-900 dark:hover:text-white"
                       >
                         {element.show ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                       </button>
@@ -759,8 +775,8 @@ export default function ReportDesignerTab() {
         </aside>
 
         {/* Canvas */}
-        <section className="flex min-w-0 flex-col bg-slate-200/70">
-          <div className="flex items-center justify-between border-b border-nx-navy-border bg-nx-navy-elevated px-3 py-1.5 text-[11px] text-nx-mist">
+        <section className="flex min-w-0 flex-col bg-slate-200/70 dark:bg-slate-900/40">
+          <div className="flex items-center justify-between border-b border-slate-200 dark:border-nx-navy-border bg-slate-100 dark:bg-nx-navy-elevated px-3 py-1.5 text-[11px] text-slate-700 dark:text-nx-mist">
             <span>
               صفحه {page.w}×{page.h} میلی‌متر · {design.page_orientation === 'landscape' ? 'افقی' : 'عمودی'}
             </span>
@@ -1096,7 +1112,7 @@ export default function ReportDesignerTab() {
               </div>
             </div>
           </div>
-          <div className="flex items-center justify-between border-t border-nx-navy-border bg-nx-navy-elevated px-3 py-1 text-[10px] text-nx-mist">
+          <div className="flex items-center justify-between border-t border-slate-200 dark:border-nx-navy-border bg-slate-100 dark:bg-nx-navy-elevated px-3 py-1 text-[10px] text-slate-700 dark:text-nx-mist">
             <span>{preview ? 'پیش‌نمایش با داده نمونه' : 'برای جابه‌جایی بکشید · دوبار کلیک روی متن = ویرایش · Delete = حذف'}</span>
             <span className="flex items-center gap-1">
               <MousePointer2 className="w-3 h-3" /> {design.elements.length} عنصر
@@ -1105,20 +1121,20 @@ export default function ReportDesignerTab() {
         </section>
 
         {/* Properties */}
-        <aside className="border-r border-nx-navy-border bg-nx-navy/60">
-          <div className="flex items-center gap-2 border-b border-nx-navy-border px-3 py-2">
-            <Settings2 className="w-3.5 h-3.5 text-nx-mist" />
+        <aside className="border-r border-slate-200 dark:border-nx-navy-border bg-slate-50/70 dark:bg-nx-navy/60">
+          <div className="flex items-center gap-2 border-b border-slate-200 dark:border-nx-navy-border px-3 py-2">
+            <Settings2 className="w-3.5 h-3.5 text-slate-500 dark:text-nx-mist" />
             <button
               type="button"
               onClick={() => setSettingsTab('page')}
-              className={`text-xs ${settingsTab === 'page' ? 'font-bold text-white' : 'text-nx-mist'}`}
+              className={`text-xs ${settingsTab === 'page' ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-600 dark:text-nx-mist'}`}
             >
               تنظیمات صفحه
             </button>
             <button
               type="button"
               onClick={() => setSettingsTab('element')}
-              className={`text-xs ${settingsTab === 'element' ? 'font-bold text-white' : 'text-nx-mist'}`}
+              className={`text-xs ${settingsTab === 'element' ? 'font-bold text-slate-900 dark:text-white' : 'text-slate-600 dark:text-nx-mist'}`}
             >
               عنصر
             </button>
@@ -1164,18 +1180,18 @@ export default function ReportDesignerTab() {
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <label className={LABEL}>رنگ خطوط</label>
-                  <input type="color" className="h-8 w-full rounded-lg border border-nx-navy-border bg-nx-navy" value={design.accent_color} onChange={(event) => mutate((current) => ({ ...current, accent_color: event.target.value }))} />
+                  <input type="color" className="h-8 w-full rounded-lg border border-slate-300 dark:border-nx-navy-border bg-white dark:bg-nx-navy" value={design.accent_color} onChange={(event) => mutate((current) => ({ ...current, accent_color: event.target.value }))} />
                 </div>
                 <div>
                   <label className={LABEL}>رنگ سرستون</label>
-                  <input type="color" className="h-8 w-full rounded-lg border border-nx-navy-border bg-nx-navy" value={design.header_bg} onChange={(event) => mutate((current) => ({ ...current, header_bg: event.target.value }))} />
+                  <input type="color" className="h-8 w-full rounded-lg border border-slate-300 dark:border-nx-navy-border bg-white dark:bg-nx-navy" value={design.header_bg} onChange={(event) => mutate((current) => ({ ...current, header_bg: event.target.value }))} />
                 </div>
               </div>
               <div>
                 <label className={LABEL}>برچسب مهر</label>
                 <input className={INPUT} value={design.signature_label} onChange={(event) => mutate((current) => ({ ...current, signature_label: event.target.value }))} />
               </div>
-              <div className="rounded-lg border border-nx-navy-border/70 p-2 text-[10px] leading-5 text-nx-mist/80">
+              <div className="rounded-lg border border-slate-200 dark:border-nx-navy-border/70 p-2 text-[10px] leading-5 text-slate-600 dark:text-nx-mist/80">
                 متغیرهای متن: <br />
                 <code>{'{service_type}'}</code> · <code>{'{buyer_name}'}</code> · <code>{'{number}'}</code> · <code>{'{date}'}</code> · <code>{'{grand_debt}'}</code> · <code>{'{grand_credit}'}</code> · <code>{'{grand_balance}'}</code> · <code>{'{manager_name}'}</code>
               </div>
@@ -1183,10 +1199,10 @@ export default function ReportDesignerTab() {
           ) : (
             <div className="space-y-3 p-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-white">
-                  {elementTitle(selected)} <span className="font-normal text-nx-mist/60">({TYPE_LABELS[selected.type]})</span>
+                <span className="text-xs font-bold text-slate-900 dark:text-white">
+                  {elementTitle(selected)} <span className="font-normal text-slate-500 dark:text-nx-mist/60">({TYPE_LABELS[selected.type]})</span>
                 </span>
-                <button type="button" className="text-rose-400 hover:text-rose-300" onClick={() => removeElement(selected.id)} title="حذف">
+                <button type="button" className="text-rose-500 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-300" onClick={() => removeElement(selected.id)} title="حذف">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -1223,7 +1239,7 @@ export default function ReportDesignerTab() {
                     </div>
                     <div>
                       <label className={LABEL}>رنگ متن</label>
-                      <input type="color" className="h-8 w-full rounded-lg border border-nx-navy-border bg-nx-navy" value={selected.color || '#000000'} onChange={(event) => updateElement(selected.id, { color: event.target.value })} />
+                      <input type="color" className="h-8 w-full rounded-lg border border-slate-300 dark:border-nx-navy-border bg-white dark:bg-nx-navy" value={selected.color || '#000000'} onChange={(event) => updateElement(selected.id, { color: event.target.value })} />
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
@@ -1232,7 +1248,7 @@ export default function ReportDesignerTab() {
                         key={align}
                         type="button"
                         onClick={() => updateElement(selected.id, { align })}
-                        className={`rounded-md border px-2 py-1 ${selected.align === align ? 'border-nx-blue bg-nx-blue/20 text-white' : 'border-nx-navy-border text-nx-mist'}`}
+                        className={`rounded-md border px-2 py-1 ${selected.align === align ? 'border-nx-blue bg-nx-blue/20 text-nx-blue dark:text-white' : 'border-slate-300 dark:border-nx-navy-border text-slate-700 dark:text-nx-mist'}`}
                       >
                         <Icon className="w-3.5 h-3.5" />
                       </button>
@@ -1240,12 +1256,12 @@ export default function ReportDesignerTab() {
                     <button
                       type="button"
                       onClick={() => updateElement(selected.id, { bold: !selected.bold })}
-                      className={`rounded-md border px-2 py-1 text-xs font-bold ${selected.bold ? 'border-nx-blue bg-nx-blue/20 text-white' : 'border-nx-navy-border text-nx-mist'}`}
+                      className={`rounded-md border px-2 py-1 text-xs font-bold ${selected.bold ? 'border-nx-blue bg-nx-blue/20 text-nx-blue dark:text-white' : 'border-slate-300 dark:border-nx-navy-border text-slate-700 dark:text-nx-mist'}`}
                     >
                       B
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 text-[11px] text-nx-mist">
+                  <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-700 dark:text-nx-mist">
                     <label className="flex items-center gap-1.5">
                       <input type="checkbox" checked={!!selected.box} onChange={(event) => updateElement(selected.id, { box: event.target.checked })} className="accent-nx-blue" /> کادر رنگی
                     </label>
@@ -1256,7 +1272,7 @@ export default function ReportDesignerTab() {
                   {selected.box && (
                     <div>
                       <label className={LABEL}>رنگ پس‌زمینه</label>
-                      <input type="color" className="h-8 w-full rounded-lg border border-nx-navy-border bg-nx-navy" value={selected.bg || '#f0f0f0'} onChange={(event) => updateElement(selected.id, { bg: event.target.value })} />
+                      <input type="color" className="h-8 w-full rounded-lg border border-slate-300 dark:border-nx-navy-border bg-white dark:bg-nx-navy" value={selected.bg || '#f0f0f0'} onChange={(event) => updateElement(selected.id, { bg: event.target.value })} />
                     </div>
                   )}
                 </>
@@ -1274,7 +1290,7 @@ export default function ReportDesignerTab() {
                       <input type="number" className={INPUT} value={selected.size || 10} onChange={(event) => updateElement(selected.id, { size: Number(event.target.value) || 10 })} />
                     </div>
                   </div>
-                  <label className="flex items-center gap-1.5 text-[11px] text-nx-mist">
+                  <label className="flex items-center gap-1.5 text-[11px] text-slate-700 dark:text-nx-mist">
                     <input type="checkbox" checked={!!selected.show_page_totals} onChange={(event) => updateElement(selected.id, { show_page_totals: event.target.checked })} className="accent-nx-blue" /> جمع هر صفحه
                   </label>
                   <div>
@@ -1305,7 +1321,7 @@ export default function ReportDesignerTab() {
                 <div className="grid grid-cols-2 gap-2">
                   <div>
                     <label className={LABEL}>رنگ</label>
-                    <input type="color" className="h-8 w-full rounded-lg border border-nx-navy-border bg-nx-navy" value={selected.color || design.accent_color} onChange={(event) => updateElement(selected.id, { color: event.target.value })} />
+                    <input type="color" className="h-8 w-full rounded-lg border border-slate-300 dark:border-nx-navy-border bg-white dark:bg-nx-navy" value={selected.color || design.accent_color} onChange={(event) => updateElement(selected.id, { color: event.target.value })} />
                   </div>
                   <div>
                     <label className={LABEL}>ضخامت (mm)</label>
@@ -1315,7 +1331,7 @@ export default function ReportDesignerTab() {
                     <div className="col-span-2">
                       <label className={LABEL}>رنگ داخل (خالی = بدون رنگ)</label>
                       <div className="flex items-center gap-2">
-                        <input type="color" className="h-8 w-16 rounded-lg border border-nx-navy-border bg-nx-navy" value={selected.bg || '#ffffff'} onChange={(event) => updateElement(selected.id, { bg: event.target.value })} />
+                        <input type="color" className="h-8 w-16 rounded-lg border border-slate-300 dark:border-nx-navy-border bg-white dark:bg-nx-navy" value={selected.bg || '#ffffff'} onChange={(event) => updateElement(selected.id, { bg: event.target.value })} />
                         <button type="button" className={BTN} onClick={() => updateElement(selected.id, { bg: '' })}>بدون رنگ</button>
                       </div>
                     </div>
@@ -1327,7 +1343,7 @@ export default function ReportDesignerTab() {
                 <div>
                   <label className={LABEL}>مقدار (می‌تواند متغیر داشته باشد)</label>
                   <input className={INPUT} dir="ltr" value={selected.data || ''} onChange={(event) => updateElement(selected.id, { data: event.target.value }, false)} />
-                  <p className="mt-1 text-[10px] text-nx-mist/60">مثال: {'{number}'} یا {'{buyer_name}'}</p>
+                  <p className="mt-1 text-[10px] text-slate-500 dark:text-nx-mist/60">مثال: {'{number}'} یا {'{buyer_name}'}</p>
                 </div>
               )}
 
@@ -1351,14 +1367,14 @@ export default function ReportDesignerTab() {
                       <label className={LABEL}>ضخامت (mm)</label>
                       <input type="number" step="0.1" min={0.1} max={2} className={INPUT} value={selected.thickness || 0.3} onChange={(event) => updateElement(selected.id, { thickness: Number(event.target.value) || 0.3 })} />
                     </div>
-                    <label className="mt-4 flex items-center gap-1.5 text-[11px] text-nx-mist">
+                    <label className="mt-4 flex items-center gap-1.5 text-[11px] text-slate-700 dark:text-nx-mist">
                       <input type="checkbox" checked={selected.border !== false} onChange={(event) => updateElement(selected.id, { border: event.target.checked })} className="accent-nx-blue" /> خط‌چین
                     </label>
                   </div>
                   <div>
                     <label className={LABEL}>رنگ پس‌زمینه (خالی = بدون رنگ)</label>
                     <div className="flex items-center gap-2">
-                      <input type="color" className="h-8 w-16 rounded-lg border border-nx-navy-border bg-nx-navy" value={selected.bg || '#ffffff'} onChange={(event) => updateElement(selected.id, { bg: event.target.value })} />
+                      <input type="color" className="h-8 w-16 rounded-lg border border-slate-300 dark:border-nx-navy-border bg-white dark:bg-nx-navy" value={selected.bg || '#ffffff'} onChange={(event) => updateElement(selected.id, { bg: event.target.value })} />
                       <button type="button" className={BTN} onClick={() => updateElement(selected.id, { bg: '' })}>بدون رنگ</button>
                     </div>
                   </div>

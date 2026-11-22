@@ -1,0 +1,144 @@
+# ----------------------------------------------------------------------
+# File: mssql_mapping.yaml
+# Description: Configuration for migrating MSSQL Desktop export to Django/PostgreSQL web service schema.
+# ----------------------------------------------------------------------
+
+version: 1
+
+tables:
+  - source: payers
+    target: billing.Payer
+    key_source: code
+    key: code
+    fields:
+      code: { source: code, transform: strip }
+      name: { source: name, transform: strip }
+      parent: { source: parent_code, fk: { ref: payers, required: false } }
+      national_id: { source: national_id, transform: strip }
+      economic_code: { source: economic_code, transform: strip }
+      registration_number: { source: registration_number, transform: strip }
+      address: { source: address, transform: strip }
+      postal_code: { source: postal_code, transform: strip }
+      phone: { source: phone, transform: strip }
+      customer_type: { source: customer_type, transform: strip, default: legal }
+      mobile: { source: mobile, transform: strip }
+      email: { source: email, transform: strip }
+
+  - source: users
+    target: accounts.User
+    key_source: id
+    key: username
+    constants:
+      company_id: 1
+      is_active: true
+      can_submit: true
+    fields:
+      username: { source: username, transform: strip }
+      password: { source: password_hash, transform: django_password }
+      can_view: { source: can_view, transform: bool }
+      can_pay: { source: can_pay, transform: bool }
+      can_issue: { source: can_issue, transform: bool }
+      can_manage_users: { source: can_manage_users, transform: bool }
+      can_manage_settings: { source: can_manage_settings, transform: bool }
+      can_delete_history: { source: can_delete_history, transform: bool }
+      can_delete_payment: { source: can_delete_payment, transform: bool }
+      can_export: { source: can_export, transform: bool }
+      can_manage_companies: { source: can_manage_companies, transform: bool }
+
+  - source: invoices
+    target: billing.Invoice
+    key_source: id
+    key: id
+    fields:
+      id: { source: id, transform: int }
+      letter_number: { source: letter_number, transform: strip }
+      payer: { source: payer, transform: strip }
+      payer_code: { source: payer_code, transform: strip }
+      invoice_type: { source: invoice_type, transform: strip }
+      amount: { source: amount, transform: int }
+      issue_date: { source: issue_date, transform: jalali_date }
+      file_path: { source: file_path, transform: strip }
+      description: { source: description, transform: strip }
+
+  - source: payments
+    target: billing.Payment
+    key_source: id
+    key: id
+    fields:
+      id: { source: id, transform: int }
+      payment_code: { source: payment_code, transform: strip }
+      payer_code: { source: payer_code, transform: strip }
+      payer_name: { source: payer_name, transform: strip }
+      payment_date: { source: payment_date, transform: jalali_date }
+      amount: { source: amount, transform: int }
+      tracking_number: { source: tracking_number, transform: strip }
+      description: { source: description, transform: strip }
+
+  - source: credits
+    target: billing.Credit
+    key_source: id
+    key: id
+    fields:
+      id: { source: id, transform: int }
+      payer_code: { source: payer_code, transform: strip }
+      amount: { source: amount, transform: int }
+      credit_date: { source: credit_date, transform: jalali_date }
+      description: { source: description, transform: strip }
+      invoice_number: { source: invoice_number, transform: strip }
+
+  - source: letter_sequences
+    target: billing.LetterSequence
+    key:
+      - payer_code
+      - year
+    fields:
+      payer_code: { source: payer_code, transform: strip }
+      year: { source: year, transform: strip }
+      last_number: { source: last_number, transform: int }
+
+  - source: available_letter_numbers
+    target: billing.AvailableLetterNumber
+    key:
+      - payer_code
+      - year
+      - number
+    fields:
+      payer_code: { source: payer_code, transform: strip }
+      year: { source: year, transform: strip }
+      number: { source: number, transform: int }
+
+  - source: manual_debts
+    target: billing.ManualDebt
+    key_source: id
+    key: id
+    fields:
+      id: { source: id, transform: int }
+      payer_code: { source: payer_code, transform: strip }
+      description: { source: description, transform: strip }
+      amount: { source: amount, transform: int }
+      date: { source: date, transform: jalali_date }
+      notes: { source: notes, transform: strip }
+
+  - source: company_settings
+    target: billing.CompanySettings
+    key: id
+    fields:
+      id: { source: id, transform: int }
+      company_name: { source: company_name, transform: strip }
+      national_id: { source: national_id, transform: strip }
+      economic_code: { source: economic_code, transform: strip }
+      registration_number: { source: registration_number, transform: strip }
+      address: { source: address, transform: strip }
+      postal_code: { source: postal_code, transform: strip }
+      phone: { source: phone, transform: strip }
+      bank_name1: { source: bank_name1, transform: strip }
+      account_number1: { source: account_number1, transform: strip }
+      shaba_number1: { source: shaba_number1, transform: strip }
+      bank_name2: { source: bank_name2, transform: strip }
+      account_number2: { source: account_number2, transform: strip }
+      shaba_number2: { source: shaba_number2, transform: strip }
+      logo_path: { source: logo_path, transform: strip }
+      signature_path: { source: signature_path, transform: strip }
+      stamp_path: { source: stamp_path, transform: strip }
+      manager_name: { source: manager_name, transform: strip }
+      manager_position: { source: manager_position, transform: strip }

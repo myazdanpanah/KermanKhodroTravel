@@ -26,9 +26,11 @@ from .models import (
     ManualDebt,
     Payer,
     Payment,
+    ReportDesign,
     ServiceCategory,
 )
 from .permissions import has_perm, perm_required, permissions_payload
+from .services.report_design import default_design, normalize_design, sample_context
 from .serializers import (
     ApprovalRequestSerializer,
     CompanySettingsSerializer,
@@ -139,7 +141,19 @@ def payer_list_create(request):
     return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
-@api_view(["GET", "PUT", "DELETE"])
+def _can_manage_payer_status(user) -> bool:
+    """Only Admin, CEO, or Finance roles can delete or activate/deactivate customers."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    if getattr(user, "is_superuser", False) or getattr(user, "is_staff", False):
+        return True
+    role = str(getattr(user, "role", "")).lower()
+    if role in ("admin", "ceo", "finance", "financial_manager", "finance_manager"):
+        return True
+    return bool(getattr(user, "can_manage_companies", False) or getattr(user, "can_manage_settings", False))
+
+
+@api_view(["GET", "PUT", "PATCH", "DELETE"])
 @perm_required("can_view")
 def payer_detail(request, code: str):
     payer = Payer.objects.filter(code=code).first()
@@ -154,11 +168,38 @@ def payer_detail(request, code: str):
     if not has_perm(request.user, "can_manage_companies"):
         return _error("شما مجوز مدیریت شرکت‌ها را ندارید.", status.HTTP_403_FORBIDDEN)
 
-    if request.method == "PUT":
+    if request.method in ("PUT", "PATCH"):
+        # Check active status change
+        if "is_active" in request.data:
+            if not _can_manage_payer_status(request.user):
+                return _error("فقط مدیرعامل، ادمین یا مدیر مالی مجاز به تغییر وضعیت فعال/غیرفعال مشتری هستند.", status.HTTP_403_FORBIDDEN)
+            target_active = request.data["is_active"] in (True, "true", "True", 1, "1")
+            # If deactivating, balance must be zero!
+            if not target_active and payer.is_active:
+                b = payer_balance(code)
+                if b.get("balance", 0) != 0:
+                    return _error(
+                        f"امکان غیرفعال‌سازی مشتری با مانده حساب غیرصفر وجود ندارد. مانده فعلی: {b.get('balance', 0):,} ریال. ابتدا باید حساب تسویه کامل شود.",
+                        status.HTTP_400_BAD_REQUEST,
+                    )
         serializer = PayerSerializer(payer, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(serializer.data)
+        data = serializer.data
+        data["balance"] = payer_balance(code)
+        return Response(data)
+
+    # DELETE request
+    if not _can_manage_payer_status(request.user):
+        return _error("فقط مدیرعامل، ادمین یا مدیر مالی مجاز به حذف مشتری هستند.", status.HTTP_403_FORBIDDEN)
+
+    # Balance condition: must be 0
+    b = payer_balance(code)
+    if b.get("balance", 0) != 0:
+        return _error(
+            f"امکان حذف مشتری با مانده حساب غیرصفر وجود ندارد. مانده فعلی: {b.get('balance', 0):,} ریال. ابتدا باید حساب تسویه کامل شود.",
+            status.HTTP_400_BAD_REQUEST,
+        )
 
     # Spec 5.6: deleting a parent detaches its children instead of cascading.
     payer.children.update(parent=None)
@@ -928,19 +969,90 @@ def next_letter(request):
 @perm_required("can_view")
 def dashboard_summary(request):
     """Compact aggregates for the preset BI dashboards."""
+    from collections import defaultdict
     total = total_outstanding()
-    per_service = list(
-        Invoice.objects.values("invoice_type").annotate(amount=Sum("amount")).order_by("-amount")
+
+    # 1. Service breakdown: top 5 services, remainder grouped into "سایر خدمات"
+    service_rows = list(
+        Invoice.objects.filter(reversed_at__isnull=True)
+        .values("invoice_type")
+        .annotate(amount=Sum("amount"))
+        .order_by("-amount")
     )
-    per_payer = list(
-        Invoice.objects.values("payer_code", "payer").annotate(amount=Sum("amount")).order_by("-amount")[:10]
-    )
-    monthly = list(
-        Invoice.objects.values("issue_date").annotate(amount=Sum("amount")).order_by("issue_date")
-    )
-    for row in monthly:
-        row["issue_date_jalali"] = gregorian_to_persian(row["issue_date"])
-        row["issue_date"] = row["issue_date"].isoformat() if row["issue_date"] else None
+    raw_service = []
+    uncategorized_amount = 0
+    for row in service_rows:
+        itype = (row.get("invoice_type") or "").strip()
+        if not itype:
+            uncategorized_amount += row.get("amount") or 0
+        else:
+            raw_service.append({"invoice_type": itype, "amount": row.get("amount") or 0})
+    if uncategorized_amount > 0:
+        raw_service.append({"invoice_type": "بدون دسته‌بندی", "amount": uncategorized_amount})
+    raw_service.sort(key=lambda x: x["amount"], reverse=True)
+
+    if len(raw_service) > 5:
+        top_services = raw_service[:5]
+        other_amount = sum(item["amount"] for item in raw_service[5:])
+        if other_amount > 0:
+            top_services.append({"invoice_type": "سایر خدمات", "amount": other_amount})
+        per_service = top_services
+    else:
+        per_service = raw_service
+
+    # 2. Highest debtor companies: top 10 derived from remaining balance (debts - payments > 0)
+    all_payers = list(Payer.objects.all())
+    balances = balances_for(all_payers)
+    per_payer = [
+        {
+            "payer_code": p.code,
+            "payer": p.name,
+            "amount": balances.get(p.code, {}).get("balance", 0),
+        }
+        for p in all_payers
+        if balances.get(p.code, {}).get("balance", 0) > 0
+    ]
+    per_payer.sort(key=lambda x: x["amount"], reverse=True)
+    per_payer = per_payer[:10]
+
+    # 3. Monthly trend: aggregated by Persian month (newest first, with Persian month names)
+    month_names = {
+        "01": "فروردین", "02": "اردیبهشت", "03": "خرداد",
+        "04": "تیر", "05": "مرداد", "06": "شهریور",
+        "07": "مهر", "08": "آبان", "09": "آذر",
+        "10": "دی", "11": "بهمن", "12": "اسفند",
+    }
+    month_invoiced = defaultdict(int)
+    month_paid = defaultdict(int)
+    for inv in Invoice.objects.filter(reversed_at__isnull=True).only("issue_date", "amount"):
+        if inv.issue_date:
+            j_month = gregorian_to_persian(inv.issue_date)[:7]
+            month_invoiced[j_month] += int(inv.amount or 0)
+
+    for pay in Payment.objects.only("payment_date", "amount"):
+        if pay.payment_date:
+            j_month = gregorian_to_persian(pay.payment_date)[:7]
+            month_paid[j_month] += int(pay.amount or 0)
+
+    all_months = sorted(set(month_invoiced.keys()) | set(month_paid.keys()), reverse=True)[:12]
+
+    monthly = []
+    for m in all_months:
+        m_part = m.split("/")[1] if "/" in m else ""
+        y_part = m.split("/")[0] if "/" in m else ""
+        label = f"{month_names.get(m_part, m_part)} {y_part}" if m_part else m
+        inv_amt = month_invoiced[m]
+        pay_amt = month_paid[m]
+        monthly.append({
+            "month": m,
+            "label": label,
+            "issue_date_jalali": label,
+            "issue_date": m,
+            "amount": inv_amt,
+            "invoiced": inv_amt,
+            "paid": pay_amt,
+        })
+
     return Response(
         {
             "totals": total,
@@ -1044,3 +1156,258 @@ def invoice_types(request):
         if name not in types:
             types.append(name)
     return Response(types)
+
+
+@api_view(["GET"])
+def management_summary(request):
+    """Cross-module KPIs and ERP database status for the management dashboard."""
+    import time
+    from datetime import date
+    from django.db import connection
+
+    company = getattr(request.user, "company", None)
+    total = total_outstanding()
+    invoiced = Invoice.objects.filter(reversed_at__isnull=True).aggregate(total=Sum("amount"))["total"] or 0
+    paid = Payment.objects.aggregate(total=Sum("amount"))["total"] or 0
+
+    kpis = {
+        "invoiced": invoiced,
+        "paid": paid,
+        "outstanding": total["invoices"] + total["manual_debts"] - total["payments"] - total["credits"],
+        "payers": Payer.objects.count(),
+        "invoices": Invoice.objects.filter(reversed_at__isnull=True).count(),
+    }
+
+    mix = []
+    try:
+        from apps.crm.models import Campaign, Lead, Opportunity
+        leads = Lead.objects.filter(company=company).count() if company else Lead.objects.count()
+        opportunities = Opportunity.objects.filter(company=company) if company else Opportunity.objects.all()
+        kpis["leads"] = leads
+        kpis["opportunities"] = opportunities.count()
+        kpis["pipeline"] = float(opportunities.exclude(status__in=["closed_won", "closed_lost"]).aggregate(
+            total=Sum("estimated_value"))["total"] or 0)
+        kpis["campaigns"] = Campaign.objects.filter(company=company).count() if company else Campaign.objects.count()
+        mix.append({"name": "سرنخ‌ها", "value": kpis["leads"]})
+        mix.append({"name": "فرصت‌ها", "value": kpis["opportunities"]})
+    except Exception:
+        pass
+    try:
+        from apps.office.models import Contract, Correspondence
+        kpis["letters"] = Correspondence.objects.filter(company=company).count() if company else Correspondence.objects.count()
+        kpis["contracts"] = Contract.objects.filter(company=company).count() if company else Contract.objects.count()
+        kpis["contract_value"] = float((Contract.objects.filter(company=company) if company else Contract.objects).aggregate(
+            total=Sum("amount"))["total"] or 0)
+        mix.append({"name": "نامه‌ها", "value": kpis["letters"]})
+        mix.append({"name": "قراردادها", "value": kpis["contracts"]})
+    except Exception:
+        pass
+    try:
+        from apps.hr.models import Employee
+        kpis["employees"] = Employee.objects.filter(company=company).count() if company else Employee.objects.count()
+        mix.append({"name": "کارکنان", "value": kpis["employees"]})
+    except Exception:
+        pass
+    try:
+        from apps.sales.models import SalesOrder
+        orders = SalesOrder.objects.filter(company=company) if company else SalesOrder.objects.all()
+        kpis["sales_orders"] = orders.count()
+        kpis["sales_value"] = float(orders.aggregate(total=Sum("total_amount"))["total"] or 0)
+        mix.append({"name": "سفارش‌های فروش", "value": kpis["sales_orders"]})
+    except Exception:
+        kpis.setdefault("sales_orders", 0)
+
+    # Last six months: invoiced vs collected.
+    monthly = []
+    today = date.today()
+    for offset in range(5, -1, -1):
+        year = today.year
+        month = today.month - offset
+        while month <= 0:
+            month += 12
+            year -= 1
+        start = date(year, month, 1)
+        end = date(year + (1 if month == 12 else 0), 1 if month == 12 else month + 1, 1)
+        month_invoiced = Invoice.objects.filter(
+            reversed_at__isnull=True, issue_date__gte=start, issue_date__lt=end,
+        ).aggregate(total=Sum("amount"))["total"] or 0
+        month_paid = Payment.objects.filter(
+            payment_date__gte=start, payment_date__lt=end,
+        ).aggregate(total=Sum("amount"))["total"] or 0
+        monthly.append({
+            "label": gregorian_to_persian(start)[:7],
+            "invoiced": month_invoiced,
+            "paid": month_paid,
+        })
+
+    # Bug 9: Highest debtor companies based on remaining balance
+    all_payers = list(Payer.objects.all())
+    balances = balances_for(all_payers)
+    top_payers = [
+        {
+            "payer_code": p.code,
+            "payer": p.name,
+            "amount": balances.get(p.code, {}).get("balance", 0),
+        }
+        for p in all_payers
+        if balances.get(p.code, {}).get("balance", 0) > 0
+    ]
+    top_payers.sort(key=lambda x: x["amount"], reverse=True)
+    top_payers = top_payers[:10]
+
+    # Bug 7: Live ERP Database connectivity check
+    db_status = {
+        "connected": False,
+        "engine": "PostgreSQL",
+        "name": "nexivo",
+        "host": "localhost",
+        "port": "5544",
+        "response_time_ms": 0,
+        "table_count": 0,
+        "version": "",
+    }
+    try:
+        t0 = time.perf_counter()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT version();")
+            ver_raw = cursor.fetchone()[0]
+            cursor.execute("SELECT count(1) FROM information_schema.tables WHERE table_schema = 'public';")
+            tbl_count = cursor.fetchone()[0]
+        t1 = time.perf_counter()
+        settings_dict = connection.settings_dict
+        db_status = {
+            "connected": True,
+            "engine": "PostgreSQL",
+            "name": settings_dict.get("NAME", "nexivo"),
+            "host": settings_dict.get("HOST", "localhost") or "localhost",
+            "port": str(settings_dict.get("PORT", "5544") or "5544"),
+            "response_time_ms": round((t1 - t0) * 1000, 1),
+            "table_count": tbl_count,
+            "version": ver_raw.split()[0] + " " + ver_raw.split()[1] if ver_raw else "PostgreSQL 15",
+        }
+    except Exception as exc:
+        db_status["error"] = str(exc)
+
+    return Response({
+        "kpis": kpis,
+        "monthly": monthly,
+        "mix": mix,
+        "top_payers": top_payers,
+        "db_status": db_status,
+    })
+
+
+@api_view(["GET", "PUT"])
+def report_design_view(request):
+    """گزارش‌ساز: the saved design the invoice PDF renderer uses."""
+    design = ReportDesign.load()
+    if request.method == "GET":
+        return Response(
+            {
+                "name": design.name,
+                "design": normalize_design(design.design_json),
+                "defaults": default_design(),
+                "sample": sample_context(normalize_design(design.design_json)),
+                "updated_at": design.updated_at,
+            }
+        )
+    if not has_perm(request.user, "can_manage_settings"):
+        return _error("شما مجوز تغییر گزارش‌ساز را ندارید.", status.HTTP_403_FORBIDDEN)
+    normalized = normalize_design(request.data.get("design", request.data))
+    design.design_json = normalized
+    design.name = str(request.data.get("name") or design.name).strip()[:100] or design.name
+    design.updated_by = request.user
+    design.save(update_fields=["design_json", "name", "updated_by", "updated_at"])
+    return Response(
+        {
+            "name": design.name,
+            "design": normalized,
+            "sample": sample_context(normalized),
+            "updated_at": design.updated_at,
+        }
+    )
+
+
+@api_view(["POST"])
+@perm_required("can_manage_settings")
+def report_design_reset(request):
+    design = ReportDesign.load()
+    design.design_json = default_design()
+    design.updated_by = request.user
+    design.save(update_fields=["design_json", "updated_by", "updated_at"])
+    normalized = normalize_design(design.design_json)
+    return Response(
+        {
+            "name": design.name,
+            "design": normalized,
+            "sample": sample_context(normalized),
+            "updated_at": design.updated_at,
+        }
+    )
+
+
+@api_view(["GET"])
+@perm_required("can_view")
+def statements_excel(request):
+    """Excel statement workbook: totals per company plus one ledger sheet each."""
+    from urllib.parse import quote
+
+    from .services.statements import build_statement_workbook
+
+    payer_code = str(request.query_params.get("payer") or "").strip() or None
+    try:
+        content, filename = build_statement_workbook(payer_code)
+    except ValueError as exc:
+        return _error(str(exc), status.HTTP_404_NOT_FOUND)
+
+    response = HttpResponse(
+        content,
+        content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+    response["Content-Disposition"] = f"attachment; filename*=UTF-8''{quote(filename)}"
+    return response
+
+
+@api_view(["GET"])
+@perm_required("can_view")
+def payer_statement_view(request, code: str):
+    """Detailed ledger and breakdown for a single payer/customer."""
+    from .services.statements import payer_breakdown, statement_rows
+    from .services.normalize import gregorian_to_persian
+
+    payer = Payer.objects.filter(code=code).first()
+    if not payer:
+        payer = Payer.objects.filter(name=code).first()
+    if not payer:
+        return _error("طرف حساب یافت نشد.", status=status.HTTP_404_NOT_FOUND)
+
+    breakdown = payer_breakdown(payer.code)
+    raw_rows = statement_rows(payer.code)
+    rows = []
+    for r in raw_rows:
+        rows.append({
+            "date": r["date"].isoformat() if r.get("date") else "",
+            "date_jalali": gregorian_to_persian(r["date"]) if r.get("date") else "",
+            "kind": r.get("kind", ""),
+            "payer_code": r.get("payer_code", ""),
+            "payer_name": r.get("payer_name", "") or payer.name,
+            "description": r.get("description", ""),
+            "reference": r.get("reference", ""),
+            "debit": r.get("debit", 0),
+            "credit": r.get("credit", 0),
+            "balance": r.get("balance", 0),
+        })
+
+    return Response({
+        "payer": {
+            "code": payer.code,
+            "name": payer.name,
+            "national_id": payer.national_id,
+            "economic_code": payer.economic_code,
+            "phone": payer.phone,
+            "mobile": payer.mobile,
+            "address": payer.address,
+        },
+        "breakdown": breakdown,
+        "rows": rows,
+    })

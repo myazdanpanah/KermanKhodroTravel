@@ -56,6 +56,20 @@ function NumberingEditor({ row, onSaved }: { row: SecretariatInfo; onSaved: (row
     },
   });
 
+  useEffect(() => {
+    setForm({
+      pattern: row.number_pattern || '{year}/{code}/{type}/{seq}',
+      padding: String(row.sequence_padding ?? 6),
+      persian: Boolean(row.persian_digits),
+      letters: {
+        incoming: row.type_letters?.incoming || '',
+        outgoing: row.type_letters?.outgoing || '',
+        internal: row.type_letters?.internal || '',
+        contract: row.type_letters?.contract || '',
+      },
+    });
+  }, [row]);
+
   const save = async () => {
     if (!form.pattern.includes('{seq}')) {
       toast('الگوی شماره باید شامل {seq} باشد', 'error');
@@ -79,10 +93,10 @@ function NumberingEditor({ row, onSaved }: { row: SecretariatInfo; onSaved: (row
         sequence_padding: padding,
         persian_digits: form.persian,
         type_letters: {
-          incoming: form.letters.incoming.trim(),
-          outgoing: form.letters.outgoing.trim(),
-          internal: form.letters.internal.trim(),
-          contract: form.letters.contract.trim(),
+          incoming: form.letters.incoming.trim() || DEFAULT_LETTERS.incoming,
+          outgoing: form.letters.outgoing.trim() || DEFAULT_LETTERS.outgoing,
+          internal: form.letters.internal.trim() || DEFAULT_LETTERS.internal,
+          contract: form.letters.contract.trim() || DEFAULT_LETTERS.contract,
         },
       });
       onSaved({ ...row, ...res.data.data });
@@ -96,48 +110,70 @@ function NumberingEditor({ row, onSaved }: { row: SecretariatInfo; onSaved: (row
   };
 
   return (
-    <div className="mt-2 rounded-lg border border-nx-border p-2 dark:border-nx-navy-border">
+    <div className="mt-2 rounded-lg border border-nx-border bg-slate-50/50 p-3 dark:border-nx-navy-border dark:bg-nx-navy-elevated/30">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[11px] text-nx-mist">
-          شمارهٔ بعدی: <span className="font-mono text-nx-navy dark:text-white" data-digits="latin">{renderPreview(row.code, form)}</span>
+        <p className="text-xs text-slate-600 dark:text-nx-mist">
+          شمارهٔ بعدی: <span className="font-mono font-medium text-slate-900 dark:text-white" data-digits="latin">{renderPreview(row.code, form)}</span>
         </p>
-        <button onClick={() => setOpen((value) => !value)}
-          className="rounded-lg border border-nx-border px-2 py-1 text-[11px] text-nx-navy dark:border-nx-navy-border dark:text-white">
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          className="rounded-lg border border-nx-border bg-white px-2.5 py-1 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 dark:border-nx-navy-border dark:bg-nx-navy dark:text-white dark:hover:bg-nx-navy-elevated"
+        >
           {open ? 'بستن تنظیمات شماره‌گذاری' : 'تنظیمات شماره‌گذاری'}
         </button>
       </div>
       {open && (
-        <div className="mt-2 space-y-2">
-          <label className="block text-[11px] text-nx-mist">
+        <div className="mt-3 space-y-3 border-t border-nx-border pt-3 dark:border-nx-navy-border">
+          <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
             الگوی شماره (جای‌نگهدارها: {'{year} {code} {type} {seq}'})
-            <input value={form.pattern} onChange={(e) => setForm({ ...form, pattern: e.target.value })} dir="ltr"
-              className="mt-1 w-full rounded-lg border border-nx-border bg-transparent px-2 py-1.5 font-mono text-xs dark:border-nx-navy-border dark:text-white" />
+            <input
+              value={form.pattern}
+              onChange={(e) => setForm({ ...form, pattern: e.target.value })}
+              dir="ltr"
+              className="mt-1 w-full rounded-lg border border-nx-border bg-white px-3 py-2 font-mono text-xs text-slate-900 shadow-sm transition focus:border-nx-teal focus:outline-none focus:ring-1 focus:ring-nx-teal dark:border-nx-navy-border dark:bg-nx-navy dark:text-white"
+            />
           </label>
-          <div className="grid gap-2 sm:grid-cols-2">
-            <label className="block text-[11px] text-nx-mist">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-xs font-medium text-slate-700 dark:text-slate-200">
               تعداد ارقام شمارهٔ ترتیبی
-              <input value={form.padding} onChange={(e) => setForm({ ...form, padding: e.target.value })}
+              <input
+                value={form.padding}
+                onChange={(e) => setForm({ ...form, padding: e.target.value })}
                 inputMode="numeric"
-                className="mt-1 w-full rounded-lg border border-nx-border bg-transparent px-2 py-1.5 text-xs dark:border-nx-navy-border dark:text-white" />
+                className="mt-1 w-full rounded-lg border border-nx-border bg-white px-3 py-2 text-xs text-slate-900 shadow-sm transition focus:border-nx-teal focus:outline-none focus:ring-1 focus:ring-nx-teal dark:border-nx-navy-border dark:bg-nx-navy dark:text-white"
+              />
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-4 gap-2">
               {([['incoming', 'وارده'], ['outgoing', 'صادره'], ['internal', 'داخلی'], ['contract', 'قرارداد']] as const).map(([key, label]) => (
-                <label key={key} className="block text-[11px] text-nx-mist">
+                <label key={key} className="block text-xs font-medium text-slate-700 dark:text-slate-200">
                   حرف {label}
-                  <input value={form.letters[key]} placeholder={DEFAULT_LETTERS[key]}
+                  <input
+                    value={form.letters[key]}
+                    placeholder={DEFAULT_LETTERS[key]}
                     onChange={(e) => setForm({ ...form, letters: { ...form.letters, [key]: e.target.value } })}
-                    className="mt-1 w-full rounded-lg border border-nx-border bg-transparent px-2 py-1.5 text-center text-xs dark:border-nx-navy-border dark:text-white" />
+                    className="mt-1 w-full rounded-lg border border-nx-border bg-white px-2 py-2 text-center text-xs font-medium text-slate-900 shadow-sm transition focus:border-nx-teal focus:outline-none focus:ring-1 focus:ring-nx-teal dark:border-nx-navy-border dark:bg-nx-navy dark:text-white"
+                  />
                 </label>
               ))}
             </div>
           </div>
-          <label className="flex items-center gap-2 text-[11px] text-nx-navy dark:text-white">
-            <input type="checkbox" checked={form.persian} onChange={(e) => setForm({ ...form, persian: e.target.checked })} />
+          <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-200">
+            <input
+              type="checkbox"
+              checked={form.persian}
+              onChange={(e) => setForm({ ...form, persian: e.target.checked })}
+              className="rounded border-nx-border text-nx-teal focus:ring-nx-teal dark:border-nx-navy-border"
+            />
             نمایش اعداد شماره با ارقام فارسی (۰۱۲۳۴۵۶۷۸۹)
           </label>
-          <div className="flex items-center justify-end gap-2">
-            <button onClick={save} disabled={saving}
-              className="rounded-lg bg-nx-blue px-3 py-1.5 text-xs text-white disabled:opacity-50">
+          <div className="flex items-center justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={save}
+              disabled={saving}
+              className="flex items-center gap-1.5 rounded-lg bg-nx-teal px-4 py-2 text-xs font-medium text-white shadow-sm transition hover:bg-nx-teal/90 active:scale-95 disabled:opacity-50"
+            >
               {saving ? 'در حال ذخیره…' : 'ذخیرهٔ تنظیمات'}
             </button>
           </div>
@@ -235,14 +271,24 @@ export default function SecretariatPanel({ meta, onClose, embedded = false }: Se
           )}
         </div>
 
-        <div className="mb-4 grid gap-2 rounded-lg border border-nx-border p-3 sm:grid-cols-3 dark:border-nx-navy-border">
-          <input value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })}
+        <div className="mb-4 grid gap-2 rounded-lg border border-nx-border bg-slate-50/50 p-3 sm:grid-cols-3 dark:border-nx-navy-border dark:bg-nx-navy-elevated/20">
+          <input
+            value={draft.name}
+            onChange={(e) => setDraft({ ...draft, name: e.target.value })}
             placeholder="نام دبیرخانه"
-            className="rounded-lg border border-nx-border bg-transparent px-3 py-2 text-sm dark:border-nx-navy-border dark:text-white" />
-          <input value={draft.code} onChange={(e) => setDraft({ ...draft, code: e.target.value })}
+            className="rounded-lg border border-nx-border bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-nx-teal focus:outline-none focus:ring-1 focus:ring-nx-teal dark:border-nx-navy-border dark:bg-nx-navy dark:text-white"
+          />
+          <input
+            value={draft.code}
+            onChange={(e) => setDraft({ ...draft, code: e.target.value })}
             placeholder="کد (مثلاً CEN)"
-            className="rounded-lg border border-nx-border bg-transparent px-3 py-2 text-sm dark:border-nx-navy-border dark:text-white" />
-          <button onClick={create} className="flex items-center justify-center gap-1 rounded-lg bg-nx-blue px-3 py-2 text-sm text-white">
+            className="rounded-lg border border-nx-border bg-white px-3 py-2 text-sm text-slate-900 shadow-sm transition focus:border-nx-teal focus:outline-none focus:ring-1 focus:ring-nx-teal dark:border-nx-navy-border dark:bg-nx-navy dark:text-white"
+          />
+          <button
+            type="button"
+            onClick={create}
+            className="flex items-center justify-center gap-1 rounded-lg bg-nx-teal px-3 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-nx-teal/90 active:scale-95"
+          >
             <Plus className="h-4 w-4" /> ایجاد
           </button>
         </div>
@@ -288,7 +334,7 @@ export default function SecretariatPanel({ meta, onClose, embedded = false }: Se
                     onChange={(e) => setMemberDraft((prev) => ({
                       ...prev, [row.id]: { ...prev[row.id], userId: e.target.value, canRegister: prev[row.id]?.canRegister ?? true },
                     }))}
-                    className="min-w-0 flex-1 rounded-lg border border-nx-border bg-transparent px-2 py-1.5 text-xs dark:border-nx-navy-border dark:text-white">
+                    className="min-w-0 flex-1 rounded-lg border border-nx-border bg-white px-2.5 py-1.5 text-xs text-slate-900 shadow-sm transition focus:border-nx-teal focus:outline-none focus:ring-1 focus:ring-nx-teal dark:border-nx-navy-border dark:bg-nx-navy dark:text-white">
                     <option value="">افزودن عضو…</option>
                     {meta.users.map((user) => (
                       <option key={user.id} value={user.id}>
@@ -298,16 +344,17 @@ export default function SecretariatPanel({ meta, onClose, embedded = false }: Se
                       </option>
                     ))}
                   </select>
-                  <label className="flex items-center gap-1 text-xs text-nx-mist">
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-slate-700 dark:text-slate-300">
                     <input type="checkbox"
                       checked={memberDraft[row.id]?.canRegister ?? true}
                       onChange={(e) => setMemberDraft((prev) => ({
                         ...prev, [row.id]: { ...prev[row.id], canRegister: e.target.checked, userId: prev[row.id]?.userId || '' },
-                      }))} />
+                      }))}
+                      className="rounded border-nx-border text-nx-teal focus:ring-nx-teal dark:border-nx-navy-border" />
                     حق ثبت
                   </label>
-                  <button onClick={() => addMember(row.id)}
-                    className="rounded-lg border border-nx-border px-2 py-1.5 text-xs text-nx-navy dark:border-nx-navy-border dark:text-white">
+                  <button type="button" onClick={() => addMember(row.id)}
+                    className="rounded-lg border border-nx-border bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 active:scale-95 dark:border-nx-navy-border dark:bg-nx-navy dark:text-white dark:hover:bg-nx-navy-elevated">
                     افزودن
                   </button>
                 </div>

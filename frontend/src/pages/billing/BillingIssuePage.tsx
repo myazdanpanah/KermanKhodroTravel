@@ -427,15 +427,15 @@ export default function BillingIssuePage() {
       <div className="flex items-center gap-2">
         <Plus className="w-5 h-5 text-nx-blue" />
         <div>
-          <h1 className="text-lg font-bold text-white">صدور صورت‌حساب</h1>
-          <p className="text-xs text-nx-mist">ثبت فروش خدمات، محاسبهٔ مانده و تولید اعلامیهٔ رسمی</p>
+          <h1 className="text-lg font-bold text-slate-900 dark:text-white">صدور صورت‌حساب</h1>
+          <p className="text-xs text-slate-500 dark:text-nx-mist">ثبت فروش خدمات، محاسبهٔ مانده و تولید اعلامیهٔ رسمی</p>
         </div>
       </div>
 
       <section className={`${CARD} p-5 space-y-4`}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-2">
-            <label className="block text-xs text-nx-mist mb-1.5">شرکت طرف حساب</label>
+            <label className="block text-xs text-slate-600 dark:text-nx-mist mb-1.5">شرکت طرف حساب</label>
             <select value={payerCode} onChange={(e) => setPayerCode(e.target.value)} className={INPUT}>
               <option value="">انتخاب شرکت…</option>
               {payers.map((p) => (
@@ -444,21 +444,21 @@ export default function BillingIssuePage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-nx-mist mb-1.5">شماره نامه</label>
+            <label className="block text-xs text-slate-600 dark:text-nx-mist mb-1.5">شماره نامه</label>
             <input value={letterNumber} readOnly className={INPUT} placeholder="YYYY/CODE/NNNNN" dir="ltr" />
           </div>
           <JalaliDateInput label="تاریخ نامه" value={letterDate} onChange={setLetterDate} />
           <JalaliDateInput label="تاریخ شروع *" value={startDate} onChange={setStartDate} />
           <JalaliDateInput label="تاریخ پایان *" value={endDate} onChange={setEndDate} />
           <div className="md:col-span-2">
-            <label className="block text-xs text-nx-mist mb-1.5">نوع خدمت (از فایل تعیین می‌شود)</label>
+            <label className="block text-xs text-slate-600 dark:text-nx-mist mb-1.5">نوع خدمت (از فایل تعیین می‌شود)</label>
             <div className={`${INPUT} flex items-center min-h-[42px]`}>
-              {serviceType || <span className="text-nx-mist/60">هنوز فایلی بارگذاری نشده است</span>}
+              {serviceType || <span className="text-slate-400 dark:text-nx-mist/60">هنوز فایلی بارگذاری نشده است</span>}
             </div>
           </div>
           {blocks.service.rows.length > 0 && (
             <div className="md:col-span-2">
-              <label className="block text-xs text-nx-mist mb-1.5">دستهٔ خدمت (برای نام‌گذاری دقیق)</label>
+              <label className="block text-xs text-slate-600 dark:text-nx-mist mb-1.5">دستهٔ خدمت (برای نام‌گذاری دقیق)</label>
               <select value={serviceCategoryId} onChange={(e) => setServiceCategoryId(e.target.value)} className={INPUT}>
                 <option value="">خدمات (عمومی)</option>
                 {categories.filter((c) => c.is_active).map((c) => (
@@ -469,16 +469,16 @@ export default function BillingIssuePage() {
           )}
         </div>
 
-        <div className="flex gap-2 border-b border-nx-navy-border pb-2">
+        <div className="flex gap-2 border-b border-slate-200 dark:border-nx-navy-border pb-2">
           {SERVICES.map((service) => (
             <button
               key={service.key}
               onClick={() => setActiveService(service.key)}
-              className={`px-4 py-2 rounded-lg text-sm transition ${activeService === service.key ? 'bg-nx-blue/15 text-nx-blue' : 'text-nx-mist hover:bg-nx-navy'}`}
+              className={`px-4 py-2 rounded-lg text-sm transition ${activeService === service.key ? 'bg-nx-blue/15 text-nx-blue font-medium' : 'text-slate-600 dark:text-nx-mist hover:bg-slate-100 dark:hover:bg-nx-navy hover:text-slate-900 dark:hover:text-white'}`}
             >
               {service.label}
               {blocks[service.key].rows.length > 0 && (
-                <span className="mr-2 text-[10px] bg-emerald-400/15 text-emerald-400 px-1.5 py-0.5 rounded">
+                <span className="mr-2 text-[10px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 px-1.5 py-0.5 rounded font-medium">
                   {blocks[service.key].rows.length}
                 </span>
               )}
@@ -487,8 +487,8 @@ export default function BillingIssuePage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <label className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-nx-navy text-nx-mist text-sm cursor-pointer border border-nx-navy-border hover:border-nx-blue/50 transition ${uploading ? 'opacity-60' : ''}`}>
-            <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+          <label className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-100 dark:bg-nx-navy text-slate-700 dark:text-nx-mist text-sm cursor-pointer border border-slate-300 dark:border-nx-navy-border hover:border-nx-blue/50 hover:bg-slate-200 dark:hover:bg-nx-navy/80 transition ${uploading ? 'opacity-60' : ''}`}>
+            <FileSpreadsheet className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
             {uploading ? 'در حال خواندن…' : 'بارگذاری اکسل (چند فایل هم‌زمان)'}
             <input
               type="file"
@@ -505,29 +505,29 @@ export default function BillingIssuePage() {
           </label>
           <button
             onClick={openManualEditor}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-nx-navy-border text-nx-mist text-sm hover:border-nx-blue/50"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-nx-navy-border text-slate-700 dark:text-nx-mist text-sm hover:border-nx-blue/50 hover:bg-slate-100 dark:hover:bg-nx-navy transition"
           >
             <PencilLine className="w-4 h-4 text-nx-blue" />
             افزودن دستی خدمت
           </button>
           {active.rows.length > 0 && (
-            <button onClick={() => clearBlock(activeService)} className="inline-flex items-center gap-1.5 text-xs text-rose-400 hover:bg-rose-400/10 px-3 py-2 rounded-lg">
+            <button onClick={() => clearBlock(activeService)} className="inline-flex items-center gap-1.5 text-xs text-rose-500 dark:text-rose-400 hover:bg-rose-500/10 px-3 py-2 rounded-lg">
               <Trash2 className="w-3.5 h-3.5" /> پاک کردن ردیف‌ها
             </button>
           )}
           {active.rows.length > 0 && (
-            <span className="text-xs text-nx-mist">
-              بدهکاری: <strong className="text-white">{rial(totals.debt)}</strong>
-              {' '}— بستانکاری: <strong className="text-white">{rial(totals.credit)}</strong>
-              {' '}— مانده: <strong className="text-white">{rial(totals.balance)}</strong>
+            <span className="text-xs text-slate-600 dark:text-nx-mist">
+              بدهکاری: <strong className="text-slate-900 dark:text-white">{rial(totals.debt)}</strong>
+              {' '}— بستانکاری: <strong className="text-slate-900 dark:text-white">{rial(totals.credit)}</strong>
+              {' '}— مانده: <strong className="text-slate-900 dark:text-white">{rial(totals.balance)}</strong>
             </span>
           )}
         </div>
 
         {active.rows.length > 0 && (
-          <div className="overflow-x-auto rounded-xl border border-nx-navy-border">
+          <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-nx-navy-border">
             <table className="w-full text-xs min-w-[720px]">
-              <thead className="bg-nx-navy text-nx-mist">
+              <thead className="bg-slate-100 dark:bg-nx-navy text-slate-700 dark:text-nx-mist">
                 <tr>
                   {(active.columns.length ? active.columns : defaultColumns(activeService)).map((column) => (
                     <th key={column} className="px-3 py-2 text-right font-medium whitespace-nowrap">{column}</th>
@@ -537,14 +537,14 @@ export default function BillingIssuePage() {
               </thead>
               <tbody>
                 {active.rows.slice(0, 100).map((row, index) => (
-                  <tr key={index} className="border-t border-nx-navy-border">
+                  <tr key={index} className="border-t border-slate-200 dark:border-nx-navy-border">
                     {(active.columns.length ? active.columns : defaultColumns(activeService)).map((column) => (
-                      <td key={column} className="px-3 py-2 text-nx-mist whitespace-nowrap">
+                      <td key={column} className="px-3 py-2 text-slate-700 dark:text-nx-mist whitespace-nowrap">
                         {typeof row[column] === 'number' ? rial(row[column] as number) : String(row[column] ?? '')}
                       </td>
                     ))}
                     <td className="px-3 py-2">
-                      <button onClick={() => removeManualRow(activeService, index)} className="p-1 rounded text-rose-400 hover:bg-rose-400/10">
+                      <button onClick={() => removeManualRow(activeService, index)} className="p-1 rounded text-rose-500 dark:text-rose-400 hover:bg-rose-500/10">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </td>
@@ -557,12 +557,12 @@ export default function BillingIssuePage() {
 
         <div className="flex justify-end gap-3">
           {canIssue && (
-            <button onClick={() => void submit(false)} disabled={saving} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-nx-navy border border-nx-navy-border text-nx-mist text-sm disabled:opacity-60">
+            <button onClick={() => void submit(false)} disabled={saving} className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-nx-navy border border-slate-300 dark:border-nx-navy-border text-slate-700 dark:text-nx-mist text-sm font-medium hover:bg-slate-200 dark:hover:bg-nx-navy/80 disabled:opacity-60">
               <Send className="w-4 h-4" /> ثبت و ارسال برای تأیید
             </button>
           )}
           {canApprove && (
-            <button onClick={() => void submit(true)} disabled={saving} className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-nx-blue text-white text-sm disabled:opacity-60">
+            <button onClick={() => void submit(true)} disabled={saving} className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-nx-blue text-white text-sm font-medium disabled:opacity-60 shadow-sm">
               <CheckCircle2 className="w-4 h-4" /> ثبت، تأیید و صدور
             </button>
           )}
@@ -570,9 +570,9 @@ export default function BillingIssuePage() {
       </section>
 
       <section className={`${CARD} overflow-x-auto`}>
-        <div className="px-4 py-3 border-b border-nx-navy-border text-sm font-semibold text-white">درخواست‌های صدور</div>
+        <div className="px-4 py-3 border-b border-slate-200 dark:border-nx-navy-border text-sm font-semibold text-slate-900 dark:text-white">درخواست‌های صدور</div>
         <table className="w-full text-sm min-w-[760px]">
-          <thead className="bg-nx-navy text-nx-mist text-xs">
+          <thead className="bg-slate-100 dark:bg-nx-navy text-slate-700 dark:text-nx-mist text-xs">
             <tr>
               <th className="text-right font-medium px-4 py-3">شماره نامه</th>
               <th className="text-right font-medium px-4 py-3">شرکت</th>
@@ -592,23 +592,23 @@ export default function BillingIssuePage() {
                 ref={(el) => {
                   rowRefs.current[approval.id] = el
                 }}
-                className={`border-t border-nx-navy-border hover:bg-nx-navy/40 ${
+                className={`border-t border-slate-200 dark:border-nx-navy-border hover:bg-slate-50 dark:hover:bg-nx-navy/40 ${
                   String(approval.id) === focusedRequest ? 'bg-nx-blue/10 ring-1 ring-inset ring-nx-blue/60' : ''
                 }`}
               >
-                <td className="px-4 py-3 text-white" dir="ltr">
+                <td className="px-4 py-3 text-slate-900 dark:text-white font-medium" dir="ltr">
                   {approval.service_letters && Object.keys(approval.service_letters).length > 0
                     ? Object.entries(approval.service_letters).map(([key, letter]) => (
                         <div key={key} className="text-[11px]">
                           {letter}
-                          <span className="text-nx-mist mr-1">({SERVICES.find((s) => s.key === key)?.label || key})</span>
+                          <span className="text-slate-500 dark:text-nx-mist mr-1">({SERVICES.find((s) => s.key === key)?.label || key})</span>
                         </div>
                       ))
                     : approval.letter_number || '—'}
                 </td>
-                <td className="px-4 py-3 text-nx-mist">{approval.payer_name}</td>
-                <td className="px-4 py-3 text-nx-mist">{approval.service_type}</td>
-                <td className="px-4 py-3 text-nx-mist">{approval.period_range}</td>
+                <td className="px-4 py-3 text-slate-700 dark:text-nx-mist">{approval.payer_name}</td>
+                <td className="px-4 py-3 text-slate-700 dark:text-nx-mist">{approval.service_type}</td>
+                <td className="px-4 py-3 text-slate-700 dark:text-nx-mist">{approval.period_range}</td>
                 <td className="px-4 py-3">
                   <span className={`px-2 py-1 rounded-lg text-[11px] ${STATUS_STYLE[approval.status] || ''}`}>{approval.status_display}</span>
                 </td>
@@ -623,17 +623,17 @@ export default function BillingIssuePage() {
                         <Download className="w-3 h-3" /> {file.file_name}
                       </button>
                     ))}
-                    {approval.files.length === 0 && <span className="text-[11px] text-nx-mist/60">—</span>}
+                    {approval.files.length === 0 && <span className="text-[11px] text-slate-400 dark:text-nx-mist/60">—</span>}
                   </div>
-                  {approval.generation_error && <p className="text-[10px] text-rose-400 mt-1">{approval.generation_error}</p>}
+                  {approval.generation_error && <p className="text-[10px] text-rose-500 dark:text-rose-400 mt-1">{approval.generation_error}</p>}
                 </td>
                 <td className="px-4 py-3">
                   {approval.status === 'pending' && canApprove && (
                     <div className="flex gap-1">
-                      <button onClick={() => void act(approval.id, 'approve')} className="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-400/10" title="تأیید و صدور">
+                      <button onClick={() => void act(approval.id, 'approve')} className="p-1.5 rounded-lg text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10" title="تأیید و صدور">
                         <CheckCircle2 className="w-4 h-4" />
                       </button>
-                      <button onClick={() => void act(approval.id, 'reject')} className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-400/10" title="رد">
+                      <button onClick={() => void act(approval.id, 'reject')} className="p-1.5 rounded-lg text-rose-500 dark:text-rose-400 hover:bg-rose-500/10" title="رد">
                         <XCircle className="w-4 h-4" />
                       </button>
                     </div>
@@ -650,19 +650,19 @@ export default function BillingIssuePage() {
           <div className={`${CARD} w-full max-w-5xl p-5 my-6`} onClick={(event) => event.stopPropagation()} dir="rtl">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-sm font-bold text-white">افزودن دستی خدمت — {SERVICES.find((s) => s.key === activeService)?.label}</h3>
-                <p className="text-[11px] text-nx-mist mt-0.5">ردیف‌ها مثل ردیف‌های اکسل به همان جدول اضافه و با ثبت درخواست در دیتابیس ذخیره می‌شوند.</p>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">افزودن دستی خدمت — {SERVICES.find((s) => s.key === activeService)?.label}</h3>
+                <p className="text-[11px] text-slate-500 dark:text-nx-mist mt-0.5">ردیف‌ها مثل ردیف‌های اکسل به همان جدول اضافه و با ثبت درخواست در دیتابیس ذخیره می‌شوند.</p>
               </div>
-              <button onClick={() => setManualOpen(false)} className="p-1.5 rounded-lg text-nx-mist hover:bg-nx-navy"><X className="w-4 h-4" /></button>
+              <button onClick={() => setManualOpen(false)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:text-nx-mist dark:hover:bg-nx-navy"><X className="w-4 h-4" /></button>
             </div>
 
             <datalist id="passenger-suggestions">
               {passengers.map((name) => <option key={name} value={name} />)}
             </datalist>
 
-            <div className="overflow-x-auto rounded-xl border border-nx-navy-border">
+            <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-nx-navy-border">
               <table className="w-full text-xs min-w-[720px]">
-                <thead className="bg-nx-navy text-nx-mist">
+                <thead className="bg-slate-100 dark:bg-nx-navy text-slate-700 dark:text-nx-mist">
                   <tr>
                     <th className="px-2 py-2 text-right font-medium">#</th>
                     {MANUAL_FIELDS[activeService].map((field) => (
@@ -675,8 +675,8 @@ export default function BillingIssuePage() {
                 </thead>
                 <tbody>
                   {draftRows.map((draft, index) => (
-                    <tr key={index} className="border-t border-nx-navy-border">
-                      <td className="px-2 py-1.5 text-nx-mist">{index + 1}</td>
+                    <tr key={index} className="border-t border-slate-200 dark:border-nx-navy-border">
+                      <td className="px-2 py-1.5 text-slate-600 dark:text-nx-mist">{index + 1}</td>
                       {MANUAL_FIELDS[activeService].map((field) => (
                         <td key={field.key} className="px-1.5 py-1.5">
                           <input
@@ -691,7 +691,7 @@ export default function BillingIssuePage() {
                         </td>
                       ))}
                       <td className="px-1.5 py-1.5">
-                        <button onClick={() => removeDraftRow(index)} className="p-1 rounded text-rose-400 hover:bg-rose-400/10">
+                        <button onClick={() => removeDraftRow(index)} className="p-1 rounded text-rose-500 dark:text-rose-400 hover:bg-rose-500/10">
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </td>
@@ -702,21 +702,21 @@ export default function BillingIssuePage() {
             </div>
 
             {activeService === 'service' && categories.length > 0 && (
-              <p className="text-[11px] text-nx-mist mt-2">
+              <p className="text-[11px] text-slate-500 dark:text-nx-mist mt-2">
                 شرح خدمات را می‌توانید از فهرست خدمات هم انتخاب کنید؛ دستهٔ انتخابی صفحه به‌عنوان نوع صورت‌حساب استفاده می‌شود.
               </p>
             )}
 
             <div className="flex flex-wrap items-center justify-between gap-2 mt-4">
               <div className="flex items-center gap-2">
-                <button onClick={addDraftRow} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-nx-navy-border text-nx-mist text-xs hover:border-nx-blue/50">
+                <button onClick={addDraftRow} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 dark:border-nx-navy-border text-slate-700 dark:text-nx-mist text-xs hover:border-nx-blue/50 hover:bg-slate-100 dark:hover:bg-nx-navy transition">
                   <Plus className="w-3.5 h-3.5" /> ردیف جدید
                 </button>
-                <p className="text-[11px] text-nx-mist">هر تعداد مسافر را می‌توانید در یک نشست وارد کنید؛ مانده خودکار محاسبه می‌شود.</p>
+                <p className="text-[11px] text-slate-500 dark:text-nx-mist">هر تعداد مسافر را می‌توانید در یک نشست وارد کنید؛ مانده خودکار محاسبه می‌شود.</p>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => setManualOpen(false)} className="px-4 py-2 rounded-xl border border-nx-navy-border text-nx-mist text-sm">بستن</button>
-                <button onClick={commitDrafts} className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-nx-blue text-white text-sm">
+                <button onClick={() => setManualOpen(false)} className="px-4 py-2 rounded-xl border border-slate-300 dark:border-nx-navy-border text-slate-700 dark:text-nx-mist hover:bg-slate-100 dark:hover:bg-nx-navy text-sm">بستن</button>
+                <button onClick={commitDrafts} className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-nx-blue text-white text-sm font-medium shadow-sm">
                   <Save className="w-4 h-4" /> ثبت ردیف‌ها
                 </button>
               </div>

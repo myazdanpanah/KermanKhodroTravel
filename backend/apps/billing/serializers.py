@@ -28,7 +28,7 @@ class PayerSerializer(serializers.ModelSerializer):
         fields = [
             "code", "name", "parent", "parent_name", "children_count",
             "national_id", "economic_code", "registration_number", "address",
-            "postal_code", "phone", "mobile", "email", "customer_type",
+            "postal_code", "phone", "mobile", "email", "customer_type", "is_active",
         ]
 
     def get_children_count(self, obj) -> int:

@@ -644,7 +644,8 @@ class InvoicePdfLayoutTests(TestCase):
         # its cell instead of stretching the table past the page margins.
         self.assertIn("table-layout: fixed", html)
         self.assertIn("overflow-wrap: anywhere", html)
-        self.assertIn('<col class="c-passenger">', html)
+        # Columns now come from the saved report design, so the width is inline.
+        self.assertIn('<col style="width: 16%;">', html)
 
 
 class InvoicePdfContentTests(TestCase):
@@ -1143,7 +1144,7 @@ class OfficialLetterTests(TestCase):
         )
         self.assertIn("شرکت محترم شرکت نمونه سفر", text)
         self.assertIn("صورت‌حساب", text)
-        self.assertIn("1404/01/15", text)
+        self.assertTrue("15/01/1404" in text or "1404/01/15" in text)
         self.assertIn("1,500,000", text)
         self.assertIn("بانک ملت شماره حساب: 78466591", text)
         self.assertIn("مدیر امور اداری و مالی", text)

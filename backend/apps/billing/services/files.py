@@ -107,6 +107,9 @@ def read_bytes(final_file: FinalFile) -> bytes:
 RETENTION_HOURS = 24
 
 
+RETENTION_HOURS = 24
+
+
 def purge_expired_files(older_than_hours: int = RETENTION_HOURS) -> int:
     """
     Drop the payload of generated files older than the retention window.

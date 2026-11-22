@@ -25,6 +25,8 @@ export interface Lead {
   converted_at: string | null;
   score: number;
   notes: string;
+  campaign: number | null;
+  campaign_name?: string;
   created_at: string;
   updated_at: string;
 }

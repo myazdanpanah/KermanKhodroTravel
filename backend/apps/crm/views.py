@@ -68,7 +68,14 @@ def lead_list(request):
         serializer = LeadCreateSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         from .services import LeadService
-        lead = LeadService.create_lead(company=company, user=request.user, **serializer.validated_data)
+        data = dict(serializer.validated_data)
+        campaign_id = data.pop("campaign_id", None)
+        lead = LeadService.create_lead(company=company, user=request.user, **data)
+        if campaign_id:
+            campaign = Campaign.objects.filter(pk=campaign_id, company=company).first()
+            if campaign is not None:
+                lead.campaign = campaign
+                lead.save(update_fields=["campaign"])
         return success_response(data=LeadSerializer(lead).data, message="Lead created", http_status_code=status.HTTP_201_CREATED)
 
 
@@ -87,6 +94,9 @@ def lead_detail(request, pk):
         for field in ["name", "company_name", "email", "phone", "mobile", "status", "source", "priority", "industry", "notes"]:
             if field in request.data:
                 setattr(lead, field, request.data[field])
+        if "campaign_id" in request.data:
+            campaign_id = request.data.get("campaign_id")
+            lead.campaign = Campaign.objects.filter(pk=campaign_id, company=request.user.company).first() if campaign_id else None
         lead.save()
         return success_response(data=LeadSerializer(lead).data)
     elif request.method == "DELETE":

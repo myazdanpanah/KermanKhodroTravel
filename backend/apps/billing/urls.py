@@ -8,6 +8,7 @@ urlpatterns = [
     # Payers / companies (spec 6.3)
     path("payers/", views.payer_list_create, name="payer-list"),
     path("payers/<str:code>/balance/", views.payer_balance_view, name="payer-balance"),
+    path("payers/<str:code>/statement/", views.payer_statement_view, name="payer-statement"),
     path("aging/", views.aging_report_view, name="aging-report"),
     path("payers/<str:code>/", views.payer_detail, name="payer-detail"),
     # Invoices (spec 6.4)
@@ -56,4 +57,9 @@ urlpatterns = [
     path("passengers/", views.passenger_suggestions, name="passenger-suggestions"),
     path("invoices/types/", views.invoice_types, name="invoice-types"),
     path("dashboard/summary/", views.dashboard_summary, name="dashboard-summary"),
+    # Report designer + Excel statements
+    path("report-design/", views.report_design_view, name="report-design"),
+    path("report-design/reset/", views.report_design_reset, name="report-design-reset"),
+    path("statements/excel/", views.statements_excel, name="statements-excel"),
+    path("management-summary/", views.management_summary, name="management-summary"),
 ]

@@ -8,7 +8,7 @@ import SplashScreen from '../components/SplashScreen'
 import { useBrandLogo } from '../store/brandingStore'
 import {
   BarChart3, DollarSign, Users, Database, Upload,
-  Settings, ArrowLeft, LogOut, Map,
+  Settings, ArrowLeft, LogOut,
   Package, ShoppingCart, Factory, Ship, Headphones,
   Briefcase, LineChart, Brain, Workflow, TrendingUp,
   Tag, Inbox
@@ -43,7 +43,7 @@ const MODULE_ICONS: Record<string, React.ElementType> = {
 
 const MODULE_ROUTES: Record<string, string> = {
   bi_dashboard: '/dashboards',
-  finance: '/erp',
+  finance: '/erp/billing',
   crm: '/erp/crm',
   office: '/erp/office',
   db_manager: '/db-manager',
@@ -233,17 +233,8 @@ export default function LauncherPage() {
       {/* Footer */}
       <footer className="border-t border-nx-navy-border px-6 py-3">
         <div className="max-w-6xl mx-auto flex items-center justify-between text-xs text-nx-mist/70">
-          <span>Nexivo v0.4.0</span>
-          <div className="flex items-center gap-4">
-            <span>پلتفرم سازمان هوشمند</span>
-            <button
-              onClick={() => navigate('/roadmap')}
-              className="text-nx-teal hover:text-nx-blue transition flex items-center gap-1"
-            >
-              <Map className="w-3 h-3" />
-              نقشه راه
-            </button>
-          </div>
+          <span>Nexivo V .1.0</span>
+          <span>پلتفرم سازمان هوشمند نکسیوو</span>
         </div>
       </footer>
     </div>

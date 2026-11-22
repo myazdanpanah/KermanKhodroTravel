@@ -43,7 +43,7 @@ class OfficeError(Exception):
 
 def is_privileged(user):
     """Admins and CEOs see every letter in their company."""
-    return bool(user.is_staff or getattr(user, "role", None) in PRIVILEGED_ROLES)
+    return bool(user.is_staff or getattr(user, "is_superuser", False) or getattr(user, "role", None) in PRIVILEGED_ROLES or getattr(user, "can_manage_settings", False))
 
 
 def visible_correspondence(user):

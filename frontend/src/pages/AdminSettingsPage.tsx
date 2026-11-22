@@ -223,7 +223,6 @@ export default function AdminSettingsPage() {
     try {
       if (editingUser) {
         const payload: Record<string, unknown> = {
-          username: form.username,
           email: form.email,
           first_name: form.first_name,
           last_name: form.last_name,
@@ -233,6 +232,11 @@ export default function AdminSettingsPage() {
           division: form.division,
           team: form.team,
           reports_to: form.reports_to,
+          permissions: form.permissions,
+          ...form.permissions,
+        }
+        if (form.username && form.username !== editingUser.username) {
+          payload.username = form.username
         }
         // Optional password reset — only sent when the admin typed one
         if (form.password) {
@@ -718,22 +722,23 @@ export default function AdminSettingsPage() {
             <div className="p-6 space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">نام</label>
-                  <input type="text" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none" />
+                  <label className="block text-xs font-medium text-slate-700 dark:text-nx-mist mb-1">نام</label>
+                  <input type="text" value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 shadow-sm transition dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none" />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">نام خانوادگی</label>
-                  <input type="text" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none" />
+                  <label className="block text-xs font-medium text-slate-700 dark:text-nx-mist mb-1">نام خانوادگی</label>
+                  <input type="text" value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 shadow-sm transition dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none" />
                 </div>
-              </div>
-
-              <div>                <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">نام کاربری *</label>
-                  <input type="text" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none" disabled={!!editingUser} />
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-nx-navy dark:text-nx-mist mb-1">ایمیل *</label>
-                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-nx-mist dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none" />
+                <label className="block text-xs font-medium text-slate-700 dark:text-nx-mist mb-1">نام کاربری *</label>
+                <input type="text" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 shadow-sm transition dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none disabled:bg-slate-100 disabled:text-slate-500 dark:disabled:bg-slate-800 dark:disabled:text-slate-400" disabled={!!editingUser} />
+              </div>
+
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-nx-mist mb-1">ایمیل *</label>
+                <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 shadow-sm transition dark:border-nx-muted dark:bg-nx-navy dark:text-slate-100 text-sm focus:ring-2 focus:ring-nx-blue focus:border-transparent outline-none" />
               </div>
 
               <div>

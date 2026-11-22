@@ -974,26 +974,59 @@ def _template_path_for(variant: str) -> Path | None:
     return None
 
 
+def _reverse_slashed(val: str) -> str:
+    """
+    Reverse slash-separated segments (e.g. 1405/013/00002 -> 00002/013/1405,
+    or 1405/08/24 -> 24/08/1405) so Microsoft Word's RTL paragraph layout
+    displays the numbers in the proper visual left-to-right order.
+    """
+    if not val or not isinstance(val, str) or "/" not in val:
+        return val
+    parts = val.split("/")
+    return "/".join(reversed(parts))
+
+
 def render_docx(context: dict) -> bytes:
     """
     Word letter: render the uploaded official .docx template for this letter
     kind (docxtpl placeholders), otherwise build the same letter programmatically.
+    Slash-delimited numbers (dates, letter numbers) are reversed so Word's RTL
+    text engine displays them in the correct visual order.
     """
-    variant = str(context.get("variant") or "debt")
+    docx_ctx = dict(context)
+    if "letter_date" in docx_ctx and docx_ctx["letter_date"]:
+        docx_ctx["letter_date"] = _reverse_slashed(str(docx_ctx["letter_date"]))
+    if "letter_number" in docx_ctx and docx_ctx["letter_number"]:
+        docx_ctx["letter_number"] = _reverse_slashed(str(docx_ctx["letter_number"]))
+    if "generated_on" in docx_ctx and docx_ctx["generated_on"]:
+        docx_ctx["generated_on"] = _reverse_slashed(str(docx_ctx["generated_on"]))
+
+    # Also adapt any slash-separated dates or numbers inside rows
+    if "rows" in docx_ctx and isinstance(docx_ctx["rows"], list):
+        adapted_rows = []
+        for row in docx_ctx["rows"]:
+            new_row = dict(row)
+            for k, v in new_row.items():
+                if isinstance(v, str) and "/" in v and any(c.isdigit() for c in v):
+                    new_row[k] = _reverse_slashed(v)
+            adapted_rows.append(new_row)
+        docx_ctx["rows"] = adapted_rows
+
+    variant = str(docx_ctx.get("variant") or "debt")
     template_file = _template_path_for(variant)
     if template_file is not None:
         try:
             from docxtpl import DocxTemplate
 
             document = DocxTemplate(str(template_file))
-            document.render(context)
+            document.render(docx_ctx)
             buffer = io.BytesIO()
             document.save(buffer)
             return buffer.getvalue()
         except Exception:  # noqa: BLE001 - fall back to the built-in letter
             pass
 
-    return _render_programmatic_docx(context)
+    return _render_programmatic_docx(docx_ctx)
 
 
 def _render_programmatic_docx(context: dict) -> bytes:

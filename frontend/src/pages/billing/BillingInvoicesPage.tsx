@@ -127,8 +127,8 @@ export default function BillingInvoicesPage() {
       <div className="flex items-center gap-2">
         <FileText className="w-5 h-5 text-nx-blue" />
         <div>
-          <h1 className="text-lg font-bold text-white">صورت‌حساب‌ها</h1>
-          <p className="text-xs text-nx-mist">صورت‌حساب‌های صادرشده به تفکیک شرکت و نوع خدمت</p>
+          <h1 className="text-lg font-bold text-slate-900 dark:text-white">صورت‌حساب‌ها</h1>
+          <p className="text-xs text-slate-500 dark:text-nx-mist">صورت‌حساب‌های صادرشده به تفکیک شرکت و نوع خدمت</p>
         </div>
       </div>
 
@@ -139,8 +139,8 @@ export default function BillingInvoicesPage() {
             onClick={() => setType(item)}
             className={`px-3.5 py-1.5 rounded-full text-xs border transition ${
               type === item
-                ? 'bg-nx-blue/15 text-nx-blue border-nx-blue/40'
-                : 'text-nx-mist border-nx-navy-border hover:border-nx-blue/40'
+                ? 'bg-nx-blue/15 text-nx-blue border-nx-blue/40 font-medium'
+                : 'text-slate-600 dark:text-nx-mist border-slate-300 dark:border-nx-navy-border hover:border-nx-blue/40 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
             {item === 'all' ? 'همهٔ خدمات' : item}
@@ -150,13 +150,13 @@ export default function BillingInvoicesPage() {
 
       <div className={`${CARD} p-4 grid grid-cols-1 md:grid-cols-4 gap-3`}>
         <div>
-          <label className="block text-xs text-nx-mist mb-1.5">شرکت</label>
+          <label className="block text-xs text-slate-600 dark:text-nx-mist mb-1.5">شرکت</label>
           <input value={payer} onChange={(e) => setPayer(e.target.value)} placeholder="نام شرکت" className={INPUT} />
         </div>
         <JalaliDateInput label="از تاریخ" value={start} onChange={setStart} />
         <JalaliDateInput label="تا تاریخ" value={end} onChange={setEnd} />
         <div className="flex items-end">
-          <button onClick={() => void load()} className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-nx-blue/15 text-nx-blue text-sm hover:bg-nx-blue/25 transition">
+          <button onClick={() => void load()} className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-nx-blue/15 text-nx-blue text-sm hover:bg-nx-blue/25 transition font-medium">
             <Filter className="w-4 h-4" />
             اعمال فیلتر
           </button>
@@ -165,7 +165,7 @@ export default function BillingInvoicesPage() {
 
       <div className={`${CARD} overflow-hidden`}>
         <table className="w-full text-sm">
-          <thead className="bg-nx-navy text-nx-mist text-xs">
+          <thead className="bg-slate-100 dark:bg-nx-navy text-slate-700 dark:text-nx-mist text-xs">
             <tr>
               <th className="text-right font-medium px-4 py-3">شماره نامه</th>
               <th className="text-right font-medium px-4 py-3">تاریخ</th>
@@ -177,26 +177,26 @@ export default function BillingInvoicesPage() {
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={6} className="py-8 text-center text-xs text-nx-mist">در حال بارگذاری…</td></tr>
+              <tr><td colSpan={6} className="py-8 text-center text-xs text-slate-500 dark:text-nx-mist">در حال بارگذاری…</td></tr>
             )}
             {!loading && rows.length === 0 && (
-              <tr><td colSpan={6} className="py-8 text-center text-xs text-nx-mist">صورت‌حسابی یافت نشد.</td></tr>
+              <tr><td colSpan={6} className="py-8 text-center text-xs text-slate-500 dark:text-nx-mist">صورت‌حسابی یافت نشد.</td></tr>
             )}
             {rows.map((row) => (
-              <tr key={row.id} className="border-t border-nx-navy-border hover:bg-nx-navy/40">
-                <td className="px-4 py-3 text-white">{row.letter_number}</td>
-                <td className="px-4 py-3 text-nx-mist">{row.issue_date_jalali}</td>
-                <td className="px-4 py-3 text-nx-mist">
-                  {row.payer} <span className="text-[10px] text-nx-mist/60">({row.payer_code})</span>
+              <tr key={row.id} className="border-t border-slate-200 dark:border-nx-navy-border hover:bg-slate-50 dark:hover:bg-nx-navy/40">
+                <td className="px-4 py-3 text-slate-900 dark:text-white font-medium">{row.letter_number}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-nx-mist">{row.issue_date_jalali}</td>
+                <td className="px-4 py-3 text-slate-800 dark:text-nx-mist">
+                  {row.payer} <span className="text-[10px] text-slate-500 dark:text-nx-mist/60">({row.payer_code})</span>
                 </td>
-                <td className="px-4 py-3 text-nx-mist">{row.invoice_type}</td>
-                <td className="px-4 py-3 text-left text-white">{rial(row.amount)}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-nx-mist">{row.invoice_type}</td>
+                <td className="px-4 py-3 text-left font-semibold text-slate-900 dark:text-white">{rial(row.amount)}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1">
                     {canPay && (
                       <button
                         onClick={() => openPayment(row)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-400/10 text-emerald-400 text-[11px] hover:bg-emerald-400/20"
+                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] hover:bg-emerald-500/20"
                         title="ثبت پرداخت برای این صورت‌حساب"
                       >
                         <Wallet className="w-3.5 h-3.5" />
@@ -211,7 +211,7 @@ export default function BillingInvoicesPage() {
                       <Download className="w-4 h-4" />
                     </button>
                     {canDelete && (
-                      <button onClick={() => void remove(row)} className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-400/10" title="حذف">
+                      <button onClick={() => void remove(row)} className="p-1.5 rounded-lg text-rose-500 dark:text-rose-400 hover:bg-rose-500/10" title="حذف">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     )}
@@ -220,10 +220,10 @@ export default function BillingInvoicesPage() {
               </tr>
             ))}
           </tbody>
-          <tfoot className="bg-nx-navy">
+          <tfoot className="bg-slate-100 dark:bg-nx-navy">
             <tr>
-              <td colSpan={4} className="px-4 py-3 text-xs text-nx-mist">جمع ({rows.length} ردیف)</td>
-              <td className="px-4 py-3 text-left font-bold text-white">{rial(total)}</td>
+              <td colSpan={4} className="px-4 py-3 text-xs text-slate-600 dark:text-nx-mist">جمع ({rows.length} ردیف)</td>
+              <td className="px-4 py-3 text-left font-bold text-slate-900 dark:text-white">{rial(total)}</td>
               <td />
             </tr>
           </tfoot>
@@ -239,12 +239,12 @@ export default function BillingInvoicesPage() {
           >
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-sm font-bold text-white">ثبت پرداخت</h3>
-                <p className="text-[11px] text-nx-mist mt-0.5">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">ثبت پرداخت</h3>
+                <p className="text-[11px] text-slate-500 dark:text-nx-mist mt-0.5">
                   {paying.payer} — صورت‌حساب {paying.letter_number}
                 </p>
               </div>
-              <button onClick={() => setPaying(null)} className="p-1.5 rounded-lg text-nx-mist hover:bg-nx-navy">
+              <button onClick={() => setPaying(null)} className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:text-nx-mist dark:hover:bg-nx-navy">
                 <X className="w-4 h-4" />
               </button>
             </div>
@@ -252,7 +252,7 @@ export default function BillingInvoicesPage() {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-nx-mist mb-1.5">مبلغ (ریال)</label>
+                  <label className="block text-xs text-slate-600 dark:text-nx-mist mb-1.5">مبلغ (ریال)</label>
                   <input
                     type="number"
                     value={payForm.amount}
@@ -267,7 +267,7 @@ export default function BillingInvoicesPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-nx-mist mb-1.5">شماره مرجع</label>
+                <label className="block text-xs text-slate-600 dark:text-nx-mist mb-1.5">شماره مرجع</label>
                 <input
                   value={payForm.tracking}
                   onChange={(e) => setPayForm({ ...payForm, tracking: e.target.value })}
@@ -275,7 +275,7 @@ export default function BillingInvoicesPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-nx-mist mb-1.5">توضیحات (اختیاری)</label>
+                <label className="block text-xs text-slate-600 dark:text-nx-mist mb-1.5">توضیحات (اختیاری)</label>
                 <input
                   value={payForm.description}
                   onChange={(e) => setPayForm({ ...payForm, description: e.target.value })}
@@ -285,7 +285,7 @@ export default function BillingInvoicesPage() {
             </div>
 
             <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setPaying(null)} className="px-4 py-2 rounded-xl border border-nx-navy-border text-nx-mist text-sm">
+              <button onClick={() => setPaying(null)} className="px-4 py-2 rounded-xl border border-slate-300 dark:border-nx-navy-border text-slate-600 dark:text-nx-mist hover:bg-slate-100 dark:hover:bg-nx-navy text-sm">
                 انصراف
               </button>
               <button

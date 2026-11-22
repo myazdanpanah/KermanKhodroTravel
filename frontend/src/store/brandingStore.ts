@@ -72,13 +72,27 @@ function setFaviconLink(href: string, type = 'image/png') {
   }
   link.type = type
   link.href = href
+
+  // Update Apple touch icon for iOS devices
+  let appleLink = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon"]')
+  if (!appleLink) {
+    appleLink = document.createElement('link')
+    appleLink.rel = 'apple-touch-icon'
+    document.head.appendChild(appleLink)
+  }
+  appleLink.href = href
+
+  const applePrecomposed = document.querySelector<HTMLLinkElement>('link[rel="apple-touch-icon-precomposed"]')
+  if (applePrecomposed) {
+    applePrecomposed.href = href
+  }
 }
 
 /**
- * Point the browser tab icon at the uploaded logo.
+ * Point the browser tab icon and iOS Apple Touch icon at the uploaded organizational logo.
  *
- * A favicon is always rendered in a square box, so the logo is drawn onto a
- * transparent square canvas with `contain` scaling — never stretched.
+ * Uses 192x192 canvas with `contain` scaling and padding so it looks crisp on
+ * Retina iOS home screen icons, Safari webclips, and browser tabs.
  */
 function applyFavicon(b: Branding) {
   const src = b.logoUrl
@@ -86,10 +100,16 @@ function applyFavicon(b: Branding) {
     setFaviconLink('/brand/nexivo-favicon.png')
     return
   }
+
+  if (b.name) {
+    const titleMeta = document.querySelector<HTMLMetaElement>('meta[name="apple-mobile-web-app-title"]')
+    if (titleMeta) titleMeta.content = b.name
+  }
+
   const image = new Image()
   image.crossOrigin = 'anonymous'
   image.onload = () => {
-    const size = 64
+    const size = 192
     const canvas = document.createElement('canvas')
     canvas.width = size
     canvas.height = size
@@ -98,7 +118,7 @@ function applyFavicon(b: Branding) {
       setFaviconLink(src)
       return
     }
-    const scale = Math.min(size / image.width, size / image.height)
+    const scale = Math.min((size - 16) / image.width, (size - 16) / image.height)
     const width = image.width * scale
     const height = image.height * scale
     ctx.clearRect(0, 0, size, size)

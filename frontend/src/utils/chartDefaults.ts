@@ -55,6 +55,10 @@ export function getChartDefaults(chartType: string): EChartsOption {
     },
     tooltip: {
       trigger: 'axis',
+      textStyle: { fontFamily: BASE_FONT_FAMILY },
+    },
+    legend: {
+      textStyle: { fontFamily: BASE_FONT_FAMILY },
     },
   }
 

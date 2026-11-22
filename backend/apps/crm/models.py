@@ -81,6 +81,14 @@ class Lead(BaseModel):
     )
     converted_at = models.DateTimeField(null=True, blank=True)
 
+    # Attribution: which campaign produced this lead (better tracking).
+    campaign = models.ForeignKey(
+        "Campaign",
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="leads",
+    )
+
     # Scoring
     score = models.IntegerField(default=0, help_text="Lead score 0-100")
 
@@ -395,3 +403,55 @@ class CustomerTimeline(BaseModel):
 
     def __str__(self):
         return f"{self.entity_type} #{self.entity_id}: {self.event_type}"
+
+
+# ─── SMS ─────────────────────────────────────────────────────
+
+class SmsSettings(BaseModel):
+    """Per-company SMS gateway configuration (Kavenegar, NikSMS or custom)."""
+
+    PROVIDERS = [
+        ("kavenegar", "کاوه‌نگار"),
+        ("niksms", "نیک‌اس‌ام‌اس"),
+        ("generic", "سرویس سفارشی"),
+    ]
+
+    provider = models.CharField(max_length=20, choices=PROVIDERS, default="kavenegar")
+    api_key = models.CharField(max_length=255, blank=True, default="")
+    sender = models.CharField(max_length=40, blank=True, default="")
+    # Generic provider only: full endpoint that accepts {"to","message","sender"}.
+    endpoint = models.CharField(max_length=300, blank=True, default="")
+    username = models.CharField(max_length=100, blank=True, default="")
+    password = models.CharField(max_length=150, blank=True, default="")
+    enabled = models.BooleanField(default=False)
+
+    class Meta:
+        verbose_name = "تنظیمات پیامک"
+        verbose_name_plural = "تنظیمات پیامک"
+
+    def __str__(self):
+        return f"SMS ({self.get_provider_display()})"
+
+
+class SmsMessage(BaseModel):
+    """Outgoing SMS log; one row per send attempt."""
+
+    STATUS_CHOICES = [
+        ("sent", "ارسال شد"),
+        ("failed", "ناموفق"),
+    ]
+
+    phone = models.CharField(max_length=20)
+    body = models.TextField()
+    provider = models.CharField(max_length=20, blank=True, default="")
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="sent")
+    provider_message_id = models.CharField(max_length=120, blank=True, default="")
+    error = models.TextField(blank=True, default="")
+    campaign = models.ForeignKey(
+        Campaign, on_delete=models.SET_NULL, null=True, blank=True, related_name="sms_messages",
+    )
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "پیامک"
+        verbose_name_plural = "پیامک‌ها"

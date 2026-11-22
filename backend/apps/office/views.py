@@ -669,9 +669,10 @@ def correspondence_attachment_download(request, pk, attachment_id):
         handle = attachment.file.open("rb")
     except (FileNotFoundError, OSError):
         return not_found_response("فایل پیوست در دسترس نیست")
+    inline = request.query_params.get("inline") == "1"
     response = FileResponse(
         handle,
-        as_attachment=True,
+        as_attachment=not inline,
         filename=attachment.original_name,
         content_type=attachment.content_type or "application/octet-stream",
     )

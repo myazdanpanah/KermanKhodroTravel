@@ -264,7 +264,7 @@ function buildChartOption(
 
   // Axis label formatter with Persian digits for numeric axes
   const persianAxisFormatter = (val: unknown) => {
-    if (typeof val === 'number') return toPersianDigits(val)
+    if (typeof val === 'number') return toPersianDigits(val.toLocaleString())
     return toPersianDigits(String(val))
   }
 
@@ -310,7 +310,12 @@ function buildChartOption(
     return {
       ...pieDefaults,
       ...customConfig,
-      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+      tooltip: {
+        trigger: 'item',
+        textStyle: { fontFamily: 'Vazirmatn' },
+        formatter: (p: any) =>
+          `${p.name}: ${toPersianDigits(Number(p.value).toLocaleString())} (${toPersianDigits(Number(p.percent).toFixed(1))}٪)`,
+      },
       series: [
         {
           type: 'pie',
@@ -324,7 +329,8 @@ function buildChartOption(
           })),
           label: {
             show: true,
-            formatter: '{b}\n{d}%',
+            formatter: (p: any) => `${p.name}\n${toPersianDigits(Number(p.percent).toFixed(0))}٪`,
+            fontFamily: 'Vazirmatn',
             fontSize: labelFontSize,
           },
           emphasis: {
@@ -388,8 +394,8 @@ function buildChartOption(
         axisTick: { show: false },
         splitLine: { length: 10, lineStyle: { width: 2 } },
         pointer: { width: 5 },
-        axisLabel: { distance: 20, fontSize: 10 },
-        detail: { valueAnimation: true, fontSize: 20, offsetCenter: [0, '70%'], formatter: '{value}' },
+        axisLabel: { distance: 20, fontSize: 10, fontFamily: 'Vazirmatn', formatter: (val: number) => toPersianDigits(val) },
+        detail: { valueAnimation: true, fontSize: 20, offsetCenter: [0, '70%'], fontFamily: 'Vazirmatn', formatter: (val: number) => toPersianDigits(val) },
         title: { offsetCenter: [0, '90%'] },
         data: [{ value: rawVal, name: valueCol }],
       }],
@@ -466,7 +472,8 @@ function buildChartOption(
       ...treemapDefaults,
       ...customConfig,
       tooltip: {
-        formatter: (p: { name?: string; value?: number }) => `${p.name}: ${p.value}`,
+        textStyle: { fontFamily: 'Vazirmatn' },
+        formatter: (p: { name?: string; value?: number }) => `${p.name}: ${toPersianDigits(Number(p.value ?? 0).toLocaleString())}`,
       },
       series: [{
         type: 'treemap',
@@ -551,7 +558,8 @@ function buildChartOption(
       ...customConfig,
       tooltip: {
         trigger: 'item' as const,
-        formatter: '{b}: {c}',
+        textStyle: { fontFamily: 'Vazirmatn' },
+        formatter: (p: any) => `${p.name}: ${toPersianDigits(Number(p.value).toLocaleString())}`,
       },
       series: [{
         type: 'funnel',
@@ -568,7 +576,8 @@ function buildChartOption(
         label: {
           show: true,
           position: 'inside' as const,
-          formatter: '{b}: {c}',
+          formatter: (p: any) => `${p.name}: ${toPersianDigits(Number(p.value).toLocaleString())}`,
+          fontFamily: 'Vazirmatn',
           fontSize: 12,
           color: '#fff',
         },

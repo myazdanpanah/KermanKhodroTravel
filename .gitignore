@@ -69,3 +69,8 @@ backend/private_media/
 frontend/test-results/
 frontend/playwright-report/
 frontend/.playwright/
+# Database backups / migration exports (never commit data dumps)
+backups/
+mssql_export/
+run_*.ps1
+run_import.py

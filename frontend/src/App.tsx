@@ -86,6 +86,9 @@ const OfficeWorkbenchPage = lazy(() => import('./pages/office/WorkbenchPage'))
 const OfficeLettersPage = lazy(() => import('./pages/office/CorrespondenceListPage'))
 const OfficeCorrespondencePage = lazy(() => import('./pages/office/CorrespondenceDetailPage'))
 const OfficeContractsPage = lazy(() => import('./pages/office/ContractsPage'))
+const UserSettingsPage = lazy(() => import('./pages/UserSettingsPage'))
+const ManagementDashboardPage = lazy(() => import('./pages/ManagementDashboardPage'))
+const SmsPage = lazy(() => import('./pages/crm/SmsPage'))
 // Reporting module
 const ReportsPage = lazy(() => import('./pages/reporting/ReportsPage'))
 const DashboardsPage = lazy(() => import('./pages/reporting/DashboardsPage'))
@@ -163,8 +166,12 @@ export default function App() {
 
         {/* ═══ Unified ERP Layout ═══ */}
         <Route path="/erp" element={<PrivateRoute><ERPLayout /></PrivateRoute>}>
-          {/* Finance */}
-          <Route index element={<BillingDashboardPage />} />
+          {/* Management Dashboard (ERP Overview) */}
+          <Route index element={<ManagementDashboardPage />} />
+          <Route path="management" element={<ManagementDashboardPage />} />
+
+          {/* Finance (Billing) */}
+          <Route path="billing" element={<BillingDashboardPage />} />
           <Route path="billing/issue" element={<BillingIssuePage />} />
           <Route path="billing/invoices" element={<BillingInvoicesPage />} />
           <Route path="billing/payments" element={<BillingPaymentsPage />} />
@@ -243,6 +250,9 @@ export default function App() {
           <Route path="office/correspondence" element={<OfficeLettersPage />} />
           <Route path="office/correspondence/:id" element={<OfficeCorrespondencePage />} />
           <Route path="office/contracts" element={<OfficeContractsPage />} />
+          <Route path="profile" element={<UserSettingsPage />} />
+          <Route path="management" element={<ManagementDashboardPage />} />
+          <Route path="crm/sms" element={<SmsPage />} />
           {/* HR */}
           <Route path="hr" element={<HRDashboard />} />
           <Route path="hr/employees" element={<EmployeesPage />} />

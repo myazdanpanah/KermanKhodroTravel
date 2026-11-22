@@ -1,6 +1,6 @@
 """CRM URL Patterns."""
 from django.urls import path
-from . import views
+from . import sms_views, views
 
 urlpatterns = [
     path("leads/", views.lead_list, name="crm-lead-list"),
@@ -27,4 +27,9 @@ urlpatterns = [
     path("timeline/<int:customer_id>/", views.customer_timeline, name="crm-timeline"),
 
     path("summary/", views.crm_summary, name="crm-summary"),
+
+    # SMS gateway: settings, send, history
+    path("sms/settings/", sms_views.sms_settings_view, name="crm-sms-settings"),
+    path("sms/send/", sms_views.sms_send_view, name="crm-sms-send"),
+    path("sms/messages/", sms_views.sms_messages_view, name="crm-sms-messages"),
 ]

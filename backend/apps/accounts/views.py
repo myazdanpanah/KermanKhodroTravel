@@ -9,13 +9,15 @@ from .serializers import (
     CompanySerializer, CompanyModulesSerializer, CompanyBrandingSerializer,
     DivisionSerializer, TeamSerializer, CustomRoleSerializer,
 )
-from .models import Company, Division, Team, CustomRole, MODULE_CHOICES, ALL_MODULE_IDS
+from .models import Company, CompanyFont, Division, Team, CustomRole, MODULE_CHOICES, ALL_MODULE_IDS
 
 User = get_user_model()
 
 
 def _is_admin_or_ceo(user):
-    return user.role in ("admin", "ceo") or user.is_staff
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    return user.role in ("admin", "ceo") or user.is_staff or getattr(user, "is_superuser", False) or getattr(user, "can_manage_users", False)
 
 
 @api_view(["POST"])
@@ -132,7 +134,7 @@ def users_list_create_view(request):
         )
 
 
-@api_view(["GET", "PUT", "DELETE"])
+@api_view(["GET", "PUT", "PATCH", "DELETE"])
 def user_detail_view(request, pk):
     """Retrieve, update, or delete a user (admin/CEO only)."""
     if not _is_admin_or_ceo(request.user):
@@ -149,7 +151,7 @@ def user_detail_view(request, pk):
     if request.method == "GET":
         return Response(UserSerializer(user).data)
 
-    elif request.method == "PUT":
+    elif request.method in ("PUT", "PATCH"):
         # Enforce role hierarchy: can only assign roles at or below your level
         ROLE_HIERARCHY = {"sales": 1, "finance": 2, "admin": 3, "ceo": 4}
         requested_role = request.data.get("role")
@@ -608,3 +610,59 @@ def branding_public(request):
     if company is None:
         return Response(BRAND_DEFAULTS)
     return Response(CompanyBrandingSerializer(company, context={"request": request}).data)
+
+
+# ---- Organization fonts (DOCX/XLSX preview) ----
+
+FONT_EXTENSIONS = {".ttf", ".otf", ".woff", ".woff2"}
+FONT_MAX_BYTES = 15 * 1024 * 1024
+
+
+@api_view(["GET", "POST"])
+def company_fonts(request):
+    """List uploaded preview fonts; admins upload and delete them."""
+    company = getattr(request.user, "company", None)
+    if company is None:
+        return Response({"detail": "کاربر به شرکتی متصل نیست."}, status=status.HTTP_400_BAD_REQUEST)
+
+    if request.method == "GET":
+        rows = CompanyFont.objects.filter(company=company)
+        return Response([
+            {"id": row.id, "name": row.name, "url": row.file.url, "created_at": row.created_at}
+            for row in rows
+        ])
+
+    if not _is_admin_or_ceo(request.user):
+        return Response({"detail": "آپلود فونت فقط برای مدیران مجاز است."}, status=status.HTTP_403_FORBIDDEN)
+
+    upload = request.FILES.get("file")
+    if upload is None:
+        return Response({"file": ["فایل فونت ارسال نشده است."]}, status=status.HTTP_400_BAD_REQUEST)
+    suffix = "." + upload.name.rsplit(".", 1)[-1].lower() if "." in upload.name else ""
+    if suffix not in FONT_EXTENSIONS:
+        return Response({"file": ["فقط فایل‌های ttf، otf، woff و woff2 پشتیبانی می‌شوند."]}, status=status.HTTP_400_BAD_REQUEST)
+    if upload.size > FONT_MAX_BYTES:
+        return Response({"file": ["حجم فونت باید کمتر از ۱۵ مگابایت باشد."]}, status=status.HTTP_400_BAD_REQUEST)
+
+    name = (request.data.get("name") or upload.name.rsplit(".", 1)[0]).strip()
+    if not name:
+        return Response({"name": ["نام فونت الزامی است."]}, status=status.HTTP_400_BAD_REQUEST)
+    font = CompanyFont.objects.create(
+        company=company, name=name, file=upload, uploaded_by=request.user,
+    )
+    return Response(
+        {"id": font.id, "name": font.name, "url": font.file.url, "created_at": font.created_at},
+        status=status.HTTP_201_CREATED,
+    )
+
+
+@api_view(["DELETE"])
+def company_font_detail(request, pk):
+    if not _is_admin_or_ceo(request.user):
+        return Response({"detail": "حذف فونت فقط برای مدیران مجاز است."}, status=status.HTTP_403_FORBIDDEN)
+    font = CompanyFont.objects.filter(pk=pk, company=getattr(request.user, "company", None)).first()
+    if font is None:
+        return Response({"detail": "فونت یافت نشد."}, status=status.HTTP_404_NOT_FOUND)
+    font.file.delete(save=False)
+    font.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)

@@ -25,7 +25,21 @@ export default function SupersetHealthPage() {
   const [health, setHealth] = useState<HealthData | null>(null)
   const [loading, setLoading] = useState(true)
   const [syncingAll, setSyncingAll] = useState(false)
+  const [syncingErp, setSyncingErp] = useState(false)
   const [syncingId, setSyncingId] = useState<number | null>(null)
+
+  const handleSyncErp = async () => {
+    setSyncingErp(true)
+    try {
+      const res = await api.post('/datasets/sync-erp-tables/')
+      toast(`جداول دیتابیس ERP با موفقیت متصل شدند (${res.data.count} جدول)`, 'success')
+      fetchHealth()
+    } catch {
+      toast('خطا در اتصال و همگام‌سازی جداول دیتابیس ERP', 'error')
+    } finally {
+      setSyncingErp(false)
+    }
+  }
 
   const fetchHealth = async () => {
     setLoading(true)
@@ -164,17 +178,27 @@ export default function SupersetHealthPage() {
           </div>
         )}
 
-        {/* Sync All Button */}
-        {unsyncedCount > 0 && health?.status === 'ok' && (
+        {/* Action Buttons */}
+        <div className="flex flex-wrap items-center gap-3">
           <button
-            onClick={handleSyncAll}
-            disabled={syncingAll}
-            className="flex items-center gap-2 px-5 py-3 bg-nx-blue text-white rounded-xl hover:bg-nx-blue transition text-sm font-medium disabled:opacity-50"
+            onClick={handleSyncErp}
+            disabled={syncingErp}
+            className="flex items-center gap-2 px-5 py-2.5 bg-nx-blue text-white rounded-xl hover:opacity-90 transition text-sm font-medium disabled:opacity-50"
           >
-            {syncingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
-            همگام‌سازی همه ({unsyncedCount} مورد)
+            {syncingErp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
+            شناسایی و اتصال جداول دیتابیس ERP
           </button>
-        )}
+          {unsyncedCount > 0 && health?.status === 'ok' && (
+            <button
+              onClick={handleSyncAll}
+              disabled={syncingAll}
+              className="flex items-center gap-2 px-5 py-2.5 bg-nx-teal text-white rounded-xl hover:opacity-90 transition text-sm font-medium disabled:opacity-50"
+            >
+              {syncingAll ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+              همگام‌سازی با سوپرست ({unsyncedCount} مورد)
+            </button>
+          )}
+        </div>
 
         {/* Dataset Table */}
         <div className="bg-white dark:bg-nx-navy rounded-2xl border border-nx-border dark:border-nx-navy-border overflow-hidden">

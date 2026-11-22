@@ -32,6 +32,7 @@ class LeadService:
         company_name: str = "", source: str = "other",
         industry: str = "", priority: str = "medium",
         notes: str = "", assigned_to_id: int = None,
+        website: str = "", address: str = "",
     ) -> Lead:
         lead = Lead.objects.create(
             company=company,
@@ -39,6 +40,8 @@ class LeadService:
             email=email,
             phone=phone,
             mobile=mobile,
+            website=website,
+            address=address,
             company_name=company_name,
             source=source,
             industry=industry,

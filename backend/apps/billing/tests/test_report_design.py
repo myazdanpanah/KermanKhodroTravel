@@ -254,6 +254,12 @@ class StatementExcelTests(TestCase):
         types = [detail.cell(row=row, column=2).value for row in range(header_row + 1, header_row + 3)]
         self.assertEqual(types, ["صورتحساب", "پرداخت"])
 
+        self.assertIn("ریز کل تراکنش‌ها", workbook.sheetnames)
+        all_sheet = workbook["ریز کل تراکنش‌ها"]
+        self.assertEqual(all_sheet["A2"].value, "3001")
+        self.assertEqual(all_sheet["D2"].value, "صورتحساب")
+        self.assertEqual(all_sheet["G2"].value, 1_000_000)
+
     def test_single_company_export_and_unknown_company(self):
         response = self.client.get("/api/v1/billing/statements/excel/?payer=3001")
         self.assertEqual(response.status_code, status.HTTP_200_OK)

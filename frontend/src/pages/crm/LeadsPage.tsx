@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Search, Users, ChevronDown, ArrowLeftRight } from 'lucide-react';
-import { crmApi, Lead } from '../../api/crm';
+import { crmApi, Campaign, Lead } from '../../api/crm';
 import { useToast } from '../../components/Toast';
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -28,7 +28,12 @@ export default function LeadsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name: '', company_name: '', email: '', phone: '', source: 'other', priority: 'medium', notes: '' });
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [form, setForm] = useState({ name: '', company_name: '', email: '', phone: '', source: 'other', priority: 'medium', notes: '', campaign_id: '' });
+
+  useEffect(() => {
+    crmApi.getCampaigns().then(r => setCampaigns(r.data.data)).catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     const params: Record<string, string> = {};
@@ -41,10 +46,10 @@ export default function LeadsPage() {
   const handleCreate = async () => {
     if (!form.name) return;
     try {
-      const res = await crmApi.createLead(form);
+      const res = await crmApi.createLead({ ...form, campaign_id: form.campaign_id ? Number(form.campaign_id) : null } as Partial<Lead>);
       setLeads(prev => [res.data.data, ...prev]);
       setShowForm(false);
-      setForm({ name: '', company_name: '', email: '', phone: '', source: 'other', priority: 'medium', notes: '' });
+      setForm({ name: '', company_name: '', email: '', phone: '', source: 'other', priority: 'medium', notes: '', campaign_id: '' });
       toast('سرنخ با موفقیت ایجاد شد', 'success');
     } catch { toast('خطا در ایجاد سرنخ', 'error'); }
   };
@@ -88,6 +93,11 @@ export default function LeadsPage() {
               <select value={form.source} onChange={e => setForm({ ...form, source: e.target.value })} className="w-full px-3 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm">
                 {Object.entries(SOURCE_MAP).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select></div>
+            <div><label className="block text-sm font-medium text-nx-navy dark:text-nx-mist mb-1">کمپین (برای رهگیری)</label>
+              <select value={form.campaign_id} onChange={e => setForm({ ...form, campaign_id: e.target.value })} className="w-full px-3 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm">
+                <option value="">بدون کمپین</option>
+                {campaigns.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select></div>
             <div><label className="block text-sm font-medium text-nx-navy dark:text-nx-mist mb-1">اولویت</label>
               <select value={form.priority} onChange={e => setForm({ ...form, priority: e.target.value })} className="w-full px-3 py-2 border border-nx-mist dark:border-nx-muted rounded-lg bg-white dark:bg-nx-navy text-nx-navy dark:text-white text-sm">
                 <option value="low">کم</option><option value="medium">متوسط</option><option value="high">زیاد</option>
@@ -130,6 +140,7 @@ export default function LeadsPage() {
                   <th className="text-right px-4 py-3 font-medium text-nx-mist">شرکت</th>
                   <th className="text-right px-4 py-3 font-medium text-nx-mist">ایمیل</th>
                   <th className="text-right px-4 py-3 font-medium text-nx-mist">منبع</th>
+                  <th className="text-right px-4 py-3 font-medium text-nx-mist">کمپین</th>
                   <th className="text-right px-4 py-3 font-medium text-nx-mist">وضعیت</th>
                   <th className="text-right px-4 py-3 font-medium text-nx-mist">عملیات</th>
                 </tr>

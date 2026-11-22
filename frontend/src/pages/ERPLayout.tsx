@@ -9,10 +9,12 @@ import {
   LayoutDashboard, FileText, CreditCard, Users, Gauge, Plus,
   Calendar, Target, TrendingUp, Inbox, Mail,
   Settings, ChevronLeft, ChevronDown,
-  Shield, Search, Sun, Moon, Menu, Briefcase, Check, X, FileSignature,
+  Search, Sun, Moon, Menu, Briefcase, Check, X, FileSignature, PieChart, Megaphone, MessageSquare,
+  BarChart3,
 } from 'lucide-react';
 import GlobalSearch from '../components/GlobalSearch';
 import QuickCreateButton from '../components/QuickCreateButton';
+import { loadCompanyFonts } from '../lib/companyFonts';
 import { useQuickActions } from '../lib/quickActions'
 
 // ─── Navigation Structure ───────────────────────────────────────
@@ -36,13 +38,15 @@ const NAV_SECTIONS: NavSection[] = [
     id: 'bi',
     label: 'داشبورد',
     items: [
-      { to: '/erp', icon: LayoutDashboard, label: 'داشبورد مدیریتی', end: true },
+      { to: '/erp/management', icon: PieChart, label: 'داشبورد مدیریتی', end: true },
+      { to: '/dashboards', icon: BarChart3, label: 'داشبوردهای هوش تجاری (BI)' },
     ],
   },
   {
     id: 'finance',
     label: 'مالی',
     items: [
+      { to: '/erp/billing', icon: LayoutDashboard, label: 'داشبورد مالی', end: true },
       { to: '/erp/billing/issue', icon: Plus, label: 'صدور صورت‌حساب' },
       { to: '/erp/billing/invoices', icon: FileText, label: 'صورت‌حساب‌ها' },
       { to: '/erp/billing/payments', icon: CreditCard, label: 'پرداخت‌ها' },
@@ -59,6 +63,8 @@ const NAV_SECTIONS: NavSection[] = [
       { to: '/erp/crm/leads', icon: Target, label: 'سرنخ‌ها' },
       { to: '/erp/crm/opportunities', icon: TrendingUp, label: 'فرصت‌ها' },
       { to: '/erp/crm/activities', icon: Calendar, label: 'فعالیت‌ها' },
+      { to: '/erp/crm/campaigns', icon: Megaphone, label: 'کمپین‌ها' },
+      { to: '/erp/crm/sms', icon: MessageSquare, label: 'پیامک‌ها' },
     ],
   },
   {
@@ -75,7 +81,6 @@ const NAV_SECTIONS: NavSection[] = [
     label: 'تنظیمات',
     items: [
       { to: '/erp/settings', icon: Settings, label: 'تنظیمات' },
-      { to: '/erp/settings/users', icon: Shield, label: 'کاربران' },
     ],
   },
 ]
@@ -94,9 +99,17 @@ export default function ERPLayout() {
   const quickActions = useQuickActions()
   const sheetRef = useRef<HTMLDivElement>(null)
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
+    bi: true,
     finance: true,
+    crm: true,
+    office: true,
   })
   const { user, logout } = useAuthStore()
+
+  // Inject the organization's uploaded fonts for DOCX/XLSX previews.
+  useEffect(() => {
+    void loadCompanyFonts();
+  }, [user?.id]);
   const brandLogo = useBrandLogo()
   const navigate = useNavigate()
   const location = useLocation()
@@ -168,7 +181,9 @@ export default function ERPLayout() {
   // Breadcrumb data (computed once per render)
   // Only the three licensed modules (plus settings for admins) are reachable.
   const isAdmin = user?.role === 'admin' || user?.role === 'ceo'
-  const allowedPrefixes = isAdmin ? ['/erp/billing', '/erp/crm', '/erp/office', '/erp/settings'] : ['/erp/billing', '/erp/crm', '/erp/office']
+  const allowedPrefixes = isAdmin
+    ? ['/erp/management', '/erp/billing', '/erp/crm', '/erp/office', '/erp/settings']
+    : ['/erp/management', '/erp/billing', '/erp/crm', '/erp/office']
   const canIssue = isAdmin || Boolean(user?.permissions?.issue)
   const sections = (isAdmin ? NAV_SECTIONS : NAV_SECTIONS.filter((section) => section.id !== 'settings'))
     .map((section) =>
@@ -370,7 +385,7 @@ export default function ERPLayout() {
         className="fixed bottom-0 inset-x-0 z-30 lg:hidden bg-white/95 backdrop-blur border-t border-nx-border dark:bg-nx-navy/95 dark:border-nx-navy-border"
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
-        <div className="grid grid-cols-5 items-end">
+                <div className="grid grid-cols-5 items-end">
           <NavLink
             to="/erp"
             end
@@ -390,6 +405,8 @@ export default function ERPLayout() {
             <FileText className="w-5 h-5" />
             <span>صورت‌حساب</span>
           </NavLink>
+          {/* Centre slot is reserved for the floating quick-add button. */}
+          <div aria-hidden className="h-full" />
           <NavLink
             to="/erp/office"
             className={({ isActive }) =>
@@ -408,17 +425,15 @@ export default function ERPLayout() {
             <Menu className="w-5 h-5" />
             <span>منو</span>
           </button>
-          <div className="relative h-full">
-            <button
-              onClick={() => { setMobileOpen(false); setQuickOpen((value) => !value) }}
-              aria-label="ثبت جدید"
-              aria-expanded={quickOpen}
-              className="absolute -top-7 left-3 grid h-14 w-14 place-items-center rounded-full bg-nx-teal text-white shadow-lg ring-4 ring-white transition hover:opacity-90 dark:ring-nx-navy"
-            >
-              <Plus className={`h-7 w-7 transition-transform ${quickOpen ? 'rotate-45' : ''}`} />
-            </button>
-          </div>
         </div>
+        <button
+          onClick={() => { setMobileOpen(false); setQuickOpen((value) => !value) }}
+          aria-label="ثبت جدید"
+          aria-expanded={quickOpen}
+          className="absolute -top-7 left-1/2 grid h-14 w-14 -translate-x-1/2 place-items-center rounded-full bg-nx-teal text-white shadow-lg ring-4 ring-white transition hover:opacity-90 dark:ring-nx-navy"
+        >
+          <Plus className={`h-7 w-7 transition-transform ${quickOpen ? 'rotate-45' : ''}`} />
+        </button>
       </nav>
 
       {/* ─── Quick add: bottom sheet for creating a record from anywhere ─── */}

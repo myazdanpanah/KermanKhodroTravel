@@ -37,6 +37,33 @@ class SupersetClient:
         """Make sure we have a valid token."""
         self._get_access_token()
 
+    def ensure_database_registered(self, name: str = "KermanKhodro_ERP", db_uri: str | None = None) -> int:
+        """Register the primary database in Superset if it doesn't already exist."""
+        self._ensure_auth()
+        try:
+            res = self.session.get(f"{self.base_url}/database/")
+            if res.status_code == 200:
+                for db in res.json().get("result", []):
+                    if db.get("database_name") == name:
+                        return db["id"]
+        except Exception:
+            pass
+
+        if not db_uri:
+            db_conf = settings.DATABASES["default"]
+            user = db_conf.get("USER", "nexivo_user")
+            password = db_conf.get("PASSWORD", "")
+            host = db_conf.get("HOST", "localhost")
+            port = db_conf.get("PORT", "5544")
+            dbname = db_conf.get("NAME", "kermankhodro")
+            # For Superset container running on docker network alongside nexivo_db
+            if host in ("localhost", "127.0.0.1"):
+                host = "nexivo_db"
+                port = "5432"
+            db_uri = f"postgresql://{user}:{password}@{host}:{port}/{dbname}"
+
+        return self.register_database(name=name, db_uri=db_uri)
+
     def register_database(self, name: str, db_uri: str) -> int:
         """Register a database connection in Superset."""
         self._ensure_auth()
@@ -56,8 +83,17 @@ class SupersetClient:
         return response.json()["id"]
 
     def register_dataset(self, database_id: int, table_name: str, schema: str = "public") -> int:
-        """Register a table as a dataset in Superset."""
+        """Register a table as a dataset in Superset, or return existing dataset ID."""
         self._ensure_auth()
+        try:
+            res = self.session.get(f"{self.base_url}/dataset/")
+            if res.status_code == 200:
+                for ds in res.json().get("result", []):
+                    if ds.get("table_name") == table_name:
+                        return ds["id"]
+        except Exception:
+            pass
+
         response = self.session.post(
             f"{self.base_url}/dataset/",
             json={

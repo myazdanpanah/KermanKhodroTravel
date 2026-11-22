@@ -30,10 +30,10 @@ export default function QuickCreateButton() {
     <>
       {open && <div className="fixed inset-0 z-30 hidden lg:block" onClick={() => setOpen(false)} />}
       {/* RTL: items-end is the physical left edge, matching the page gutter. */}
-      <div className="fixed bottom-7 left-8 z-40 hidden flex-col items-end lg:flex">
+      <div className="fixed bottom-7 left-8 z-40 hidden flex-col items-end lg:flex pointer-events-none">
         <div
           className={`mb-3 w-64 origin-bottom-left rounded-2xl border border-nx-border bg-white p-2 shadow-2xl transition-all duration-300 ease-out dark:border-nx-navy-border dark:bg-nx-navy-elevated ${
-            open ? 'scale-100 opacity-100' : 'pointer-events-none scale-0 opacity-0'
+            open ? 'scale-100 opacity-100 pointer-events-auto' : 'pointer-events-none scale-0 opacity-0'
           }`}
           style={{ transformOrigin: 'left bottom' }}
         >
@@ -63,7 +63,7 @@ export default function QuickCreateButton() {
           onClick={() => setOpen((value) => !value)}
           aria-label="ثبت جدید"
           aria-expanded={open}
-          className="grid h-14 w-14 place-items-center rounded-full bg-nx-teal text-white shadow-xl ring-4 ring-white transition-transform duration-300 hover:scale-105 active:scale-95 dark:ring-nx-navy"
+          className="pointer-events-auto grid h-14 w-14 place-items-center rounded-full bg-nx-teal text-white shadow-xl ring-4 ring-white transition-transform duration-300 hover:scale-105 active:scale-95 dark:ring-nx-navy"
         >
           <Plus className={`h-7 w-7 transition-transform duration-300 ${open ? 'rotate-45' : ''}`} />
         </button>

@@ -8,12 +8,15 @@ import {
   Puzzle, Users, Building2, FolderTree, Settings,
   ChevronDown, ChevronRight, Plus, Pencil, Trash2, X, Check,
   ToggleLeft, ToggleRight, Zap, Save,
-  Palette, Upload, RotateCcw, FileText, Inbox
+  Palette, Upload, RotateCcw, FileText, Inbox, MessageSquare, Type, LayoutTemplate, Maximize2
 } from 'lucide-react'
 import BillingLetterheadTab from './BillingLetterheadTab'
 import AdminSettingsPage from './AdminSettingsPage'
 import SecretariatPanel from './office/SecretariatPanel'
 import { officeApi, OfficeMeta } from '../api/office'
+import SmsSettingsPanel from '../components/SmsSettingsPanel'
+import FontsTab from '../components/FontsTab'
+import ReportDesignerTab from './billing/ReportDesignerTab'
 
 // ─── Module Management ────────────────────────────────────────────
 
@@ -697,7 +700,8 @@ function SecretariatsTab() {
 export default function SettingsPage() {
   const { user } = useAuthStore()
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'modules' | 'users' | 'branding' | 'letterhead' | 'org' | 'secretariats'>('modules')
+  const [activeTab, setActiveTab] = useState<'modules' | 'users' | 'branding' | 'letterhead' | 'org' | 'secretariats' | 'sms' | 'fonts' | 'report-design'>('modules')
+  const [designerFullscreen, setDesignerFullscreen] = useState(false)
 
   useEffect(() => {
     if (!user || (user.role !== 'admin' && user.role !== 'ceo')) {
@@ -714,6 +718,9 @@ export default function SettingsPage() {
     { id: 'letterhead' as const, label: 'سربرگ و اطلاعات نامه', icon: FileText },
     { id: 'org' as const, label: 'ساختار سازمانی', icon: Building2 },
     { id: 'secretariats' as const, label: 'دبیرخانه‌ها', icon: Inbox },
+    { id: 'sms' as const, label: 'تنظیمات پیامک', icon: MessageSquare },
+    { id: 'fonts' as const, label: 'فونت‌های اسناد', icon: Type },
+    { id: 'report-design' as const, label: 'گزارش‌ساز', icon: LayoutTemplate },
   ]
 
   return (
@@ -750,6 +757,39 @@ export default function SettingsPage() {
         {activeTab === 'letterhead' && <BillingLetterheadTab />}
         {activeTab === 'org' && <OrganizationTab />}
         {activeTab === 'secretariats' && <SecretariatsTab />}
+        {activeTab === 'sms' && <SmsSettingsPanel />}
+        {activeTab === 'fonts' && <FontsTab />}
+        {activeTab === 'report-design' && (
+          <div className="space-y-4">
+            <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-nx-navy-border dark:bg-nx-navy">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <LayoutTemplate className="w-5 h-5 text-nx-blue" />
+                    <h2 className="text-base font-bold text-nx-navy dark:text-white">طراحی و ویرایشگر قالب صورت‌حساب</h2>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-nx-mist max-w-xl leading-5">
+                    برای چیدمان دقیق و ویرایش بصری المان‌های صورت‌حساب (A4 افقی و عمودی، فونت‌ها، رنگ‌ها، جداول و بارکد)، ویرایشگر را به صورت تمام‌صفحه باز کنید.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setDesignerFullscreen(true)}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-nx-blue text-white text-sm font-medium hover:bg-nx-blue/90 shadow-sm transition shrink-0"
+                >
+                  <Maximize2 className="w-4 h-4" />
+                  ورود به تنظیمات گزارش‌ساز
+                </button>
+              </div>
+            </div>
+
+            {designerFullscreen && (
+              <div className="fixed inset-0 z-50 flex flex-col bg-slate-100 p-3 sm:p-5 dark:bg-[#0c1626] overflow-hidden">
+                <ReportDesignerTab onClose={() => setDesignerFullscreen(false)} isFullscreen={true} />
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

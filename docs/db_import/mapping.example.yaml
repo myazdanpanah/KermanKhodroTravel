@@ -1,0 +1,88 @@
+# Annotated example of `mssql_mapping.yaml`.
+#
+# `--analyze` generates a first draft of this file. Review it, then run
+# `--apply`. Only tables with a `target` are imported.
+#
+# Field spec forms:
+#   field: SourceColumn                       # simplest
+#   field: {source: SourceColumn}
+#   field: {source: SourceColumn, transform: digits}
+#   field: {source: SourceColumn, default: "unknown"}
+#   field: {constant: true}
+#   field:
+#     source: CustomerID
+#     fk: {model: finance.Customer, lookup: id}   # query target by a value
+#   field:
+#     source: CustomerID
+#     fk: {ref: Customers}                        # use an already imported row
+#                                                 # (legacy PK -> object, built
+#                                                 # while the referenced table
+#                                                 # was imported)
+#
+# Transforms: strip, trim, upper, lower, digits, phone, national_id, bool,
+#             int, float, decimal, date, datetime, json
+#
+# Table options:
+#   key: legacy_customer_id   # natural key for update_or_create (must be unique)
+#   key_source: CustomerID    # legacy PK column; remembered for `ref` lookups
+#   constants: {is_active: true}
+#   remember: false           # do not keep legacy PK -> object for this table
+#   constants may also be set globally under `defaults`.
+#
+# NOTE: `SalesInvoice.save()` recomputes `total` from subtotal/discount/tax,
+# so importing `total` directly is pointless there; import the components.
+
+version: 1
+
+# Applied to every table (typical for multi-tenant data).
+defaults:
+  company: 1                # accounts.Company pk; change to your company id
+
+tables:
+  - source: Customers
+    target: finance.Customer
+    key_source: CustomerID
+    fields:
+      id:    {source: CustomerID}
+      name:  {source: FullName, transform: strip}
+      phone: {source: Phone, transform: digits}
+      email: {source: Email, transform: lower}
+      # FK by direct value (source stores the target PK).
+      company: {source: CompanyID, fk: {model: accounts.Company, lookup: id}}
+
+  - source: Invoices
+    target: sales.SalesInvoice
+    key_source: InvoiceID
+    fields:
+      id: {source: InvoiceID}
+      invoice_number: {source: InvoiceNo, transform: strip}
+      invoice_date: {source: InvoiceDate, transform: date}
+      due_date: {source: DueDate, transform: date}
+      subtotal: {source: Subtotal, transform: decimal, default: 0}
+      discount_amount: {source: Discount, transform: decimal, default: 0}
+      tax_amount: {source: Tax, transform: decimal, default: 0}
+      # FK by in-memory reference: the Customers table was imported first
+      # (topological order is computed from `ref`), so its legacy PK map is
+      # available here.
+      customer: {source: CustomerID, fk: {ref: Customers}}
+
+  - source: InvoiceLines
+    target: sales.SalesInvoiceLine
+    key_source: LineID
+    fields:
+      id: {source: LineID}
+      invoice: {source: InvoiceID, fk: {ref: Invoices}}
+      product_name: {source: ProductName, transform: strip}
+      product_code: {source: ProductCode, transform: strip}
+      quantity: {source: Qty, transform: decimal, default: 0}
+      unit_price: {source: UnitPrice, transform: decimal, default: 0}
+
+  # ---------------------------------------------------------------------
+  # FK lookup by business key instead of a legacy PK map. Useful when the
+  # referenced target row was not imported in this run.
+  # ---------------------------------------------------------------------
+  # - source: Activities
+  #   target: crm.Activity
+  #   fields:
+  #     subject: {source: Subject}
+  #     customer: {source: CustomerCode, fk: {model: finance.Customer, lookup: code}}

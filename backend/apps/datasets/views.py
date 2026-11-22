@@ -14,16 +14,27 @@ from .parsers import parse_excel_file, generate_table_name, create_table_from_da
 
 
 from apps.accounts.permissions import RequireModule
+from .services import sync_erp_tables_as_datasets
 
-# Module gate: all datasets endpoints require 'datasets'
+# Module gate: datasets endpoints require 'datasets' or 'bi_dashboard'
 _DatasetsPerm = RequireModule.for_module("datasets")()
 
 
 def _check_datasets_module(request):
-    """Return None if OK, or a 403 Response if the module is not enabled."""
+    """Return None if OK, or a 403 Response if neither 'datasets' nor 'bi_dashboard' is enabled."""
+    user = getattr(request, "user", None)
+    if not user or not user.is_authenticated:
+        return Response({"error": "احراز هویت الزامی است"}, status=status.HTTP_401_UNAUTHORIZED)
+    if user.is_staff or getattr(user, "role", "") in ("ceo", "admin"):
+        return None
+    company = getattr(user, "company", None)
+    if company:
+        enabled = company.enabled_modules or []
+        if "datasets" in enabled or "bi_dashboard" in enabled:
+            return None
     if not _DatasetsPerm.has_permission(request, None):
         return Response(
-            {"error": "Module 'datasets' is not enabled for your company"},
+            {"error": "ماژول داشبورد یا مجموعه داده‌ها برای سازمان شما فعال نیست"},
             status=status.HTTP_403_FORBIDDEN,
         )
     return None
@@ -34,11 +45,20 @@ logger = logging.getLogger(__name__)
 
 @api_view(["GET"])
 def dataset_list(request):
-    """List datasets accessible to the current user's role."""
+    """List datasets accessible to the current user's role and operational levels."""
     gate = _check_datasets_module(request)
     if gate:
         return gate
+
+    # Check operational permission
+    if not getattr(request.user, "can_view", True) and not request.user.is_staff and request.user.role not in ("ceo", "admin"):
+        return Response([])
+
     datasets = Dataset.objects.filter(status="ready")
+    if not datasets.exists():
+        # Auto-discover and register active ERP tables as datasets
+        sync_erp_tables_as_datasets()
+        datasets = Dataset.objects.filter(status="ready")
 
     # Role-based filtering: users only see datasets for their role
     if request.user.role in ("ceo", "admin") or request.user.is_staff:
@@ -197,6 +217,11 @@ def dataset_query(request, pk):
     # Role check (mirrors dataset_detail): a non-CEO/staff user may only
     # query datasets shared with their role.
     if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
+        if not getattr(request.user, "can_view", True):
+            return Response(
+                {"error": "دسترسی مشاهده برای این کاربر غیرفعال است"},
+                status=status.HTTP_403_FORBIDDEN,
+            )
         if request.user.role not in dataset.allowed_roles:
             return Response(
                 {"error": "You do not have access to this dataset"},
@@ -592,4 +617,25 @@ def superset_sync_all(request):
         "synced": synced_count,
         "skipped": Dataset.objects.filter(status="ready").exclude(superset_dataset_id__isnull=True).count(),
         "errors": errors,
+    }, status=status.HTTP_200_OK)
+
+
+@api_view(["POST"])
+def sync_erp_datasets_view(request):
+    """
+    Sync and register PostgreSQL ERP tables as BI datasets,
+    and register them into Superset.
+    """
+    gate = _check_datasets_module(request)
+    if gate:
+        return gate
+    if request.user.role not in ("ceo", "admin") and not request.user.is_staff:
+        return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+
+    datasets = sync_erp_tables_as_datasets()
+    serializer = DatasetSerializer(datasets, many=True)
+    return Response({
+        "message": "جداول ERP با موفقیت با مجموعه داده‌های هوش تجاری همگام شدند",
+        "count": len(datasets),
+        "datasets": serializer.data,
     }, status=status.HTTP_200_OK)

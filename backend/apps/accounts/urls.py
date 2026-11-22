@@ -25,4 +25,7 @@ urlpatterns = [
     # System-wide branding (logo + brand colors)
     path("company/branding/", views.company_branding, name="company-branding"),
     path("branding/public/", views.branding_public, name="branding-public"),
+    # Organization fonts for document previews
+    path("fonts/", views.company_fonts, name="company-fonts"),
+    path("fonts/<int:pk>/", views.company_font_detail, name="company-font-detail"),
 ]

@@ -18,12 +18,23 @@
   <body>
     <div id="root"></div>
     <script>
-      /* Apply dark class synchronously before React renders to prevent flash */
+      /* Apply theme and brand icons synchronously before React renders to prevent flash */
       (function() {
         try {
-          var stored = JSON.parse(localStorage.getItem('nexivo-theme') || '{}');
-          if (stored.state && stored.state.dark) {
+          var storedTheme = JSON.parse(localStorage.getItem('nexivo-theme') || '{}');
+          if (storedTheme.state && storedTheme.state.dark) {
             document.documentElement.classList.add('dark');
+          }
+          var storedBrand = JSON.parse(localStorage.getItem('nexivo-brand') || '{}');
+          if (storedBrand.logoUrl) {
+            var icon = document.querySelector('link[rel="icon"]');
+            if (icon) icon.href = storedBrand.logoUrl;
+            var appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
+            if (appleIcon) appleIcon.href = storedBrand.logoUrl;
+          }
+          if (storedBrand.name) {
+            var appTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+            if (appTitle) appTitle.content = storedBrand.name;
           }
         } catch(e) {}
       })();

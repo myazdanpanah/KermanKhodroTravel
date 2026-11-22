@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@ant-design/icons": "^6.3.2",
+    "@casualoffice/docs": "1.4.2",
     "@codemirror/lang-sql": "^6.10.0",
     "@fontsource/vazirmatn": "^5.3.0",
     "@seydanloo/persian-calendar": "^0.3.2",
@@ -31,6 +32,7 @@
     "react-grid-layout": "^1.4.4",
     "react-router-dom": "^6.26.0",
     "tailwind-merge": "^2.4.0",
+    "xlsx": "0.18.5",
     "zustand": "^4.5.4"
   },
   "devDependencies": {

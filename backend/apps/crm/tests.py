@@ -412,3 +412,150 @@ class OpportunityRecordActivityTests(CRMTestBase):
 
         self.assertEqual(response.status_code, 201, response.content)
         self.assertIsNone(response.json()["data"]["opportunity"])
+
+
+# ─── SMS Routes ───────────────────────────────────────────────
+
+from unittest.mock import patch  # noqa: E402
+
+from django.urls import reverse  # noqa: E402
+from rest_framework.test import APIClient  # noqa: E402
+
+from .models import SmsMessage, SmsSettings  # noqa: E402
+from .sms import SmsError  # noqa: E402
+
+
+class SmsApiTests(CRMTestBase):
+    """Access control, admin settings, input validation and gateway errors."""
+
+    def setUp(self):
+        super().setUp()
+        self.client = APIClient()
+        self.admin = create_test_user(
+            username="sms_admin", company=self.company, role="admin",
+        )
+        self.sales = create_test_user(
+            username="sms_sales", company=self.company, role="sales",
+        )
+
+    def _settings_payload(self, **overrides):
+        payload = {
+            "provider": "kavenegar",
+            "sender": "10004346",
+            "api_key": "test-api-key",
+            "enabled": True,
+        }
+        payload.update(overrides)
+        return payload
+
+    # ── Access ──────────────────────────────────────────────
+
+    def test_anonymous_cannot_read_or_send(self):
+        for name in ("crm-sms-settings", "crm-sms-messages"):
+            response = self.client.get(reverse(name))
+            self.assertIn(response.status_code, (401, 403), name)
+        response = self.client.post(
+            reverse("crm-sms-send"), {"phone": "09123456789", "message": "سلام"}, format="json",
+        )
+        self.assertIn(response.status_code, (401, 403))
+
+    def test_non_admin_cannot_save_settings(self):
+        self.client.force_authenticate(self.sales)
+        response = self.client.put(
+            reverse("crm-sms-settings"), self._settings_payload(), format="json",
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertFalse(SmsSettings.objects.filter(company=self.company, enabled=True).exists())
+
+    def test_admin_saves_settings_and_secret_is_not_echoed(self):
+        self.client.force_authenticate(self.admin)
+        response = self.client.put(
+            reverse("crm-sms-settings"),
+            self._settings_payload(provider="niksms", username="panel-user", password="panel-pass"),
+            format="json",
+        )
+        self.assertEqual(response.status_code, 200)
+        data = response.data["data"]
+        self.assertTrue(data["enabled"])
+        self.assertTrue(data["has_api_key"])
+        self.assertTrue(data["has_password"])
+        self.assertNotIn("api_key", data)
+        self.assertNotIn("password", data)
+
+        stored = SmsSettings.objects.get(company=self.company)
+        self.assertEqual(stored.provider, "niksms")
+        self.assertEqual(stored.api_key, "test-api-key")
+        self.assertEqual(stored.sender, "10004346")
+
+    # ── Validation ──────────────────────────────────────────
+
+    def _enabled_settings(self):
+        SmsSettings.objects.create(
+            company=self.company, provider="kavenegar", api_key="key",
+            sender="1000", enabled=True,
+        )
+
+    def test_invalid_phone_rejected(self):
+        self._enabled_settings()
+        self.client.force_authenticate(self.admin)
+        response = self.client.post(
+            reverse("crm-sms-send"), {"phone": "12345", "message": "سلام"}, format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("موبایل", response.data["error"])
+        self.assertEqual(SmsMessage.objects.count(), 0)
+
+    def test_empty_and_too_long_message_rejected(self):
+        self._enabled_settings()
+        self.client.force_authenticate(self.admin)
+        empty = self.client.post(
+            reverse("crm-sms-send"), {"phone": "09123456789", "message": "   "}, format="json",
+        )
+        self.assertEqual(empty.status_code, 400)
+        long_body = "ا" * 1001
+        too_long = self.client.post(
+            reverse("crm-sms-send"), {"phone": "09123456789", "message": long_body}, format="json",
+        )
+        self.assertEqual(too_long.status_code, 400)
+        self.assertEqual(SmsMessage.objects.count(), 0)
+
+    def test_disabled_gateway_rejected(self):
+        SmsSettings.objects.create(company=self.company, provider="kavenegar", enabled=False)
+        self.client.force_authenticate(self.admin)
+        response = self.client.post(
+            reverse("crm-sms-send"), {"phone": "09123456789", "message": "سلام"}, format="json",
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("فعال نیست", response.data["error"])
+
+    # ── Provider failure ────────────────────────────────────
+
+    def test_provider_error_is_reported_and_logged_as_failed(self):
+        self._enabled_settings()
+        self.client.force_authenticate(self.admin)
+        with patch("apps.crm.sms_views.send_sms", side_effect=SmsError("اعتبار کلید کافی نیست")):
+            response = self.client.post(
+                reverse("crm-sms-send"),
+                {"phone": "0912 345 6789", "message": "پیام آزمایشی"},
+                format="json",
+            )
+        self.assertEqual(response.status_code, 502)
+        self.assertIn("اعتبار کلید", response.data["error"])
+        message = SmsMessage.objects.get()
+        self.assertEqual(message.status, "failed")
+        self.assertEqual(message.phone, "09123456789")
+        self.assertIn("اعتبار کلید", message.error)
+
+    def test_successful_send_is_logged(self):
+        self._enabled_settings()
+        self.client.force_authenticate(self.admin)
+        with patch("apps.crm.sms_views.send_sms", return_value="provider-42"):
+            response = self.client.post(
+                reverse("crm-sms-send"),
+                {"phone": "09123456789", "message": "سلام"},
+                format="json",
+            )
+        self.assertEqual(response.status_code, 200)
+        message = SmsMessage.objects.get()
+        self.assertEqual(message.status, "sent")
+        self.assertEqual(message.provider_message_id, "provider-42")

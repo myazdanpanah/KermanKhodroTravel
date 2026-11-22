@@ -128,12 +128,12 @@ export default function BillingPaymentsPage() {
         <div className="flex items-center gap-2">
           <CreditCard className="w-5 h-5 text-nx-blue" />
           <div>
-            <h1 className="text-lg font-bold text-white">پرداخت‌ها</h1>
-            <p className="text-xs text-nx-mist">پرداخت‌های دریافتی از شرکت‌های طرف حساب</p>
+            <h1 className="text-lg font-bold text-slate-900 dark:text-white">پرداخت‌ها</h1>
+            <p className="text-xs text-slate-500 dark:text-nx-mist">پرداخت‌های دریافتی از شرکت‌های طرف حساب</p>
           </div>
         </div>
         {canPay && (
-          <button onClick={toggleForm} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-nx-blue text-white text-sm hover:brightness-110 transition">
+          <button onClick={toggleForm} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-nx-blue text-white text-sm hover:brightness-110 transition shadow-sm font-medium">
             {open ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             {open ? 'بستن' : 'ثبت پرداخت'}
           </button>
@@ -143,7 +143,7 @@ export default function BillingPaymentsPage() {
       {open && (
         <div className={`${CARD} p-5 grid grid-cols-1 md:grid-cols-3 gap-4`}>
           <div>
-            <label className="block text-xs text-nx-mist mb-1.5">شرکت</label>
+            <label className="block text-xs text-slate-600 dark:text-nx-mist mb-1.5">شرکت</label>
             <select value={form.payer_code} onChange={(e) => setForm({ ...form, payer_code: e.target.value })} className={INPUT}>
               <option value="">انتخاب شرکت…</option>
               {payers.map((p) => (
@@ -152,7 +152,7 @@ export default function BillingPaymentsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-xs text-nx-mist mb-1.5">مبلغ (ریال)</label>
+            <label className="block text-xs text-slate-600 dark:text-nx-mist mb-1.5">مبلغ (ریال)</label>
             <input
               type="number"
               value={form.amount}
@@ -163,15 +163,15 @@ export default function BillingPaymentsPage() {
           </div>
           <JalaliDateInput label="تاریخ پرداخت" value={form.payment_date} onChange={(iso) => setForm({ ...form, payment_date: iso })} />
           <div>
-            <label className="block text-xs text-nx-mist mb-1.5">شماره پیگیری</label>
+            <label className="block text-xs text-slate-600 dark:text-nx-mist mb-1.5">شماره پیگیری</label>
             <input value={form.tracking_number} onChange={(e) => setForm({ ...form, tracking_number: e.target.value })} className={INPUT} />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-xs text-nx-mist mb-1.5">توضیحات</label>
+            <label className="block text-xs text-slate-600 dark:text-nx-mist mb-1.5">توضیحات</label>
             <input value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={INPUT} />
           </div>
           <div className="md:col-span-3 flex justify-end">
-            <button onClick={() => void submit()} disabled={saving} className="px-6 py-2.5 rounded-xl bg-nx-blue text-white text-sm disabled:opacity-60">
+            <button onClick={() => void submit()} disabled={saving} className="px-6 py-2.5 rounded-xl bg-nx-blue text-white text-sm font-medium disabled:opacity-60 shadow-sm">
               {saving ? 'در حال ذخیره…' : 'ذخیرهٔ پرداخت'}
             </button>
           </div>
@@ -180,7 +180,7 @@ export default function BillingPaymentsPage() {
 
       <div className={`${CARD} overflow-hidden`}>
         <table className="w-full text-sm">
-          <thead className="bg-nx-navy text-nx-mist text-xs">
+          <thead className="bg-slate-100 dark:bg-nx-navy text-slate-700 dark:text-nx-mist text-xs">
             <tr>
               <th className="text-right font-medium px-4 py-3">تاریخ</th>
               <th className="text-right font-medium px-4 py-3">شرکت</th>
@@ -192,21 +192,21 @@ export default function BillingPaymentsPage() {
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={7} className="py-8 text-center text-xs text-nx-mist">در حال بارگذاری…</td></tr>}
+            {loading && <tr><td colSpan={7} className="py-8 text-center text-xs text-slate-500 dark:text-nx-mist">در حال بارگذاری…</td></tr>}
             {!loading && rows.length === 0 && (
-              <tr><td colSpan={7} className="py-8 text-center text-xs text-nx-mist">پرداختی ثبت نشده است.</td></tr>
+              <tr><td colSpan={7} className="py-8 text-center text-xs text-slate-500 dark:text-nx-mist">پرداختی ثبت نشده است.</td></tr>
             )}
             {rows.map((row) => (
-              <tr key={row.id} className="border-t border-nx-navy-border hover:bg-nx-navy/40">
-                <td className="px-4 py-3 text-nx-mist">{row.payment_date}</td>
-                <td className="px-4 py-3 text-white">{row.payer_name}</td>
-                <td className="px-4 py-3 text-nx-mist">{row.tracking_number || '—'}</td>
-                <td className="px-4 py-3 text-nx-mist">{row.description || '—'}</td>
-                <td className="px-4 py-3 text-nx-mist">{row.created_by_name || '—'}</td>
-                <td className="px-4 py-3 text-left text-white">{rial(row.amount)}</td>
+              <tr key={row.id} className="border-t border-slate-200 dark:border-nx-navy-border hover:bg-slate-50 dark:hover:bg-nx-navy/40">
+                <td className="px-4 py-3 text-slate-600 dark:text-nx-mist">{row.payment_date}</td>
+                <td className="px-4 py-3 text-slate-900 dark:text-white font-medium">{row.payer_name}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-nx-mist">{row.tracking_number || '—'}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-nx-mist">{row.description || '—'}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-nx-mist">{row.created_by_name || '—'}</td>
+                <td className="px-4 py-3 text-left font-semibold text-emerald-600 dark:text-emerald-400">{rial(row.amount)}</td>
                 <td className="px-4 py-3">
                   {canDelete && (
-                    <button onClick={() => void remove(row)} className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-400/10">
+                    <button onClick={() => void remove(row)} className="p-1.5 rounded-lg text-rose-500 dark:text-rose-400 hover:bg-rose-500/10">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   )}
@@ -214,10 +214,10 @@ export default function BillingPaymentsPage() {
               </tr>
             ))}
           </tbody>
-          <tfoot className="bg-nx-navy">
+          <tfoot className="bg-slate-100 dark:bg-nx-navy">
             <tr>
-              <td colSpan={5} className="px-4 py-3 text-xs text-nx-mist">جمع ({rows.length} پرداخت)</td>
-              <td className="px-4 py-3 text-left font-bold text-white">{rial(total)}</td>
+              <td colSpan={5} className="px-4 py-3 text-xs text-slate-600 dark:text-nx-mist">جمع ({rows.length} پرداخت)</td>
+              <td className="px-4 py-3 text-left font-bold text-slate-900 dark:text-white">{rial(total)}</td>
               <td />
             </tr>
           </tfoot>

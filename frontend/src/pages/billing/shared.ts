@@ -23,6 +23,7 @@ export interface Payer {
   mobile: string
   email: string
   customer_type: 'legal' | 'individual'
+  is_active?: boolean
   balance?: Balance
 }
 
@@ -74,13 +75,16 @@ export interface Payment {
   created_by_name: string
 }
 
+export const toPersianDigits = (input: string | number | undefined | null) =>
+  String(input ?? '').replace(/[0-9]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[Number(d)])
+
 export const num = (value: number | undefined | null) =>
   Number(value || 0).toLocaleString('fa-IR')
 
 export const rial = (value: number | undefined | null) => `${num(value)} ریال`
 
 export const INPUT =
-  'w-full px-3 py-2.5 rounded-xl border border-nx-navy-border bg-nx-navy-elevated text-white placeholder:text-nx-mist/45 text-sm focus:ring-2 focus:ring-nx-blue focus:border-nx-blue outline-none transition'
+  'w-full px-3 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 placeholder:text-slate-400 text-sm focus:ring-2 focus:ring-nx-blue focus:border-nx-blue outline-none transition dark:border-nx-navy-border dark:bg-nx-navy-elevated dark:text-white dark:placeholder:text-nx-mist/45'
 
-// `dark-surface` keeps muted copy light inside these always-navy cards.
-export const CARD = 'dark-surface rounded-xl border border-nx-navy-border bg-nx-navy-elevated'
+export const CARD =
+  'rounded-xl border border-slate-200 bg-white text-slate-900 shadow-sm dark:border-nx-navy-border dark:bg-nx-navy-elevated dark:text-white'

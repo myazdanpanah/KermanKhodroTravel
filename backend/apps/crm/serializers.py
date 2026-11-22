@@ -9,12 +9,15 @@ from .models import (
 
 
 class LeadSerializer(serializers.ModelSerializer):
+    campaign_name = serializers.CharField(source="campaign.name", read_only=True, default="")
+
     class Meta:
         model = Lead
         fields = [
             "id", "name", "company_name", "email", "phone", "mobile", "website", "address",
             "status", "source", "priority", "industry", "employees_count", "annual_revenue",
             "currency", "assigned_to", "converted_customer", "converted_at", "score", "notes",
+            "campaign", "campaign_name",
             "created_at", "updated_at",
         ]
         read_only_fields = ["converted_customer", "converted_at"]
@@ -33,6 +36,7 @@ class LeadCreateSerializer(serializers.Serializer):
     priority = serializers.ChoiceField(choices=Lead.PRIORITY_CHOICES, default="medium")
     notes = serializers.CharField(required=False, default="")
     assigned_to_id = serializers.IntegerField(required=False, allow_null=True)
+    campaign_id = serializers.IntegerField(required=False, allow_null=True)
 
 
 class OpportunitySerializer(serializers.ModelSerializer):

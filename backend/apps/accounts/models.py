@@ -258,3 +258,27 @@ class User(AbstractUser):
     @property
     def is_admin_user(self):
         return self.role == "admin" or self.is_staff
+
+
+class CompanyFont(models.Model):
+    """Uploaded font family used to render DOCX/XLSX previews.
+
+    The family name must match the name used inside the document (for example
+    "B Nazanin"), because the preview injects it as an @font-face rule.
+    """
+
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name="fonts")
+    name = models.CharField(max_length=120)
+    file = models.FileField(upload_to="fonts/")
+    uploaded_by = models.ForeignKey(
+        "User", on_delete=models.SET_NULL, null=True, blank=True, related_name="uploaded_fonts",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["name"]
+        verbose_name = "فونت سازمان"
+        verbose_name_plural = "فونت‌های سازمان"
+
+    def __str__(self):
+        return f"{self.name} ({self.company_id})"

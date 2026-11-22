@@ -120,23 +120,23 @@ export default function BillingServicesPage() {
       <div className="flex items-center gap-2">
         <Briefcase className="w-5 h-5 text-nx-blue" />
         <div>
-          <h1 className="text-lg font-bold text-white">خدمات</h1>
-          <p className="text-xs text-nx-mist">تعریف انواع خدمت (ویزا، تور، اتوبوس، …) که در صدور و اعلامیه‌ها استفاده می‌شود</p>
+          <h1 className="text-lg font-bold text-slate-900 dark:text-white">خدمات</h1>
+          <p className="text-xs text-slate-500 dark:text-nx-mist">تعریف انواع خدمت (ویزا، تور، اتوبوس، …) که در صدور و اعلامیه‌ها استفاده می‌شود</p>
         </div>
       </div>
 
       <section className={`${CARD} p-5`}>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           <div>
-            <label className="block text-xs text-nx-mist mb-1.5">نام خدمت *</label>
+            <label className="block text-xs text-slate-600 dark:text-nx-mist mb-1.5">نام خدمت *</label>
             <input value={name} onChange={(e) => setName(e.target.value)} className={INPUT} placeholder="مثلاً ویزا" />
           </div>
           <div>
-            <label className="block text-xs text-nx-mist mb-1.5">کد (اختیاری)</label>
+            <label className="block text-xs text-slate-600 dark:text-nx-mist mb-1.5">کد (اختیاری)</label>
             <input value={code} onChange={(e) => setCode(e.target.value)} className={INPUT} placeholder="VISA" dir="ltr" />
           </div>
           <div>
-            <label className="block text-xs text-nx-mist mb-1.5">خدمت مادر (اختیاری)</label>
+            <label className="block text-xs text-slate-600 dark:text-nx-mist mb-1.5">خدمت مادر (اختیاری)</label>
             <select value={parentId} onChange={(e) => setParentId(e.target.value)} className={INPUT}>
               <option value="">—</option>
               {rows.filter((r) => r.id !== editing?.id).map((r) => (
@@ -148,24 +148,24 @@ export default function BillingServicesPage() {
             <button
               onClick={() => void save()}
               disabled={busy || !canManage}
-              className="inline-flex items-center gap-2 px-8 py-2.5 rounded-xl bg-nx-blue text-white text-sm disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-8 py-2.5 rounded-xl bg-nx-blue text-white text-sm font-medium disabled:opacity-60 shadow-sm"
             >
               {editing ? <Save className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
               {editing ? 'ذخیره' : 'افزودن'}
             </button>
             {editing && (
-              <button onClick={reset} className="px-4 py-2.5 rounded-xl border border-nx-navy-border text-nx-mist text-sm">
+              <button onClick={reset} className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-nx-navy-border text-slate-600 dark:text-nx-mist hover:bg-slate-100 dark:hover:bg-nx-navy text-sm">
                 <X className="w-4 h-4" />
               </button>
             )}
           </div>
         </div>
-        {!canManage && <p className="text-[11px] text-amber-400 mt-3">برای تغییر خدمات به مجوز مدیریت تنظیمات نیاز است.</p>}
+        {!canManage && <p className="text-[11px] text-amber-500 dark:text-amber-400 mt-3">برای تغییر خدمات به مجوز مدیریت تنظیمات نیاز است.</p>}
       </section>
 
       <section className={`${CARD} overflow-x-auto`}>
         <table className="w-full text-sm min-w-[520px]">
-          <thead className="bg-nx-navy text-nx-mist text-xs">
+          <thead className="bg-slate-100 dark:bg-nx-navy text-slate-700 dark:text-nx-mist text-xs">
             <tr>
               <th className="text-right font-medium px-4 py-3">نام</th>
               <th className="text-right font-medium px-4 py-3">کد</th>
@@ -175,20 +175,20 @@ export default function BillingServicesPage() {
             </tr>
           </thead>
           <tbody>
-            {loading && <tr><td colSpan={5} className="py-8 text-center text-xs text-nx-mist">در حال بارگذاری…</td></tr>}
+            {loading && <tr><td colSpan={5} className="py-8 text-center text-xs text-slate-500 dark:text-nx-mist">در حال بارگذاری…</td></tr>}
             {!loading && rows.length === 0 && (
-              <tr><td colSpan={5} className="py-8 text-center text-xs text-nx-mist">خدمتی تعریف نشده است.</td></tr>
+              <tr><td colSpan={5} className="py-8 text-center text-xs text-slate-500 dark:text-nx-mist">خدمتی تعریف نشده است.</td></tr>
             )}
             {rows.map((row) => (
-              <tr key={row.id} className="border-t border-nx-navy-border hover:bg-nx-navy/40">
-                <td className="px-4 py-3 text-white">{row.name}</td>
-                <td className="px-4 py-3 text-nx-mist" dir="ltr">{row.code || '—'}</td>
-                <td className="px-4 py-3 text-nx-mist">{rows.find((r) => r.id === row.parent)?.name || '—'}</td>
+              <tr key={row.id} className="border-t border-slate-200 dark:border-nx-navy-border hover:bg-slate-50 dark:hover:bg-nx-navy/40">
+                <td className="px-4 py-3 text-slate-900 dark:text-white font-medium">{row.name}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-nx-mist" dir="ltr">{row.code || '—'}</td>
+                <td className="px-4 py-3 text-slate-600 dark:text-nx-mist">{rows.find((r) => r.id === row.parent)?.name || '—'}</td>
                 <td className="px-4 py-3">
                   <button
                     onClick={() => void toggleActive(row)}
                     disabled={!canManage}
-                    className={`px-2 py-1 rounded-lg text-[11px] ${row.is_active ? 'bg-emerald-400/10 text-emerald-400' : 'bg-slate-400/10 text-slate-400'}`}
+                    className={`px-2 py-1 rounded-lg text-[11px] font-medium ${row.is_active ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-slate-200 dark:bg-slate-400/10 text-slate-600 dark:text-slate-400'}`}
                   >
                     {row.is_active ? 'فعال' : 'غیرفعال'}
                   </button>
@@ -196,7 +196,7 @@ export default function BillingServicesPage() {
                 <td className="px-4 py-3">
                   <div className="flex gap-1">
                     <button onClick={() => startEdit(row)} disabled={!canManage} className="px-2 py-1 rounded-lg text-xs text-nx-blue hover:bg-nx-blue/10">ویرایش</button>
-                    <button onClick={() => void remove(row)} disabled={!canManage} className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-400/10">
+                    <button onClick={() => void remove(row)} disabled={!canManage} className="p-1.5 rounded-lg text-rose-500 dark:text-rose-400 hover:bg-rose-500/10">
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>

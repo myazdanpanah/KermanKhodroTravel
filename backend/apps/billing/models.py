@@ -51,6 +51,7 @@ class Payer(models.Model):
         default="legal",
         verbose_name="نوع مشتری",
     )
+    is_active = models.BooleanField(default=True, verbose_name="فعال")
 
     class Meta:
         verbose_name = "مشتری / شرکت"
@@ -85,6 +86,7 @@ class Invoice(models.Model):
     amount = models.BigIntegerField(verbose_name="مبلغ (ریال)")
     issue_date = models.DateField(verbose_name="تاریخ صدور")
     file_path = models.CharField(max_length=500, blank=True, default="", verbose_name="مسیر فایل")
+    description = models.CharField(max_length=500, blank=True, default="", verbose_name="توضیحات")
     created_at = models.DateTimeField(auto_now_add=True)
     # An issued invoice is never deleted: it is reversed in place so its letter
     # number stays taken and the audit trail keeps pointing at a real row.
@@ -541,3 +543,38 @@ class BillingAuditEntry(models.Model):
 
     def __str__(self):
         return f"{self.get_action_display()} {self.entity} #{self.object_id}"
+
+
+class ReportDesign(models.Model):
+    """Singleton design for the generated invoice PDF ("گزارش‌ساز").
+
+    The JSON is validated by ``services.report_design.normalize_design`` before
+    it is saved, so rendering never has to trust stored markup.
+    """
+
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    name = models.CharField(max_length=100, default="طراحی پیش‌فرض", verbose_name="نام")
+    design_json = models.JSONField(default=dict, blank=True, verbose_name="طراحی")
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="report_designs",
+        verbose_name="آخرین ویرایشگر",
+    )
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="زمان ویرایش")
+
+    class Meta:
+        verbose_name = "گزارش‌ساز صورت‌حساب"
+        verbose_name_plural = "گزارش‌ساز صورت‌حساب"
+
+    def __str__(self):
+        return self.name
+
+    @classmethod
+    def load(cls) -> "ReportDesign":
+        from .services.report_design import default_design
+
+        obj, _created = cls.objects.get_or_create(pk=1, defaults={"design_json": default_design()})
+        return obj

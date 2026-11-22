@@ -1,3 +1,52 @@
+/* ─── Modern Custom Scrollbars ─────────────────────────────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+html.dark * {
+  scrollbar-color: rgba(100, 116, 139, 0.35) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.6);
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background-color: rgba(100, 116, 139, 0.35);
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(148, 163, 184, 0.55);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Hide native scrollbar buttons (arrows) */
+::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -60,6 +109,29 @@ html:not(.dark) :is(.bg-white, .dark-surface, .bg-nx-cream) :is(
   color: #0f172a;
 }
 
+/* System-wide light-mode overrides to prevent dark boxes/textboxes/headers */
+html:not(.dark) table thead.bg-nx-navy,
+html:not(.dark) table tfoot.bg-nx-navy {
+  background-color: #f1f5f9;
+  color: #1e293b;
+}
+
+html:not(.dark) .border-nx-navy-border {
+  border-color: #e2e8f0;
+}
+
+html:not(.dark) input.bg-nx-navy,
+html:not(.dark) textarea.bg-nx-navy,
+html:not(.dark) select.bg-nx-navy {
+  background-color: #ffffff;
+  color: #0f172a;
+  border-color: #cbd5e1;
+}
+
+html:not(.dark) :is(h1, h2, h3, h4, h5, h6, p, label, td, th).text-white {
+  color: #0f172a;
+}
+
 /* Silver Mist is a muted colour; on the cream canvas it needs more weight. */
 html:not(.dark) .text-nx-mist {
   color: #64748b;
@@ -84,21 +156,25 @@ html:not(.dark) .text-slate-600 {
   color: #475569;
 }
 
-/* Always-dark surfaces (navy cards, launcher, login, sidebars) keep light copy
-   in both themes: the light-theme slate override above would otherwise paint
-   near-black text on #101D35 / #1E2A42. */
-/* Always-dark cards opt in with `.dark-surface` (billing cards, popovers) so
-   muted copy stays light even in the light theme, without touching the white
-   cards that live inside the same navy shell. */
-html .dark-surface .text-slate-600,
-html .dark-surface .text-slate-700,
-html .dark-surface .text-slate-800 {
+/* Dark mode text colors inside dark-surface */
+html.dark .dark-surface .text-slate-600,
+html.dark .dark-surface .text-slate-700,
+html.dark .dark-surface .text-slate-800 {
   color: #cbd5e1;
 }
 
+html:not(.dark) .dark-surface .text-slate-600,
+html:not(.dark) .dark-surface .text-slate-700,
+html:not(.dark) .dark-surface .text-slate-800 {
+  color: #475569;
+}
+
 /* The shared Jalali picker ships its own label colour and ignores the theme. */
-html .dark-surface .pc-date-picker__label {
+html.dark .dark-surface .pc-date-picker__label {
   color: #cbd5e1 !important;
+}
+html:not(.dark) .pc-date-picker__label {
+  color: #475569 !important;
 }
 
 /* Grid layout styles */
