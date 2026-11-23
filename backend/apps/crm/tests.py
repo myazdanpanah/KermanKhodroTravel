@@ -559,3 +559,61 @@ class SmsApiTests(CRMTestBase):
         message = SmsMessage.objects.get()
         self.assertEqual(message.status, "sent")
         self.assertEqual(message.provider_message_id, "provider-42")
+
+    def test_bulk_send_dry_run(self):
+        self._enabled_settings()
+        self.client.force_authenticate(self.admin)
+        payload = {
+            "template": "سلام {نام} عزیز، مبلغ بدهی شما {مبلغ} ریال است.",
+            "recipients": [
+                {"phone": "09123456789", "variables": {"نام": "حمیدرضا", "مبلغ": "۱,۰۰۰,۰۰۰"}},
+                {"phone": "invalid-phone", "variables": {"نام": "علی"}},
+            ],
+            "dry_run": True,
+        }
+        response = self.client.post(reverse("crm-sms-bulk-send"), payload, format="json")
+        self.assertEqual(response.status_code, 200)
+        data = response.data
+        self.assertTrue(data["dry_run"])
+        self.assertEqual(data["total"], 2)
+        # Verify first item interpolation
+        first = data["results"][0]
+        self.assertEqual(first["phone"], "09123456789")
+        self.assertEqual(first["body"], "سلام حمیدرضا عزیز، مبلغ بدهی شما ۱,۰۰۰,۰۰۰ ریال است.")
+        self.assertTrue(first["valid"])
+        # Verify second item validation
+        second = data["results"][1]
+        self.assertFalse(second["valid"])
+        self.assertIn("شمارهٔ موبایل نامعتبر است", second["error"])
+        # No DB messages created on dry run
+        self.assertEqual(SmsMessage.objects.count(), 0)
+
+    def test_bulk_send_execution_and_logging(self):
+        self._enabled_settings()
+        self.client.force_authenticate(self.admin)
+        payload = {
+            "template": "جناب {نام}، صورت‌حساب {شماره} صادر شد.",
+            "recipients": [
+                {"phone": "09123456789", "variables": {"نام": "حمیدرضا", "شماره": "1405/01"}},
+                {"phone": "99999", "variables": {"نام": "مهران"}},
+            ],
+        }
+        with patch("apps.crm.sms_views.send_sms", return_value="prov-99"):
+            response = self.client.post(reverse("crm-sms-bulk-send"), payload, format="json")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["total"], 2)
+        self.assertEqual(response.data["sent"], 1)
+        self.assertEqual(response.data["failed"], 1)
+
+        # 1 valid message was created and sent
+        sent_msg = SmsMessage.objects.filter(status="sent").first()
+        self.assertIsNotNone(sent_msg)
+        self.assertEqual(sent_msg.phone, "09123456789")
+        self.assertEqual(sent_msg.body, "جناب حمیدرضا، صورت‌حساب 1405/01 صادر شد.")
+        self.assertEqual(sent_msg.provider_message_id, "prov-99")
+
+    def test_bulk_send_empty_recipients_rejected(self):
+        self._enabled_settings()
+        self.client.force_authenticate(self.admin)
+        response = self.client.post(reverse("crm-sms-bulk-send"), {"recipients": []}, format="json")
+        self.assertEqual(response.status_code, 400)

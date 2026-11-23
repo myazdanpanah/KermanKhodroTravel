@@ -43,7 +43,7 @@ export default function SplashScreen({ show, minMs = 900, onExited }: SplashScre
 
   return (
     <div
-      className="fixed inset-0 z-[200] flex items-center justify-center bg-nx-navy"
+      className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-50 dark:bg-nx-navy transition-colors duration-300"
       role="status"
       aria-live="polite"
       aria-label="در حال بارگذاری"
@@ -56,10 +56,10 @@ export default function SplashScreen({ show, minMs = 900, onExited }: SplashScre
           draggable={false}
           className="nx-splash-mark relative h-24 w-auto select-none"
         />
-        <div className="nx-splash-bar relative mt-10 h-[3px] w-40 overflow-hidden rounded-full bg-white/10">
+        <div className="nx-splash-bar relative mt-10 h-[3px] w-40 overflow-hidden rounded-full bg-slate-300 dark:bg-white/10">
           <div className="nx-splash-bar-fill h-full w-1/3 rounded-full bg-nx-teal" />
         </div>
-        <p className="relative mt-4 text-xs tracking-wide text-nx-mist/70">در حال بارگذاری…</p>
+        <p className="relative mt-4 text-xs tracking-wide text-slate-500 dark:text-nx-mist/70">در حال بارگذاری…</p>
       </div>
       {phase === 'flash' && (
         <div className="nx-splash-flash pointer-events-none absolute inset-0 bg-white" />

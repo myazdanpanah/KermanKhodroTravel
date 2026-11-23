@@ -4,8 +4,9 @@ import { useToast } from '../../components/Toast'
 import { useAuthStore } from '../../store/authStore'
 import JalaliDateInput from '../../components/JalaliDateInput'
 import { CARD, INPUT, rial, type Invoice } from './shared'
-import { Download, FileText, Filter, Trash2, Wallet, X } from 'lucide-react'
+import { Download, FileText, Filter, Trash2, Wallet, X, Receipt, Eye } from 'lucide-react'
 import { todayIso } from '../../lib/jalali'
+import InvoiceDetailModal from '../../components/InvoiceDetailModal'
 
 export default function BillingInvoicesPage() {
   const { toast } = useToast()
@@ -15,6 +16,7 @@ export default function BillingInvoicesPage() {
 
   const [rows, setRows] = useState<Invoice[]>([])
   const [loading, setLoading] = useState(true)
+  const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null)
   const [paying, setPaying] = useState<Invoice | null>(null)
   const [payForm, setPayForm] = useState({ amount: '', date: '', tracking: '', description: '' })
   const [savingPay, setSavingPay] = useState(false)
@@ -202,8 +204,24 @@ export default function BillingInvoicesPage() {
             )}
             {rows.map((row) => (
               <tr key={row.id} className="border-t border-slate-200 dark:border-nx-navy-border hover:bg-slate-50 dark:hover:bg-nx-navy/40">
-                <td className="px-4 py-3 text-slate-900 dark:text-white font-medium">{row.letter_number}</td>
-                <td className="px-4 py-3 text-slate-600 dark:text-nx-mist">{row.issue_date_jalali}</td>
+                <td className="px-4 py-3">
+                  <button
+                    onClick={() => setSelectedInvoice(row)}
+                    className="text-nx-blue dark:text-blue-400 font-bold hover:underline font-mono text-xs flex items-center gap-1"
+                    title="مشاهده کارت و ریز اقلام صورت‌حساب"
+                  >
+                    <Receipt className="w-3.5 h-3.5" />
+                    <span>{row.letter_number}</span>
+                  </button>
+                </td>
+                <td className="px-4 py-3 text-slate-600 dark:text-nx-mist">
+                  <div>{row.issue_date_jalali}</div>
+                  {row.period_range && (
+                    <div className="text-[10px] text-slate-400 dark:text-nx-mist/60 font-normal">
+                      {row.period_range}
+                    </div>
+                  )}
+                </td>
                 <td className="px-4 py-3 text-slate-800 dark:text-nx-mist">
                   {row.payer} <span className="text-[10px] text-slate-500 dark:text-nx-mist/60">({row.payer_code})</span>
                 </td>
@@ -211,14 +229,22 @@ export default function BillingInvoicesPage() {
                 <td className="px-4 py-3 text-left font-semibold text-slate-900 dark:text-white">{rial(row.amount)}</td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setSelectedInvoice(row)}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-xs font-bold transition shadow-xs"
+                      title="مشاهده کارت و ریز اقلام صورت‌حساب"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>کارت و ریز اقلام</span>
+                    </button>
                     {canPay && (
                       <button
                         onClick={() => openPayment(row)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] hover:bg-emerald-500/20"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[11px] hover:bg-emerald-500/20"
                         title="ثبت پرداخت برای این صورت‌حساب"
                       >
                         <Wallet className="w-3.5 h-3.5" />
-                        ثبت پرداخت
+                        پرداخت
                       </button>
                     )}
                     <button
@@ -325,6 +351,14 @@ export default function BillingInvoicesPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {selectedInvoice && (
+        <InvoiceDetailModal
+          invoiceIdOrCode={selectedInvoice.id}
+          initialData={selectedInvoice}
+          onClose={() => setSelectedInvoice(null)}
+        />
       )}
     </div>
   )

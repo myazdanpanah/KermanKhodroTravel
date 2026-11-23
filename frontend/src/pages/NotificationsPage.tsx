@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import api from '../api/client'
 import { useToast } from '../components/Toast'
+import { resolveNotificationRoute } from '../utils/notificationNavigation'
 import { toPersianDigits } from '../utils/kpiFormat'
 
 interface NotificationItem {
@@ -92,10 +93,11 @@ export default function NotificationsPage() {
 
   const openTarget = (n: NotificationItem) => {
     if (!n.is_read) void markAsRead(n.id)
-    if (n.target_type === 'billing_request' && n.target_id) {
+    const route = resolveNotificationRoute(n)
+    if (route) {
       navigate({
-        pathname: '/erp/billing/issue',
-        search: new URLSearchParams({ request: n.target_id }).toString(),
+        pathname: route.pathname,
+        search: route.search ? `?${route.search}` : undefined,
       })
     }
   }
@@ -117,16 +119,29 @@ export default function NotificationsPage() {
     })
   }, [notifications, activeTab, searchQuery])
 
-  const getTypeBadge = (type: string) => {
+  const getTypeBadge = (n: NotificationItem) => {
+    const type = (n.target_type || n.type || '').toLowerCase()
     switch (type) {
       case 'assignment_new':
-        return { label: 'تخصیص جدید', color: 'bg-blue-50 text-nx-blue dark:bg-blue-500/10 dark:text-blue-400 border-blue-200 dark:border-blue-500/20' }
+        return { label: 'تخصیص داشبورد', color: 'bg-blue-50 text-nx-blue dark:bg-blue-500/10 dark:text-blue-400 border-blue-200 dark:border-blue-500/20' }
       case 'assignment_updated':
         return { label: 'ویرایش دسترسی', color: 'bg-amber-50 text-amber-600 dark:bg-amber-500/10 dark:text-amber-400 border-amber-200 dark:border-amber-500/20' }
       case 'assignment_removed':
         return { label: 'حذف دسترسی', color: 'bg-rose-50 text-rose-600 dark:bg-rose-500/10 dark:text-rose-400 border-rose-200 dark:border-rose-500/20' }
+      case 'dashboard':
+        return { label: 'داشبورد هوش تجاری', color: 'bg-indigo-50 text-indigo-600 dark:bg-indigo-500/10 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20' }
       case 'billing_request':
         return { label: 'درخواست صورت‌حساب', color: 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/10 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/20' }
+      case 'office_correspondence':
+      case 'correspondence':
+      case 'letter':
+        return { label: 'مکاتبات اداری', color: 'bg-cyan-50 text-cyan-700 dark:bg-cyan-500/10 dark:text-cyan-400 border-cyan-200 dark:border-cyan-500/20' }
+      case 'messaging':
+      case 'new_message':
+        return { label: 'پیام‌رسان سازمانی', color: 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400 border-purple-200 dark:border-purple-500/20' }
+      case 'invoice':
+      case 'billing_invoice':
+        return { label: 'فاکتور مالی', color: 'bg-teal-50 text-teal-700 dark:bg-teal-500/10 dark:text-teal-400 border-teal-200 dark:border-teal-500/20' }
       default:
         return { label: 'اطلاعیه سیستم', color: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700' }
     }
@@ -268,13 +283,13 @@ export default function NotificationsPage() {
       ) : (
         <div className="space-y-3">
           {filteredNotifications.map((n) => {
-            const badge = getTypeBadge(n.type)
+            const badge = getTypeBadge(n)
+            const targetRoute = resolveNotificationRoute(n)
             return (
               <div
                 key={n.id}
                 onClick={() => {
-                  if (n.target_id) openTarget(n)
-                  else if (!n.is_read) markAsRead(n.id)
+                  openTarget(n)
                 }}
                 className={`group relative rounded-2xl border p-4.5 transition cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                   !n.is_read
@@ -309,7 +324,7 @@ export default function NotificationsPage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
-                  {n.target_id && (
+                  {(targetRoute || n.target_id) && (
                     <button
                       type="button"
                       onClick={(e) => {

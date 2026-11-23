@@ -9,6 +9,7 @@ import api from '../api/client';
 import { rial, num, toPersianDigits } from './billing/shared';
 import PayerStatementModal from './billing/PayerStatementModal';
 import { useToast } from '../components/Toast';
+import { useBrandLogo, useBrandingStore } from '../store/brandingStore';
 import {
   Wallet, AlertCircle, ReceiptText, Users, FileSignature, Target, Building2, UserRound,
   PieChart as PieIcon, LayoutDashboard, Calendar, Loader2
@@ -46,6 +47,8 @@ const DEBTOR_PALETTE = ['#EF4444', '#F97316', '#F59E0B', '#3678F6', '#8B5CF6', '
 
 export default function ManagementDashboardPage() {
   const { toast } = useToast();
+  const brandLogo = useBrandLogo();
+  const branding = useBrandingStore((s) => s.branding);
   const [data, setData] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPayer, setSelectedPayer] = useState<{ code: string; name: string } | null>(null);
@@ -264,12 +267,27 @@ export default function ManagementDashboardPage() {
     <div className="space-y-5" dir="rtl">
       {/* Page Title */}
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-nx-blue/10 text-nx-blue">
-            <LayoutDashboard className="h-5 w-5" />
-          </span>
+        <div className="flex items-center gap-3">
+          {brandLogo ? (
+            <img
+              src={brandLogo}
+              alt={branding.name || 'Logo'}
+              className="h-10 w-auto max-w-[120px] object-contain select-none"
+            />
+          ) : (
+            <span className="grid h-10 w-10 place-items-center rounded-xl bg-nx-blue/10 text-nx-blue">
+              <LayoutDashboard className="h-5 w-5" />
+            </span>
+          )}
           <div>
-            <h1 className="text-lg font-bold text-nx-navy dark:text-white">داشبورد مدیریتی</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-bold text-nx-navy dark:text-white">داشبورد مدیریتی</h1>
+              {branding.name && (
+                <span className="rounded-full bg-nx-blue/10 px-2 py-0.5 text-[11px] font-bold text-nx-blue dark:bg-nx-blue/20">
+                  {branding.name}
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-500 dark:text-nx-mist">تصویر یکپارچه از شاخص‌های کلیدی مالی، فروش، CRM، اداری و منابع انسانی</p>
           </div>
         </div>

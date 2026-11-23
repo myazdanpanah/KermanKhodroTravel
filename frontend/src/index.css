@@ -51,7 +51,26 @@ html.dark ::-webkit-scrollbar-thumb:hover {
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Global Font Enforcement: Vazirmatn Everywhere ────────────────── */
+*, *::before, *::after {
+  font-family: 'Vazirmatn', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+html, body, #root, button, input, select, textarea, table, th, td, div, span, p, h1, h2, h3, h4, h5, h6, label, a {
+  font-family: 'Vazirmatn', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+.cm-editor, .cm-editor * {
+  font-family: 'Fira Code', 'Cascadia Code', Consolas, monospace !important;
+}
+
 :root {
+  /* iOS PWA Safe Area variables */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
+
   /* Brand tokens — defaults from color-palette.json.
      Company branding overrides these at runtime (brandingStore). */
   --nx-blue: 54 120 246; /* #3678F6 Intelligence Blue */

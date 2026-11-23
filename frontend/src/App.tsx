@@ -133,6 +133,8 @@ const AIDashboardPage = lazy(() => import('./pages/ai-insights/AIDashboardPage')
 const AnomaliesPage = lazy(() => import('./pages/ai-insights/AnomaliesPage'))
 const ForecastsPage = lazy(() => import('./pages/ai-insights/ForecastsPage'))
 const NLQueryPage = lazy(() => import('./pages/ai-insights/NLQueryPage'))
+// Messaging module (Nexivo Orbit)
+const OrbitLayout = lazy(() => import('./pages/messaging/OrbitLayout'))
 // Analytics
 const AdvancedAnalyticsPage = lazy(() => import('./pages/analytics/AdvancedAnalyticsPage'))
 
@@ -279,6 +281,9 @@ export default function App() {
           <Route path="analytics" element={<AdvancedAnalyticsPage />} />
           {/* Notifications */}
           <Route path="notifications" element={<NotificationsPage />} />
+          {/* Messaging (Nexivo Orbit) redirect to standalone */}
+          <Route path="messages" element={<Navigate to="/orbit" replace />} />
+          <Route path="messages/:conversationId" element={<Navigate to="/orbit" replace />} />
           {/* Settings */}
           <Route path="settings" element={<SettingsPage />} />
           <Route path="settings/:tab" element={<SettingsPage />} />
@@ -309,6 +314,10 @@ export default function App() {
         <Route path="/org-chart" element={<Navigate to="/erp/settings/org" replace />} />
 
         {/* ═══ Standalone modules ═══ */}
+        <Route path="/orbit" element={<PrivateRoute><OrbitLayout /></PrivateRoute>} />
+        <Route path="/orbit/:conversationId" element={<PrivateRoute><OrbitLayout /></PrivateRoute>} />
+        <Route path="/messages" element={<Navigate to="/orbit" replace />} />
+        <Route path="/messages/:conversationId" element={<Navigate to="/orbit" replace />} />
         <Route path="/dashboards" element={<PrivateRoute><DashboardListPage /></PrivateRoute>} />
         <Route path="/dashboards/:id" element={<PrivateRoute><DashboardBuilderPage /></PrivateRoute>} />
         <Route path="/admin/assignments" element={<PrivateRoute><DashboardAssignPage /></PrivateRoute>} />

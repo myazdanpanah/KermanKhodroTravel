@@ -57,6 +57,9 @@ export interface Invoice {
   amount: number
   issue_date: string
   issue_date_jalali: string
+  period_range?: string
+  start_date?: string | null
+  end_date?: string | null
   file_path: string
   file_id?: number | null
   pdf_file_id?: number | null

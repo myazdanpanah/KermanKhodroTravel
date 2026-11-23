@@ -26,6 +26,7 @@ MODULE_CHOICES = [
     ("hr",             "HR"),
     ("reporting",       "Reporting & Analytics"),
     ("ai_insights",     "AI Insights"),
+    ("orbit",           "Messaging & Collaboration (Orbit)"),
 ]
 
 ALL_MODULE_IDS = [m[0] for m in MODULE_CHOICES]
@@ -235,6 +236,8 @@ class User(AbstractUser):
     can_submit = models.BooleanField(default=True, verbose_name="ارسال درخواست")
     can_approve = models.BooleanField(default=False, verbose_name="تأیید درخواست")
     can_edit_template = models.BooleanField(default=False, verbose_name="ویرایش قالب")
+
+    last_seen_at = models.DateTimeField(null=True, blank=True, verbose_name="آخرین بازدید")
 
     class Meta:
         verbose_name = "user"

@@ -400,14 +400,19 @@ def normalize_design(raw) -> dict:
             )
             base["type"] = element_type
 
+            el_x = round(_num(item.get("x"), base.get("x", 10), 0, max(0, page_w - 5)), 2)
+            el_y = round(_num(item.get("y"), base.get("y", 10), 0, max(0, page_h - 5)), 2)
+            el_w = round(_num(item.get("w"), base.get("w", 60), 5, max(5, page_w - el_x)), 2)
+            el_h = round(_num(item.get("h"), base.get("h", 10), 4, max(4, page_h - el_y)), 2)
+
             base.update(
                 {
                     "id": element_id,
                     "type": element_type,
-                    "x": round(_num(item.get("x"), base.get("x", 10), 0, page_w), 2),
-                    "y": round(_num(item.get("y"), base.get("y", 10), 0, page_h), 2),
-                    "w": round(_num(item.get("w"), base.get("w", 60), 5, page_w), 2),
-                    "h": round(_num(item.get("h"), base.get("h", 10), 4, page_h), 2),
+                    "x": el_x,
+                    "y": el_y,
+                    "w": el_w,
+                    "h": el_h,
                     "show": _bool(item.get("show"), True),
                 }
             )
@@ -514,7 +519,19 @@ def visible_columns(design_or_columns) -> list[dict]:
                 "width": column.get("width") or COLUMN_WIDTHS[key],
             }
         )
-    return result or [{"key": "rank", "label": COLUMN_LABELS["rank"], "field": "row_number", "width": 5}]
+    if not result:
+        return [{"key": "rank", "label": COLUMN_LABELS["rank"], "field": "row_number", "width": 100.0}]
+
+    total_w = sum(c["width"] for c in result) or 1
+    for c in result:
+        c["width"] = round((c["width"] / total_w) * 100.0, 1)
+
+    diff = round(100.0 - sum(c["width"] for c in result), 1)
+    if diff != 0:
+        largest = max(result, key=lambda c: c["width"])
+        largest["width"] = round(largest["width"] + diff, 1)
+
+    return result
 
 
 def table_element(design: dict) -> dict:
@@ -540,16 +557,19 @@ def render_text(text: str, values: dict) -> str:
 
 def design_css(design: dict) -> str:
     page_w, page_h = PAGE_SIZES[design["page_orientation"]]
+    font_name = design.get("font_family") or "KKT Vazirmatn"
     return f"""
 @page {{ size: {page_w}mm {page_h}mm; margin: 0; }}
-body {{ font-family: '{design['font_family']}', Tahoma, sans-serif; }}
-.page {{ position: relative; width: {page_w}mm; height: {page_h}mm; overflow: hidden; background: #fff; }}
-.el {{ position: absolute; box-sizing: border-box; overflow: hidden; }}
+body {{ font-family: '{font_name}', 'KKT Vazirmatn', 'B Nazanin', Tahoma, sans-serif; }}
+.page {{ position: relative; width: {page_w}mm; height: {page_h}mm; overflow: hidden; background: #fff; page-break-after: always; }}
+.page:last-child {{ page-break-after: avoid; }}
+.el {{ position: absolute; box-sizing: border-box; }}
 .el-text {{ white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.45; }}
-.el-table table {{ width: 100%; border-collapse: collapse; table-layout: fixed; }}
-.el-table th, .el-table td {{ border: 0.4mm solid {design['accent_color']}; padding: 1mm 1.5mm; text-align: center; overflow-wrap: anywhere; word-break: break-word; }}
+.el-table {{ overflow: hidden; }}
+.el-table table {{ width: 100%; border-collapse: collapse; table-layout: fixed; box-sizing: border-box; }}
+.el-table th, .el-table td {{ border: 0.4mm solid {design['accent_color']}; padding: 1mm 1.2mm; text-align: center; overflow-wrap: anywhere; word-break: break-word; font-size: inherit; }}
 .el-table th {{ background: {design['header_bg']}; font-weight: bold; }}
-.el-table .page-totals td {{ font-weight: bold; }}
+.el-table .page-totals td {{ font-weight: bold; background: #fafafa; }}
 .el-signature, .el-stamp {{ text-align: center; font-size: 9pt; }}
 .el-signature img, .el-stamp img {{ max-height: 18mm; max-width: 100%; }}
 .el-logo img {{ max-height: 100%; max-width: 100%; }}

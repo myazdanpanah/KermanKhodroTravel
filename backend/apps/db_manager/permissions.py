@@ -4,14 +4,24 @@ from django.db import models
 from rest_framework.permissions import BasePermission
 
 
-class IsAdminOrCEO(BasePermission):
-    """Allow access only to admin, CEO, or staff users."""
+class IsMainAdmin(BasePermission):
+    """Allow access exclusively to the main system administrator."""
 
     def has_permission(self, request, view):
         user = request.user
         if not user or not user.is_authenticated:
             return False
-        return user.role in ("admin", "ceo") or user.is_staff
+        return user.role in ("admin", "ceo") or user.is_superuser
+
+
+class IsAdminOrCEO(BasePermission):
+    """Allow access only to main system admin (admin or CEO)."""
+
+    def has_permission(self, request, view):
+        user = request.user
+        if not user or not user.is_authenticated:
+            return False
+        return user.role in ("admin", "ceo") or user.is_superuser
 
 
 class IsUpdaterOrAbove(BasePermission):
@@ -27,28 +37,10 @@ class IsUpdaterOrAbove(BasePermission):
 
 
 class CanEditTable(BasePermission):
-    """Check that the user has edit permission on the specific table.
-
-    Admin/CEO/staff always pass. Updater-role users must have a matching
-    DatabasePermission row with can_edit=True for the source/table.
-    """
+    """Check that the user is the main administrator for table editing."""
 
     def has_permission(self, request, view):
         user = request.user
         if not user or not user.is_authenticated:
             return False
-        if user.role in ("admin", "ceo") or user.is_staff:
-            return True
-
-        from apps.db_manager.models import DatabasePermission
-
-        source = view.kwargs.get("source", "local")
-        table = view.kwargs.get("table", "")
-
-        return DatabasePermission.objects.filter(
-            user=user,
-            database_source=source,
-            can_edit=True,
-        ).filter(
-            models.Q(table_name="*") | models.Q(table_name=table)
-        ).exists()
+        return user.role in ("admin", "ceo") or user.is_superuser

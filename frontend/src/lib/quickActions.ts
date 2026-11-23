@@ -5,7 +5,7 @@
  * user never sees a shortcut for something they cannot do.
  */
 import { useMemo } from 'react';
-import { CreditCard, FilePlus2, Mail, UserPlus } from 'lucide-react';
+import { CreditCard, FilePlus2, Mail, MessageSquarePlus, UserPlus } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 
 export interface QuickAction {
@@ -25,6 +25,8 @@ export function useQuickActions(): QuickAction[] {
     const canLetter = privileged || Boolean(user?.accessible_modules?.includes('office'));
 
     const actions: QuickAction[] = [];
+    // Sending message is universally accessible to all authenticated users
+    actions.push({ to: '/orbit?new=1', label: 'ارسال پیام جدید', icon: MessageSquarePlus });
     if (canIssue) actions.push({ to: '/erp/billing/issue', label: 'ثبت صورت‌حساب جدید', icon: FilePlus2 });
     if (canPay) actions.push({ to: '/erp/billing/payments?new=1', label: 'ثبت پرداخت جدید', icon: CreditCard });
     if (canCustomer) actions.push({ to: '/erp/customers?new=1', label: 'ثبت مشتری جدید (CRM)', icon: UserPlus });

@@ -8,9 +8,14 @@ import WidgetConfigPanel from '../components/WidgetConfigPanel'
 import DashboardFilterBar from '../components/DashboardFilterBar'
 import PageNavBar from '../components/PageNavBar'
 import ThemeToggle from '../components/ThemeToggle'
+import NotificationBell from '../components/NotificationBell'
 import DesignLockModal from '../components/DesignLockModal'
+import FloatingChatWidget from '../components/FloatingChatWidget'
+import ModuleSwitcherNav from '../components/ModuleSwitcherNav'
+import MobileAppNavBar from '../components/MobileAppNavBar'
+import { useBrandLogo, useBrandingStore } from '../store/brandingStore'
 import { useToast } from '../components/Toast'
-import { Plus, ArrowRight, Settings, Trash2, Share2, X, Undo2, Redo2, Filter, XCircle, Download, Maximize2, Minimize2, Play, FileText, Copy, RefreshCw, Clock, ChevronDown, Lock, Unlock } from 'lucide-react'
+import { Plus, ArrowRight, Settings, Trash2, Share2, X, Undo2, Redo2, Filter, XCircle, Download, Maximize2, Minimize2, Play, FileText, Copy, RefreshCw, Clock, ChevronDown, Lock, Unlock, BarChart3 } from 'lucide-react'
 import { ALL_ROLES } from '../utils/roles'
 import { useAuthStore } from '../store/authStore'
 import { computeResponsiveLayout } from '../utils/layoutUtils'
@@ -40,6 +45,8 @@ export default function DashboardBuilderPage() {
   // Derived: active page (must be declared before effects that reference it)
   const activePage = pages.find((p) => p.id === activePageId)
   const { toast } = useToast()
+  const brandLogo = useBrandLogo()
+  const branding = useBrandingStore((s) => s.branding)
   const currentUser = useAuthStore((s) => s.user)
   const canEdit = currentUser && ['admin', 'ceo', 'finance', 'sales'].includes(currentUser.role)
   const [showConfig, setShowConfig] = useState(false)
@@ -494,15 +501,24 @@ export default function DashboardBuilderPage() {
           doc.addPage()
         }
 
-        // Page title
+        // Page title & branding
         if (persianFontLoaded) doc.setFont('Vazirmatn', 'normal')
-        doc.setFontSize(16)
-        doc.text(page.name || `صفحه ${pageIdx + 1}`, pageWidth / 2, margin + 6, { align: 'center' })
+        doc.setFontSize(14)
+        doc.text(`${branding.name || 'نکسیو'} — ${page.name || `صفحه ${pageIdx + 1}`}`, pageWidth / 2, margin + 6, { align: 'center' })
         doc.setFontSize(8)
         doc.setTextColor(120)
         const now = new Date()
         doc.text(`${now.toLocaleDateString('fa-IR')} ${now.toLocaleTimeString('fa-IR')} — صفحه ${pageIdx + 1}/${allPages.length}`, pageWidth / 2, margin + 12, { align: 'center' })
         doc.setTextColor(0)
+
+        // Embed organizational logo if available
+        if (brandLogo) {
+          try {
+            doc.addImage(brandLogo, 'PNG', pageWidth - margin - 22, margin + 1, 20, 10, undefined, 'FAST')
+          } catch {
+            // skip if format is not supported by jsPDF
+          }
+        }
 
         // Collect chart images from this page's widgets
         const chartImages: Array<{ title: string; dataUrl: string }> = []
@@ -610,78 +626,84 @@ export default function DashboardBuilderPage() {
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg>
                 </div>
               )}
-              {/* Export dropdown */}
-              <div className="relative">
+              {/* Export dropdown — hidden on mobile */}
+              {!editingMobile && (
+                <div className="relative hidden md:block">
+                  <button
+                    onClick={() => setExportDropdown(exportDropdown === w.id ? null : w.id)}
+                    className="p-1 text-nx-mist hover:text-nx-teal active:text-nx-teal transition opacity-0 group-hover:opacity-100"
+                    title="خروجی"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                  </button>
+                  {exportDropdown === w.id && (
+                    <div className="absolute left-0 top-full mt-1 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted rounded-lg shadow-lg z-50 py-1 min-w-[120px]">
+                      <button
+                        onClick={() => {
+                          setExportDropdown(null)
+                          const container = document.getElementById(`chart-${w.id}`)
+                          if (!container) { toast('امکان خروجی وجود ندارد', 'error'); return }
+                          import('echarts').then((echarts) => {
+                            const instance = echarts.getInstanceByDom(container)
+                            if (!instance) { toast('امکان خروجی وجود ندارد', 'error'); return }
+                            const url = instance.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: '#fff' })
+                            const link = document.createElement('a')
+                            link.download = `${w.title || 'chart'}.png`
+                            link.href = url
+                            link.click()
+                            toast('تصویر PNG دانلود شد', 'success')
+                          })
+                        }}
+                        className="w-full px-3 py-2 text-right text-sm text-nx-navy dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy transition flex items-center gap-2"
+                      >
+                        <span className="text-xs font-mono bg-nx-mist/10 dark:bg-nx-navy px-1.5 py-0.5 rounded">PNG</span>
+                        <span>تصویر</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setExportDropdown(null)
+                          const container = document.getElementById(`chart-${w.id}`)
+                          if (!container) { toast('امکان خروجی وجود ندارد', 'error'); return }
+                          import('echarts').then((echarts) => {
+                            const instance = echarts.getInstanceByDom(container)
+                            if (!instance) { toast('امکان خروجی وجود ندارد', 'error'); return }
+                            const url = instance.getDataURL({ type: 'svg', pixelRatio: 2 })
+                            const link = document.createElement('a')
+                            link.download = `${w.title || 'chart'}.svg`
+                            link.href = url
+                            link.click()
+                            toast('تصویر SVG دانلود شد', 'success')
+                          })
+                        }}
+                        className="w-full px-3 py-2 text-right text-sm text-nx-navy dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy transition flex items-center gap-2"
+                      >
+                        <span className="text-xs font-mono bg-nx-mist/10 dark:bg-nx-navy px-1.5 py-0.5 rounded">SVG</span>
+                        <span>برداری</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Copy chart to clipboard — hidden on mobile */}
+              {!editingMobile && (
                 <button
-                  onClick={() => setExportDropdown(exportDropdown === w.id ? null : w.id)}
-                  className="p-1 text-nx-mist hover:text-nx-teal active:text-nx-teal transition md:opacity-0 md:group-hover:opacity-100"
-                  title="خروجی"
+                  onClick={() => handleCopyChart(w)}
+                  className="hidden md:block p-1 text-nx-mist hover:text-nx-blue active:text-nx-blue transition opacity-0 group-hover:opacity-100"
+                  title="کپی نمودار"
                 >
-                  <Download className="w-3.5 h-3.5" />
+                  <Copy className="w-3.5 h-3.5" />
                 </button>
-                {exportDropdown === w.id && (
-                  <div className="absolute left-0 top-full mt-1 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted rounded-lg shadow-lg z-50 py-1 min-w-[120px]">
-                    <button
-                      onClick={() => {
-                        setExportDropdown(null)
-                        const container = document.getElementById(`chart-${w.id}`)
-                        if (!container) { toast('امکان خروجی وجود ندارد', 'error'); return }
-                        import('echarts').then((echarts) => {
-                          const instance = echarts.getInstanceByDom(container)
-                          if (!instance) { toast('امکان خروجی وجود ندارد', 'error'); return }
-                          const url = instance.getDataURL({ type: 'png', pixelRatio: 2, backgroundColor: '#fff' })
-                          const link = document.createElement('a')
-                          link.download = `${w.title || 'chart'}.png`
-                          link.href = url
-                          link.click()
-                          toast('تصویر PNG دانلود شد', 'success')
-                        })
-                      }}
-                      className="w-full px-3 py-2 text-right text-sm text-nx-navy dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy transition flex items-center gap-2"
-                    >
-                      <span className="text-xs font-mono bg-nx-mist/10 dark:bg-nx-navy px-1.5 py-0.5 rounded">PNG</span>
-                      <span>تصویر</span>
-                    </button>
-                    <button
-                      onClick={() => {
-                        setExportDropdown(null)
-                        const container = document.getElementById(`chart-${w.id}`)
-                        if (!container) { toast('امکان خروجی وجود ندارد', 'error'); return }
-                        import('echarts').then((echarts) => {
-                          const instance = echarts.getInstanceByDom(container)
-                          if (!instance) { toast('امکان خروجی وجود ندارد', 'error'); return }
-                          const url = instance.getDataURL({ type: 'svg', pixelRatio: 2 })
-                          const link = document.createElement('a')
-                          link.download = `${w.title || 'chart'}.svg`
-                          link.href = url
-                          link.click()
-                          toast('تصویر SVG دانلود شد', 'success')
-                        })
-                      }}
-                      className="w-full px-3 py-2 text-right text-sm text-nx-navy dark:text-nx-mist hover:bg-nx-mist/10 dark:hover:bg-nx-navy transition flex items-center gap-2"
-                    >
-                      <span className="text-xs font-mono bg-nx-mist/10 dark:bg-nx-navy px-1.5 py-0.5 rounded">SVG</span>
-                      <span>برداری</span>
-                    </button>
-                  </div>
-                )}
-              </div>
-              {/* Copy chart to clipboard */}
-              <button
-                onClick={() => handleCopyChart(w)}
-                className="p-1 text-nx-mist hover:text-nx-blue active:text-nx-blue transition md:opacity-0 md:group-hover:opacity-100"
-                title="کپی نمودار"
-              >
-                <Copy className="w-3.5 h-3.5" />
-              </button>
-              {/* Full-screen button */}
-              <button
-                onClick={() => setFullScreenWidget(w.id)}
-                className="p-1 text-nx-mist hover:text-nx-blue active:text-nx-blue transition md:opacity-0 md:group-hover:opacity-100"
-                title="تمام صفحه"
-              >
-                <Maximize2 className="w-3.5 h-3.5" />
-              </button>
+              )}
+              {/* Full-screen button — hidden on mobile */}
+              {!editingMobile && (
+                <button
+                  onClick={() => setFullScreenWidget(w.id)}
+                  className="hidden md:block p-1 text-nx-mist hover:text-nx-blue active:text-nx-blue transition opacity-0 group-hover:opacity-100"
+                  title="تمام صفحه"
+                >
+                  <Maximize2 className="w-3.5 h-3.5" />
+                </button>
+              )}
               {!isEffectiveDesignLocked && canEdit && (
                 <>
                   <button
@@ -763,7 +785,7 @@ export default function DashboardBuilderPage() {
           <h1 className="text-2xl font-bold text-nx-navy dark:text-slate-100">{activePage?.name || 'داشبورد'}</h1>
         </div>
         {/* Grid without editing controls */}
-        <main className="px-6 pb-6">
+        <main className="px-4 sm:px-6 pb-[calc(112px+env(safe-area-inset-bottom,0px))] lg:pb-12">
           {currentPageWidgets.length > 0 && (
             <div className="react-grid-layout-wrapper">
               <ResponsiveGridLayout
@@ -822,20 +844,57 @@ export default function DashboardBuilderPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-nx-navy" dir="rtl">
-      {/* Header */}
-      <header className="bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border px-6 py-3">
+      {/* Header — with iPhone notch safe-area & identical style to DashboardListPage */}
+      <header className="bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border px-4 sm:px-6 pt-[max(0.75rem,calc(env(safe-area-inset-top,0px)+0.75rem))] pb-3 transition-all">
         <div className="max-w-full mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <Link
               to="/dashboards"
-              className="p-2 text-nx-mist hover:text-nx-mist dark:hover:text-nx-mist transition"
+              className="p-1.5 text-nx-mist hover:text-slate-800 dark:hover:text-white transition rounded-xl hover:bg-slate-100 dark:hover:bg-nx-navy-elevated flex items-center justify-center shrink-0"
+              title="بازگشت به فهرست داشبوردها"
             >
               <ArrowRight className="w-5 h-5" />
             </Link>
-            <h1 className="text-lg font-bold text-nx-navy dark:text-slate-100">ویرایشگر داشبورد</h1>
-            {/* Device mode toggle — only for editors */}
+
+            <Link to="/dashboards" className="flex items-center gap-2.5 transition hover:opacity-85">
+              {brandLogo ? (
+                <img
+                  src={brandLogo}
+                  alt={branding.name || 'Brand Logo'}
+                  className="h-9 w-auto max-w-[120px] object-contain select-none shrink-0"
+                />
+              ) : (
+                <div className="w-9 h-9 bg-nx-blue rounded-xl flex items-center justify-center text-white shadow-xs shrink-0">
+                  <BarChart3 className="w-5 h-5" />
+                </div>
+              )}
+
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-sm sm:text-base font-extrabold text-nx-navy dark:text-slate-100 tracking-tight truncate max-w-[140px] sm:max-w-xs">
+                    {activePage?.name || branding.name || 'هوش تجاری'}
+                  </h1>
+                  <span className="rounded-full bg-nx-blue/10 px-2 py-0.5 text-[10px] font-bold text-nx-blue dark:bg-nx-blue/20 shrink-0">
+                    هوش تجاری
+                  </span>
+                </div>
+                <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-nx-mist truncate">
+                  پلتفرم داشبوردهای تحلیلی
+                </p>
+              </div>
+            </Link>
+
+            {/* Vertical Separator — Desktop only */}
+            <div className="hidden h-5 w-px bg-slate-200 lg:block dark:bg-nx-navy-border mx-1" />
+
+            {/* Quick Cross-Module Navigation Switcher — Desktop only */}
+            <div className="hidden lg:block">
+              <ModuleSwitcherNav active="bi" />
+            </div>
+
+            {/* Device mode toggle — only on desktop for editors */}
             {canEdit && (
-              <div className="flex items-center gap-1 mr-2 p-1 bg-nx-mist/10 dark:bg-nx-navy rounded-lg">
+              <div className="hidden lg:flex items-center gap-1 mr-2 p-1 bg-nx-mist/10 dark:bg-nx-navy rounded-lg">
                 {(['desktop', 'mobile'] as const).map((mode) => (
                   <button
                     key={mode}
@@ -853,155 +912,178 @@ export default function DashboardBuilderPage() {
               </div>
             )}
           </div>
-          <div className="flex items-center gap-2">
-            {/* Undo/Redo buttons */}
-            <div className="flex items-center gap-0.5 mr-2 p-1 bg-nx-mist/10 dark:bg-nx-navy rounded-lg">
-              <button
-                onClick={handleUndo}
-                disabled={!canUndo}
-                className="p-1.5 rounded-md transition text-slate-600 dark:text-slate-200 hover:text-nx-mist dark:hover:text-nx-mist disabled:opacity-30 disabled:cursor-not-allowed"
-                title="بازگشت (Ctrl+Z)"
-              >
-                <Undo2 className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={handleRedo}
-                disabled={!canRedo}
-                className="p-1.5 rounded-md transition text-slate-600 dark:text-slate-200 hover:text-nx-mist dark:hover:text-nx-mist disabled:opacity-30 disabled:cursor-not-allowed"
-                title="بازگشت (Ctrl+Shift+Z)"
-              >
-                <Redo2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            {/* Manual refresh + interval selector */}
-            <div className="relative" ref={refreshMenuRef}>
-              <div className="flex items-center gap-1 p-1 bg-nx-mist/10 dark:bg-nx-navy rounded-lg">
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Desktop Only Actions Toolbar */}
+            <div className="hidden md:flex items-center gap-2">
+              {/* Undo/Redo buttons */}
+              <div className="flex items-center gap-0.5 mr-1 p-1 bg-nx-mist/10 dark:bg-nx-navy rounded-lg">
                 <button
-                  onClick={handleManualRefresh}
-                  className="p-1.5 rounded-md transition text-slate-600 dark:text-slate-200 hover:text-nx-mist dark:hover:text-nx-mist"
-                  title="به‌روزرسانی دستی"
+                  onClick={handleUndo}
+                  disabled={!canUndo}
+                  className="p-1.5 rounded-md transition text-slate-600 dark:text-slate-200 hover:text-nx-mist dark:hover:text-nx-mist disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="بازگشت (Ctrl+Z)"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" />
+                  <Undo2 className="w-3.5 h-3.5" />
                 </button>
                 <button
-                  onClick={() => setShowRefreshMenu(!showRefreshMenu)}
-                  className="flex items-center gap-0.5 px-1.5 py-1 rounded-md transition text-[10px] text-slate-600 dark:text-slate-200 hover:text-nx-navy dark:hover:text-nx-mist"
-                  title="تنظیم بازه به‌روزرسانی"
+                  onClick={handleRedo}
+                  disabled={!canRedo}
+                  className="p-1.5 rounded-md transition text-slate-600 dark:text-slate-200 hover:text-nx-mist dark:hover:text-nx-mist disabled:opacity-30 disabled:cursor-not-allowed"
+                  title="بازگشت (Ctrl+Shift+Z)"
                 >
-                  <Clock className="w-3 h-3" />
-                  <span>{refreshInterval} دقیقه</span>
-                  <ChevronDown className="w-3 h-3" />
+                  <Redo2 className="w-3.5 h-3.5" />
                 </button>
               </div>
-              {showRefreshMenu && (
-                <div className="absolute left-0 top-full mt-1 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted rounded-lg shadow-xl z-50 py-1 min-w-[160px]">
-                  <div className="px-3 py-1.5 text-[10px] font-medium text-slate-600 dark:text-slate-200">بازه به‌روزرسانی</div>
-                  {([1, 5, 15, 30] as const).map((min) => (
-                    <button
-                      key={min}
-                      onClick={() => handleChangeRefreshInterval(min)}
-                      className={`w-full px-3 py-1.5 text-right text-sm hover:bg-white dark:hover:bg-nx-navy transition ${
-                        refreshInterval === min
-                          ? 'text-nx-blue dark:text-nx-blue font-medium bg-nx-blue/10 dark:bg-nx-blue/20'
-                          : 'text-nx-navy dark:text-nx-mist'
-                      }`}
-                    >
-                      {min} دقیقه
-                    </button>
-                  ))}
-                  <div className="border-t border-nx-border dark:border-nx-navy-border mt-1 pt-1">
-                    <div className="flex items-center justify-between px-3 py-1.5">
-                      <span className="text-xs text-slate-600 dark:text-slate-200">بی‌صدا</span>
-                      <button
-                        onClick={() => {
-                          const next = !silentRefresh
-                          setSilentRefresh(next)
-                          localStorage.setItem('nexivo_silent_refresh', String(next))
-                        }}
-                        className={`relative w-8 h-4 rounded-full transition ${silentRefresh ? 'bg-nx-blue' : 'bg-nx-mist dark:bg-nx-muted'}`}
-                      >
-                        <span className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow transition transform ${silentRefresh ? 'translate-x-4' : ''}`} />
-                      </button>
-                    </div>
-                  </div>
-                  {lastRefreshed && (
-                    <div className="px-3 py-1.5 text-[10px] text-slate-600 dark:text-slate-200 border-t border-nx-border dark:border-nx-navy-border mt-1">
-                      آخرین به‌روزرسانی: {lastRefreshed.toLocaleTimeString('fa-IR')}
-                    </div>
-                  )}
+
+              {/* Manual refresh + interval selector */}
+              <div className="relative" ref={refreshMenuRef}>
+                <div className="flex items-center gap-1 p-1 bg-nx-mist/10 dark:bg-nx-navy rounded-lg">
+                  <button
+                    onClick={handleManualRefresh}
+                    className="p-1.5 rounded-md transition text-slate-600 dark:text-slate-200 hover:text-nx-mist dark:hover:text-nx-mist"
+                    title="به‌روزرسانی دستی"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => setShowRefreshMenu(!showRefreshMenu)}
+                    className="flex items-center gap-0.5 px-1.5 py-1 rounded-md transition text-[10px] text-slate-600 dark:text-slate-200 hover:text-nx-navy dark:hover:text-nx-mist"
+                    title="تنظیم بازه به‌روزرسانی"
+                  >
+                    <Clock className="w-3 h-3" />
+                    <span>{refreshInterval} دقیقه</span>
+                    <ChevronDown className="w-3 h-3" />
+                  </button>
                 </div>
+                {showRefreshMenu && (
+                  <div className="absolute left-0 top-full mt-1 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted rounded-lg shadow-xl z-50 py-1 min-w-[160px]">
+                    <div className="px-3 py-1.5 text-[10px] font-medium text-slate-600 dark:text-slate-200">بازه به‌روزرسانی</div>
+                    {([1, 5, 15, 30] as const).map((min) => (
+                      <button
+                        key={min}
+                        onClick={() => handleChangeRefreshInterval(min)}
+                        className={`w-full px-3 py-1.5 text-right text-sm hover:bg-white dark:hover:bg-nx-navy transition ${
+                          refreshInterval === min
+                            ? 'text-nx-blue dark:text-nx-blue font-medium bg-nx-blue/10 dark:bg-nx-blue/20'
+                            : 'text-nx-navy dark:text-nx-mist'
+                        }`}
+                      >
+                        {min} دقیقه
+                      </button>
+                    ))}
+                    <div className="border-t border-nx-border dark:border-nx-navy-border mt-1 pt-1">
+                      <div className="flex items-center justify-between px-3 py-1.5">
+                        <span className="text-xs text-slate-600 dark:text-slate-200">بی‌صدا</span>
+                        <button
+                          onClick={() => {
+                            const next = !silentRefresh
+                            setSilentRefresh(next)
+                            localStorage.setItem('nexivo_silent_refresh', String(next))
+                          }}
+                          className={`relative w-8 h-4 rounded-full transition ${silentRefresh ? 'bg-nx-blue' : 'bg-nx-mist dark:bg-nx-muted'}`}
+                        >
+                          <span className={`absolute top-0.5 left-0.5 w-3 h-3 bg-white rounded-full shadow transition transform ${silentRefresh ? 'translate-x-4' : ''}`} />
+                        </button>
+                      </div>
+                    </div>
+                    {lastRefreshed && (
+                      <div className="px-3 py-1.5 text-[10px] text-slate-600 dark:text-slate-200 border-t border-nx-border dark:border-nx-navy-border mt-1">
+                        آخرین به‌روزرسانی: {lastRefreshed.toLocaleTimeString('fa-IR')}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Presentation mode toggle */}
+              <button
+                onClick={() => setPresentMode(!presentMode)}
+                className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg transition text-sm ${
+                  presentMode
+                    ? 'bg-nx-warning-500 text-white border-nx-warning-500 hover:bg-nx-warning-600'
+                    : 'bg-white dark:bg-nx-navy border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist hover:bg-white dark:hover:bg-nx-navy'
+                }`}
+                title={presentMode ? 'خروج از حالت ارائه' : 'حالت ارائه'}
+              >
+                <Play className="w-4 h-4" />
+                {presentMode ? 'خروج' : 'ارائه'}
+              </button>
+
+              {/* PDF Export */}
+              <button
+                onClick={handleExportPdf}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist rounded-lg hover:bg-white dark:hover:bg-nx-navy transition text-sm"
+                title="خروجی PDF"
+              >
+                <FileText className="w-4 h-4" />
+                PDF
+              </button>
+
+              {/* Design Lock Button */}
+              {canEdit && (
+                <button
+                  onClick={() => setShowLockModal(true)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-lg transition text-xs font-semibold ${
+                    isEffectiveDesignLocked
+                      ? 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800 hover:bg-rose-100'
+                      : sessionUnlocked
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 hover:bg-emerald-100'
+                      : 'bg-white dark:bg-nx-navy border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist hover:bg-slate-50'
+                  }`}
+                  title="قفل طراحی و چینش داشبورد"
+                >
+                  {isEffectiveDesignLocked ? (
+                    <>
+                      <Lock className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                      <span>چینش قفل است</span>
+                    </>
+                  ) : sessionUnlocked ? (
+                    <>
+                      <Unlock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                      <span>قفل‌گشایی شده</span>
+                    </>
+                  ) : (
+                    <>
+                      <Lock className="w-3.5 h-3.5 text-slate-500" />
+                      <span>قفل طراحی</span>
+                    </>
+                  )}
+                </button>
+              )}
+
+              <button
+                onClick={openShareModal}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist rounded-lg hover:bg-white dark:hover:bg-nx-navy transition text-sm"
+                title="اشتراک‌گذاری و دسترسی"
+              >
+                <Share2 className="w-4 h-4" />
+                اشتراک‌گذاری
+              </button>
+
+              {canEdit && !isEffectiveDesignLocked && (
+                <button
+                  onClick={addNewWidget}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-nx-blue text-white rounded-lg hover:bg-nx-blue transition text-sm"
+                >
+                  <Plus className="w-4 h-4" />
+                  افزودن نمودار
+                </button>
               )}
             </div>
-            <ThemeToggle />
-            {/* Presentation mode toggle */}
-            <button
-              onClick={() => setPresentMode(!presentMode)}
-              className={`flex items-center gap-2 px-3 py-1.5 border rounded-lg transition text-sm ${
-                presentMode
-                  ? 'bg-nx-warning-500 text-white border-nx-warning-500 hover:bg-nx-warning-600'
-                  : 'bg-white dark:bg-nx-navy border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist hover:bg-white dark:hover:bg-nx-navy'
-              }`}
-              title={presentMode ? 'خروج از حالت ارائه' : 'حالت ارائه'}
-            >
-              <Play className="w-4 h-4" />
-              {presentMode ? 'خروج' : 'ارائه'}
-            </button>
-            {/* PDF Export */}
-            <button
-              onClick={handleExportPdf}
-              className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist rounded-lg hover:bg-white dark:hover:bg-nx-navy transition text-sm"
-              title="خروجی PDF"
-            >
-              <FileText className="w-4 h-4" />
-              PDF
-            </button>
-            {/* Design Lock Button */}
-            {canEdit && (
-              <button
-                onClick={() => setShowLockModal(true)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 border rounded-lg transition text-xs font-semibold ${
-                  isEffectiveDesignLocked
-                    ? 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800 hover:bg-rose-100'
-                    : sessionUnlocked
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800 hover:bg-emerald-100'
-                    : 'bg-white dark:bg-nx-navy border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist hover:bg-slate-50'
-                }`}
-                title="قفل طراحی و چینش داشبورد"
-              >
-                {isEffectiveDesignLocked ? (
-                  <>
-                    <Lock className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                    <span>چینش قفل است</span>
-                  </>
-                ) : sessionUnlocked ? (
-                  <>
-                    <Unlock className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    <span>قفل‌گشایی شده</span>
-                  </>
-                ) : (
-                  <>
-                    <Lock className="w-3.5 h-3.5 text-slate-500" />
-                    <span>قفل طراحی</span>
-                  </>
-                )}
-              </button>
-            )}
 
-            <button
-              onClick={openShareModal}
-              className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-nx-navy border border-nx-border dark:border-nx-muted text-nx-navy dark:text-nx-mist rounded-lg hover:bg-white dark:hover:bg-nx-navy transition text-sm"
-              title="اشتراک‌گذاری و دسترسی"
-            >
-              <Share2 className="w-4 h-4" />
-              اشتراک‌گذاری
-            </button>
+            {/* Common Elements — Identical to DashboardListPage */}
+            <NotificationBell />
+            <ThemeToggle />
+
+            {/* Mobile-only compact Add Button */}
             {canEdit && !isEffectiveDesignLocked && (
               <button
                 onClick={addNewWidget}
-                className="flex items-center gap-2 px-3 py-1.5 bg-nx-blue text-white rounded-lg hover:bg-nx-blue transition text-sm"
+                className="md:hidden flex items-center justify-center w-8 h-8 rounded-xl bg-nx-blue text-white shadow-xs active:scale-95 transition"
+                title="افزودن نمودار جدید"
               >
                 <Plus className="w-4 h-4" />
-                افزودن نمودار
               </button>
             )}
           </div>
@@ -1015,7 +1097,7 @@ export default function DashboardBuilderPage() {
       {currentPageWidgets.length > 0 && <DashboardFilterBar />}
 
       {/* Dashboard Grid */}
-      <main className="p-6">
+      <main className="px-4 sm:px-6 pt-4 pb-[calc(130px+env(safe-area-inset-bottom,0px))] lg:pb-16">
         {currentPageWidgets.length === 0 ? (
           <div className="text-center py-20">
             <Settings className="w-16 h-16 text-slate-600 dark:text-slate-200 mx-auto mb-4" />
@@ -1055,6 +1137,15 @@ export default function DashboardBuilderPage() {
             >
               {currentPageWidgets.map((w) => fullScreenWidget === w.id ? null : renderWidgetCard(w))}
             </ResponsiveGridLayout>
+
+            {/* Bottom Buffer & Growth Area for Mobile/Touch Designer */}
+            <div className="mt-8 mb-4 min-h-[85px] w-full flex items-center justify-center">
+              {!isEffectiveDesignLocked && canEdit && (
+                <div className="w-full max-w-md mx-auto py-3 px-4 rounded-2xl border-2 border-dashed border-slate-200 dark:border-nx-navy-border/60 bg-slate-50/50 dark:bg-nx-navy/30 text-center text-xs text-slate-400 dark:text-nx-mist">
+                  <span>فضای آزاد انتهای داشبورد جهت کشیدن، جابجایی و تغییر اندازه نمودارها</span>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </main>
@@ -1094,7 +1185,7 @@ export default function DashboardBuilderPage() {
                   <Minimize2 className="w-5 h-5" />
                 </button>
               </div>
-              <div className="flex-1 p-3 min-h-0">
+              <div className="flex-1 p-3 min-h-0 pb-[calc(80px+env(safe-area-inset-bottom,0px))] lg:pb-3">
                 <ChartWidget
                   widget={w}
                   dashboardFilters={filters}
@@ -1198,6 +1289,12 @@ export default function DashboardBuilderPage() {
           dashboardId={parseInt(id)}
         />
       )}
+
+      {/* Floating Chat Widget */}
+      <FloatingChatWidget positionClass="bottom-7 left-8" />
+
+      {/* Mobile Navigation Dock */}
+      <MobileAppNavBar />
     </div>
   )
 }

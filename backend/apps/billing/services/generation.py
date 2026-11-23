@@ -248,17 +248,11 @@ ASSETS_DIR = Path(__file__).with_name("assets")
 
 def _embedded_font_faces() -> str:
     """
-    Embed Vazirmatn (SIL OFL, `assets/OFL.txt`) in the invoice stylesheet.
-
-    The PDF is rendered on whatever machine runs the backend, which may not
-    have B Nazanin; without an embedded face Chromium falls back to Tahoma (or
-    worse, the default serif) and the invoice looks different per machine.
+    Embed Vazirmatn, B Nazanin, B Titr, and other fonts in the invoice stylesheet.
     """
     faces = []
     subsets = (
         ("arabic", "U+0600-06FF, U+0750-077F, U+0870-088E, U+FB50-FDFF, U+FE70-FEFF"),
-        # Slashes, Latin passenger names and ticket numbers need the Latin face;
-        # without it Chromium falls back to Times/Tahoma for those characters.
         ("latin", "U+0000-00FF, U+2000-206F, U+20AC"),
     )
     for weight in (400, 700):
@@ -272,14 +266,51 @@ def _embedded_font_faces() -> str:
                 f"font-weight: {weight}; unicode-range: {unicode_range}; "
                 f"src: url(data:font/woff2;base64,{encoded}) format('woff2'); }}"
             )
+            faces.append(
+                f"@font-face {{ font-family: 'Vazirmatn'; font-style: normal; "
+                f"font-weight: {weight}; unicode-range: {unicode_range}; "
+                f"src: url(data:font/woff2;base64,{encoded}) format('woff2'); }}"
+            )
+
+    fonts_dir = Path(django_settings.MEDIA_ROOT) / "fonts"
+    p_nazanin = fonts_dir / "B_Nazanin.ttf"
+    if p_nazanin.exists():
+        enc_nazanin = base64.b64encode(p_nazanin.read_bytes()).decode("ascii")
+        for weight in ("normal", "bold", "400", "700"):
+            faces.append(
+                f"@font-face {{ font-family: 'B Nazanin'; font-style: normal; "
+                f"font-weight: {weight}; "
+                f"src: url(data:font/truetype;base64,{enc_nazanin}) format('truetype'); }}"
+            )
+
+    p_titr = fonts_dir / "B_Titr_Bold.ttf"
+    if p_titr.exists():
+        enc_titr = base64.b64encode(p_titr.read_bytes()).decode("ascii")
+        for weight in ("normal", "bold", "400", "700"):
+            faces.append(
+                f"@font-face {{ font-family: 'B Titr'; font-style: normal; "
+                f"font-weight: {weight}; "
+                f"src: url(data:font/truetype;base64,{enc_titr}) format('truetype'); }}"
+            )
+
+    p_mitra = fonts_dir / "B_Mitra.ttf"
+    if p_mitra.exists():
+        enc_mitra = base64.b64encode(p_mitra.read_bytes()).decode("ascii")
+        for weight in ("normal", "bold", "400", "700"):
+            faces.append(
+                f"@font-face {{ font-family: 'B Mitra'; font-style: normal; "
+                f"font-weight: {weight}; "
+                f"src: url(data:font/truetype;base64,{enc_mitra}) format('truetype'); }}"
+            )
+
     return "\n".join(faces)
 
 
 INVOICE_CSS = f"""
 {_embedded_font_faces()}
-@page {{ size: A4 landscape; margin: 1cm; }}
 body {{ font-family: {INVOICE_FONT_STACK}; font-size: 12px; line-height: 1.4; margin: 0; direction: rtl; }}
-.page {{ page-break-after: avoid; }}
+.page {{ page-break-after: always; }}
+.page:last-child {{ page-break-after: avoid; }}
 .header-top {{ display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }}
 .left-info {{ text-align: left; font-size: 14px; line-height: 1.4; }}
 .left-info div {{ margin-bottom: 2px; font-weight: bold; }}
@@ -382,28 +413,56 @@ def _signed_amount(value: int | float) -> str:
     return f"({_amount(abs(value))})" if int(value) < 0 else _amount(value)
 
 
+def _format_row_date(raw_date: Any) -> str:
+    """Format any row date into Persian (Jalali) with Persian digits."""
+    if not raw_date:
+        return ""
+    if isinstance(raw_date, (dt.date, dt.datetime)):
+        return to_persian_digits(gregorian_to_persian(raw_date))
+    s = str(raw_date).strip()
+    if not s:
+        return ""
+    if "T" in s and len(s) >= 10 and s[4] in ("-", "/") and s[7] in ("-", "/"):
+        s = s.split("T")[0]
+
+    def _replace_gregorian(m):
+        y, mth, d = int(m.group(1)), int(m.group(2)), int(m.group(3))
+        if y >= 1900:
+            try:
+                import jdatetime
+                g_date = dt.date(y, mth, d)
+                j = jdatetime.date.fromgregorian(date=g_date)
+                return f"{j.year:04d}/{j.month:02d}/{j.day:02d}"
+            except Exception:
+                return m.group(0)
+        return m.group(0)
+
+    converted = re.sub(r"(\d{4})[-/](\d{1,2})[-/](\d{1,2})", _replace_gregorian, s)
+    return to_persian_digits(converted)
+
+
 def _invoice_row(row: dict, service_key: str) -> dict:
     """Map one stored data row onto the invoice table columns."""
     if service_key == "flight":
         description = str(row.get("مسیر") or "")
-        date = str(row.get("تاریخ پرواز") or "")
+        date = _format_row_date(row.get("تاریخ پرواز") or row.get("تاریخ") or row.get("item_date"))
         notes = f"بلیط: {row.get('شماره بلیط')}" if row.get("شماره بلیط") else ""
     elif service_key == "hotel":
         description = " — ".join(
             part for part in (str(row.get("هتل") or ""), str(row.get("نوع اتاق") or "")) if part
         )
-        date = str(row.get("تاریخ ورود و خروج") or "")
+        date = _format_row_date(row.get("تاریخ ورود و خروج") or row.get("تاریخ") or row.get("item_date"))
         notes = f"{row.get('تعداد نفرات')} نفر" if row.get("تعداد نفرات") else ""
     else:
         description = str(row.get("شرح خدمات") or "")
-        date = str(row.get("تاریخ") or "")
+        date = _format_row_date(row.get("تاریخ") or row.get("item_date"))
         notes = str(row.get("توضیحات") or "")
 
-    debt = int(row.get("بدهکار") or 0)
-    credit = int(row.get("بستانکار") or 0)
+    debt = int(row.get("بدهکار") or row.get("debt") or row.get("debit") or row.get("amount") or 0)
+    credit = int(row.get("بستانکار") or row.get("credit") or 0)
     return {
-        "contract": str(row.get("قرارداد") or ""),
-        "passenger": str(row.get("نام مسافر") or ""),
+        "contract": str(row.get("قرارداد") or row.get("contract") or row.get("contract_number") or ""),
+        "passenger": str(row.get("نام مسافر") or row.get("passenger") or row.get("passenger_name") or ""),
         "description": description,
         "date": date,
         "notes": notes,
@@ -411,6 +470,7 @@ def _invoice_row(row: dict, service_key: str) -> dict:
         "credit": credit,
         "balance": debt - credit,
         "row_number": "",
+        "debit_display": _amount(debt),
         "debt_display": _amount(debt),
         "credit_display": _amount(credit),
         "balance_display": _signed_amount(debt - credit),
@@ -521,20 +581,30 @@ def build_invoice_context(
         row["row_number"] = to_persian_digits(str(index + 1))
 
     table = table_element(design)
-    chunk_size = max(1, min(int(table.get("rows_per_page") or 8), 20))
+    is_landscape = design.get("page_orientation") == "landscape"
+    user_rows = int(table.get("rows_per_page") or (6 if is_landscape else 9))
+    max_safe_rows = 6 if is_landscape else 9
+    chunk_size = max(1, min(user_rows, max_safe_rows))
 
     grand_debt = sum(row["debt"] for row in invoice_rows)
     grand_credit = sum(row["credit"] for row in invoice_rows)
     grand_balance = sum(row["balance"] for row in invoice_rows)
     label = dict((key, title) for key, _attr, title in SERVICE_KEYS).get(service_key, service_key)
-    if service_key == "service" and (request_obj.service_category or "").strip():
-        label = request_obj.service_category.strip()
+    service_cat = (getattr(request_obj, "service_category", "") or getattr(request_obj, "invoice_type", "") or "").strip()
+    if service_key == "service" and service_cat:
+        label = service_cat
+
+    from .normalize import gregorian_to_persian
+    buyer_name = getattr(request_obj, "payer_name", None) or getattr(request_obj, "payer", "")
+    letter_date = getattr(request_obj, "letter_date", None) or (
+        gregorian_to_persian(getattr(request_obj, "issue_date", None)) if getattr(request_obj, "issue_date", None) else ""
+    )
 
     values = {
         "service_type": label,
-        "buyer_name": request_obj.payer_name,
+        "buyer_name": buyer_name,
         "number": letter_number,
-        "date": request_obj.letter_date,
+        "date": letter_date,
         "grand_debt": _amount(grand_debt),
         "grand_credit": _amount(grand_credit),
         "grand_balance": _signed_amount(grand_balance),
@@ -1118,7 +1188,7 @@ def _render_programmatic_docx(context: dict) -> bytes:
         para("در نظر داشته باشید که این مبلغ در خریدهای آینده از حساب شما کسر خواهد شد.", size=12)
     else:
         about = f"مربوط به {context['subsidiary']} " if context["variant"] == "subsidiary" else ""
-        para(f"احتراماً بدین وسیله صورت‌حساب {about}{context['period_range']}", size=12)
+        para(f"احتراما بدین وسیله صورت حساب {about}{context['period_range']}", size=12)
         para(
             f"بابت {context['service_type']} به مبلغ {context['total_debt_display']} ریال",
             size=12,
@@ -1170,24 +1240,228 @@ def _context_for(request_obj: ApprovalRequest, service_key: str) -> dict:
     return context
 
 
+def generate_invoice_pdf_bytes(invoice) -> bytes:
+    """Render official Invoice PDF bytes following the ReportDesign (گزارش‌ساز)."""
+    from ..models import ApprovalRequest
+    from .normalize import gregorian_to_persian
+
+    jalali_date = gregorian_to_persian(invoice.issue_date) or str(invoice.issue_date)
+
+    inv_type = (invoice.invoice_type or "").strip()
+    if "پرواز" in inv_type or inv_type.lower() == "flight":
+        service_key = "flight"
+    elif "هتل" in inv_type or inv_type.lower() == "hotel":
+        service_key = "hotel"
+    else:
+        service_key = "service"
+
+    request_obj = ApprovalRequest.objects.filter(letter_number=invoice.letter_number).first()
+
+    rows = []
+    if request_obj and service_key in SERVICE_ATTRS:
+        attr, _label = SERVICE_ATTRS[service_key]
+        rows = list(getattr(request_obj, attr) or [])
+
+    if not rows:
+        items = list(invoice.items.all().order_by("id"))
+        if items:
+            for idx, it in enumerate(items, 1):
+                row = {
+                    "ردیف": idx,
+                    "نام مسافر": it.passenger_name or "—",
+                    "قرارداد": it.contract_number or "",
+                    "بدهکار": it.debt_amount or (invoice.amount if len(items) == 1 else 0),
+                    "بستانکار": it.credit_amount or 0,
+                }
+                if service_key == "flight":
+                    row["مسیر"] = it.destination or inv_type
+                    row["شماره بلیط"] = it.ticket_number or "—"
+                    row["تاریخ پرواز"] = it.item_date or jalali_date
+                elif service_key == "hotel":
+                    row["هتل"] = it.hotel_name or invoice.description or "هتل"
+                    row["نوع اتاق"] = it.room_type or ""
+                    row["تاریخ ورود و خروج"] = it.item_date or jalali_date
+                    row["تعداد نفرات"] = it.guest_count or 1
+                else:
+                    row["شرح خدمات"] = it.description or invoice.description or inv_type
+                    row["تاریخ"] = it.item_date or jalali_date
+                    row["توضیحات"] = it.room_type or it.ticket_number or ""
+                rows.append(row)
+        else:
+            row = {
+                "ردیف": 1,
+                "نام مسافر": "کلیه مسافران",
+                "مسیر": invoice.description or inv_type,
+                "هتل": invoice.description or inv_type,
+                "شرح خدمات": invoice.description or inv_type,
+                "شماره بلیط": "—",
+                "نوع اتاق": "",
+                "تعداد نفرات": 1,
+                "تاریخ پرواز": jalali_date,
+                "تاریخ ورود و خروج": jalali_date,
+                "تاریخ": jalali_date,
+                "قرارداد": "",
+                "توضیحات": invoice.period_range or "",
+                "بدهکار": invoice.amount,
+                "بستانکار": 0,
+            }
+            rows = [row]
+
+    if not request_obj:
+        class _InvoiceReqAdapter:
+            def __init__(self, inv, jdate):
+                self.payer_name = inv.payer
+                self.payer_code = inv.payer_code
+                self.letter_number = inv.letter_number
+                self.letter_date = jdate
+                self.period_range = inv.period_range or ""
+                self.service_category = inv.invoice_type
+                self.service_type = inv.invoice_type
+                self.year = None
+                self.month = None
+                self.start_day = None
+                self.end_day = None
+
+        request_obj = _InvoiceReqAdapter(invoice, jalali_date)
+
+    try:
+        with pdf_session() as browser:
+            if browser.found:
+                try:
+                    return render_invoice_pdf(request_obj, service_key, rows, invoice.letter_number, browser=browser)
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+    context = build_invoice_context(request_obj, service_key, rows, invoice.letter_number)
+    html = Environment(autoescape=select_autoescape(["html", "xml"])).from_string(INVOICE_HTML).render(**context)
+    return _weasyprint_pdf(html)
+
+
+def generate_invoice_letter_bytes(invoice) -> bytes:
+    """Render official Letter Word (.docx) bytes directly from an Invoice model instance."""
+    from ..models import CompanySettings, ApprovalRequest, Payer
+    from .normalize import gregorian_to_persian
+
+    company = CompanySettings.load()
+    jalali_issue_date = gregorian_to_persian(invoice.issue_date) or str(invoice.issue_date)
+
+    req = ApprovalRequest.objects.filter(letter_number=invoice.letter_number).first()
+    period_range = invoice.period_range or (req.period_range if (req and req.period_range) else "")
+    if not period_range:
+        item_dates = [it.item_date for it in invoice.items.all() if it.item_date]
+        if item_dates:
+            min_d = gregorian_to_persian(min(item_dates))
+            max_d = gregorian_to_persian(max(item_dates))
+            period_range = f"از {min_d} تا {max_d}" if min_d != max_d else f"مورخ {min_d}"
+        else:
+            period_range = f"مورخ {jalali_issue_date}"
+
+    payer_obj = Payer.objects.filter(code=invoice.payer_code).first() if invoice.payer_code else None
+    subsidiary_name = ""
+    recipient = invoice.payer
+    variant = "debt"
+    if payer_obj and payer_obj.parent:
+        subsidiary_name = payer_obj.name
+        recipient = payer_obj.parent.name
+        variant = "subsidiary"
+
+    amount_num = int(invoice.amount or 0)
+    formatted_amount = f"{amount_num:,}"
+
+    context = {
+        "letter_date": jalali_issue_date,
+        "letter_number": invoice.letter_number,
+        "payer": recipient,
+        "payer_code": invoice.payer_code or "",
+        "period_range": period_range,
+        "service_type": invoice.invoice_type or "خدمات مسافرتی",
+        "subsidiary": subsidiary_name,
+        "variant": variant,
+        "legal_note": company.legal_note or LEGAL_NOTE,
+        "total_debt": formatted_amount,
+        "total_credit": "0",
+        "total_debt_display": formatted_amount,
+        "total_credit_display": "0",
+        "company_name": company.company_name or "سفرهای کرمان خودرو",
+        "address": company.address or "",
+        "phone": company.phone or "",
+        "national_id": company.national_id or "",
+        "bank_name1": company.bank_name1 or "",
+        "account_number1": company.account_number1 or "",
+        "shaba_number1": company.shaba_number1 or "",
+        "bank_name2": company.bank_name2 or "",
+        "account_number2": company.account_number2 or "",
+        "shaba_number2": company.shaba_number2 or "",
+        "manager_name": company.manager_name or "",
+        "manager_position": company.manager_position or "",
+        "logo_path": company.logo_path or "",
+        "signature_path": company.signature_path or "",
+        "stamp_path": company.stamp_path or "",
+        "rows": [],
+    }
+    return render_docx(context)
+
+
 def regenerate_file(final_file) -> bytes:
     """
-    Reproduce one generated artifact from the stored request data.
+    Reproduce one generated artifact from the stored request data or invoice record.
 
     Used after the retention window has released the original bytes, so a
     download always works without keeping old files on disk (spec §7).
     """
-    context = _context_for(final_file.request, final_file.service_type)
-    if final_file.file_name.lower().endswith(".pdf"):
-        # PDF is the invoice table; the letter itself is always the Word file.
-        attr, _label = SERVICE_ATTRS[final_file.service_type]
-        rows = list(getattr(final_file.request, attr) or [])
-        letter = final_file.letter_number or final_file.request.letter_number
-        with pdf_session() as browser:
-            return render_invoice_pdf(
-                final_file.request, final_file.service_type, rows, letter, browser=browser
-            )
-    return render_docx(context)
+    is_pdf = final_file.file_name.lower().endswith(".pdf")
+    request_obj = getattr(final_file, "request", None)
+    service_key = getattr(final_file, "service_type", None)
+
+    # 1. Try from ApprovalRequest if request object and service rows exist
+    if request_obj and service_key in SERVICE_ATTRS:
+        attr, label = SERVICE_ATTRS[service_key]
+        rows = list(getattr(request_obj, attr) or [])
+        if rows:
+            letter = final_file.letter_number or request_obj.letter_number
+            if is_pdf:
+                try:
+                    with pdf_session() as browser:
+                        return render_invoice_pdf(request_obj, service_key, rows, letter, browser=browser)
+                except Exception:
+                    pass
+            else:
+                try:
+                    context = _context_for(request_obj, service_key)
+                    return render_docx(context)
+                except Exception:
+                    pass
+
+    # 2. Try from Invoice model by letter_number
+    from ..models import Invoice
+    inv = Invoice.objects.filter(letter_number=final_file.letter_number).first()
+    if inv:
+        if is_pdf:
+            return generate_invoice_pdf_bytes(inv)
+        return generate_invoice_letter_bytes(inv)
+
+    # 3. Fallback: if ApprovalRequest exists even without specific service rows
+    if request_obj:
+        if is_pdf:
+            return render_invoice_pdf(request_obj, service_key or "flight", [], final_file.letter_number or "")
+        context = {
+            "letter_date": request_obj.letter_date or "",
+            "letter_number": final_file.letter_number or request_obj.letter_number,
+            "payer": request_obj.payer_name,
+            "payer_code": request_obj.payer_code or "",
+            "period_range": request_obj.period_range or "",
+            "service_type": request_obj.service_type or "خدمات",
+            "subsidiary": "",
+            "variant": "debt",
+            "total_debt": "0",
+            "total_credit": "0",
+            "rows": [],
+        }
+        return render_docx(context)
+
+    raise GenerationError(f"امکان بازتولید فایل {final_file.file_name} وجود ندارد؛ داده‌های درخواست یا صورت‌حساب یافت نشد.")
 
 
 def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
@@ -1255,6 +1529,20 @@ def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
             invoice_type = label
             if service_key == "service":
                 invoice_type = (request_obj.service_category or "").strip() or label
+
+            period_range = request_obj.period_range or ""
+            start_date = None
+            end_date = None
+            try:
+                if request_obj.year and request_obj.month and request_obj.start_day:
+                    m = int(str(request_obj.month).strip())
+                    start_date = persian_date_to_gregorian(f"{request_obj.year:04d}/{m:02d}/{request_obj.start_day:02d}")
+                if request_obj.year and request_obj.month and request_obj.end_day:
+                    m = int(str(request_obj.month).strip())
+                    end_date = persian_date_to_gregorian(f"{request_obj.year:04d}/{m:02d}/{request_obj.end_day:02d}")
+            except Exception:
+                pass
+
             with transaction.atomic():
                 invoice, created = Invoice.objects.get_or_create(
                     letter_number=letter,
@@ -1265,8 +1553,22 @@ def generate_request(request_obj: ApprovalRequest) -> list[FinalFile]:
                         "amount": amount,
                         "issue_date": issue_date,
                         "file_path": f"{letter_slug}/{service_key}_{letter_slug}.pdf",
+                        "period_range": period_range,
+                        "start_date": start_date,
+                        "end_date": end_date,
                     },
                 )
+                if not created:
+                    invoice.payer = request_obj.payer_name
+                    invoice.amount = amount
+                    invoice.issue_date = issue_date
+                    invoice.file_path = f"{letter_slug}/{service_key}_{letter_slug}.pdf"
+                    invoice.period_range = period_range
+                    if start_date:
+                        invoice.start_date = start_date
+                    if end_date:
+                        invoice.end_date = end_date
+                    invoice.save(update_fields=["payer", "amount", "issue_date", "file_path", "period_range", "start_date", "end_date"])
                 if not created and invoice.reversed_at is not None:
                     # Regenerating an aborted invoice would emit a document that
                     # never reaches the ledger; surface it instead.

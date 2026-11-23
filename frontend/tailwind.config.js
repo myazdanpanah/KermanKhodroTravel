@@ -12,6 +12,7 @@ export default {
       fontFamily: {
         // Vazirmatn is self-hosted via @fontsource (see main.tsx)
         sans: ['Vazirmatn', 'system-ui', 'sans-serif'],
+        mono: ['Vazirmatn', 'ui-monospace', 'monospace'],
       },
       colors: {
         // color-palette.json

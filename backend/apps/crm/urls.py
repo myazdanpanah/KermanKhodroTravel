@@ -28,8 +28,9 @@ urlpatterns = [
 
     path("summary/", views.crm_summary, name="crm-summary"),
 
-    # SMS gateway: settings, send, history
+    # SMS gateway: settings, send, bulk send, history
     path("sms/settings/", sms_views.sms_settings_view, name="crm-sms-settings"),
     path("sms/send/", sms_views.sms_send_view, name="crm-sms-send"),
+    path("sms/bulk-send/", sms_views.sms_bulk_send_view, name="crm-sms-bulk-send"),
     path("sms/messages/", sms_views.sms_messages_view, name="crm-sms-messages"),
 ]

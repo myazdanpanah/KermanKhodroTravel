@@ -31,6 +31,8 @@ urlpatterns = [
     path("api/v1/tenants/", include("apps.multi_tenant.urls")),
     path("api/v1/sso/", include("apps.sso.urls")),
     path("api/v1/audit/", include("apps.audit_log.urls")),
+    path("api/v1/messaging/", include("apps.messaging.urls")),
+    path("api/v1/search/", include("apps.core.urls")),
     # Schema
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),

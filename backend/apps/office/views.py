@@ -184,6 +184,7 @@ def correspondence_list(request):
         if params.get("archived") != "true":
             qs = qs.filter(archived_at__isnull=True)
         if params.get("q"):
+            print(f"[OfficeSearch] Search letters: q='{params['q']}' by {request.user.username}", flush=True)
             qs = qs.filter(Q(subject__icontains=params["q"]) | Q(registration_number__icontains=params["q"])
                            | Q(body__icontains=params["q"]))
         if params.get("due_before"):

@@ -109,13 +109,23 @@ export default function CorrespondenceListPage() {
     officeApi.getMeta().then((res) => setMeta(res.data.data)).catch(() => toast('خطا در دریافت تنظیمات', 'error'));
   }, [toast]);
 
-  useEffect(() => { load(bucket); }, [bucket]);
+  useEffect(() => {
+    const term = search.trim();
+    if (!term) {
+      load(bucket);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      setLoading(true);
+      officeApi.getLetters({ q: term })
+        .then((res) => setLetters(res.data.data))
+        .catch(() => toast('خطا در جستجوی نامه‌ها', 'error'))
+        .finally(() => setLoading(false));
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [search, bucket]);
 
-  const filtered = letters.filter((letter) =>
-    !search ||
-    letter.subject.includes(search) ||
-    (letter.registration_number || '').includes(search) ||
-    letter.sender_display.includes(search));
+  const filtered = letters;
 
   const clearUploads = () => {
     setUploads((prev) => {

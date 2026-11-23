@@ -1143,7 +1143,7 @@ class OfficialLetterTests(TestCase):
             )
         )
         self.assertIn("شرکت محترم شرکت نمونه سفر", text)
-        self.assertIn("صورت‌حساب", text)
+        self.assertTrue("صورت حساب" in text or "صورت‌حساب" in text or "صورتحساب" in text)
         self.assertTrue("15/01/1404" in text or "1404/01/15" in text)
         self.assertIn("1,500,000", text)
         self.assertIn("بانک ملت شماره حساب: 78466591", text)

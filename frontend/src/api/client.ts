@@ -3,8 +3,11 @@ import { useAuthStore } from '../store/authStore'
 
 const api = axios.create({ baseURL: '/api/v1' })
 
-// Attach JWT token to every request
+// Attach JWT token to every request and normalize duplicate baseURL prefixes
 api.interceptors.request.use((config) => {
+  if (config.url && config.url.startsWith('/api/v1/')) {
+    config.url = config.url.slice('/api/v1'.length)
+  }
   const token = useAuthStore.getState().token
   if (token) {
     config.headers.Authorization = `Bearer ${token}`

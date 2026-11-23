@@ -6,6 +6,10 @@ import { useToast } from '../components/Toast'
 import { Plus, BarChart3, LogOut, ChevronLeft, LayoutTemplate, TrendingUp, DollarSign, Megaphone, Users, ShoppingBag, Trash2, Copy, Share2, MoreVertical, X, UserCheck, Pencil } from 'lucide-react'
 import NotificationBell from '../components/NotificationBell'
 import ThemeToggle from '../components/ThemeToggle'
+import FloatingChatWidget from '../components/FloatingChatWidget'
+import ModuleSwitcherNav from '../components/ModuleSwitcherNav'
+import MobileAppNavBar from '../components/MobileAppNavBar'
+import { useBrandLogo, useBrandingStore } from '../store/brandingStore'
 import { ALL_ROLES } from '../utils/roles'
 
 interface Dashboard {
@@ -64,6 +68,8 @@ export default function DashboardListPage() {
   const [editModal, setEditModal] = useState<Dashboard | null>(null)
   const [editForm, setEditForm] = useState({ name: '', description: '' })
   const { user, logout } = useAuthStore()
+  const brandLogo = useBrandLogo()
+  const branding = useBrandingStore((s) => s.branding)
   const navigate = useNavigate()
   const { toast } = useToast()
   const menuRef = useRef<HTMLDivElement>(null)
@@ -241,17 +247,40 @@ export default function DashboardListPage() {
 
   return (
     <div className="min-h-screen bg-white dark:bg-nx-navy" dir="rtl">
-      {/* Header */}
-      <header className="bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border px-6 py-4">
+      {/* Header — with iPhone notch safe-area */}
+      <header className="bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border px-4 sm:px-6 pt-[max(1rem,calc(env(safe-area-inset-top,0px)+1rem))] pb-4 transition-all">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-nx-blue rounded-xl flex items-center justify-center">
-              <BarChart3 className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-lg font-bold text-nx-navy dark:text-slate-100">نکسیوو</h1>
-              <p className="text-xs text-slate-600 dark:text-slate-200">پلتفرم داشبورد هوشمند</p>
-            </div>
+            <Link to="/launcher" className="flex items-center gap-3 transition hover:opacity-85">
+              {brandLogo ? (
+                <img
+                  src={brandLogo}
+                  alt={branding.name || 'Logo'}
+                  className="h-10 w-auto max-w-[140px] object-contain select-none"
+                />
+              ) : (
+                <div className="w-10 h-10 bg-nx-blue rounded-xl flex items-center justify-center text-white shadow-md">
+                  <BarChart3 className="w-5 h-5" />
+                </div>
+              )}
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <h1 className="text-base font-extrabold text-nx-navy dark:text-slate-100 tracking-tight">
+                    {branding.name || 'نکسیو'}
+                  </h1>
+                  <span className="rounded-full bg-nx-blue/10 px-2 py-0.5 text-[10px] font-bold text-nx-blue dark:bg-nx-blue/20">
+                    هوش تجاری
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-nx-mist">پلتفرم داشبوردهای تحلیلی</p>
+              </div>
+            </Link>
+
+            {/* Vertical Separator */}
+            <div className="hidden h-6 w-px bg-slate-200 md:block dark:bg-nx-navy-border mx-2" />
+
+            {/* Quick Cross-Module Navigation Switcher */}
+            <ModuleSwitcherNav active="bi" />
           </div>
 
           <div className="flex items-center gap-4">
@@ -277,7 +306,7 @@ export default function DashboardListPage() {
       </header>
 
       {/* Content */}
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-[calc(112px+env(safe-area-inset-bottom,0px))] lg:pb-8">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-xl font-bold text-white dark:text-slate-100">داشبوردها</h2>
           <div className="flex items-center gap-3">
@@ -559,6 +588,12 @@ export default function DashboardListPage() {
           </div>
         </div>
       )}
+
+      {/* Floating Chat Widget */}
+      <FloatingChatWidget positionClass="bottom-7 left-8" />
+
+      {/* Mobile Navigation Dock */}
+      <MobileAppNavBar />
     </div>
   )
 }

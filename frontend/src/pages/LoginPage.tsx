@@ -90,7 +90,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-nx-navy p-6">
+    <div className="min-h-screen flex items-center justify-center bg-nx-navy p-6 pt-[max(1.5rem,calc(env(safe-area-inset-top,0px)+1.5rem))] pb-[max(1.5rem,calc(env(safe-area-inset-bottom,0px)+1.5rem))]">
       <div className="w-full max-w-md p-6 bg-white rounded-nx-card border border-nx-border shadow-nx-card">
         <div className="flex flex-col items-center mb-8">
           <img

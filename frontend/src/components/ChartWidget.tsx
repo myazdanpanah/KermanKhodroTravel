@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
 import * as echarts from 'echarts'
+import { Search, X, MoveHorizontal } from 'lucide-react'
 import { applyRTL } from '../utils/rtlConfig'
 import { getChartDefaults } from '../utils/chartDefaults'
 import { formatKpiValue, toPersianDigits, type KpiFormat } from '../utils/kpiFormat'
@@ -1480,43 +1481,57 @@ export default function ChartWidget({
       : pivotData.rows
 
     return (
-      <div className="h-full flex flex-col overflow-hidden text-xs" dir="rtl">
-        {/* Search bar & summary header */}
-        <div className="flex items-center justify-between gap-2 p-2 border-b border-slate-200 dark:border-nx-navy-border bg-slate-50/70 dark:bg-nx-navy/40 shrink-0">
-          <div className="flex items-center gap-2 flex-1 max-w-xs">
+      <div className="h-full flex flex-col overflow-hidden text-xs bg-white dark:bg-nx-navy" dir="rtl">
+        {/* Search bar & summary header — ERP Card Style */}
+        <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-slate-200/80 dark:border-nx-navy-border bg-slate-50/80 dark:bg-nx-navy-elevated/60 shrink-0">
+          <div className="relative flex-1 max-w-[220px] sm:max-w-xs">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={pivotSearch}
               onChange={(e) => setPivotSearch(e.target.value)}
               placeholder={`جستجو در ${pivotData.rowDimension}…`}
-              className="w-full text-xs px-2.5 py-1 rounded-lg border border-slate-300 dark:border-nx-navy-border bg-white dark:bg-nx-navy-elevated text-slate-800 dark:text-white outline-none focus:ring-1 focus:ring-nx-blue"
+              className="w-full text-xs pr-8 pl-6 py-1.5 rounded-xl border border-slate-200 dark:border-nx-navy-border bg-white dark:bg-nx-navy text-slate-800 dark:text-white placeholder:text-slate-400 outline-none focus:ring-2 focus:ring-nx-blue/30 focus:border-nx-blue transition-all"
             />
+            {pivotSearch && (
+              <button
+                onClick={() => setPivotSearch('')}
+                className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-0.5"
+                title="پاک کردن جستجو"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
           </div>
-          <div className="text-[11px] text-slate-500 dark:text-nx-mist">
-            <span>{toPersianDigits(filteredRows.length)} سطر</span>
-            <span className="mx-1">•</span>
-            <span>{toPersianDigits(pivotData.colValues.length)} نوع {pivotData.colDimension}</span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-slate-200/70 dark:bg-white/10 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+              {toPersianDigits(filteredRows.length)} سطر
+            </span>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-[10px] font-semibold text-nx-blue dark:text-blue-400">
+              {toPersianDigits(pivotData.colValues.length)} {pivotData.colDimension}
+            </span>
           </div>
         </div>
 
-        {/* Pivot Matrix Table */}
-        <div className="flex-1 overflow-auto">
+        {/* Pivot Matrix Table — Enhanced Touch / Mobile Momentum Scrolling */}
+        <div className="flex-1 overflow-auto touch-pan-x overscroll-contain select-text scrollbar-thin">
           <table className="w-full min-w-max text-right border-collapse">
-            <thead className="sticky top-0 z-10 bg-slate-100 dark:bg-nx-navy-elevated shadow-xs border-b border-slate-200 dark:border-nx-navy-border">
+            <thead className="sticky top-0 z-20 bg-slate-50/95 dark:bg-nx-navy-elevated/95 backdrop-blur-xs border-b border-slate-200 dark:border-nx-navy-border shadow-xs">
               <tr>
-                <th className="py-2.5 px-3 font-semibold text-slate-700 dark:text-slate-200 sticky right-0 z-20 bg-slate-100 dark:bg-nx-navy-elevated border-l border-slate-200 dark:border-nx-navy-border">
+                {/* Frozen Row Dimension Column Header */}
+                <th className="py-2.5 px-3.5 font-bold text-slate-800 dark:text-slate-100 sticky right-0 z-30 bg-slate-100 dark:bg-nx-navy-elevated border-l border-slate-200 dark:border-nx-navy-border shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.4)] whitespace-nowrap text-xs">
                   {pivotData.rowDimension}
                 </th>
                 {pivotData.colValues.map((colName) => (
                   <th
                     key={colName}
-                    className="py-2.5 px-3 text-center font-medium text-slate-600 dark:text-nx-mist whitespace-nowrap min-w-[90px]"
+                    className="py-2.5 px-3 text-center font-bold text-slate-700 dark:text-slate-200 whitespace-nowrap min-w-[95px] text-xs border-b border-slate-200/80 dark:border-nx-navy-border"
                   >
                     {colName}
                   </th>
                 ))}
                 {pivotData.columns.includes('جمع کل') && (
-                  <th className="py-2.5 px-3 text-center font-bold text-nx-blue dark:text-nx-teal bg-nx-blue/5 dark:bg-nx-blue/10 min-w-[100px] border-r border-slate-200 dark:border-nx-navy-border">
+                  <th className="py-2.5 px-3.5 text-center font-extrabold text-nx-blue dark:text-blue-400 bg-blue-50/70 dark:bg-nx-blue/20 min-w-[105px] border-r border-slate-200 dark:border-nx-navy-border whitespace-nowrap text-xs">
                     جمع کل
                   </th>
                 )}
@@ -1527,7 +1542,7 @@ export default function ChartWidget({
                 <tr>
                   <td
                     colSpan={pivotData.columns.length + 1}
-                    className="py-8 text-center text-slate-400 dark:text-nx-mist"
+                    className="py-10 text-center text-slate-400 dark:text-nx-mist text-xs"
                   >
                     موردی یافت نشد.
                   </td>
@@ -1538,9 +1553,10 @@ export default function ChartWidget({
                   return (
                     <tr
                       key={`${rowLabel}-${idx}`}
-                      className="hover:bg-slate-50 dark:hover:bg-white/5 transition group"
+                      className="group even:bg-slate-50/40 dark:even:bg-white/[0.02] hover:bg-blue-50/40 dark:hover:bg-blue-950/20 transition-colors"
                     >
-                      <td className="py-2 px-3 font-medium text-slate-900 dark:text-white whitespace-nowrap sticky right-0 bg-white dark:bg-nx-navy group-hover:bg-slate-50 dark:group-hover:bg-nx-navy border-l border-slate-200 dark:border-nx-navy-border">
+                      {/* Frozen Row Dimension Cell */}
+                      <td className="py-2 px-3.5 font-semibold text-slate-900 dark:text-slate-100 whitespace-nowrap sticky right-0 z-10 bg-white dark:bg-nx-navy group-hover:bg-blue-50/40 dark:group-hover:bg-nx-navy-elevated group-even:bg-slate-50/60 dark:group-even:bg-white/[0.03] border-l border-slate-200/90 dark:border-nx-navy-border shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)] dark:shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.4)] transition-colors">
                         {rowLabel}
                       </td>
                       {pivotData.colValues.map((colName) => {
@@ -1548,18 +1564,20 @@ export default function ChartWidget({
                         return (
                           <td
                             key={colName}
-                            className={`py-2 px-3 text-center whitespace-nowrap ${
-                              val > 0
-                                ? 'font-medium text-slate-800 dark:text-slate-200'
-                                : 'text-slate-300 dark:text-slate-600'
-                            }`}
+                            className="py-2 px-3 text-center whitespace-nowrap font-mono tabular-nums text-xs transition-colors"
                           >
-                            {val > 0 ? toPersianDigits(val.toLocaleString()) : '—'}
+                            {val > 0 ? (
+                              <span className="font-semibold text-slate-800 dark:text-slate-200">
+                                {toPersianDigits(val.toLocaleString())}
+                              </span>
+                            ) : (
+                              <span className="text-slate-300 dark:text-slate-600 font-light select-none">—</span>
+                            )}
                           </td>
                         )
                       })}
                       {pivotData.columns.includes('جمع کل') && (
-                        <td className="py-2 px-3 text-center font-bold text-slate-900 dark:text-white bg-slate-50/50 dark:bg-white/5 border-r border-slate-200 dark:border-nx-navy-border whitespace-nowrap">
+                        <td className="py-2 px-3.5 text-center font-bold text-slate-900 dark:text-white bg-blue-50/30 dark:bg-blue-950/20 border-r border-slate-200 dark:border-nx-navy-border whitespace-nowrap font-mono tabular-nums text-xs">
                           {toPersianDigits((Number(row['جمع کل']) || 0).toLocaleString())}
                         </td>
                       )}
@@ -1569,18 +1587,18 @@ export default function ChartWidget({
               )}
             </tbody>
             {pivotData.footerRow && (
-              <tfoot className="sticky bottom-0 z-10 bg-slate-200/90 dark:bg-nx-navy-elevated font-bold text-slate-900 dark:text-white border-t-2 border-slate-300 dark:border-nx-navy-border shadow-xs">
+              <tfoot className="sticky bottom-0 z-20 bg-slate-100/95 dark:bg-nx-navy-elevated/95 backdrop-blur-xs font-bold text-slate-900 dark:text-white border-t-2 border-slate-200 dark:border-nx-navy-border shadow-xs">
                 <tr>
-                  <td className="py-2.5 px-3 sticky right-0 bg-slate-200/90 dark:bg-nx-navy-elevated border-l border-slate-300 dark:border-nx-navy-border">
+                  <td className="py-2.5 px-3.5 sticky right-0 z-30 bg-slate-100 dark:bg-nx-navy-elevated border-l border-slate-300 dark:border-nx-navy-border shadow-[-4px_0_8px_-2px_rgba(0,0,0,0.06)] font-extrabold text-slate-900 dark:text-white">
                     جمع کل
                   </td>
                   {pivotData.colValues.map((colName) => (
-                    <td key={colName} className="py-2.5 px-3 text-center whitespace-nowrap text-nx-navy dark:text-white">
+                    <td key={colName} className="py-2.5 px-3 text-center whitespace-nowrap font-mono tabular-nums text-xs font-bold text-slate-800 dark:text-slate-100">
                       {toPersianDigits((Number(pivotData.footerRow![colName]) || 0).toLocaleString())}
                     </td>
                   ))}
                   {pivotData.columns.includes('جمع کل') && (
-                    <td className="py-2.5 px-3 text-center font-extrabold text-nx-blue dark:text-nx-teal bg-nx-blue/10 dark:bg-nx-blue/20 border-r border-slate-300 dark:border-nx-navy-border whitespace-nowrap">
+                    <td className="py-2.5 px-3.5 text-center font-black text-emerald-700 dark:text-emerald-400 bg-emerald-50/80 dark:bg-emerald-950/40 border-r border-slate-300 dark:border-nx-navy-border whitespace-nowrap font-mono tabular-nums text-xs">
                       {toPersianDigits((Number(pivotData.footerRow!['جمع کل']) || 0).toLocaleString())}
                     </td>
                   )}
@@ -1589,6 +1607,19 @@ export default function ChartWidget({
             )}
           </table>
         </div>
+
+        {/* Mobile Swipe Guidance Bar */}
+        {pivotData.colValues.length > 1 && (
+          <div className="sm:hidden flex items-center justify-between px-3 py-1 bg-slate-50 dark:bg-nx-navy-elevated/70 border-t border-slate-200/80 dark:border-nx-navy-border text-[10px] text-slate-500 dark:text-nx-mist shrink-0">
+            <span className="flex items-center gap-1">
+              <MoveHorizontal className="w-3.5 h-3.5 text-nx-blue animate-pulse" />
+              <span>برای پیمایش ستون‌ها به طرفین بکشید</span>
+            </span>
+            <span className="font-semibold text-slate-700 dark:text-slate-300">
+              {toPersianDigits(pivotData.colValues.length)} ستون
+            </span>
+          </div>
+        )}
       </div>
     )
   }

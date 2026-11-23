@@ -47,24 +47,38 @@ class PayerSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class InvoiceItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        from .models import InvoiceItem
+        model = InvoiceItem
+        fields = [
+            "id", "letter_number", "payer", "payer_code", "service_type",
+            "passenger_name", "destination", "hotel_name", "ticket_number",
+            "room_type", "contract_number", "guest_count", "item_date",
+            "issue_date", "description", "debt_amount", "credit_amount", "amount",
+        ]
+
+
 class InvoiceSerializer(serializers.ModelSerializer):
     issue_date_jalali = serializers.SerializerMethodField()
     file_id = serializers.SerializerMethodField()
     pdf_file_id = serializers.SerializerMethodField()
     letter_file_id = serializers.SerializerMethodField()
     items_count = serializers.SerializerMethodField()
+    items = serializers.SerializerMethodField()
 
     class Meta:
         model = Invoice
         fields = [
             "id", "letter_number", "payer", "payer_code", "invoice_type",
-            "amount", "issue_date", "issue_date_jalali", "file_path", "created_at", "file_id",
-            "pdf_file_id", "letter_file_id", "items_count",
+            "amount", "issue_date", "issue_date_jalali", "period_range", "start_date", "end_date",
+            "file_path", "created_at", "file_id",
+            "pdf_file_id", "letter_file_id", "items_count", "items",
             "is_reversed", "reversed_at", "reversal_reason",
         ]
         read_only_fields = [
-            "id", "created_at", "issue_date_jalali", "file_id",
-            "pdf_file_id", "letter_file_id", "items_count",
+            "id", "created_at", "issue_date_jalali", "period_range", "start_date", "end_date", "file_id",
+            "pdf_file_id", "letter_file_id", "items_count", "items",
             "is_reversed", "reversed_at", "reversal_reason",
         ]
 
@@ -89,6 +103,11 @@ class InvoiceSerializer(serializers.ModelSerializer):
 
     def get_items_count(self, obj):
         return obj.items.count()
+
+    def get_items(self, obj):
+        from .models import InvoiceItem
+        items = InvoiceItem.objects.filter(letter_number=obj.letter_number).order_by("id")
+        return InvoiceItemSerializer(items, many=True).data
 
     def get_issue_date_jalali(self, obj) -> str:
         from .services.normalize import gregorian_to_persian

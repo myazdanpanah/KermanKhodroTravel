@@ -292,7 +292,13 @@ export default function PageNavBar() {
   const accessPage = showAccessControl ? visiblePages.find((p) => p.id === showAccessControl) : null
 
   return (
-    <div ref={menuContainerRef} className="bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border" dir="rtl">
+    <div
+      ref={menuContainerRef}
+      className={`bg-white dark:bg-nx-navy border-b border-nx-border dark:border-nx-navy-border ${
+        visiblePages.length <= 1 ? 'hidden sm:block' : ''
+      }`}
+      dir="rtl"
+    >
       {/* Tab row */}
       <div className="flex items-center gap-1 px-6 overflow-x-auto py-1 scrollbar-thin">
         {visiblePages.map((page, index) => {

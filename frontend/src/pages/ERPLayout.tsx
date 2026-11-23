@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useThemeStore, syncThemeClass } from '../store/themeStore'
@@ -6,108 +6,29 @@ import { useBrandLogo } from '../store/brandingStore'
 import UserMenu from '../components/UserMenu'
 import NotificationBell from '../components/NotificationBell'
 import {
-  LayoutDashboard, FileText, CreditCard, Users, Gauge, Plus,
-  Calendar, Target, TrendingUp, Inbox, Mail,
-  Settings, ChevronLeft, ChevronDown,
-  Search, Sun, Moon, Menu, Briefcase, Check, X, FileSignature, PieChart, Megaphone, MessageSquare, Bell,
+  ChevronLeft,
+  ChevronDown,
+  Search,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import GlobalSearch from '../components/GlobalSearch';
 import QuickCreateButton from '../components/QuickCreateButton';
+import FloatingChatWidget from '../components/FloatingChatWidget';
+import ModuleSwitcherNav from '../components/ModuleSwitcherNav';
+import MobileAppNavBar from '../components/MobileAppNavBar';
 import { loadCompanyFonts } from '../lib/companyFonts';
-import { useQuickActions } from '../lib/quickActions'
-
-// ─── Navigation Structure ───────────────────────────────────────
-
-interface NavSection {
-  id: string
-  label: string
-  items: NavItem[]
-}
-
-interface NavItem {
-  to: string
-  icon: React.ElementType
-  label: string
-  end?: boolean
-}
-
-// The installation is limited to three modules: BI dashboard, finance and CRM.
-const NAV_SECTIONS: NavSection[] = [
-  {
-    id: 'bi',
-    label: 'داشبورد',
-    items: [
-      { to: '/erp/management', icon: PieChart, label: 'داشبورد مدیریتی', end: true },
-    ],
-  },
-  {
-    id: 'finance',
-    label: 'مالی',
-    items: [
-      { to: '/erp/billing', icon: LayoutDashboard, label: 'داشبورد مالی', end: true },
-      { to: '/erp/billing/issue', icon: Plus, label: 'صدور صورت‌حساب' },
-      { to: '/erp/billing/invoices', icon: FileText, label: 'صورت‌حساب‌ها' },
-      { to: '/erp/billing/payments', icon: CreditCard, label: 'پرداخت‌ها' },
-      { to: '/erp/billing/performance', icon: Gauge, label: 'عملکرد' },
-      { to: '/erp/billing/payers', icon: Users, label: 'مشتریان' },
-      { to: '/erp/billing/services', icon: Briefcase, label: 'خدمات' },
-    ],
-  },
-  {
-    id: 'crm',
-    label: 'CRM',
-    items: [
-      { to: '/erp/crm', icon: Users, label: 'داشبورد CRM', end: true },
-      { to: '/erp/crm/leads', icon: Target, label: 'سرنخ‌ها' },
-      { to: '/erp/crm/opportunities', icon: TrendingUp, label: 'فرصت‌ها' },
-      { to: '/erp/crm/activities', icon: Calendar, label: 'فعالیت‌ها' },
-      { to: '/erp/crm/campaigns', icon: Megaphone, label: 'کمپین‌ها' },
-      { to: '/erp/crm/sms', icon: MessageSquare, label: 'پیامک‌ها' },
-    ],
-  },
-  {
-    id: 'office',
-    label: 'اداری',
-    items: [
-      { to: '/erp/office', icon: Inbox, label: 'میزکار اداری', end: true },
-      { to: '/erp/office/correspondence', icon: Mail, label: 'نامه‌ها' },
-      { to: '/erp/office/contracts', icon: FileSignature, label: 'قراردادها' },
-    ],
-  },
-  {
-    id: 'notifications',
-    label: 'اعلانات',
-    items: [
-      { to: '/erp/notifications', icon: Bell, label: 'اعلانات' },
-    ],
-  },
-  {
-    id: 'settings',
-    label: 'تنظیمات',
-    items: [
-      { to: '/erp/settings', icon: Settings, label: 'تنظیمات' },
-    ],
-  },
-]
-
-// Sheet slide animation; a selection waits for it before navigating.
-const SHEET_TRANSITION_MS = 300
-
-// ─── Component ───────────────────────────────────────────────────
+import { ERP_NAV_SECTIONS } from '../lib/erpNavigation';
 
 export default function ERPLayout() {
   const [collapsed, setCollapsed] = useState(false)
-  // Mobile: bottom tab bar plus the menu sheet that slides up over it.
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const [quickOpen, setQuickOpen] = useState(false)
   const [searchOpen, setSearchOpen] = useState(false)
-  const quickActions = useQuickActions()
-  const sheetRef = useRef<HTMLDivElement>(null)
   const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
     bi: true,
     finance: true,
     crm: true,
     office: true,
+    messaging: true,
     notifications: true,
   })
   const { user, logout } = useAuthStore()
@@ -130,23 +51,6 @@ export default function ERPLayout() {
     setExpandedSections((prev) => ({ ...prev, [sectionId]: !prev[sectionId] }))
   }
 
-  // Close the mobile sheets whenever the route changes.
-  useEffect(() => {
-    setMobileOpen(false)
-    setQuickOpen(false)
-  }, [location.pathname])
-
-  // Selecting from the sheet: let it slide back down, then show the page.
-  const goFromSheet = (to: string) => {
-    setMobileOpen(false)
-    window.setTimeout(() => navigate(to), SHEET_TRANSITION_MS)
-  }
-
-  const goFromQuickAdd = (to: string) => {
-    setQuickOpen(false)
-    window.setTimeout(() => navigate(to), SHEET_TRANSITION_MS)
-  }
-
   // ⌘K / Ctrl+K opens the same search as the top-bar button.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -159,12 +63,6 @@ export default function ERPLayout() {
     return () => window.removeEventListener('keydown', onKey)
   }, [])
 
-  // A closed sheet is off-screen but still mounted: keep its rows out of
-  // the tab order so focus cannot land in a menu nobody can see.
-  useEffect(() => {
-    sheetRef.current?.toggleAttribute('inert', !mobileOpen)
-  }, [mobileOpen])
-
   // Sync dark mode class to <html>
   useEffect(() => {
     syncThemeClass(dark)
@@ -172,7 +70,7 @@ export default function ERPLayout() {
 
   // Auto-expand section that contains active route
   useEffect(() => {
-    const activeSection = NAV_SECTIONS.find((section) =>
+    const activeSection = ERP_NAV_SECTIONS.find((section) =>
       section.items.some((item) =>
         item.end
           ? location.pathname === item.to
@@ -191,7 +89,7 @@ export default function ERPLayout() {
     ? ['/erp/management', '/erp/billing', '/erp/crm', '/erp/office', '/erp/settings', '/erp/notifications', '/erp/profile']
     : ['/erp/management', '/erp/billing', '/erp/crm', '/erp/office', '/erp/notifications', '/erp/profile']
   const canIssue = isAdmin || Boolean(user?.permissions?.issue)
-  const sections = (isAdmin ? NAV_SECTIONS : NAV_SECTIONS.filter((section) => section.id !== 'settings'))
+  const sections = (isAdmin ? ERP_NAV_SECTIONS : ERP_NAV_SECTIONS.filter((section) => section.id !== 'settings'))
     .map((section) =>
       section.id === 'finance'
         ? { ...section, items: section.items.filter((item) => item.to !== '/erp/billing/issue' || canIssue) }
@@ -205,7 +103,7 @@ export default function ERPLayout() {
     if (!allowed) navigate('/erp', { replace: true })
   }, [location.pathname, allowedPrefixes, navigate])
 
-  const activeSection = NAV_SECTIONS.find((s) =>
+  const activeSection = ERP_NAV_SECTIONS.find((s) =>
     s.items.some((i) =>
       i.end ? location.pathname === i.to : location.pathname.startsWith(i.to) && i.to !== '/erp'
     )
@@ -216,14 +114,6 @@ export default function ERPLayout() {
 
   return (
     <div className="min-h-screen bg-nx-cream flex dark:bg-nx-navy" dir="rtl">
-      {/* Mobile backdrop for the bottom sheet */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden transition-opacity duration-300"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-
       {/* ─── Sidebar (desktop only; mobile uses the bottom sheet below) ─── */}
       <aside
         className={`
@@ -337,8 +227,8 @@ export default function ERPLayout() {
       <main
         className={`flex-1 min-w-0 w-full overflow-x-hidden mr-0 ${collapsed ? 'lg:mr-16' : 'lg:mr-64'} pb-[calc(96px+env(safe-area-inset-bottom))] lg:pb-0 transition-all duration-300`}
       >
-        {/* Top Navigation Bar */}
-        <header className="h-14 bg-nx-cream/90 backdrop-blur border-b border-nx-border flex items-center justify-between px-4 sm:px-6 sticky top-0 z-20 dark:bg-nx-navy/90 dark:border-nx-navy-border">
+        {/* Top Navigation Bar — with iPhone safe-area top padding */}
+        <header className="min-h-14 h-[calc(3.5rem+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)] bg-nx-cream/90 backdrop-blur border-b border-nx-border flex items-center justify-between px-4 sm:px-6 sticky top-0 z-20 dark:bg-nx-navy/90 dark:border-nx-navy-border transition-all">
           <div className="flex items-center gap-4">
             {/* Breadcrumbs */}
             <nav className="hidden lg:flex items-center gap-2 text-sm">
@@ -356,6 +246,12 @@ export default function ERPLayout() {
                 </>
               )}
             </nav>
+
+            {/* Vertical Separator */}
+            <div className="hidden h-5 w-px bg-slate-200 lg:block dark:bg-nx-navy-border" />
+
+            {/* Quick Cross-Module Navigation Switcher */}
+            <ModuleSwitcherNav active="erp" />
           </div>
           <div className="flex items-center gap-3">
             {/* Global Search */}
@@ -385,177 +281,12 @@ export default function ERPLayout() {
         </div>
       </main>
 
-      {/* ─── Mobile bottom navigation ─────────────────── */}
-      {/* Visual order left→right: dashboard, invoices, quick add, office, menu. */}
-      <nav
-        className="fixed bottom-0 inset-x-0 z-30 lg:hidden bg-white/95 backdrop-blur border-t border-nx-border dark:bg-nx-navy/95 dark:border-nx-navy-border"
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      >
-                <div className="grid grid-cols-5 items-end">
-          <NavLink
-            to="/erp"
-            end
-            className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 py-2 text-[10px] transition ${isActive ? 'text-nx-teal dark:text-nx-blue' : 'text-slate-500 dark:text-nx-mist'}`
-            }
-          >
-            <LayoutDashboard className="w-5 h-5" />
-            <span>داشبورد</span>
-          </NavLink>
-          <NavLink
-            to="/erp/billing/invoices"
-            className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 py-2 text-[10px] transition ${isActive ? 'text-nx-teal dark:text-nx-blue' : 'text-slate-500 dark:text-nx-mist'}`
-            }
-          >
-            <FileText className="w-5 h-5" />
-            <span>صورت‌حساب</span>
-          </NavLink>
-          {/* Centre slot is reserved for the floating quick-add button. */}
-          <div aria-hidden className="h-full" />
-          <NavLink
-            to="/erp/office"
-            className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 py-2 text-[10px] transition ${isActive ? 'text-nx-teal dark:text-nx-blue' : 'text-slate-500 dark:text-nx-mist'}`
-            }
-          >
-            <Inbox className="w-5 h-5" />
-            <span>میزکار اداری</span>
-          </NavLink>
-          <button
-            onClick={() => { setQuickOpen(false); setMobileOpen(true) }}
-            className={`flex flex-col items-center gap-0.5 py-2 text-[10px] ${
-              mobileOpen ? 'text-nx-teal dark:text-nx-blue' : 'text-slate-500 dark:text-nx-mist'
-            }`}
-          >
-            <Menu className="w-5 h-5" />
-            <span>منو</span>
-          </button>
-        </div>
-        <button
-          onClick={() => { setMobileOpen(false); setQuickOpen((value) => !value) }}
-          aria-label="ثبت جدید"
-          aria-expanded={quickOpen}
-          className="absolute -top-7 left-1/2 grid h-14 w-14 -translate-x-1/2 place-items-center rounded-full bg-nx-teal text-white shadow-lg ring-4 ring-white transition hover:opacity-90 dark:ring-nx-navy"
-        >
-          <Plus className={`h-7 w-7 transition-transform ${quickOpen ? 'rotate-45' : ''}`} />
-        </button>
-      </nav>
-
-      {/* ─── Quick add: bottom sheet for creating a record from anywhere ─── */}
-      {quickOpen && (
-        <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setQuickOpen(false)} />
-      )}
-      <div
-        className={`fixed inset-x-0 bottom-0 z-50 lg:hidden will-change-transform ${
-          quickOpen ? '' : 'pointer-events-none'
-        }`}
-        style={{
-          paddingBottom: 'env(safe-area-inset-bottom)',
-          transform: quickOpen ? 'translateY(0)' : 'translateY(115%)',
-          transition: `transform ${SHEET_TRANSITION_MS}ms ease-out`,
-        }}
-        aria-hidden={!quickOpen}
-      >
-        <div className="mx-2 mb-2 max-h-[80dvh] overflow-y-auto rounded-3xl bg-white border border-nx-border shadow-2xl overscroll-contain dark:bg-nx-navy-elevated dark:border-nx-navy-border">
-          <div className="flex justify-center pt-2.5 pb-1">
-            <span className="h-1.5 w-10 rounded-full bg-slate-300 dark:bg-nx-mist/40" />
-          </div>
-          <div className="flex items-center justify-between px-5 pb-2 pt-1">
-            <h2 className="text-base font-bold text-nx-navy dark:text-white">ثبت جدید</h2>
-            <button
-              onClick={() => setQuickOpen(false)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-slate-500 hover:bg-black/5 dark:text-nx-mist dark:hover:bg-white/5"
-            >
-              <X className="w-4 h-4" /> بستن
-            </button>
-          </div>
-          <div className="px-3 pb-4 space-y-1">
-            {quickActions.length === 0 ? (
-              <p className="px-3 py-6 text-center text-xs text-slate-500 dark:text-nx-mist">
-                برای حساب شما موردی که بتوانید ثبت کنید وجود ندارد.
-              </p>
-            ) : quickActions.map((action) => (
-              <button
-                key={action.to}
-                onClick={() => goFromQuickAdd(action.to)}
-                className="w-full flex items-center gap-3 px-2.5 py-2.5 rounded-xl text-right text-nx-navy hover:bg-black/5 dark:text-slate-200 dark:hover:bg-white/5"
-              >
-                <span className="w-9 h-9 rounded-xl grid place-items-center bg-nx-teal/15 text-nx-teal">
-                  <action.icon className="w-5 h-5" />
-                </span>
-                <span className="flex-1 text-[15px] font-medium">{action.label}</span>
-                <ChevronLeft className="w-4 h-4 text-slate-400 dark:text-nx-mist" />
-              </button>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* ─── Mobile menu: a card that slides up from the bottom ───────── */}
-      <div
-        ref={sheetRef}
-        className={`fixed inset-x-0 bottom-0 z-50 lg:hidden will-change-transform ${
-          mobileOpen ? '' : 'pointer-events-none'
-        }`}
-        style={{
-          paddingBottom: 'env(safe-area-inset-bottom)',
-          transform: mobileOpen ? 'translateY(0)' : 'translateY(115%)',
-          transition: `transform ${SHEET_TRANSITION_MS}ms ease-out`,
-        }}
-        aria-hidden={!mobileOpen}
-      >
-        <div className="mx-2 mb-2 rounded-3xl bg-white border border-nx-border shadow-2xl overflow-hidden dark:bg-nx-navy-elevated dark:border-nx-navy-border">
-          <div className="flex justify-center pt-2.5 pb-1">
-            <span className="h-1.5 w-10 rounded-full bg-slate-300 dark:bg-nx-mist/40" />
-          </div>
-          <div className="flex items-center justify-between px-5 pb-2 pt-1">
-            <h2 className="text-base font-bold text-nx-navy dark:text-white">منو</h2>
-            <button
-              onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs text-slate-500 hover:bg-black/5 dark:text-nx-mist dark:hover:bg-white/5"
-            >
-              <X className="w-4 h-4" /> بستن
-            </button>
-          </div>
-          <div className="max-h-[66vh] overflow-y-auto px-3 pb-4 space-y-4">
-            {sections.map((section) => (
-              <div key={section.id}>
-                <p className="px-2 mb-1.5 text-[11px] font-semibold tracking-wide text-slate-500 dark:text-nx-mist">{section.label}</p>
-                <div className="space-y-1">
-                  {section.items.map((item) => {
-                    const active = item.end
-                      ? location.pathname === item.to
-                      : location.pathname.startsWith(item.to) && item.to !== '/erp'
-                    return (
-                      <button
-                        key={item.to}
-                        onClick={() => goFromSheet(item.to)}
-                        className={`w-full flex items-center gap-3 px-2.5 py-2.5 rounded-xl text-right transition ${
-                          active ? 'bg-nx-teal/10 text-nx-teal dark:bg-nx-blue/15 dark:text-white' : 'text-nx-navy hover:bg-black/5 dark:text-slate-200 dark:hover:bg-white/5'
-                        }`}
-                      >
-                        <span
-                          className={`w-9 h-9 rounded-xl grid place-items-center flex-shrink-0 ${
-                            active ? 'bg-nx-teal text-white dark:bg-nx-blue' : 'bg-black/5 text-slate-500 dark:bg-white/5 dark:text-nx-mist'
-                          }`}
-                        >
-                          <item.icon className="w-5 h-5" />
-                        </span>
-                        <span className="flex-1 text-[15px] font-medium">{item.label}</span>
-                        {active && <Check className="w-4 h-4 text-nx-teal dark:text-nx-blue" />}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* ─── Global Mobile Bottom Navigation Bar ─────────────────── */}
+      <MobileAppNavBar />
 
       <GlobalSearch open={searchOpen} onClose={() => setSearchOpen(false)} />
       <QuickCreateButton />
+      <FloatingChatWidget positionClass="bottom-7 left-24" />
     </div>
   )
 }

@@ -1,5 +1,5 @@
 from rest_framework import status, permissions
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.response import Response
 from django.contrib.auth import authenticate, get_user_model
 from django.db import models
@@ -22,6 +22,7 @@ def _is_admin_or_ceo(user):
 
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
+@throttle_classes([])
 def login_view(request):
     """Authenticate user and return JWT token."""
     serializer = LoginSerializer(data=request.data)
@@ -505,15 +506,22 @@ def company_modules(request, pk):
 
 
 @api_view(["GET"])
+@permission_classes([permissions.AllowAny])
+@throttle_classes([])
 def user_modules(request):
     """Return the modules the current user can access."""
     user = request.user
-    if user.is_staff or user.role == "admin":
+    if not user.is_authenticated:
+        return Response([])
+
+    if user.is_staff or user.role in ("admin", "ceo") or getattr(user, "is_superuser", False):
         modules = ALL_MODULE_IDS
     elif user.company:
         modules = user.company.enabled_modules or []
     else:
-        modules = []
+        # Default fallback to all modules if company not assigned yet
+        modules = ALL_MODULE_IDS
+
     # Return module details
     module_map = {m[0]: m[1] for m in MODULE_CHOICES}
     result = [
@@ -601,6 +609,7 @@ def company_branding(request):
 
 @api_view(["GET"])
 @permission_classes([permissions.AllowAny])
+@throttle_classes([])
 def branding_public(request):
     """
     Public branding for pre-login screens (the login page must match the tenant).

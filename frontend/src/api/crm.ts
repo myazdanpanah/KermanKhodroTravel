@@ -211,4 +211,34 @@ export const crmApi = {
   // Timeline
   getTimeline: (customerId: number) =>
     apiClient.get(`/crm/timeline/${customerId}/`),
+
+  // Bulk SMS
+  sendBulkSms: (payload: {
+    template: string;
+    recipients: Array<{
+      phone: string;
+      variables?: Record<string, string | number>;
+      message?: string;
+    }>;
+    campaign_id?: number | string;
+    dry_run?: boolean;
+  }) =>
+    apiClient.post<{
+      success: boolean;
+      dry_run?: boolean;
+      total: number;
+      sent?: number;
+      failed?: number;
+      results: Array<{
+        index: number;
+        id?: number;
+        phone: string;
+        body?: string;
+        status?: 'sent' | 'failed';
+        error?: string;
+        valid?: boolean;
+        char_count?: number;
+        provider_message_id?: string;
+      }>;
+    }>('/crm/sms/bulk-send/', payload),
 };

@@ -15,6 +15,7 @@ ALLOWED_HOSTS = ["*"]
 
 # Application definition
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -25,6 +26,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "corsheaders",
     "drf_spectacular",
+    "channels",
     # Local apps
     "apps.core.apps.CoreConfig",
     "apps.accounts.apps.AccountsConfig",
@@ -51,6 +53,7 @@ INSTALLED_APPS = [
     "apps.multi_tenant.apps.MultiTenantConfig",
     "apps.sso.apps.SSOConfig",
     "apps.audit_log.apps.AuditLogConfig",
+    "apps.messaging.apps.MessagingConfig",
 ]
 
 # Rate Limiting
@@ -157,11 +160,11 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "100/hour",
-        "user": "1000/hour",
-        "llm_chat": "20/minute",
-        "nl_query": "30/minute",
-        "alert": "60/minute",
+        "anon": "3000/hour",
+        "user": "15000/hour",
+        "llm_chat": "60/minute",
+        "nl_query": "60/minute",
+        "alert": "120/minute",
     },
 }
 
@@ -260,3 +263,17 @@ ROLE_CHOICES = [
     (ROLE_ADMIN, "Admin"),
     (ROLE_UPDATER, "Updater"),
 ]
+
+# Nexivo Orbit Messaging Settings
+NEXIVO_MESSAGING_ENABLED = config("NEXIVO_MESSAGING_ENABLED", default=True, cast=bool)
+NEXIVO_MESSAGING_MAX_MESSAGE_LENGTH = config("NEXIVO_MESSAGING_MAX_MESSAGE_LENGTH", default=20000, cast=int)
+NEXIVO_MESSAGING_MAX_ATTACHMENT_SIZE_MB = config("NEXIVO_MESSAGING_MAX_ATTACHMENT_SIZE_MB", default=25, cast=int)
+NEXIVO_MESSAGING_PRESENCE_HEARTBEAT_SECONDS = config("NEXIVO_MESSAGING_PRESENCE_HEARTBEAT_SECONDS", default=30, cast=int)
+NEXIVO_MESSAGING_PRESENCE_TTL_SECONDS = config("NEXIVO_MESSAGING_PRESENCE_TTL_SECONDS", default=90, cast=int)
+NEXIVO_MESSAGING_TYPING_TTL_SECONDS = config("NEXIVO_MESSAGING_TYPING_TTL_SECONDS", default=8, cast=int)
+NEXIVO_MESSAGING_DEFAULT_PAGE_SIZE = config("NEXIVO_MESSAGING_DEFAULT_PAGE_SIZE", default=50, cast=int)
+NEXIVO_MESSAGING_MAX_PAGE_SIZE = config("NEXIVO_MESSAGING_MAX_PAGE_SIZE", default=100, cast=int)
+NEXIVO_MESSAGING_EDIT_WINDOW_MINUTES = config("NEXIVO_MESSAGING_EDIT_WINDOW_MINUTES", default=15, cast=int)
+NEXIVO_MESSAGING_READ_RECEIPTS_ENABLED = config("NEXIVO_MESSAGING_READ_RECEIPTS_ENABLED", default=True, cast=bool)
+MESSAGING_ATTACHMENT_ROOT = BASE_DIR / "private_media" / "messaging"
+

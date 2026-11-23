@@ -4,6 +4,7 @@ import { Bell, Check, CheckCheck, X, Trash2, ExternalLink } from 'lucide-react'
 import api from '../api/client'
 import { useToast } from './Toast'
 import { playOfficeChime } from '../utils/sound'
+import { resolveNotificationRoute } from '../utils/notificationNavigation'
 
 interface Notification {
   id: number
@@ -80,14 +81,15 @@ export default function NotificationBell() {
   }
 
   // Marking read is a side effect of opening; navigation must happen even if
-  // the request fails, and only known target types get a destination.
+  // the request fails, and target route is resolved via unified resolver.
   const openNotification = (notification: Notification) => {
     if (!notification.is_read) void markAsRead(notification.id)
     setOpen(false)
-    if (notification.target_type === 'billing_request' && notification.target_id) {
+    const route = resolveNotificationRoute(notification)
+    if (route) {
       navigate({
-        pathname: '/erp/billing/issue',
-        search: new URLSearchParams({ request: notification.target_id }).toString(),
+        pathname: route.pathname,
+        search: route.search ? `?${route.search}` : undefined,
       })
     }
   }

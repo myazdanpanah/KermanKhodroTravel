@@ -19,8 +19,14 @@ from apps.accounts.permissions import RequireModule
 _DBManagerPerm = RequireModule.for_module("db_manager")()
 
 
+def _is_main_admin(user):
+    return bool(user and user.is_authenticated and (user.role in ("admin", "ceo") or user.is_superuser))
+
+
 def _check_db_manager_module(request):
-    """Return None if OK, or a 403 Response if the module is not enabled."""
+    """Allow main admin unconditionally; for others, check module permission."""
+    if _is_main_admin(request.user):
+        return None
     if not _DBManagerPerm.has_permission(request, None):
         return Response(
             {"error": "Module 'db_manager' is not enabled for your company"},
@@ -30,17 +36,22 @@ def _check_db_manager_module(request):
 
 
 def _is_admin_or_ceo(user):
-    return user.role in ("admin", "ceo") or user.is_staff
+    # Strictly restricted to main admin
+    return _is_main_admin(user)
 
 
 def _check_table_perm(user, source, table):
-    """Check CanEditTable permission for updater-role users.
-    Returns None on OK, Response on denial.
+    """Check table modification permission.
+    Main admin always passes. Users with 'updater' role require explicit DatabasePermission row.
+    All other roles (sales, finance, ceo, etc.) are strictly forbidden.
     """
-    if user.role in ("admin", "ceo") or user.is_staff:
+    if _is_main_admin(user):
         return None
     if user.role != "updater":
-        return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+        return Response(
+            {"error": "فقط مدیر ارشد سیستم مجاز به ویرایش پایگاه‌داده است."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
 
     from django.db import models as db_models
 
@@ -50,7 +61,10 @@ def _check_table_perm(user, source, table):
         db_models.Q(table_name="*") | db_models.Q(table_name=table)
     ).exists()
     if not has_perm:
-        return Response({"error": "Permission denied for this table"}, status=status.HTTP_403_FORBIDDEN)
+        return Response(
+            {"error": "عدم دسترسی برای ویرایش این جدول"},
+            status=status.HTTP_403_FORBIDDEN,
+        )
     return None
 
 
@@ -465,7 +479,7 @@ def sql_execute(request):
     if gate:
         return gate
     if not _is_admin_or_ceo(request.user):
-        return Response({"error": "SQL editor is admin/CEO only"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": "کنسول SQL منحصراً برای مدیر ارشد سیستم (ادمین اصلی) مجاز است."}, status=status.HTTP_403_FORBIDDEN)
 
     source = request.data.get("source", "local")
     sql = request.data.get("sql", "")

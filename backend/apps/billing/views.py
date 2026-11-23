@@ -308,199 +308,79 @@ def invoice_detail(request, pk: int):
 
 
 def _build_invoice_pdf_response(invoice: Invoice) -> HttpResponse:
+    from .services.generation import generate_invoice_pdf_bytes
+    from .services.files import save_final_file
+
+    # Always generate following the latest ReportDesign (گزارش‌ساز)
+    pdf_bytes = generate_invoice_pdf_bytes(invoice)
+    letter_slug = invoice.letter_number.replace("/", "-")
+    file_name = f"invoice_{letter_slug}.pdf"
+
+    # Cache/restore to disk and FinalFile for the 24h retention window
+    try:
+        final_file = FinalFile.objects.filter(
+            letter_number=invoice.letter_number, file_name__endswith=".pdf"
+        ).order_by("-id").first()
+        save_final_file(
+            final_file.request if final_file else None,
+            final_file.service_type if final_file else "finance",
+            file_name,
+            pdf_bytes,
+            letter_number=invoice.letter_number,
+        )
+    except Exception:
+        pass
+
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = f'attachment; filename="{file_name}"'
+    return response
+
+
+def _build_invoice_letter_response(invoice: Invoice) -> HttpResponse:
     final_file = FinalFile.objects.filter(
-        letter_number=invoice.letter_number, file_name__endswith=".pdf"
+        letter_number=invoice.letter_number, file_name__endswith=".docx"
     ).order_by("-id").first()
     if final_file:
         try:
             data = read_bytes(final_file)
             letter_slug = invoice.letter_number.replace("/", "-")
-            response = HttpResponse(data, content_type="application/pdf")
-            response["Content-Disposition"] = f'attachment; filename="invoice_{letter_slug}.pdf"'
+            file_name = f"letter_{letter_slug}.docx"
+            response = HttpResponse(
+                data,
+                content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+            response["Content-Disposition"] = f'attachment; filename="{file_name}"'
             return response
         except FileNotFoundError:
             pass
 
-    from .services.generation import html_to_pdf, HTML_DOCUMENT, DEFAULT_CSS
-    from .services.normalize import gregorian_to_persian
-    from .models import CompanySettings
+    from .services.generation import generate_invoice_letter_bytes
+    from .services.files import save_final_file
 
-    company = CompanySettings.load()
-    items = list(invoice.items.all().order_by("id"))
-    rows = []
-    if items:
-        for idx, it in enumerate(items, 1):
-            rows.append({
-                "ردیف": idx,
-                "نام مسافر": it.passenger_name or "—",
-                "شرح خدمت / مقصد": it.destination or it.hotel_name or it.description or invoice.invoice_type,
-                "شماره بلیط / اتاق": it.ticket_number or it.room_type or "—",
-                "تاریخ": it.item_date or str(invoice.issue_date),
-                "بدهکار": f"{it.debt_amount:,}",
-                "بستانکار": f"{it.credit_amount:,}",
-                "مانده": f"{it.amount:,}",
-            })
-    else:
-        rows.append({
-            "ردیف": 1,
-            "نام مسافر": "کلیه مسافران",
-            "شرح خدمت / مقصد": invoice.description or invoice.invoice_type,
-            "شماره بلیط / اتاق": "—",
-            "تاریخ": str(invoice.issue_date),
-            "بدهکار": f"{invoice.amount:,}",
-            "بستانکار": "0",
-            "مانده": f"{invoice.amount:,}",
-        })
-
-    jalali_date = gregorian_to_persian(invoice.issue_date) or str(invoice.issue_date)
-
-    rows_html = "".join([
-        f"<tr><td style='padding: 6px; border: 1px solid #cbd5e1;'>{r['ردیف']}</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{r['نام مسافر']}</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{r['شرح خدمت / مقصد']}</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{r['شماره بلیط / اتاق']}</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{r['تاریخ']}</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{r['بدهکار']}</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{r['بستانکار']}</td><td style='padding: 6px; border: 1px solid #cbd5e1;'>{r['مانده']}</td></tr>"
-        for r in rows
-    ])
-    invoice_html_body = f"""
-    <div style="font-family: 'Vazirmatn', Tahoma, sans-serif; direction: rtl; padding: 20px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #003366; padding-bottom: 12px; margin-bottom: 16px;">
-            <div>
-                <h2 style="margin: 0; color: #003366; font-size: 18px;">{company.company_name or 'سفرهای کرمان خودرو'}</h2>
-                <p style="margin: 4px 0 0; font-size: 11px; color: #64748b;">صورت‌حساب رسمی خدمات مسافرتی و گردشگری</p>
-            </div>
-            <div style="text-align: left; font-size: 11px; line-height: 1.8;">
-                <div><strong>شماره صورت‌حساب:</strong> {invoice.letter_number}</div>
-                <div><strong>تاریخ صدور:</strong> {jalali_date}</div>
-                <div><strong>نوع خدمت:</strong> {invoice.invoice_type}</div>
-            </div>
-        </div>
-        
-        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 12px;">
-            <strong>طرف حساب / خریدار:</strong> {invoice.payer} (کد: {invoice.payer_code})
-        </div>
-
-        <table style="width: 100%; border-collapse: collapse; font-size: 11px; margin-bottom: 16px; text-align: center;">
-            <thead>
-                <tr style="background: #003366; color: white;">
-                    <th style="padding: 6px; border: 1px solid #002244;">ردیف</th>
-                    <th style="padding: 6px; border: 1px solid #002244;">نام مسافر</th>
-                    <th style="padding: 6px; border: 1px solid #002244;">شرح خدمت / مقصد</th>
-                    <th style="padding: 6px; border: 1px solid #002244;">شماره بلیط / اتاق</th>
-                    <th style="padding: 6px; border: 1px solid #002244;">تاریخ</th>
-                    <th style="padding: 6px; border: 1px solid #002244;">بدهکار (ریال)</th>
-                    <th style="padding: 6px; border: 1px solid #002244;">بستانکار (ریال)</th>
-                    <th style="padding: 6px; border: 1px solid #002244;">مانده (ریال)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {rows_html}
-            </tbody>
-            <tfoot>
-                <tr style="background: #f1f5f9; font-weight: bold;">
-                    <td colspan="5" style="padding: 8px; text-align: left; border: 1px solid #cbd5e1;">جمع کل (ریال):</td>
-                    <td style="padding: 8px; border: 1px solid #cbd5e1;">{invoice.amount:,}</td>
-                    <td style="padding: 8px; border: 1px solid #cbd5e1;">0</td>
-                    <td style="padding: 8px; border: 1px solid #cbd5e1;">{invoice.amount:,}</td>
-                </tr>
-            </tfoot>
-        </table>
-
-        <div style="margin-top: 24px; font-size: 10px; color: #64748b; text-align: justify; line-height: 1.6; border-top: 1px dashed #cbd5e1; padding-top: 10px;">
-            {company.legal_note or 'برابر مقررات، برای هر یک از خدمات ارائه شده صورت‌حساب رسمی صادر می‌گردد.'}
-        </div>
-    </div>
-    """
-    full_html = HTML_DOCUMENT.format(css=DEFAULT_CSS, body=invoice_html_body)
-    pdf_bytes = html_to_pdf(full_html)
+    docx_bytes = generate_invoice_letter_bytes(invoice)
     letter_slug = invoice.letter_number.replace("/", "-")
-    response = HttpResponse(pdf_bytes, content_type="application/pdf")
-    response["Content-Disposition"] = f'attachment; filename="invoice_{letter_slug}.pdf"'
-    return response
+    file_name = f"letter_{letter_slug}.docx"
 
+    # Cache/restore to disk and FinalFile for the 24h retention window
+    try:
+        final_file = FinalFile.objects.filter(
+            letter_number=invoice.letter_number, file_name__endswith=".docx"
+        ).order_by("-id").first()
+        save_final_file(
+            final_file.request if final_file else None,
+            final_file.service_type if final_file else "finance",
+            file_name,
+            docx_bytes,
+            letter_number=invoice.letter_number,
+        )
+    except Exception:
+        pass
 
-def _build_invoice_letter_response(invoice: Invoice) -> HttpResponse:
-    from pathlib import Path
-    from django.conf import settings as django_settings
-    from .services.generation import render_docx, LEGAL_NOTE
-    from .services.normalize import gregorian_to_persian
-    from .models import CompanySettings, ApprovalRequest, Payer
-
-    company = CompanySettings.load()
-    jalali_issue_date = gregorian_to_persian(invoice.issue_date) or str(invoice.issue_date)
-
-    # Check if an ApprovalRequest exists for this letter
-    req = ApprovalRequest.objects.filter(letter_number=invoice.letter_number).first()
-    period_range = req.period_range if (req and req.period_range) else ""
-    if not period_range:
-        item_dates = [it.item_date for it in invoice.items.all() if it.item_date]
-        if item_dates:
-            min_d = gregorian_to_persian(min(item_dates))
-            max_d = gregorian_to_persian(max(item_dates))
-            period_range = f"از {min_d} تا {max_d}" if min_d != max_d else f"مورخ {min_d}"
-        else:
-            period_range = f"از {jalali_issue_date} تا {jalali_issue_date}"
-
-    payer_obj = Payer.objects.filter(code=invoice.payer_code).first() if invoice.payer_code else None
-    subsidiary_name = ""
-    recipient = invoice.payer
-    variant = "debt"
-    if payer_obj and payer_obj.parent:
-        subsidiary_name = payer_obj.name
-        recipient = payer_obj.parent.name
-        variant = "subsidiary"
-
-    amount_num = int(invoice.amount or 0)
-    formatted_amount = f"{amount_num:,}"
-
-    context = {
-        "letter_date": jalali_issue_date,
-        "letter_number": invoice.letter_number,
-        "payer": recipient,
-        "payer_code": invoice.payer_code or "",
-        "period_range": period_range,
-        "service_type": invoice.invoice_type or "خدمات مسافرتی",
-        "subsidiary": subsidiary_name,
-        "variant": variant,
-        "legal_note": company.legal_note or LEGAL_NOTE,
-        "total_debt": formatted_amount,
-        "total_credit": "0",
-        "total_debt_display": formatted_amount,
-        "total_credit_display": "0",
-        "company_name": company.company_name or "سفرهای کرمان خودرو",
-        "address": company.address or "",
-        "phone": company.phone or "",
-        "national_id": company.national_id or "",
-        "bank_name1": company.bank_name1 or "",
-        "account_number1": company.account_number1 or "",
-        "shaba_number1": company.shaba_number1 or "",
-        "bank_name2": company.bank_name2 or "",
-        "account_number2": company.account_number2 or "",
-        "shaba_number2": company.shaba_number2 or "",
-        "manager_name": company.manager_name or "",
-        "manager_position": company.manager_position or "",
-        "logo_path": company.logo_path or "",
-        "signature_path": company.signature_path or "",
-        "stamp_path": company.stamp_path or "",
-        "rows": [],
-    }
-
-    docx_bytes = render_docx(context)
-
-    # Update FinalFile on disk if it exists
-    final_file = FinalFile.objects.filter(
-        letter_number=invoice.letter_number, file_name__endswith=".docx"
-    ).order_by("-id").first()
-    if final_file and final_file.file_path:
-        try:
-            full_path = Path(django_settings.MEDIA_ROOT) / final_file.file_path
-            full_path.parent.mkdir(parents=True, exist_ok=True)
-            full_path.write_bytes(docx_bytes)
-        except Exception:
-            pass
-
-    letter_slug = invoice.letter_number.replace("/", "-")
     response = HttpResponse(
         docx_bytes,
-        content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+        content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )
-    response["Content-Disposition"] = f'attachment; filename="letter_{letter_slug}.docx"'
+    response["Content-Disposition"] = f'attachment; filename="{file_name}"'
     return response
 
 

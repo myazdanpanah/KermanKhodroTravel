@@ -7,9 +7,11 @@ interface User {
   email: string
   first_name: string
   last_name: string
+  full_name?: string
   role: 'finance' | 'sales' | 'ceo' | 'admin'
   department: string
   isStaff?: boolean
+  is_superuser?: boolean
   company_name?: string | null
   accessible_modules?: string[]
   /** Billing permission flags (spec §6.1); drives UI visibility. */

@@ -46,32 +46,39 @@ def save_final_file(
     file_name: str,
     data: bytes,
     letter_number: str | None = None,
-) -> FinalFile:
+) -> FinalFile | None:
     """Write the artifact to disk and to the BLOB column (idempotent)."""
-    letter_number = letter_number or request_obj.letter_number
+    from ..models import ApprovalRequest
+
+    letter_number = letter_number or (request_obj.letter_number if request_obj else "unknown")
+    if request_obj is None and letter_number:
+        request_obj = ApprovalRequest.objects.filter(letter_number=letter_number).first()
+
     rel_path = relative_path(letter_number, service_type, file_name)
     absolute = storage_root() / rel_path
     absolute.parent.mkdir(parents=True, exist_ok=True)
     absolute.write_bytes(data)
 
-    obj, created = FinalFile.objects.get_or_create(
-        request=request_obj,
-        service_type=service_type,
-        file_name=file_name,
-        defaults={
-            "letter_number": letter_number,
-            "file_path": rel_path,
-            "file_data": data,
-            "is_deleted_from_disk": False,
-        },
-    )
-    if not created:
-        obj.letter_number = letter_number
-        obj.file_path = rel_path
-        obj.file_data = data
-        obj.is_deleted_from_disk = False
-        obj.save(update_fields=["letter_number", "file_path", "file_data", "is_deleted_from_disk"])
-    return obj
+    if request_obj is not None:
+        obj, created = FinalFile.objects.get_or_create(
+            request=request_obj,
+            service_type=service_type,
+            file_name=file_name,
+            defaults={
+                "letter_number": letter_number,
+                "file_path": rel_path,
+                "file_data": data,
+                "is_deleted_from_disk": False,
+            },
+        )
+        if not created:
+            obj.letter_number = letter_number
+            obj.file_path = rel_path
+            obj.file_data = data
+            obj.is_deleted_from_disk = False
+            obj.save(update_fields=["letter_number", "file_path", "file_data", "is_deleted_from_disk"])
+        return obj
+    return None
 
 
 def ensure_on_disk(final_file: FinalFile) -> Path:

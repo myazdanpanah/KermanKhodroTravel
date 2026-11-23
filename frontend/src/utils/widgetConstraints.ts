@@ -33,6 +33,7 @@ const CONSTRAINTS: Record<string, WidgetSizeConstraints> = {
   map:           { minW: 4, minH: 4, maxW: 12, maxH: 10 },
   leader_kpi:    { minW: 2, minH: 2, maxW: 6, maxH: 4 },
   table:         { minW: 3, minH: 3, maxW: 12, maxH: 12 },
+  pivot_table:   { minW: 3, minH: 4, maxW: 12, maxH: 14 },
 }
 
 const DEFAULT_CONSTRAINTS: WidgetSizeConstraints = { minW: 2, minH: 2, maxW: 12, maxH: 12 }

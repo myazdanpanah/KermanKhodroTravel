@@ -51,6 +51,22 @@ def get_table_schema(source_str, table_name):
 
     try:
         with conn.cursor() as cursor:
+            # Detect primary key column(s)
+            cursor.execute(
+                """
+                SELECT kcu.column_name
+                FROM information_schema.table_constraints tc
+                JOIN information_schema.key_column_usage kcu
+                  ON tc.constraint_name = kcu.constraint_name
+                  AND tc.table_schema = kcu.table_schema
+                WHERE tc.constraint_type = 'PRIMARY KEY'
+                  AND tc.table_schema = 'public'
+                  AND tc.table_name = %s
+                """,
+                [table_name],
+            )
+            pk_cols = set(r[0] for r in cursor.fetchall())
+
             cursor.execute(
                 "SELECT column_name, data_type, is_nullable, "
                 "column_default, character_maximum_length "
@@ -61,12 +77,14 @@ def get_table_schema(source_str, table_name):
             )
             cols = []
             for row in cursor.fetchall():
+                col_name = row[0]
                 cols.append({
-                    "name": row[0],
+                    "name": col_name,
                     "type": row[1],
                     "nullable": row[2] == "YES",
                     "default": row[3],
                     "max_length": row[4],
+                    "is_pk": col_name in pk_cols,
                 })
             return cols
     finally:

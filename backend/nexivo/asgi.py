@@ -14,8 +14,9 @@ django_asgi_app = get_asgi_application()
 try:
     from channels.auth import AuthMiddlewareStack
     from channels.routing import ProtocolTypeRouter, URLRouter
-    from apps.ai_insights.routing import websocket_urlpatterns
-    _ws_urlpatterns = websocket_urlpatterns
+    from apps.ai_insights.routing import websocket_urlpatterns as ai_ws_urlpatterns
+    from apps.messaging.routing import websocket_urlpatterns as messaging_ws_urlpatterns
+    _ws_urlpatterns = ai_ws_urlpatterns + messaging_ws_urlpatterns
 except ImportError:
     _ws_urlpatterns = []
 
