@@ -521,19 +521,8 @@ def user_modules(request):
     if not user.is_authenticated:
         return Response([])
 
-    is_sysadmin = getattr(user, "is_superuser", False) or user.role == "admin"
-
-    if is_sysadmin:
-        modules = list(ALL_MODULE_IDS)
-    elif user.company:
-        modules = list(user.company.enabled_modules or [])
-    else:
-        # Default fallback to delivered business modules if company not assigned yet
-        modules = [m for m in ("bi_dashboard", "finance", "crm", "office") if m in ALL_MODULE_IDS]
-
-    # System Settings and Database Studio & Editor are strictly for System Administrator
-    if not is_sysadmin:
-        modules = [m for m in modules if m not in ("settings", "db_manager")]
+    serializer = UserSerializer(user)
+    modules = serializer.get_accessible_modules(user)
 
     # Return module details
     module_map = {m[0]: m[1] for m in MODULE_CHOICES}

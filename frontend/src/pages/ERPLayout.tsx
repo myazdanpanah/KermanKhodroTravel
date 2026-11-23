@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '../store/authStore'
 import { useThemeStore, syncThemeClass } from '../store/themeStore'
@@ -18,7 +18,7 @@ import FloatingChatWidget from '../components/FloatingChatWidget';
 import ModuleSwitcherNav from '../components/ModuleSwitcherNav';
 import MobileAppNavBar from '../components/MobileAppNavBar';
 import { loadCompanyFonts } from '../lib/companyFonts';
-import { ERP_NAV_SECTIONS } from '../lib/erpNavigation';
+import { getFilteredNavSections, getDefaultERPPath, canUserAccessERPPath } from '../lib/erpNavigation';
 
 export default function ERPLayout() {
   const [collapsed, setCollapsed] = useState(false)
@@ -32,6 +32,9 @@ export default function ERPLayout() {
     notifications: true,
   })
   const { user, logout } = useAuthStore()
+
+  // Dynamic role- and organization-filtered ERP navigation sections
+  const sections = useMemo(() => getFilteredNavSections(user), [user])
 
   // Inject the organization's uploaded fonts for DOCX/XLSX previews.
   useEffect(() => {
@@ -70,7 +73,7 @@ export default function ERPLayout() {
 
   // Auto-expand section that contains active route
   useEffect(() => {
-    const activeSection = ERP_NAV_SECTIONS.find((section) =>
+    const activeSection = sections.find((section) =>
       section.items.some((item) =>
         item.end
           ? location.pathname === item.to
@@ -80,30 +83,27 @@ export default function ERPLayout() {
     if (activeSection) {
       setExpandedSections((prev) => ({ ...prev, [activeSection.id]: true }))
     }
-  }, [location.pathname])
+  }, [location.pathname, sections])
 
-  // Breadcrumb data (computed once per render)
-  // Only the licensed modules (plus settings EXCLUSIVELY for main system admin) are reachable.
-  const isSystemAdmin = user?.role === 'admin' || user?.is_superuser === true
-  const allowedPrefixes = isSystemAdmin
-    ? ['/erp/management', '/erp/billing', '/erp/crm', '/erp/office', '/erp/settings', '/erp/notifications', '/erp/profile']
-    : ['/erp/management', '/erp/billing', '/erp/crm', '/erp/office', '/erp/notifications', '/erp/profile']
-  const canIssue = isSystemAdmin || user?.role === 'ceo' || Boolean(user?.permissions?.issue)
-  const sections = (isSystemAdmin ? ERP_NAV_SECTIONS : ERP_NAV_SECTIONS.filter((section) => section.id !== 'settings'))
-    .map((section) =>
-      section.id === 'finance'
-        ? { ...section, items: section.items.filter((item) => item.to !== '/erp/billing/issue' || canIssue) }
-        : section
-    )
-
+  // Dynamic route access control and root resolver
   useEffect(() => {
     const path = location.pathname.replace(/\/$/, '')
-    const isRoot = path === '/erp'
-    const allowed = isRoot || allowedPrefixes.some((prefix) => path.startsWith(prefix))
-    if (!allowed) navigate('/erp', { replace: true })
-  }, [location.pathname, allowedPrefixes, navigate])
+    if (path === '/erp') {
+      const defaultPath = getDefaultERPPath(user)
+      if (defaultPath !== '/erp') {
+        navigate(defaultPath, { replace: true })
+      }
+      return
+    }
 
-  const activeSection = ERP_NAV_SECTIONS.find((s) =>
+    const allowed = canUserAccessERPPath(user, path)
+    if (!allowed) {
+      const defaultPath = getDefaultERPPath(user)
+      navigate(defaultPath, { replace: true })
+    }
+  }, [location.pathname, user, navigate])
+
+  const activeSection = sections.find((s) =>
     s.items.some((i) =>
       i.end ? location.pathname === i.to : location.pathname.startsWith(i.to) && i.to !== '/erp'
     )

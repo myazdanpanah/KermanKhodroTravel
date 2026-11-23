@@ -267,6 +267,17 @@ export default function LauncherPage() {
       delivered = delivered.filter((m) => m.id !== 'settings' && m.id !== 'db_manager')
     }
 
+    // Role-based filtering so non-finance/non-crm users don't see modules they can't access
+    const canViewFinance = isSysAdmin || user?.role === 'ceo' || user?.role === 'finance' || Boolean(user?.permissions?.view)
+    if (!canViewFinance) {
+      delivered = delivered.filter((m) => m.id !== 'finance' && m.id !== 'billing')
+    }
+
+    const canAccessCrm = isSysAdmin || user?.role === 'ceo' || user?.role === 'sales' || user?.department === 'sales' || Boolean(user?.permissions?.crm)
+    if (!canAccessCrm) {
+      delivered = delivered.filter((m) => m.id !== 'crm')
+    }
+
     // Orbit messaging is a toggleable module per organization (only shown if present in delivered list)
     setModules(delivered)
   }
@@ -317,12 +328,21 @@ export default function LauncherPage() {
     return 'وقت بخیر'
   }, [])
 
+  const isSysAdmin = user?.role === 'admin' || user?.is_superuser === true
+  const canIssue = isSysAdmin || user?.role === 'ceo' || Boolean(user?.permissions?.issue)
+  const canAccessManagement = isSysAdmin || user?.role === 'ceo' || (user?.role === 'finance' && Boolean(user?.permissions?.view))
+
   // Build resolved module list
   const resolvedModules = useMemo(() => {
     return modules.map((mod) => {
       const def = MODULE_DEFINITIONS[mod.id]
       if (def) {
-        return def
+        const shortcuts = (def.shortcuts || []).filter((sc) => {
+          if (sc.route === '/erp/billing/issue') return canIssue
+          if (sc.route === '/management' || sc.route === '/erp/management') return canAccessManagement
+          return true
+        })
+        return { ...def, shortcuts }
       }
       const FallbackIcon = FALLBACK_ICONS[mod.id] || Database
       return {
@@ -339,7 +359,7 @@ export default function LauncherPage() {
         shortcuts: [],
       }
     })
-  }, [modules])
+  }, [modules, canIssue, canAccessManagement])
 
   // Filter modules based on search query and category
   const filteredModules = useMemo(() => {

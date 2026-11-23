@@ -1318,6 +1318,17 @@ def invoice_types(request):
 @api_view(["GET"])
 def management_summary(request):
     """Cross-module KPIs and ERP database status for the management dashboard."""
+    user = request.user
+    if not (
+        getattr(user, "is_superuser", False)
+        or getattr(user, "role", "") in ("admin", "ceo")
+        or (getattr(user, "role", "") == "finance" and getattr(user, "can_view", False))
+    ):
+        return Response(
+            {"error": "شما مجوز دسترسی به داشبورد مدیریتی را ندارید."},
+            status=status.HTTP_403_FORBIDDEN,
+        )
+
     import time
     from datetime import date
     from django.db import connection

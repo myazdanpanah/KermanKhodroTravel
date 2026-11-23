@@ -47,7 +47,13 @@ export default function BillingDashboardPage() {
     api
       .get('/billing/dashboard/summary/')
       .then((res) => setData(res.data))
-      .catch(() => toast('خطا در دریافت خلاصهٔ مالی', 'error'))
+      .catch((err) => {
+        if (err.response?.status === 403) {
+          toast('شما مجوز مشاهده خلاصه مالی را ندارید', 'error')
+        } else {
+          toast('خطا در دریافت خلاصهٔ مالی', 'error')
+        }
+      })
       .finally(() => setLoading(false))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

@@ -18,20 +18,25 @@ export function useQuickActions(): QuickAction[] {
   const user = useAuthStore((state) => state.user);
 
   return useMemo(() => {
-    const privileged = user?.role === 'admin' || user?.role === 'ceo' || Boolean(user?.isStaff);
-    const canIssue = privileged || Boolean(user?.permissions?.issue);
-    const canPay = privileged || Boolean(user?.permissions?.pay);
-    const canCustomer = privileged || user?.role === 'sales' || user?.role === 'finance';
-    const canLetter = privileged || Boolean(user?.accessible_modules?.includes('office'));
+    const privileged = user?.role === 'admin' || user?.role === 'ceo' || Boolean(user?.is_superuser);
+
+    const hasFinanceModule = privileged || Boolean(user?.accessible_modules?.includes('finance') || user?.accessible_modules?.includes('billing'));
+    const hasCrmModule = privileged || Boolean(user?.accessible_modules?.includes('crm'));
+    const hasOfficeModule = privileged || Boolean(user?.accessible_modules?.includes('office'));
+    const hasOrbitModule = privileged || Boolean(user?.accessible_modules?.some((m) => m === 'orbit' || m === 'messaging'));
+
+    const canIssue = hasFinanceModule && (privileged || Boolean(user?.permissions?.issue));
+    const canPay = hasFinanceModule && (privileged || Boolean(user?.permissions?.pay));
+    const canCustomer = hasCrmModule && (privileged || user?.role === 'sales');
+    const canLetter = hasOfficeModule;
 
     const actions: QuickAction[] = [];
-    const canOrbit = user?.is_superuser || user?.role === 'admin' || Boolean(user?.accessible_modules?.some((m) => m === 'orbit' || m === 'messaging'));
-    if (canOrbit) {
+    if (hasOrbitModule) {
       actions.push({ to: '/orbit?new=1', label: 'ارسال پیام جدید', icon: MessageSquarePlus });
     }
     if (canIssue) actions.push({ to: '/erp/billing/issue', label: 'ثبت صورت‌حساب جدید', icon: FilePlus2 });
     if (canPay) actions.push({ to: '/erp/billing/payments?new=1', label: 'ثبت پرداخت جدید', icon: CreditCard });
-    if (canCustomer) actions.push({ to: '/erp/customers?new=1', label: 'ثبت مشتری جدید (CRM)', icon: UserPlus });
+    if (canCustomer) actions.push({ to: '/erp/crm/leads?new=1', label: 'ثبت سرنخ جدید (CRM)', icon: UserPlus });
     if (canLetter) actions.push({ to: '/erp/office/correspondence?new=1', label: 'ثبت نامه جدید', icon: Mail });
     return actions;
   }, [user]);

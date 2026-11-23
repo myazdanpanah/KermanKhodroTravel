@@ -2,6 +2,7 @@ import { Suspense, lazy } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from './store/authStore'
 import { useBrandLogo } from './store/brandingStore'
+import { getDefaultERPPath } from './lib/erpNavigation'
 
 // ── Eagerly loaded shell pages ─────────────────────────────────
 import LoginPage from './pages/LoginPage'
@@ -160,6 +161,81 @@ function OrbitRoute({ children }: { children: React.ReactNode }) {
   return isOrbitEnabled ? <>{children}</> : <Navigate to="/launcher" replace />
 }
 
+function BIRoute({ children }: { children: React.ReactNode }) {
+  const { token, user } = useAuthStore()
+  if (!token) return <Navigate to="/login" replace />
+  const isBiEnabled =
+    user?.is_superuser ||
+    user?.role === 'admin' ||
+    Boolean(user?.accessible_modules?.some((m) => m === 'bi_dashboard' || m === 'bi'))
+  return isBiEnabled ? <>{children}</> : <Navigate to="/launcher" replace />
+}
+
+function ManagementRoute({ children }: { children: React.ReactNode }) {
+  const { token, user } = useAuthStore()
+  if (!token) return <Navigate to="/login" replace />
+  const isSysAdmin = user?.role === 'admin' || user?.is_superuser === true
+  const isCeo = user?.role === 'ceo'
+  const isFinanceWithView = user?.role === 'finance' && Boolean(user?.permissions?.view)
+  const canAccessManagement = isSysAdmin || isCeo || isFinanceWithView
+  return canAccessManagement ? <>{children}</> : <Navigate to="/launcher" replace />
+}
+
+function FinanceRoute({ children }: { children: React.ReactNode }) {
+  const { token, user } = useAuthStore()
+  if (!token) return <Navigate to="/login" replace />
+  const isSysAdmin = user?.role === 'admin' || user?.is_superuser === true
+  const hasFinanceModule =
+    isSysAdmin ||
+    Boolean(user?.accessible_modules?.includes('finance') || user?.accessible_modules?.includes('billing'))
+  const canViewFinance =
+    hasFinanceModule &&
+    (isSysAdmin || user?.role === 'ceo' || user?.role === 'finance' || Boolean(user?.permissions?.view))
+  return canViewFinance ? <>{children}</> : <Navigate to="/launcher" replace />
+}
+
+function FinanceIssueRoute({ children }: { children: React.ReactNode }) {
+  const { token, user } = useAuthStore()
+  if (!token) return <Navigate to="/login" replace />
+  const isSysAdmin = user?.role === 'admin' || user?.is_superuser === true
+  const hasFinanceModule =
+    isSysAdmin ||
+    Boolean(user?.accessible_modules?.includes('finance') || user?.accessible_modules?.includes('billing'))
+  const canIssue =
+    hasFinanceModule &&
+    (isSysAdmin || user?.role === 'ceo' || Boolean(user?.permissions?.issue))
+  return canIssue ? <>{children}</> : <Navigate to="/erp/billing" replace />
+}
+
+function CRMRoute({ children }: { children: React.ReactNode }) {
+  const { token, user } = useAuthStore()
+  if (!token) return <Navigate to="/login" replace />
+  const isSysAdmin = user?.role === 'admin' || user?.is_superuser === true
+  const hasCrmModule = isSysAdmin || Boolean(user?.accessible_modules?.includes('crm'))
+  const canAccessCrm =
+    hasCrmModule &&
+    (isSysAdmin ||
+      user?.role === 'ceo' ||
+      user?.role === 'sales' ||
+      user?.department === 'sales' ||
+      Boolean(user?.permissions?.crm))
+  return canAccessCrm ? <>{children}</> : <Navigate to="/launcher" replace />
+}
+
+function OfficeRoute({ children }: { children: React.ReactNode }) {
+  const { token, user } = useAuthStore()
+  if (!token) return <Navigate to="/login" replace />
+  const isSysAdmin = user?.role === 'admin' || user?.is_superuser === true
+  const hasOfficeModule = isSysAdmin || Boolean(user?.accessible_modules?.includes('office'))
+  return hasOfficeModule ? <>{children}</> : <Navigate to="/launcher" replace />
+}
+
+function ERPIndexResolver() {
+  const { user } = useAuthStore()
+  const target = getDefaultERPPath(user)
+  return <Navigate to={target === '/erp' ? '/launcher' : target} replace />
+}
+
 function PageFallback() {
   // Always the tenant's own logo, including while a sub-page lazy-loads.
   const logo = useBrandLogo()
@@ -186,18 +262,18 @@ export default function App() {
 
         {/* ═══ Unified ERP Layout ═══ */}
         <Route path="/erp" element={<PrivateRoute><ERPLayout /></PrivateRoute>}>
-          {/* Management Dashboard (ERP Overview) */}
-          <Route index element={<ManagementDashboardPage />} />
-          <Route path="management" element={<ManagementDashboardPage />} />
+          {/* Dynamic landing resolver: sends user to their primary permitted dashboard */}
+          <Route index element={<ERPIndexResolver />} />
+          <Route path="management" element={<ManagementRoute><ManagementDashboardPage /></ManagementRoute>} />
 
           {/* Finance (Billing) */}
-          <Route path="billing" element={<BillingDashboardPage />} />
-          <Route path="billing/issue" element={<BillingIssuePage />} />
-          <Route path="billing/invoices" element={<BillingInvoicesPage />} />
-          <Route path="billing/payments" element={<BillingPaymentsPage />} />
-          <Route path="billing/performance" element={<BillingPerformancePage />} />
-          <Route path="billing/payers" element={<BillingPayersPage />} />
-          <Route path="billing/services" element={<BillingServicesPage />} />
+          <Route path="billing" element={<FinanceRoute><BillingDashboardPage /></FinanceRoute>} />
+          <Route path="billing/issue" element={<FinanceIssueRoute><BillingIssuePage /></FinanceIssueRoute>} />
+          <Route path="billing/invoices" element={<FinanceRoute><BillingInvoicesPage /></FinanceRoute>} />
+          <Route path="billing/payments" element={<FinanceRoute><BillingPaymentsPage /></FinanceRoute>} />
+          <Route path="billing/performance" element={<FinanceRoute><BillingPerformancePage /></FinanceRoute>} />
+          <Route path="billing/payers" element={<FinanceRoute><BillingPayersPage /></FinanceRoute>} />
+          <Route path="billing/services" element={<SystemAdminRoute><BillingServicesPage /></SystemAdminRoute>} />
           <Route path="chart-of-accounts" element={<ChartOfAccountsPage />} />
           <Route path="invoices" element={<InvoicesPage />} />
           <Route path="receipts" element={<ReceiptsPage />} />
@@ -260,19 +336,18 @@ export default function App() {
           <Route path="service-management/sla" element={<SLAPage />} />
           <Route path="service-management/maintenance" element={<MaintenancePage />} />
           {/* CRM */}
-          <Route path="crm" element={<CRMPage />} />
-          <Route path="crm/leads" element={<LeadsPage />} />
-          <Route path="crm/opportunities" element={<OpportunitiesPage />} />
-          <Route path="crm/activities" element={<ActivitiesPage />} />
-          <Route path="crm/campaigns" element={<CampaignsPage />} />
+          <Route path="crm" element={<CRMRoute><CRMPage /></CRMRoute>} />
+          <Route path="crm/leads" element={<CRMRoute><LeadsPage /></CRMRoute>} />
+          <Route path="crm/opportunities" element={<CRMRoute><OpportunitiesPage /></CRMRoute>} />
+          <Route path="crm/activities" element={<CRMRoute><ActivitiesPage /></CRMRoute>} />
+          <Route path="crm/campaigns" element={<CRMRoute><CampaignsPage /></CRMRoute>} />
+          <Route path="crm/sms" element={<CRMRoute><SmsPage /></CRMRoute>} />
           {/* Office */}
-          <Route path="office" element={<OfficeWorkbenchPage />} />
-          <Route path="office/correspondence" element={<OfficeLettersPage />} />
-          <Route path="office/correspondence/:id" element={<OfficeCorrespondencePage />} />
-          <Route path="office/contracts" element={<OfficeContractsPage />} />
+          <Route path="office" element={<OfficeRoute><OfficeWorkbenchPage /></OfficeRoute>} />
+          <Route path="office/correspondence" element={<OfficeRoute><OfficeLettersPage /></OfficeRoute>} />
+          <Route path="office/correspondence/:id" element={<OfficeRoute><OfficeCorrespondencePage /></OfficeRoute>} />
+          <Route path="office/contracts" element={<OfficeRoute><OfficeContractsPage /></OfficeRoute>} />
           <Route path="profile" element={<UserSettingsPage />} />
-          <Route path="management" element={<ManagementDashboardPage />} />
-          <Route path="crm/sms" element={<SmsPage />} />
           {/* HR */}
           <Route path="hr" element={<HRDashboard />} />
           <Route path="hr/employees" element={<EmployeesPage />} />
@@ -335,8 +410,8 @@ export default function App() {
         <Route path="/orbit/:conversationId" element={<OrbitRoute><OrbitLayout /></OrbitRoute>} />
         <Route path="/messages" element={<Navigate to="/orbit" replace />} />
         <Route path="/messages/:conversationId" element={<Navigate to="/orbit" replace />} />
-        <Route path="/dashboards" element={<PrivateRoute><DashboardListPage /></PrivateRoute>} />
-        <Route path="/dashboards/:id" element={<PrivateRoute><DashboardBuilderPage /></PrivateRoute>} />
+        <Route path="/dashboards" element={<BIRoute><DashboardListPage /></BIRoute>} />
+        <Route path="/dashboards/:id" element={<BIRoute><DashboardBuilderPage /></BIRoute>} />
         <Route path="/admin/assignments" element={<PrivateRoute><DashboardAssignPage /></PrivateRoute>} />
         <Route path="/data/upload" element={<PrivateRoute><DataUploadPage /></PrivateRoute>} />
         <Route path="/db-manager" element={<SystemAdminRoute><DatabaseManagerPage /></SystemAdminRoute>} />

@@ -61,15 +61,41 @@ class UserSerializer(serializers.ModelSerializer):
         return {flag: bool(getattr(obj, flag, False)) for flag in PERMISSION_FLAGS}
 
     def get_accessible_modules(self, obj):
-        """Return the list of module slugs this user can access."""
-        # Admins and staff can access every module regardless of subscription.
-        if obj.is_staff or obj.role == "admin":
+        """Return the list of module slugs this user can access based on company entitlement and user role/permissions."""
+        is_sysadmin = bool(getattr(obj, "is_superuser", False) or obj.role == "admin")
+        if is_sysadmin:
             return ALL_MODULE_IDS
+
         if not obj.company:
-            return []
-        enabled = obj.company.enabled_modules or []
-        # TODO: filter by role when per-module role gates are added
-        return enabled
+            raw_modules = [m for m in ("bi_dashboard", "finance", "crm", "office") if m in ALL_MODULE_IDS]
+        else:
+            raw_modules = list(obj.company.enabled_modules or [])
+
+        # System Settings and DB Manager are strictly for System Administrator
+        enabled = [m for m in raw_modules if m not in ("settings", "db_manager")]
+
+        # CEO has access to all company-enabled business modules
+        if obj.role == "ceo":
+            return enabled
+
+        # Per-module role and permission gating for other staff/users
+        filtered = []
+        for m in enabled:
+            if m in ("finance", "billing"):
+                if obj.role == "finance" or getattr(obj, "can_view", False):
+                    filtered.append(m)
+            elif m == "crm":
+                if obj.role == "sales" or getattr(obj, "department", "") == "sales" or getattr(obj, "can_view_crm", False):
+                    filtered.append(m)
+            elif m in ("bi_dashboard", "bi"):
+                # BI is accessible to management, finance, sales, or users with view permission
+                if obj.role in ("finance", "sales") or getattr(obj, "can_view", False):
+                    filtered.append(m)
+            else:
+                # Other modules (e.g., office, orbit) are accessible to all company members when enabled
+                filtered.append(m)
+
+        return filtered
 
 
 class CompanySerializer(serializers.ModelSerializer):

@@ -55,7 +55,16 @@ export default function ModuleSwitcherNav({
     user?.role === 'admin' ||
     Boolean(user?.accessible_modules?.some((m) => m === 'orbit' || m === 'messaging'))
 
-  const filteredModules = MODULES.filter((m) => m.id !== 'orbit' || isOrbitEnabled)
+  const isBiEnabled =
+    user?.is_superuser ||
+    user?.role === 'admin' ||
+    Boolean(user?.accessible_modules?.some((m) => m === 'bi_dashboard' || m === 'bi'))
+
+  const filteredModules = MODULES.filter((m) => {
+    if (m.id === 'orbit') return isOrbitEnabled
+    if (m.id === 'bi') return isBiEnabled
+    return true
+  })
 
   return (
     <nav

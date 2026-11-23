@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useLocation, useNavigate, NavLink } from 'react-router-dom'
 import {
   LayoutGrid,
@@ -13,7 +13,7 @@ import {
 import { useMessagingStore } from '../store/messagingStore'
 import { useAuthStore } from '../store/authStore'
 import { useQuickActions } from '../lib/quickActions'
-import { ERP_NAV_SECTIONS } from '../lib/erpNavigation'
+import { getFilteredNavSections } from '../lib/erpNavigation'
 import { toPersianDigits } from '../pages/messaging/presenceUtils'
 
 const SHEET_TRANSITION_MS = 250
@@ -39,15 +39,21 @@ export default function MobileAppNavBar() {
     setErpMenuOpen(false)
   }, [location.pathname])
 
-  const isSystemAdmin = user?.role === 'admin' || user?.is_superuser === true
-  const sections = isSystemAdmin
-    ? ERP_NAV_SECTIONS
-    : ERP_NAV_SECTIONS.filter((s) => s.id !== 'settings')
+  const sections = useMemo(() => getFilteredNavSections(user), [user])
+
+  const isBiEnabled =
+    user?.is_superuser ||
+    user?.role === 'admin' ||
+    Boolean(user?.accessible_modules?.some((m) => m === 'bi_dashboard' || m === 'bi'))
 
   const isOrbitEnabled =
     user?.is_superuser ||
     user?.role === 'admin' ||
     Boolean(user?.accessible_modules?.some((m) => m === 'orbit' || m === 'messaging'))
+
+  const totalTabs = 3 + (isBiEnabled ? 1 : 0) + (isOrbitEnabled ? 1 : 0)
+  const gridColsClass =
+    totalTabs === 5 ? 'grid-cols-5' : totalTabs === 4 ? 'grid-cols-4' : 'grid-cols-3'
 
   const goFromQuick = (to: string) => {
     setQuickOpen(false)
@@ -73,7 +79,7 @@ export default function MobileAppNavBar() {
         style={{ paddingBottom: 'max(0.4rem, env(safe-area-inset-bottom, 0px))' }}
         dir="rtl"
       >
-        <div className={`grid items-end relative py-1 px-1 ${isOrbitEnabled ? 'grid-cols-5' : 'grid-cols-4'}`}>
+        <div className={`grid items-end relative py-1 px-1 ${gridColsClass}`}>
           {/* Tab 1: Launcher */}
           <NavLink
             to="/launcher"
@@ -91,22 +97,24 @@ export default function MobileAppNavBar() {
             <span className="text-[10px] mt-0.5">لانچر</span>
           </NavLink>
 
-          {/* Tab 2: BI Dashboards */}
-          <NavLink
-            to="/dashboards"
-            onClick={() => { setQuickOpen(false); setErpMenuOpen(false) }}
-            className={`group relative flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all duration-200 active:scale-95 ${
-              isBiActive
-                ? 'text-nx-blue dark:text-nx-teal font-bold'
-                : 'text-slate-500 hover:text-slate-800 dark:text-nx-mist dark:hover:text-white'
-            }`}
-          >
-            {isBiActive && (
-              <span className="absolute inset-x-1 inset-y-0.5 -z-10 rounded-xl bg-nx-blue/10 dark:bg-nx-teal/15 transition-all" />
-            )}
-            <BarChart3 className="w-5 h-5 transition-transform group-hover:scale-105" />
-            <span className="text-[10px] mt-0.5">هوش تجاری</span>
-          </NavLink>
+          {/* Tab 2: BI Dashboards (if enabled for organization) */}
+          {isBiEnabled && (
+            <NavLink
+              to="/dashboards"
+              onClick={() => { setQuickOpen(false); setErpMenuOpen(false) }}
+              className={`group relative flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all duration-200 active:scale-95 ${
+                isBiActive
+                  ? 'text-nx-blue dark:text-nx-teal font-bold'
+                  : 'text-slate-500 hover:text-slate-800 dark:text-nx-mist dark:hover:text-white'
+              }`}
+            >
+              {isBiActive && (
+                <span className="absolute inset-x-1 inset-y-0.5 -z-10 rounded-xl bg-nx-blue/10 dark:bg-nx-teal/15 transition-all" />
+              )}
+              <BarChart3 className="w-5 h-5 transition-transform group-hover:scale-105" />
+              <span className="text-[10px] mt-0.5">هوش تجاری</span>
+            </NavLink>
+          )}
 
           {/* Tab 3 (Center Slot): Floating Quick Action Button (+) */}
           <div className="flex items-center justify-center relative h-10">

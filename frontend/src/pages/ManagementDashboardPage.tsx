@@ -65,7 +65,13 @@ export default function ManagementDashboardPage() {
       })
       .catch((err) => {
         console.error('Error fetching management summary:', err);
-        if (active) toast('دریافت شاخص‌های مدیریتی انجام نشد', 'error');
+        if (active) {
+          if (err.response?.status === 403) {
+            toast('شما مجوز دسترسی به داشبورد مدیریتی را ندارید', 'error');
+          } else {
+            toast('دریافت شاخص‌های مدیریتی انجام نشد', 'error');
+          }
+        }
       })
       .finally(() => {
         if (active) setLoading(false);
