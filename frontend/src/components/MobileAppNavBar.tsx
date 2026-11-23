@@ -39,10 +39,15 @@ export default function MobileAppNavBar() {
     setErpMenuOpen(false)
   }, [location.pathname])
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'ceo' || Boolean(user?.isStaff)
-  const sections = isAdmin
+  const isSystemAdmin = user?.role === 'admin' || user?.is_superuser === true
+  const sections = isSystemAdmin
     ? ERP_NAV_SECTIONS
     : ERP_NAV_SECTIONS.filter((s) => s.id !== 'settings')
+
+  const isOrbitEnabled =
+    user?.is_superuser ||
+    user?.role === 'admin' ||
+    Boolean(user?.accessible_modules?.some((m) => m === 'orbit' || m === 'messaging'))
 
   const goFromQuick = (to: string) => {
     setQuickOpen(false)
@@ -68,7 +73,7 @@ export default function MobileAppNavBar() {
         style={{ paddingBottom: 'max(0.4rem, env(safe-area-inset-bottom, 0px))' }}
         dir="rtl"
       >
-        <div className="grid grid-cols-5 items-end relative py-1 px-1">
+        <div className={`grid items-end relative py-1 px-1 ${isOrbitEnabled ? 'grid-cols-5' : 'grid-cols-4'}`}>
           {/* Tab 1: Launcher */}
           <NavLink
             to="/launcher"
@@ -122,29 +127,31 @@ export default function MobileAppNavBar() {
             </button>
           </div>
 
-          {/* Tab 4: Messenger (Orbit) */}
-          <NavLink
-            to="/orbit"
-            onClick={() => { setQuickOpen(false); setErpMenuOpen(false) }}
-            className={`group relative flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all duration-200 active:scale-95 ${
-              isOrbitActive
-                ? 'text-nx-blue dark:text-nx-teal font-bold'
-                : 'text-slate-500 hover:text-slate-800 dark:text-nx-mist dark:hover:text-white'
-            }`}
-          >
-            {isOrbitActive && (
-              <span className="absolute inset-x-1 inset-y-0.5 -z-10 rounded-xl bg-nx-blue/10 dark:bg-nx-teal/15 transition-all" />
-            )}
-            <div className="relative">
-              <MessageSquare className="w-5 h-5 transition-transform group-hover:scale-105" />
-              {totalUnreadChat > 0 && (
-                <span className="absolute -top-1.5 -right-2.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-nx-navy animate-pulse">
-                  {toPersianDigits(totalUnreadChat)}
-                </span>
+          {/* Tab 4: Messenger (Orbit) — visible only if enabled for organization */}
+          {isOrbitEnabled && (
+            <NavLink
+              to="/orbit"
+              onClick={() => { setQuickOpen(false); setErpMenuOpen(false) }}
+              className={`group relative flex flex-col items-center justify-center py-1.5 px-0.5 rounded-xl transition-all duration-200 active:scale-95 ${
+                isOrbitActive
+                  ? 'text-nx-blue dark:text-nx-teal font-bold'
+                  : 'text-slate-500 hover:text-slate-800 dark:text-nx-mist dark:hover:text-white'
+              }`}
+            >
+              {isOrbitActive && (
+                <span className="absolute inset-x-1 inset-y-0.5 -z-10 rounded-xl bg-nx-blue/10 dark:bg-nx-teal/15 transition-all" />
               )}
-            </div>
-            <span className="text-[10px] mt-0.5">پیام‌رسان</span>
-          </NavLink>
+              <div className="relative">
+                <MessageSquare className="w-5 h-5 transition-transform group-hover:scale-105" />
+                {totalUnreadChat > 0 && (
+                  <span className="absolute -top-1.5 -right-2.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[9px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-nx-navy animate-pulse">
+                    {toPersianDigits(totalUnreadChat)}
+                  </span>
+                )}
+              </div>
+              <span className="text-[10px] mt-0.5">پیام‌رسان</span>
+            </NavLink>
+          )}
 
           {/* Tab 5: ERP Subsystem Menu */}
           <button

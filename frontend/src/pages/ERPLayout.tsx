@@ -83,13 +83,13 @@ export default function ERPLayout() {
   }, [location.pathname])
 
   // Breadcrumb data (computed once per render)
-  // Only the three licensed modules (plus settings for admins) are reachable.
-  const isAdmin = user?.role === 'admin' || user?.role === 'ceo'
-  const allowedPrefixes = isAdmin
+  // Only the licensed modules (plus settings EXCLUSIVELY for main system admin) are reachable.
+  const isSystemAdmin = user?.role === 'admin' || user?.is_superuser === true
+  const allowedPrefixes = isSystemAdmin
     ? ['/erp/management', '/erp/billing', '/erp/crm', '/erp/office', '/erp/settings', '/erp/notifications', '/erp/profile']
     : ['/erp/management', '/erp/billing', '/erp/crm', '/erp/office', '/erp/notifications', '/erp/profile']
-  const canIssue = isAdmin || Boolean(user?.permissions?.issue)
-  const sections = (isAdmin ? ERP_NAV_SECTIONS : ERP_NAV_SECTIONS.filter((section) => section.id !== 'settings'))
+  const canIssue = isSystemAdmin || user?.role === 'ceo' || Boolean(user?.permissions?.issue)
+  const sections = (isSystemAdmin ? ERP_NAV_SECTIONS : ERP_NAV_SECTIONS.filter((section) => section.id !== 'settings'))
     .map((section) =>
       section.id === 'finance'
         ? { ...section, items: section.items.filter((item) => item.to !== '/erp/billing/issue' || canIssue) }

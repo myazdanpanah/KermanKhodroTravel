@@ -20,6 +20,13 @@ def _is_admin_or_ceo(user):
     return user.role in ("admin", "ceo") or user.is_staff or getattr(user, "is_superuser", False) or getattr(user, "can_manage_users", False)
 
 
+def _is_system_admin(user):
+    """True exclusively for the main system administrator (role 'admin' or superuser)."""
+    if not user or not getattr(user, "is_authenticated", False):
+        return False
+    return user.role == "admin" or getattr(user, "is_superuser", False)
+
+
 @api_view(["POST"])
 @permission_classes([permissions.AllowAny])
 @throttle_classes([])
@@ -477,13 +484,13 @@ def role_detail(request, pk):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-# ---- Module Management (admin/CEO only) ----
+# ---- Module Management (system administrator only) ----
 
 @api_view(["GET", "PUT"])
 def company_modules(request, pk):
     """Get or update the enabled modules for a company."""
-    if not _is_admin_or_ceo(request.user):
-        return Response({"error": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
+    if not _is_system_admin(request.user):
+        return Response({"error": "Permission denied. Only System Administrator can manage modules."}, status=status.HTTP_403_FORBIDDEN)
     try:
         company = Company.objects.get(pk=pk)
     except Company.DoesNotExist:
@@ -514,13 +521,19 @@ def user_modules(request):
     if not user.is_authenticated:
         return Response([])
 
-    if user.is_staff or user.role in ("admin", "ceo") or getattr(user, "is_superuser", False):
-        modules = ALL_MODULE_IDS
+    is_sysadmin = getattr(user, "is_superuser", False) or user.role == "admin"
+
+    if is_sysadmin:
+        modules = list(ALL_MODULE_IDS)
     elif user.company:
-        modules = user.company.enabled_modules or []
+        modules = list(user.company.enabled_modules or [])
     else:
-        # Default fallback to all modules if company not assigned yet
-        modules = ALL_MODULE_IDS
+        # Default fallback to delivered business modules if company not assigned yet
+        modules = [m for m in ("bi_dashboard", "finance", "crm", "office") if m in ALL_MODULE_IDS]
+
+    # System Settings and Database Studio & Editor are strictly for System Administrator
+    if not is_sysadmin:
+        modules = [m for m in modules if m not in ("settings", "db_manager")]
 
     # Return module details
     module_map = {m[0]: m[1] for m in MODULE_CHOICES}
@@ -578,9 +591,9 @@ def company_branding(request):
                           "Ask a superuser to assign your account to a company."},
                 status=status.HTTP_403_FORBIDDEN,
             )
-        if not _is_admin_or_ceo(request.user):
+        if not _is_system_admin(request.user):
             return Response(
-                {"error": "Only a CEO or Admin can change system branding"},
+                {"error": "Only System Administrator can change system branding"},
                 status=status.HTTP_403_FORBIDDEN,
             )
         # Explicit logo removal (a blank ImageField value would be rejected)

@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { useAuthStore } from '../store/authStore'
 import {
   LayoutGrid,
   BarChart3,
@@ -48,12 +49,20 @@ export default function ModuleSwitcherNav({
   active,
   className = '',
 }: ModuleSwitcherNavProps) {
+  const { user } = useAuthStore()
+  const isOrbitEnabled =
+    user?.is_superuser ||
+    user?.role === 'admin' ||
+    Boolean(user?.accessible_modules?.some((m) => m === 'orbit' || m === 'messaging'))
+
+  const filteredModules = MODULES.filter((m) => m.id !== 'orbit' || isOrbitEnabled)
+
   return (
     <nav
       aria-label="ماژول‌های سیستم"
       className={`hidden md:flex items-center gap-1 p-0.5 rounded-xl border border-slate-200/80 bg-slate-100/60 dark:border-nx-navy-border/60 dark:bg-nx-navy/50 ${className}`}
     >
-      {MODULES.map((item) => {
+      {filteredModules.map((item) => {
         const Icon = item.icon
         const isActive = active === item.id
 

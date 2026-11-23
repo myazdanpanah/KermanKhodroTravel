@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Responsive, WidthProvider } from 'react-grid-layout'
 import { useDashboardStore, controlFiltersToQuery, type DashboardPageConfig, type DashboardFilterControl } from '../store/dashboardStore'
@@ -15,7 +15,7 @@ import ModuleSwitcherNav from '../components/ModuleSwitcherNav'
 import MobileAppNavBar from '../components/MobileAppNavBar'
 import { useBrandLogo, useBrandingStore } from '../store/brandingStore'
 import { useToast } from '../components/Toast'
-import { Plus, ArrowRight, Settings, Trash2, Share2, X, Undo2, Redo2, Filter, XCircle, Download, Maximize2, Minimize2, Play, FileText, Copy, RefreshCw, Clock, ChevronDown, Lock, Unlock, BarChart3 } from 'lucide-react'
+import { Plus, ArrowRight, Settings, Trash2, Share2, X, Undo2, Redo2, Filter, XCircle, Download, Maximize2, Minimize2, Play, FileText, Copy, RefreshCw, Clock, ChevronDown, Lock, Unlock, BarChart3, Monitor, Smartphone, EyeOff } from 'lucide-react'
 import { ALL_ROLES } from '../utils/roles'
 import { useAuthStore } from '../store/authStore'
 import { computeResponsiveLayout } from '../utils/layoutUtils'
@@ -33,7 +33,7 @@ export default function DashboardBuilderPage() {
   const { id } = useParams<{ id: string }>()
   const {
     pages, activePageId, setPages, setActivePage,
-    layout, widgets, setLayout, setWidgets, addWidget, removeWidget,
+    layout, widgets, setLayout, setWidgets, addWidget, removeWidget, updateWidget,
     setDashboard, filters,    setFilter, removeCrossFilter, filterControls,
     setFilterControls, canUndo, canRedo, undo, redo, pushLayoutSnapshot,
     isDesignLocked, sessionUnlocked, setDesignLockState,
@@ -298,12 +298,82 @@ export default function DashboardBuilderPage() {
   // Auto-refresh dashboard at configured interval, preserving the active page
   const activePageIdRef = useRef(activePageId)
   activePageIdRef.current = activePageId
-  const currentPageWidgets = activePage?.widgets || widgets
+  const currentPageWidgets = (activePage?.widgets || widgets) as Array<{
+    id: string
+    title: string
+    chartType: string
+    datasetId: number | null
+    chartConfig: Record<string, unknown>
+    queryConfig: Record<string, unknown>
+    columnTypes?: Record<string, string>
+  }>
   // Effective device: builder override beats viewport auto-detection.
   const editingMobile = deviceMode === 'mobile' || (deviceMode === 'auto' && isMobile)
   const desktopLayout = activePage?.layout || layout
   const mobileLayout = activePage?.mobileLayout || computeResponsiveLayout(desktopLayout, 12)
   const currentPageLayout = editingMobile ? mobileLayout : desktopLayout
+
+  // Device visibility helpers
+  const isWidgetVisibleOnDevice = useCallback(
+    (w: { chartConfig?: Record<string, unknown> }) => {
+      const cfg = (w.chartConfig || {}) as Record<string, unknown>
+      return editingMobile ? cfg.showOnMobile !== false : cfg.showOnDesktop !== false
+    },
+    [editingMobile]
+  )
+
+  const isViewOnlyMode = presentMode || isEffectiveDesignLocked || !canEdit
+
+  const displayedWidgets = useMemo(() => {
+    if (isViewOnlyMode) {
+      return currentPageWidgets.filter(isWidgetVisibleOnDevice)
+    }
+    return currentPageWidgets
+  }, [currentPageWidgets, isViewOnlyMode, isWidgetVisibleOnDevice])
+
+  const displayedLayout = useMemo(() => {
+    if (isViewOnlyMode) {
+      const visibleIds = new Set(displayedWidgets.map((w) => w.id))
+      return currentPageLayout.filter((item) => visibleIds.has(item.i))
+    }
+    return currentPageLayout
+  }, [currentPageLayout, displayedWidgets, isViewOnlyMode])
+
+  const toggleWidgetDeviceVisibility = useCallback(
+    async (widgetId: string, device: 'desktop' | 'mobile') => {
+      if (isEffectiveDesignLocked || !canEdit) return
+      const widget = currentPageWidgets.find((w) => w.id === widgetId)
+      if (!widget) return
+      const currentChartConfig = (widget.chartConfig || {}) as Record<string, unknown>
+      const key = device === 'desktop' ? 'showOnDesktop' : 'showOnMobile'
+      const currentVal = currentChartConfig[key] !== false
+      const nextVal = !currentVal
+      const newChartConfig = { ...currentChartConfig, [key]: nextVal }
+
+      updateWidget(widgetId, { chartConfig: newChartConfig })
+
+      if (id) {
+        try {
+          await api.put(`/dashboards/${id}/widgets/${widgetId}/`, {
+            title: widget.title,
+            chart_type: widget.chartType,
+            dataset: widget.datasetId,
+            chart_config: newChartConfig,
+            query_config: widget.queryConfig,
+          })
+          toast(
+            nextVal
+              ? `نمایش در ${device === 'desktop' ? 'دسکتاپ' : 'موبایل'} فعال شد`
+              : `نمایش در ${device === 'desktop' ? 'دسکتاپ' : 'موبایل'} غیرفعال شد`,
+            'success'
+          )
+        } catch {
+          toast('خطا در ذخیره وضعیت نمایش دستگاه', 'error')
+        }
+      }
+    },
+    [isEffectiveDesignLocked, canEdit, currentPageWidgets, updateWidget, id, toast]
+  )
 
   // Debounced snapshot push — only fires once per drag/resize session
   const snapshotTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -584,7 +654,10 @@ export default function DashboardBuilderPage() {
 
   // Reusable widget card renderer (used in both edit mode and preview modes)
   const renderWidgetCard = (w: { id: string; title: string; chartType: string; datasetId: number | null; chartConfig: Record<string, unknown>; queryConfig: Record<string, unknown>; columnTypes?: Record<string, string> }) => {
-    const ws = (w.chartConfig as Record<string, unknown>)?.widgetStyle as { shadow?: string; borderRadius?: number } | undefined
+    const cfg = (w.chartConfig || {}) as Record<string, unknown>
+    const isVisibleOnDevice = editingMobile ? cfg.showOnMobile !== false : cfg.showOnDesktop !== false
+    const isHiddenOnCurrentDevice = !isVisibleOnDevice
+    const ws = cfg.widgetStyle as { shadow?: string; borderRadius?: number } | undefined
     const shadow = ws?.shadow === 'none' ? '' : ws?.shadow === 'md' ? 'shadow-md' : ws?.shadow === 'lg' ? 'shadow-lg' : 'shadow-sm'
     const radius = ws?.borderRadius ?? 16
     // Check if this widget has active cross-chart filters applied to it
@@ -592,10 +665,16 @@ export default function DashboardBuilderPage() {
     const hasActiveFilter = activeFilters.length > 0
     return (
       <div key={w.id} className="group h-full" style={{ direction: 'rtl', textAlign: 'right' }}>
-        <div className={`bg-white dark:bg-nx-navy border h-full flex flex-col overflow-hidden ${shadow} hover:shadow-md transition ${hasActiveFilter ? 'border-nx-blue dark:border-nx-blue ring-1 ring-nx-blue/10 dark:ring-nx-blue' : 'border-nx-border dark:border-nx-navy-border'}`} style={{ borderRadius: radius }}>
+        <div className={`bg-white dark:bg-nx-navy border h-full flex flex-col overflow-hidden ${shadow} hover:shadow-md transition ${
+          isHiddenOnCurrentDevice
+            ? 'border-dashed border-amber-400 dark:border-amber-500 bg-amber-50/15 dark:bg-amber-950/20'
+            : hasActiveFilter
+            ? 'border-nx-blue dark:border-nx-blue ring-1 ring-nx-blue/10 dark:ring-nx-blue'
+            : 'border-nx-border dark:border-nx-navy-border'
+        }`} style={{ borderRadius: radius }}>
           <div className="relative flex items-center px-4 py-2 border-b border-nx-border dark:border-nx-navy-border shrink-0">
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-              <span className="text-sm font-medium text-nx-navy dark:text-slate-100 truncate max-w-[60%] text-center">
+              <span className="text-sm font-medium text-nx-navy dark:text-slate-100 truncate max-w-[50%] text-center">
                 {w.title}
               </span>
             </div>
@@ -618,6 +697,16 @@ export default function DashboardBuilderPage() {
                       </button>
                     </div>
                   ))}
+                </div>
+              )}
+              {/* Hidden on current device badge */}
+              {isHiddenOnCurrentDevice && (
+                <div
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200 shrink-0"
+                  title={`این نمودار در نمای ${editingMobile ? 'موبایل' : 'دسکتاپ'} برای بینندگان مخفی است`}
+                >
+                  <EyeOff className="w-2.5 h-2.5" />
+                  <span>مخفی در {editingMobile ? 'موبایل' : 'دسکتاپ'}</span>
                 </div>
               )}
               {/* Drag handle — hidden when design is locked */}
@@ -706,6 +795,34 @@ export default function DashboardBuilderPage() {
               )}
               {!isEffectiveDesignLocked && canEdit && (
                 <>
+                  {/* Quick Device Visibility Switches */}
+                  <div className="flex items-center gap-0.5 ml-0.5 border-l border-slate-200 dark:border-nx-navy-border/80 pl-1">
+                    <button
+                      type="button"
+                      onClick={() => toggleWidgetDeviceVisibility(w.id, 'desktop')}
+                      className={`p-1 rounded transition text-xs ${
+                        cfg.showOnDesktop !== false
+                          ? 'text-nx-blue dark:text-nx-teal hover:bg-nx-blue/10'
+                          : 'text-slate-300 dark:text-slate-600 hover:text-slate-500'
+                      }`}
+                      title={`نمایش در دسکتاپ: ${cfg.showOnDesktop !== false ? 'فعال (کلیک برای غیرفعال‌سازی)' : 'غیرفعال (کلیک برای فعال‌سازی)'}`}
+                    >
+                      <Monitor className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggleWidgetDeviceVisibility(w.id, 'mobile')}
+                      className={`p-1 rounded transition text-xs ${
+                        cfg.showOnMobile !== false
+                          ? 'text-nx-blue dark:text-nx-teal hover:bg-nx-blue/10'
+                          : 'text-slate-300 dark:text-slate-600 hover:text-slate-500'
+                      }`}
+                      title={`نمایش در موبایل: ${cfg.showOnMobile !== false ? 'فعال (کلیک برای غیرفعال‌سازی)' : 'غیرفعال (کلیک برای فعال‌سازی)'}`}
+                    >
+                      <Smartphone className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
                   <button
                     onClick={() => {
                       if (isMobile) {
@@ -786,11 +903,11 @@ export default function DashboardBuilderPage() {
         </div>
         {/* Grid without editing controls */}
         <main className="px-4 sm:px-6 pb-[calc(112px+env(safe-area-inset-bottom,0px))] lg:pb-12">
-          {currentPageWidgets.length > 0 && (
+          {displayedWidgets.length > 0 && (
             <div className="react-grid-layout-wrapper">
               <ResponsiveGridLayout
                 className="layout"
-                layouts={{ lg: currentPageLayout, md: currentPageLayout, sm: currentPageLayout }}
+                layouts={{ lg: displayedLayout, md: displayedLayout, sm: displayedLayout }}
                 breakpoints={{ lg: 1200, md: 996, sm: 768 }}
                 cols={{ lg: 12, md: 9, sm: 6 }}
                 rowHeight={60}
@@ -799,7 +916,7 @@ export default function DashboardBuilderPage() {
                 useCSSTransforms
                 compactType="vertical"
               >
-                {currentPageWidgets.map((w) => {
+                {displayedWidgets.map((w) => {
                   const ws = (w.chartConfig as Record<string, unknown>)?.widgetStyle as { shadow?: string; borderRadius?: number } | undefined
                   const shadow = ws?.shadow === 'none' ? '' : ws?.shadow === 'md' ? 'shadow-md' : ws?.shadow === 'lg' ? 'shadow-lg' : 'shadow-sm'
                   const radius = ws?.borderRadius ?? 16
@@ -1098,16 +1215,20 @@ export default function DashboardBuilderPage() {
 
       {/* Dashboard Grid */}
       <main className="px-4 sm:px-6 pt-4 pb-[calc(130px+env(safe-area-inset-bottom,0px))] lg:pb-16">
-        {currentPageWidgets.length === 0 ? (
+        {displayedWidgets.length === 0 ? (
           <div className="text-center py-20">
             <Settings className="w-16 h-16 text-slate-600 dark:text-slate-200 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-nx-navy dark:text-slate-100 mb-2">
-              {activePage ? `${activePage.name} خالی است` : 'داشبورد خالی است'}
+              {currentPageWidgets.length > 0
+                ? `نموداری برای نمایش در حالت ${editingMobile ? 'موبایل' : 'دسکتاپ'} فعال نیست`
+                : activePage ? `${activePage.name} خالی است` : 'داشبورد خالی است'}
             </h3>
-            <p className="text-slate-600 dark:text-slate-200 mb-6">
-              {isEffectiveDesignLocked ? 'چینش این داشبورد قفل است و افزودن نمودار بدون رمز امکان‌پذیر نیست.' : 'اولین نمودار خود را اضافه کنید'}
+            <p className="text-slate-600 dark:text-slate-200 mb-6 text-sm">
+              {currentPageWidgets.length > 0
+                ? `تمامی نمودارهای این صفحه برای حالت ${editingMobile ? 'موبایل' : 'دسکتاپ'} غیرفعال شده‌اند.`
+                : isEffectiveDesignLocked ? 'چینش این داشبورد قفل است و افزودن نمودار بدون رمز امکان‌پذیر نیست.' : 'اولین نمودار خود را اضافه کنید'}
             </p>
-            {!isEffectiveDesignLocked && (
+            {!isEffectiveDesignLocked && canEdit && (
               <button
                 onClick={addNewWidget}
                 className="px-6 py-3 bg-nx-blue text-white rounded-xl hover:bg-nx-blue transition font-medium"
@@ -1120,7 +1241,7 @@ export default function DashboardBuilderPage() {
           <div className="react-grid-layout-wrapper">
             <ResponsiveGridLayout
               className={`layout ${isDragging ? 'is-dragging' : ''}`}
-              layouts={{ lg: currentPageLayout, md: currentPageLayout, sm: currentPageLayout }}
+              layouts={{ lg: displayedLayout, md: displayedLayout, sm: displayedLayout }}
               breakpoints={{ lg: 1200, md: 996, sm: 768 }}
               cols={{ lg: 12, md: 9, sm: 6 }}
               rowHeight={60}
@@ -1135,7 +1256,7 @@ export default function DashboardBuilderPage() {
               compactType="vertical"
               draggableHandle='.drag-handle'
             >
-              {currentPageWidgets.map((w) => fullScreenWidget === w.id ? null : renderWidgetCard(w))}
+              {displayedWidgets.map((w) => fullScreenWidget === w.id ? null : renderWidgetCard(w))}
             </ResponsiveGridLayout>
 
             {/* Bottom Buffer & Growth Area for Mobile/Touch Designer */}

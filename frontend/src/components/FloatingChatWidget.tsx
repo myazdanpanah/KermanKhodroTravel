@@ -98,11 +98,17 @@ export default function FloatingChatWidget({
     }
   }
 
-  // Initialize conversations and websocket connection
+  const isOrbitEnabled =
+    user?.is_superuser ||
+    user?.role === 'admin' ||
+    Boolean(user?.accessible_modules?.some((m) => m === 'orbit' || m === 'messaging'))
+
+  // Initialize conversations and websocket connection (only if orbit is enabled)
   useEffect(() => {
+    if (!isOrbitEnabled) return
     fetchConversations()
     initWebSocket()
-  }, [])
+  }, [isOrbitEnabled])
 
   // Auto-scroll on new messages in chat view
   useEffect(() => {
@@ -181,6 +187,8 @@ export default function FloatingChatWidget({
     isDirect &&
     activeConversation?.other_user &&
     presenceMap[activeConversation.other_user.id] === 'online'
+
+  if (!isOrbitEnabled) return null
 
   return (
     <>

@@ -250,25 +250,24 @@ export default function LauncherPage() {
   }, [])
 
   const processAndSetModules = (rawModules: ModuleInfo[]) => {
-    const delivered = (rawModules || []).filter((m: ModuleInfo) => DELIVERED_MODULES.has(m.id))
-    // Settings is needed for CEO and Admin
-    if (
-      (user?.role === 'ceo' || user?.role === 'admin' || user?.is_superuser) &&
-      !delivered.some((m: ModuleInfo) => m.id === 'settings')
-    ) {
+    let delivered = (rawModules || []).filter((m: ModuleInfo) => DELIVERED_MODULES.has(m.id))
+    const isSysAdmin = user?.role === 'admin' || user?.is_superuser === true
+
+    // Settings is EXCLUSIVELY for main system admin
+    if (isSysAdmin && !delivered.some((m: ModuleInfo) => m.id === 'settings')) {
       delivered.push({ id: 'settings', label: 'تنظیمات' })
     }
     // db_manager is EXCLUSIVELY for main system admin
-    if (
-      (user?.role === 'admin' || user?.is_superuser) &&
-      !delivered.some((m: ModuleInfo) => m.id === 'db_manager')
-    ) {
+    if (isSysAdmin && !delivered.some((m: ModuleInfo) => m.id === 'db_manager')) {
       delivered.push({ id: 'db_manager', label: 'استودیو پایگاه داده (SSMS)' })
     }
-    // Orbit messaging is a core organization module available to all users
-    if (!delivered.some((m: ModuleInfo) => m.id === 'orbit' || m.id === 'messaging')) {
-      delivered.push({ id: 'orbit', label: 'پیام‌رسان سازمانی (Orbit)' })
+
+    // For non-admin users (including CEO, finance, sales), strictly remove settings and db_manager
+    if (!isSysAdmin) {
+      delivered = delivered.filter((m) => m.id !== 'settings' && m.id !== 'db_manager')
     }
+
+    // Orbit messaging is a toggleable module per organization (only shown if present in delivered list)
     setModules(delivered)
   }
 
@@ -277,20 +276,13 @@ export default function LauncherPage() {
       const res = await api.get('/auth/user-modules/')
       processAndSetModules(res.data)
     } catch {
-      // Fallback: If network issue or rate limit occurs, use user.accessible_modules or default delivered modules
-      if (user?.accessible_modules && user.accessible_modules.length > 0) {
-        const fallbackList: ModuleInfo[] = user.accessible_modules.map((id) => ({
-          id,
-          label: MODULE_DEFINITIONS[id]?.label || id,
-        }))
-        processAndSetModules(fallbackList)
-      } else {
-        const fallbackList: ModuleInfo[] = Array.from(DELIVERED_MODULES).map((id) => ({
-          id,
-          label: MODULE_DEFINITIONS[id]?.label || id,
-        }))
-        processAndSetModules(fallbackList)
-      }
+      // Fallback: If network issue or rate limit occurs, use user.accessible_modules
+      const accessible = user?.accessible_modules || ['bi_dashboard', 'finance', 'crm', 'office']
+      const fallbackList: ModuleInfo[] = accessible.map((id) => ({
+        id,
+        label: MODULE_DEFINITIONS[id]?.label || id,
+      }))
+      processAndSetModules(fallbackList)
     } finally {
       setLoading(false)
     }

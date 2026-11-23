@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { useDashboardStore } from '../store/dashboardStore'
 import api from '../api/client'
-import { X, BarChart3, PieChart, TrendingUp, Table, Hash, Circle, Target, GitBranch, Grid3x3, TreePine, ArrowRightLeft, Filter, Radar, Network, Map, Code2, Calculator, Play, CheckCircle2, AlertCircle, LayoutGrid, Database, Palette, Check } from 'lucide-react'
+import { X, BarChart3, PieChart, TrendingUp, Table, Hash, Circle, Target, GitBranch, Grid3x3, TreePine, ArrowRightLeft, Filter, Radar, Network, Map, Code2, Calculator, Play, CheckCircle2, AlertCircle, LayoutGrid, Database, Palette, Check, Monitor, Smartphone, Sliders } from 'lucide-react'
 import { formatKpiValue, DEFAULT_KPI_FORMAT, type KpiFormat } from '../utils/kpiFormat'
 import { PRESET_PALETTES } from '../utils/palettes'
 import { DEFAULT_WIDGET_STYLE, type WidgetStyle } from '../utils/themeConfig'
@@ -140,6 +140,14 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
   )
   const [sortLimit, setSortLimit] = useState(
     ((widget?.chartConfig as Record<string, unknown>)?.sortLimit as number) || 0
+  )
+
+  // Device visibility state (desktop / mobile switches)
+  const [showOnDesktop, setShowOnDesktop] = useState<boolean>(
+    (widget?.chartConfig as Record<string, unknown>)?.showOnDesktop !== false
+  )
+  const [showOnMobile, setShowOnMobile] = useState<boolean>(
+    (widget?.chartConfig as Record<string, unknown>)?.showOnMobile !== false
   )
 
   // Widget-level filters
@@ -391,6 +399,8 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
       ...widget.chartConfig,
       paletteId,
       widgetStyle,
+      showOnDesktop,
+      showOnMobile,
     }
     if (chartType === 'kpi') {
       chartConfig.kpiFormat = kpiFormat
@@ -538,6 +548,67 @@ export default function WidgetConfigPanel({ widgetId, onClose }: WidgetConfigPan
 
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          {/* Device Visibility (Desktop / Mobile Switches) */}
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-nx-navy-elevated/70 border border-nx-border dark:border-nx-navy-border space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-nx-navy dark:text-slate-100 flex items-center gap-1.5">
+                <Sliders className="w-3.5 h-3.5 text-nx-blue dark:text-nx-teal" />
+                نمایش در دستگاه‌ها (موبایل و دسکتاپ)
+              </span>
+              <span className="text-[10px] text-slate-400 dark:text-nx-mist">سوئیچ تفکیک چارت</span>
+            </div>
+            <div className="grid grid-cols-2 gap-2.5">
+              {/* Desktop Switch */}
+              <button
+                type="button"
+                onClick={() => setShowOnDesktop(!showOnDesktop)}
+                className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-medium transition cursor-pointer ${
+                  showOnDesktop
+                    ? 'bg-white dark:bg-nx-navy border-nx-blue text-nx-blue dark:text-nx-teal shadow-xs'
+                    : 'bg-transparent border-slate-200 dark:border-nx-navy-border text-slate-400 dark:text-nx-mist opacity-60'
+                }`}
+              >
+                <span className="flex items-center gap-1.5">
+                  <Monitor className="w-4 h-4" />
+                  <span>نسخه دسکتاپ</span>
+                </span>
+                <span className={`w-8 h-4 rounded-full transition-colors relative flex items-center px-0.5 ${
+                  showOnDesktop ? 'bg-nx-blue dark:bg-nx-teal' : 'bg-slate-300 dark:bg-nx-mist/30'
+                }`}>
+                  <span className={`w-3 h-3 rounded-full bg-white transition-transform ${
+                    showOnDesktop ? 'translate-x-0' : '-translate-x-4'
+                  }`} />
+                </span>
+              </button>
+
+              {/* Mobile Switch */}
+              <button
+                type="button"
+                onClick={() => setShowOnMobile(!showOnMobile)}
+                className={`flex items-center justify-between p-2.5 rounded-xl border text-xs font-medium transition cursor-pointer ${
+                  showOnMobile
+                    ? 'bg-white dark:bg-nx-navy border-nx-blue text-nx-blue dark:text-nx-teal shadow-xs'
+                    : 'bg-transparent border-slate-200 dark:border-nx-navy-border text-slate-400 dark:text-nx-mist opacity-60'
+                }`}
+              >
+                <span className="flex items-center gap-1.5">
+                  <Smartphone className="w-4 h-4" />
+                  <span>نسخه موبایل</span>
+                </span>
+                <span className={`w-8 h-4 rounded-full transition-colors relative flex items-center px-0.5 ${
+                  showOnMobile ? 'bg-nx-blue dark:bg-nx-teal' : 'bg-slate-300 dark:bg-nx-mist/30'
+                }`}>
+                  <span className={`w-3 h-3 rounded-full bg-white transition-transform ${
+                    showOnMobile ? 'translate-x-0' : '-translate-x-4'
+                  }`} />
+                </span>
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-400 dark:text-nx-mist">
+              در صورت خاموش بودن هر سوئیچ، این چارت در نمای مربوطه نمایش داده نخواهد شد.
+            </p>
+          </div>
+
           {activeTab === 'data' && (
             <>
               {/* Title */}

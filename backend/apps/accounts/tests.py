@@ -334,7 +334,7 @@ PNG_1PX = (
 
 
 class CompanyBrandingAccessTests(TestCase):
-    """CEO and Admin may change branding; other roles may only read it."""
+    """Only system admin may change branding; other roles may only read it."""
 
     def setUp(self):
         from apps.accounts.models import Company
@@ -354,15 +354,14 @@ class CompanyBrandingAccessTests(TestCase):
             company=self.company,
         )
 
-    def test_ceo_can_update_branding(self):
+    def test_ceo_is_rejected_with_403(self):
         self.client.force_authenticate(user=self.ceo)
         response = self.client.put(
             self.url, {"primary_color": "#0EA5E9", "accent_color": "#14B8A6"}, format="json"
         )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.company.refresh_from_db()
-        self.assertEqual(self.company.primary_color, "#0EA5E9")
-        self.assertEqual(self.company.accent_color, "#14B8A6")
+        self.assertNotEqual(self.company.primary_color, "#0EA5E9")
 
     def test_admin_can_update_branding(self):
         self.client.force_authenticate(user=self.admin)

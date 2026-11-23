@@ -11,27 +11,27 @@ class IsMainAdmin(BasePermission):
         user = request.user
         if not user or not user.is_authenticated:
             return False
-        return user.role in ("admin", "ceo") or user.is_superuser
+        return user.role == "admin" or user.is_superuser
 
 
 class IsAdminOrCEO(BasePermission):
-    """Allow access only to main system admin (admin or CEO)."""
+    """Allow access exclusively to the main system administrator."""
 
     def has_permission(self, request, view):
         user = request.user
         if not user or not user.is_authenticated:
             return False
-        return user.role in ("admin", "ceo") or user.is_superuser
+        return user.role == "admin" or user.is_superuser
 
 
 class IsUpdaterOrAbove(BasePermission):
-    """Allow access to admin/CEO/staff, plus updater-role users with table permissions."""
+    """Allow access to system admin/staff, plus updater-role users with table permissions."""
 
     def has_permission(self, request, view):
         user = request.user
         if not user or not user.is_authenticated:
             return False
-        if user.role in ("admin", "ceo") or user.is_staff:
+        if user.role == "admin" or user.is_superuser or user.is_staff:
             return True
         return user.role == "updater"
 
@@ -43,4 +43,4 @@ class CanEditTable(BasePermission):
         user = request.user
         if not user or not user.is_authenticated:
             return False
-        return user.role in ("admin", "ceo") or user.is_superuser
+        return user.role == "admin" or user.is_superuser

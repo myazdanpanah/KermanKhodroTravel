@@ -143,6 +143,23 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
   return token ? <>{children}</> : <Navigate to="/login" replace />
 }
 
+function SystemAdminRoute({ children }: { children: React.ReactNode }) {
+  const { token, user } = useAuthStore()
+  if (!token) return <Navigate to="/login" replace />
+  const isSysAdmin = user?.role === 'admin' || user?.is_superuser === true
+  return isSysAdmin ? <>{children}</> : <Navigate to="/launcher" replace />
+}
+
+function OrbitRoute({ children }: { children: React.ReactNode }) {
+  const { token, user } = useAuthStore()
+  if (!token) return <Navigate to="/login" replace />
+  const isOrbitEnabled =
+    user?.is_superuser ||
+    user?.role === 'admin' ||
+    Boolean(user?.accessible_modules?.some((m) => m === 'orbit' || m === 'messaging'))
+  return isOrbitEnabled ? <>{children}</> : <Navigate to="/launcher" replace />
+}
+
 function PageFallback() {
   // Always the tenant's own logo, including while a sub-page lazy-loads.
   const logo = useBrandLogo()
@@ -284,14 +301,14 @@ export default function App() {
           {/* Messaging (Nexivo Orbit) redirect to standalone */}
           <Route path="messages" element={<Navigate to="/orbit" replace />} />
           <Route path="messages/:conversationId" element={<Navigate to="/orbit" replace />} />
-          {/* Settings */}
-          <Route path="settings" element={<SettingsPage />} />
-          <Route path="settings/:tab" element={<SettingsPage />} />
-          <Route path="settings/users" element={<AdminSettingsPage />} />
-          <Route path="settings/org" element={<OrgChartPage />} />
-          <Route path="settings/ai" element={<LLMSettingsPage />} />
-          <Route path="settings/sso" element={<SSOSettingsPage />} />
-          <Route path="audit" element={<AuditLogPage />} />
+          {/* Settings — System Administrator only */}
+          <Route path="settings" element={<SystemAdminRoute><SettingsPage /></SystemAdminRoute>} />
+          <Route path="settings/:tab" element={<SystemAdminRoute><SettingsPage /></SystemAdminRoute>} />
+          <Route path="settings/users" element={<SystemAdminRoute><AdminSettingsPage /></SystemAdminRoute>} />
+          <Route path="settings/org" element={<SystemAdminRoute><OrgChartPage /></SystemAdminRoute>} />
+          <Route path="settings/ai" element={<SystemAdminRoute><LLMSettingsPage /></SystemAdminRoute>} />
+          <Route path="settings/sso" element={<SystemAdminRoute><SSOSettingsPage /></SystemAdminRoute>} />
+          <Route path="audit" element={<SystemAdminRoute><AuditLogPage /></SystemAdminRoute>} />
         </Route>
 
         {/* ═══ Redirects from old routes to unified ERP ═══ */}
@@ -314,21 +331,21 @@ export default function App() {
         <Route path="/org-chart" element={<Navigate to="/erp/settings/org" replace />} />
 
         {/* ═══ Standalone modules ═══ */}
-        <Route path="/orbit" element={<PrivateRoute><OrbitLayout /></PrivateRoute>} />
-        <Route path="/orbit/:conversationId" element={<PrivateRoute><OrbitLayout /></PrivateRoute>} />
+        <Route path="/orbit" element={<OrbitRoute><OrbitLayout /></OrbitRoute>} />
+        <Route path="/orbit/:conversationId" element={<OrbitRoute><OrbitLayout /></OrbitRoute>} />
         <Route path="/messages" element={<Navigate to="/orbit" replace />} />
         <Route path="/messages/:conversationId" element={<Navigate to="/orbit" replace />} />
         <Route path="/dashboards" element={<PrivateRoute><DashboardListPage /></PrivateRoute>} />
         <Route path="/dashboards/:id" element={<PrivateRoute><DashboardBuilderPage /></PrivateRoute>} />
         <Route path="/admin/assignments" element={<PrivateRoute><DashboardAssignPage /></PrivateRoute>} />
         <Route path="/data/upload" element={<PrivateRoute><DataUploadPage /></PrivateRoute>} />
-        <Route path="/db-manager" element={<PrivateRoute><DatabaseManagerPage /></PrivateRoute>} />
-        <Route path="/db-manager/table/:source/:table" element={<PrivateRoute><TableEditorPage /></PrivateRoute>} />
-        <Route path="/db-manager/table/:source/:table/schema" element={<PrivateRoute><SchemaEditorPage /></PrivateRoute>} />
-        <Route path="/db-manager/table/:source/:table/import" element={<PrivateRoute><FileImportPage /></PrivateRoute>} />
-        <Route path="/db-manager/sql" element={<PrivateRoute><SqlEditorPage /></PrivateRoute>} />
-        <Route path="/db-manager/syncs" element={<PrivateRoute><SheetsSyncPage /></PrivateRoute>} />
-        <Route path="/db-manager/connections" element={<PrivateRoute><ExternalDbPage /></PrivateRoute>} />
+        <Route path="/db-manager" element={<SystemAdminRoute><DatabaseManagerPage /></SystemAdminRoute>} />
+        <Route path="/db-manager/table/:source/:table" element={<SystemAdminRoute><TableEditorPage /></SystemAdminRoute>} />
+        <Route path="/db-manager/table/:source/:table/schema" element={<SystemAdminRoute><SchemaEditorPage /></SystemAdminRoute>} />
+        <Route path="/db-manager/table/:source/:table/import" element={<SystemAdminRoute><FileImportPage /></SystemAdminRoute>} />
+        <Route path="/db-manager/sql" element={<SystemAdminRoute><SqlEditorPage /></SystemAdminRoute>} />
+        <Route path="/db-manager/syncs" element={<SystemAdminRoute><SheetsSyncPage /></SystemAdminRoute>} />
+        <Route path="/db-manager/connections" element={<SystemAdminRoute><ExternalDbPage /></SystemAdminRoute>} />
         <Route path="/admin/superset" element={<PrivateRoute><SupersetHealthPage /></PrivateRoute>} />
         <Route path="/roadmap" element={<PrivateRoute><RoadmapPage /></PrivateRoute>} />
 
